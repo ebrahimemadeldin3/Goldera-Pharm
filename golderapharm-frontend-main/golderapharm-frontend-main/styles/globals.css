@@ -1,0 +1,280 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* :root {
+  --gold: #c9a961;
+  --secondary-light: #D9D9D9;
+  --secondary-very-light: #F8FAFC;
+  --secondary-dark: #666666;
+  --notification: #DC2626;
+  --light-warning: #FEF9E7;
+  --gold-stroke: #F9E9B8;
+} */
+
+/* .dark {
+} */
+
+@theme inline {
+  /* feature based color system - dynamically set by RoleUIProvider */
+  --color-system-primary: var(--system-primary);
+  --color-system-gradient-from: var(--system-gradient-from);
+  --color-system-gradient-to: var(--system-gradient-to);
+  --color-system-primary-stroke: var(--system-primary-stroke);
+  --color-system-primary-light: var(--system-primary-light);
+
+  /* ------------------------------- */
+  --color-gold: #c9a961; /*used for manager*/
+  --color-secondary-dark: #666666;
+  --color-secondary-light: #d9d9d9;
+  --color-secondary-very-light: #f8fafc;
+
+  /* dashboard colors  */
+  --color-dashboard-green: #10b981;
+  --color-dashboard-purple: #8b5cf6;
+  --color-dashboard-blue: #2563eb;
+  --color-dashboard-orange: #f59e0b;
+  --color-dashboard-red: #dc2626;
+
+  /* stroke */
+  --color-gold-stroke: #f9e9b8;
+  --color-orange-stroke: #fed7aa;
+  --color-green-stroke: #bbf7d0;
+  --color-blue-stroke: #dbeafe;
+  --color-red-stroke: #fecaca;
+
+  /* light */
+  --color-light-warning: #fef9e7; /* light gold is the same */
+  --color-light-blue: #ebf1ff;
+  --color-light-red: #fef2f2;
+  --color-light-green: #e7fff7;
+
+  /* gradiant */
+  --color-light-blue-gradiant: #f5f9ff;
+  --color-light-green-gradiant: #e7fff7;
+  --color-light-red-gradiant: #fef2f2;
+  --color-light-orange-gradiant: #fff7ed;
+  --color-light-warning-gradiant: #fef9e7;
+
+  /* text */
+  --color-secondary-text: #64748b;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+.input {
+  @apply bg-secondary-very-light border-secondary-light placeholder:text-secondary-dark cursor-pointer border px-4 font-normal shadow-none placeholder:text-sm/5;
+}
+
+.button-system-primary {
+  @apply bg-system-primary border-system-primary hover:text-system-primary cursor-pointer border text-sm/5 font-medium text-white select-none hover:bg-white;
+}
+
+.button-system-gradient-primary {
+  @apply from-system-gradient-from to-system-gradient-to hover:outline-system-primary hover:text-system-primary cursor-pointer bg-linear-to-b text-sm/5 font-medium text-white outline outline-transparent transition-colors duration-300 outline-solid select-none hover:bg-white hover:from-white hover:to-white;
+}
+
+.gradient-orange {
+  @apply bg-linear-to-b from-[#F59E0B] to-[#D97706];
+}
+
+.gradient-green {
+  @apply bg-linear-to-b from-[#10B981] to-[#059669];
+}
+
+.gradient-blue {
+  @apply bg-linear-to-b from-[#2563EB] to-[#1E3A8A];
+}
+
+.gradient-brown {
+  @apply bg-linear-to-b from-[#C9A961] to-[#B89951];
+}
+
+.gradient-gold {
+  @apply bg-linear-to-b from-[#C9A961] to-[#987B3B]
+}
+
+/* Hide Chrome/Edge "reveal password" eye icon */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
+
+/*  header */
+@keyframes notify-slide-in-far {
+  from {
+    transform: translateX(100vw) scale(0.98);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes notify-slide-out-far {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100vw) scale(0.98);
+    opacity: 0;
+  }
+}
+.notify-panel[data-state="open"] {
+  animation: notify-slide-in-far 900ms cubic-bezier(0.16, 0.84, 0.44, 1)
+    forwards;
+}
+.notify-panel[data-state="closed"] {
+  animation: notify-slide-out-far 500ms cubic-bezier(0.33, 0, 0.67, 1) forwards;
+}
+.notify-panel {
+  transform-origin: right center;
+}
+/* ---------------------------------- */
+
+/* Loading line animation */
+@keyframes loading-line {
+  0% {
+    width: 0%;
+    left: 0;
+  }
+  50% {
+    width: 100%;
+    left: 0;
+  }
+  51% {
+    width: 100%;
+    left: auto;
+    right: 0;
+  }
+  100% {
+    width: 0%;
+    right: 0;
+  }
+}
+
+.animate-loading-line {
+  animation: loading-line 1.5s ease-in-out infinite;
+}
+/* ---------------------------------- */

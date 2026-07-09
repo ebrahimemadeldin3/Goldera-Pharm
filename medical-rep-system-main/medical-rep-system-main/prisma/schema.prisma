@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                  String    @id @default(uuid())
+  name                String
+  email               String    @unique
+  phone               String?
+  role                Role      @default(MEDICAL_REP)
+  password            String
+  dateOfBirth         DateTime
+  dateOfRecruitment   DateTime  @default(now())
+  department          String?
+  location            String?
+  bio                 String?
+  educationBackground String?
+  iqamaNumber         String?
+  passportNumber      String?
+  resume              Json?
+  certificates        Json[]
+  lastLogin           DateTime?
+  isActive            Boolean?  @default(true)
+  profileImage        Json?
+
+  leaveStartDate      DateTime?
+  leaveEndDate        DateTime?
+  leaveDaysCountTotal Int?      @default(0)
+
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
+  subRegionId String?
+
+  supervisorId String? // Reps belong to a supervisor
+  managerId    String?
+  supervisor   User?     @relation("SupervisorToReps", fields: [supervisorId], references: [id])
+  manager      User?     @relation("manager", fields: [managerId], references: [id])
+  reps         User[]    @relation("SupervisorToReps")
+  visits       Visit[]
+  requests     Request[]
+
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  regions             Region[]
+  visitReports        VisitReport[]
+  plans               Plan[]           @relation("planCreatedBy")
+  users               User[]           @relation("manager")
+  coachings           CoachingReport[] @relation("CoachingCreatedBy")
+  repCoachings        CoachingReport[] @relation("repCoaching")
+  appraisalsByManager Appraisal[]      @relation("appraisalManager")
+  appraisalsForRep    Appraisal[]      @relation("appraisalRep")
+  forecasts           forecast[]
+}
+
+enum Role {
+  MANAGER
+  SUPERVISOR
+  MEDICAL_REP
+}
+
+model Plan {
+  id                 String     @id @default(uuid())
+  title              String     @unique
+  type               PlanType
+  status             PlanStatus @default(PENDING)
+  description        String
+  startDate          DateTime
+  endDate            DateTime
+  doctors            Json[]
+  targetDoctors      Int
+  targetVisits       Int
+  objectives         String[]
+  supervisorFeedback String?
+
+  createdBy   User   @relation("planCreatedBy", fields: [createdById], references: [id])
+  createdById String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  visits    Visit[]
+}
+
+enum PlanStatus {
+  APPROVED
+  PENDING
+  REJECTED
+}
+
+enum PlanType {
+  WEEKLY
+  MONTHLY
+}
+
+model Visit {
+  id        String    @id @default(uuid())
+  visitType VisitType @default(ROUTINE)
+  samples   String[]
+  date      DateTime
+  time      String?
+  doctor    Doctor    @relation(fields: [doctorId], references: [id])
+  doctorId  String
+  createdBy User      @relation(fields: [userId], references: [id])
+  userId    String
+
+  plan   Plan?       @relation(fields: [planId], references: [id])
+  planId String?
+  notes  String?
+  status VisitStatus @default(SCHEDULED)
+
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  visitReports VisitReport[]
+}
+
+enum VisitType {
+  ROUTINE
+  FOLLOW_UP
+  EMERGENCY
+}
+
+enum VisitStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+model VisitReport {
+  id              String   @id @default(uuid())
+  visitId         String
+  userId          String
+  duration        String
+  rating          String
+  discussedTopics String[]
+  doctorFeedback  String?
+  visitPurpose    String
+  notes           String?
+  samplesProvided String[]
+
+  createdBy User  @relation(fields: [userId], references: [id])
+  visit     Visit @relation(fields: [visitId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Request {
+  id           String        @id @default(uuid())
+  title        String
+  userId       String
+  type         RequestType
+  status       RequestStatus @default(PENDING)
+  urgency      String
+  subject      String
+  description  String
+  response     String?
+  responseDate DateTime?
+  handledAt    DateTime?
+
+  leaveStartDate DateTime?
+  leaveEndDate   DateTime?
+  leaveType      String?
+  leaveDaysCount Int?
+
+  visitedCity        String?
+  visitDaysCount     Int?
+  totalExpenseAmount Float?
+  totalExpenseData   Json[]
+  sampleData         Json[]
+
+  pdfs Json[]
+
+  budget  Float?
+  doctors Doctor[]
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  products   Products? @relation(fields: [productsId], references: [id])
+  productsId String?
+}
+
+enum RequestType {
+  EXPENSE
+  MARKETING
+  SAMPLE
+  LEAVE
+  PERSONAL_EXPENSE
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Region {
+  id           String  @id @default(uuid())
+  name         String
+  country      String
+  supervisorId String?
+
+  supervisor User?       @relation(fields: [supervisorId], references: [id])
+  subRegions SubRegion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SubRegion {
+  id       String @id @default(uuid())
+  name     String
+  regionId String
+
+  region    Region     @relation(fields: [regionId], references: [id])
+  reps      User[]
+  // doctors   Doctor[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  accounts  Accounts[]
+}
+
+model Doctor {
+  id                String  @id @default(uuid())
+  nameAR            String?
+  nameEN            String?
+  email             String?
+  phone             String?
+  grade             String?
+  avgPatientsPerDay Int?
+  specialty         String?
+  planId            String?
+  LicenseNumber     String?
+  latitude          Float?
+  longitude         Float?
+  isActive          Boolean @default(true)
+
+  accountName String?
+  subRegion   String?
+  area        String?
+
+  // account   Accounts[]
+  // subRegion SubRegion[]
+  accounts   Accounts? @relation(fields: [accountsId], references: [id])
+  accountsId String?
+
+  visits    Visit[]
+  coachings CoachingReport[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  request   Request[]
+}
+
+model Accounts {
+  id          String     @id @default(uuid())
+  name        String
+  subRegionId String?
+  subRegion   SubRegion? @relation(fields: [subRegionId], references: [id])
+
+  doctors Doctor[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CoachingReport {
+  id                String   @id @default(uuid())
+  rep               User     @relation("repCoaching", fields: [repId], references: [id])
+  doctor            Doctor   @relation(fields: [doctorId], references: [id])
+  createdBy         User     @relation("CoachingCreatedBy", fields: [createdById], references: [id])
+  visitDate         DateTime
+  visitDuration     String
+  visitLocation     String
+  performanceRating Int
+  visitPros         String[]
+  visitCons         String[]
+  recommendations   String
+  actionItems       String[]
+  notes             String?
+  repComment        String?
+  repAccepted       Boolean? @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  repId             String
+  doctorId          String
+  createdById       String
+}
+
+model Appraisal {
+  id      String @id @default(uuid())
+  rep     User   @relation("appraisalRep", fields: [repId], references: [id])
+  manager User   @relation("appraisalManager", fields: [managerId], references: [id])
+
+  period                       DateTime
+  salesPerformance             Float
+  customerRelationships        Float
+  productKnowledge             Float
+  complianceAndRegulations     Float
+  teamworkAndCollaboration     Float
+  feedbackComments             String?
+  presentationSkills           Int?
+  sellingSkills                Int?
+  reporting                    Int?
+  productInformation           Int?
+  competitorsInformation       Int?
+  organizationalValueAwareness Int?
+  properUtilizationOfResources Int?
+  reliabilityAndCredibility    Int?
+  independenceAndJudgment      Int?
+  teamSpirit                   Int?
+  personalDrive                Int?
+  creativityAndInitiative      Int?
+  broadProspective             Int?
+  communicationSkills          Int?
+  planningAndOrganizing        Int?
+  appearance                   Int?
+  attitude                     Int?
+  timing                       Int?
+
+  repId     String
+  managerId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model forecast {
+  id                 String   @id @default(uuid())
+  rep                User     @relation(fields: [repId], references: [id])
+  repId              String
+  periodType         String
+  periodDate         DateTime
+  productForecasts   Json[]
+  notes              String?
+  isApproved         Boolean  @default(false)
+  supervisorFeedback String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Products {
+  id          String @id @default(uuid())
+  name        String
+  internalRef String
+  salesPrice  Float
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  sales     Sales[]
+  request   Request[]
+}
+
+model Pharmacy {
+  id        String @id @default(uuid())
+  name      String
+  city      String
+  region    String
+  subRegion String
+  country   String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Sales {
+  sheetName    String
+  id           String   @id @default(uuid())
+  customer     String
+  order        String
+  orderDate    DateTime
+  productId    String
+  product      Products @relation(fields: [productId], references: [id])
+  qtyOrdered   Int
+  untaxedTotal Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

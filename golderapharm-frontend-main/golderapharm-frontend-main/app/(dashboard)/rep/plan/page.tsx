@@ -1,0 +1,79 @@
+import PlanStats from "@/features/plan/components/PlanStats";
+import CreatePlanDialogRep from "@/features/plan/components/rep/CreatePlanDialogRep";
+import RepPlansList from "@/features/plan/components/rep/RepPlansList";
+import { calculateRepPlanStats } from "@/features/plan/lib/utils";
+import { getRepPlansAction } from "@/features/plan/api/get";
+import { fetchProfile } from "@/features/profile/api";
+import { getRegionsAction } from "@/lib/requests/regions";
+
+export const dynamic = "force-dynamic";
+
+export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
+  const params = await searchParams;
+
+  const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
+  const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
+
+ 
+  // Fetch plans data and user profile in parallel
+  const [plansResult, profile] = await Promise.all([
+    getRepPlansAction(page, limit),
+    fetchProfile().catch(() => null),
+  ]);
+
+  // Resolve subRegion name for doctor filtering
+  let userSubRegionName: string | null = null;
+  if (profile && profile.role !== "MANAGER" && profile.subRegionId) {
+    const regionsResult = await getRegionsAction();
+    if (regionsResult.success && regionsResult.regions) {
+      for (const region of regionsResult.regions) {
+        const found = region.subRegions.find(
+          (sr) => sr.id === profile.subRegionId,
+        );
+        if (found) {
+          userSubRegionName = found.name;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!plansResult.success || !plansResult.data) {
+    return (
+      <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
+        <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
+          <p className="text-sm">
+            {plansResult.error?.message || "Failed to load plans"}
+          </p>
+        </div>
+      </main>
+    );
+  }
+
+  const plans = plansResult.data;
+  const stats = calculateRepPlanStats(plans);
+
+  return (
+    <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
+      <header className="mb-6 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl/10 font-normal">My Plans</h1>
+          <p className="text-secondary-dark mt-2 text-base/6 font-normal">
+            Create and manage your weekly and monthly visit plans
+          </p>
+        </div>
+        <CreatePlanDialogRep
+          userRole={profile?.role ?? "MEDICAL_REP"}
+          userSubRegionName={userSubRegionName}
+        />
+      </header>
+      <PlanStats data={stats} />
+      <RepPlansList
+        plans={plans}
+        page={page}
+        limit={limit}
+        totalCount={plansResult.totalCount ?? plans.length}
+      />
+    </main>
+  );
+}
