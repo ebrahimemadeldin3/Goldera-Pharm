@@ -42,7 +42,7 @@ export default function MainCards({
           id: "target",
           title: "Target Achievement",
           metric: (
-            <span className="text-[34px] font-bold">
+            <span className="text-2xl font-bold md:text-[34px]">
               {targetAchievement || "0%"}
             </span>
           ),
@@ -53,7 +53,7 @@ export default function MainCards({
           id: "coverage",
           title: "Coverage",
           metric: (
-            <span className="text-[34px] font-bold">{coverage || "0%"}</span>
+            <span className="text-2xl font-bold md:text-[34px]">{coverage || "0%"}</span>
           ),
           sub: "This Month",
           Icon: (
@@ -78,7 +78,7 @@ export default function MainCards({
           id: "pending",
           title: "Pending Requests",
           metric: (
-            <span className="text-[34px] font-bold">
+            <span className="text-2xl font-bold md:text-[34px]">
               {pendingRequestsCount}
             </span>
           ),
@@ -107,7 +107,7 @@ export default function MainCards({
           id: "pending",
           title: "Pending Requests",
           metric: (
-            <span className="text-[34px] font-bold">
+            <span className="text-2xl font-bold md:text-[34px]">
               {pendingRequestsCount}
             </span>
           ),
@@ -118,15 +118,15 @@ export default function MainCards({
         },
       ];
   return (
-    <section className="grid grid-cols-1 gap-6 min-[1440px]:w-[714px] sm:grid-cols-2">
+    <section className="grid w-full min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
       {data.map((c) => (
         <div
           key={c.id}
-          className="border-secondary-light flex flex-col justify-between rounded-[25px] border bg-white px-4 py-6 text-nowrap"
+          className="border-secondary-light flex min-w-0 flex-col justify-between rounded-[25px] border bg-white px-4 py-6"
           role="region"
           aria-labelledby={`card-${c.id}-title`}
         >
-          <div className="flex items-start justify-between">
+          <div className="flex flex-wrap items-start justify-between gap-2">
             <div className="flex items-center gap-3">
               <div className="bg-system-primary flex size-11 items-center justify-center rounded-lg">
                 {c.Icon}
@@ -151,9 +151,9 @@ export default function MainCards({
             )}
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-4">
-            {c.metric}
-            <div className="flex items-center justify-center gap-5">
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
+            <div className="min-w-0">{c.metric}</div>
+            <div className="flex shrink-0 items-center justify-center gap-5">
               {c.sub && <div className="text-[12px]">{c.sub}</div>}
               {c.delta && (
                 <div

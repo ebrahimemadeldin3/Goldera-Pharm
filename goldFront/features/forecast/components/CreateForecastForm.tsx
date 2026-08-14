@@ -276,7 +276,7 @@ export default function CreateForecastForm() {
   }
 
   return (
-    <main className="border-system-primary rounded-[14px] border bg-white">
+    <div className="border-system-primary rounded-[14px] border bg-white">
       <h2 className="bg-system-primary rounded-t-[14px] p-6 text-base/4 font-normal text-white">
         Create New Forecast
       </h2>
@@ -288,7 +288,7 @@ export default function CreateForecastForm() {
           }}
           className="space-y-8 p-6"
         >
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <FormField
               control={form.control}
               name="periodType"
@@ -504,12 +504,12 @@ export default function CreateForecastForm() {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-4 flex flex-col items-center justify-between gap-4 sm:flex-row">
                 <div className="text-secondary-text text-sm">
                   Showing {startIndex + 1}-{Math.min(endIndex, doctors.length)}{" "}
                   of {doctors.length} doctors
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   <Button
                     type="button"
                     onClick={handlePreviousPage}
@@ -521,7 +521,7 @@ export default function CreateForecastForm() {
                     <ChevronLeft className="h-4 w-4" />
                     Previous
                   </Button>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center justify-center gap-1">
                     {getPageNumbers().map((page) => (
                       <Button
                         key={page}
@@ -574,7 +574,7 @@ export default function CreateForecastForm() {
               </FormItem>
             )}
           />
-          <footer className="flex items-center justify-start gap-32 rounded-[10px] border-[0.8px] border-[#BFDBFE] bg-[#EFF6FF] p-4">
+          <footer className="grid grid-cols-1 gap-6 rounded-[10px] border-[0.8px] border-[#BFDBFE] bg-[#EFF6FF] p-4 sm:grid-cols-3">
             <p className="text-secondary-text text-sm/5 font-normal">
               Total Units Planned
               <span className="block text-2xl/7 font-normal text-black">
@@ -599,7 +599,7 @@ export default function CreateForecastForm() {
               <p className="text-sm/5 font-medium text-red-800">{error}</p>
             </div>
           )}
-          <div className="flex items-center justify-end gap-4">
+          <div className="flex flex-wrap items-center justify-end gap-4">
             <Button
               type="button"
               onClick={onCancel}
@@ -620,6 +620,6 @@ export default function CreateForecastForm() {
           </div>
         </form>
       </Form>
-    </main>
+    </div>
   );
 }

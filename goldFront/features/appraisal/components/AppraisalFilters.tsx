@@ -31,11 +31,11 @@ export function AppraisalFilters({
 }: Props) {
   return (
     <section className="flex flex-col gap-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-base/4 font-normal text-black">
           Performance Reviews
         </h3>
-        <div className="ml-auto flex items-center gap-3">
+        <div className="ml-auto flex flex-wrap items-center gap-3">
           <Select value={period} onValueChange={onChangePeriod}>
             <SelectTrigger className="data-placeholder:text-secondary-text cursor-pointer border-[0.8px] border-[#E2E8F0] bg-[#F8FAFC] px-3 text-sm/5 font-normal shadow-none">
               <SelectValue placeholder="All Periods" />
@@ -58,7 +58,7 @@ export function AppraisalFilters({
               <SelectItem value="Dammam">Dammam</SelectItem>
             </SelectContent>
           </Select>
-          <div className="relative w-70">
+          <div className="relative w-full sm:w-70">
             <Search className="text-secondary-text pointer-events-none absolute top-1/2 left-2 h-4 w-4 -translate-y-1/2" />
             <Input
               value={query}
@@ -69,7 +69,7 @@ export function AppraisalFilters({
           </div>
         </div>
       </div>
-      <div className="flex w-fit items-center gap-1 rounded-[14px] bg-[#F1F5F9] p-1 text-sm/5 font-medium *:cursor-pointer *:rounded-[14px] *:border-[0.8px] *:px-2 *:py-1">
+      <div className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-[14px] bg-[#F1F5F9] p-1 text-sm/5 font-medium *:cursor-pointer *:rounded-[14px] *:border-[0.8px] *:px-2 *:py-1">
         <button
           className={`${tab === "all" ? "bg-white" : "bg-transparent"}`}
           onClick={() => onChangeTab("all")}

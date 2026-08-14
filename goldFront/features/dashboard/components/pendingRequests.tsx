@@ -51,7 +51,7 @@ export default function PendingRequests({
     .slice(0, 4);
 
   return (
-    <Card className="border-secondary-light rounded-[25px] border bg-white py-6 shadow-none">
+    <Card className="border-secondary-light w-full min-w-0 rounded-[25px] border bg-white py-6 shadow-none">
       <CardHeader className="flex items-center gap-4 px-6">
         <div className="bg-system-primary flex h-10 w-10 items-center justify-center rounded-[15px]">
           <Image

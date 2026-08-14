@@ -2,6 +2,7 @@ import PharmaciesHeader from "@/features/pharmacies/components/PharmaciesHeader"
 import PharmaciesList from "@/features/pharmacies/components/PharmaciesList";
 import { getPharmaciesAction } from "@/features/pharmacies/api";
 import type { PharmacyApiResponse } from "@/features/pharmacies/lib/types";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -32,9 +33,9 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
     totalCount =  result.results as number ?? pharmacies.length;
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 *:min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <PharmaciesHeader pharmacies={pharmacies} />
       <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </PageContainer>
   );
 }

@@ -21,9 +21,9 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
 
   return (
     <>
-      <header className="flex w-full items-center justify-start gap-6 min-[1440px]:w-270.75! lg:w-5xl">
+      <header className="flex w-full flex-wrap items-center justify-start gap-6">
         <div>
-          <h1 className="font-nomral text-[34px] text-black">Visit Calendar</h1>
+          <h1 className="font-nomral text-2xl text-black md:text-[34px]">Visit Calendar</h1>
           <p className="text-secondary-dark text-[16px]">
             Track and manage medical rep visits and appointments
           </p>
@@ -37,7 +37,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
           Add Visit
         </Link>
       </header>
-      <section className="mt-6 flex items-center gap-6 *:flex-1">
+      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
         <div className="border-secondary-light flex flex-col items-start gap-2 rounded-[10px] border-[.8px] bg-white p-5">
           <h3 className="text-secondary-dark text-sm/5 font-normal">
             Total Visits

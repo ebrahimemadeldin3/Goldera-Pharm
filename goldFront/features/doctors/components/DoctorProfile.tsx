@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import type { VisitApiResponse } from "@/features/visits/lib/types/api";
 import type { CoachingReportApiResponse } from "@/features/coaching/api";
 import { formatSaudiDateDisplay, parseDateValue } from "@/lib/utils";
+import { PageContainer } from "@/components/layout/page-container";
 
 type DoctorProfileProps = {
   doctor: DoctorProfileData;
@@ -51,16 +52,16 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
     !!doctor.plan || (!!doctor.coachings && doctor.coachings.length > 0);
 
   return (
-    <main className="flex flex-col gap-6 p-6 *:min-[1440px]:w-270.75!">
-      <header className="flex items-center justify-start gap-2">
+    <PageContainer className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-start gap-2">
         <Link
           href={getBackLink()}
-          className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
+          className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
         >
           <ArrowLeft size={16} />
         </Link>
-        <div className="ml-3">
-          <h1 className="font-nomral text-[34px] text-black">Doctor Profile</h1>
+        <div className="ml-3 min-w-0 flex-1">
+          <h1 className="font-nomral text-2xl text-black md:text-[34px]">Doctor Profile</h1>
           <p className="text-secondary-dark text-[16px]">
             View and manage doctor information
           </p>
@@ -136,13 +137,13 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
 
       {/* profile summary card */}
       <section className="border-secondary-light rounded-lg border-[0.8px] bg-white p-6">
-        <div className="flex items-start gap-6">
+        <div className="flex flex-col items-start gap-6 sm:flex-row">
           <div className="flex size-24 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[#2563EB] to-[#1E3A8A] text-xl font-semibold text-white">
             <Stethoscope size={48} />
           </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-base/6 font-normal text-black">
                 {displayName}
               </h2>
@@ -163,7 +164,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
               </span>
             </div>
 
-            <div className="text-secondary-dark mt-4 grid grid-cols-2 gap-3 text-sm">
+            <div className="text-secondary-dark mt-4 grid grid-cols-1 gap-3 text-sm md:grid-cols-2">
               <div className="flex items-center gap-3">
                 <span className="font-medium text-black">Name (EN):</span>
                 {isEditMode ? (
@@ -374,7 +375,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
               )}
 
               {!isEditMode && doctor.latitude && doctor.longitude && (
-                <div className="col-span-2 flex items-center gap-3">
+                <div className="flex items-center gap-3 md:col-span-2">
                   <MapPin className="h-4 w-4" />
                   <span>
                     Coordinates: {doctor.latitude}, {doctor.longitude}
@@ -401,7 +402,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
       </section>
 
       {/* stats */}
-      <section className="grid grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="border-secondary-light flex flex-col gap-1 rounded-lg border-[0.8px] bg-white p-6 text-center">
           <div className="text-secondary-dark text-base/6">
             Avg. Patients/Day
@@ -426,7 +427,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
       </section>
 
       {/* two-column area */}
-      <section className="grid grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Account Information */}
         <div className="border-secondary-light rounded-lg border-[0.8px] bg-white p-6">
           <h3 className="mb-4 text-[20px]/6 font-semibold text-black">
@@ -531,6 +532,6 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
           )}
         </section>
       )} */}
-    </main>
+    </PageContainer>
   );
 }

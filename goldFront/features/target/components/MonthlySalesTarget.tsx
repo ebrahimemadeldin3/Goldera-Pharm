@@ -27,7 +27,7 @@ const MonthlySalesTarget = () => {
         </CardAction>
       </CardHeader>
       <CardContent className="mt-5 space-y-10">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div>
             <p className="text-secondary-text text-xs/4 font-normal">Target</p>
             <p className="text-2xl/8 font-normal text-black">

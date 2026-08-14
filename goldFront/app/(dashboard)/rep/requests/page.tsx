@@ -6,6 +6,7 @@ import { getDoctorsAction } from "@/features/doctors/api";
 import { getProductsAction } from "@/features/products/api";
 import { fetchProfile } from "@/features/profile/api";
 import { getRegionsAction } from "@/lib/requests/regions";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -75,10 +76,10 @@ export default async function Page({ searchParams }: PageProps) {
   ).length;
 
   return (
-    <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
-      <header className="mb-6 flex items-center justify-start gap-4">
+    <PageContainer>
+      <header className="mb-6 flex flex-wrap items-center justify-start gap-4">
         <div>
-          <h1 className="text-4xl/10 font-normal">Requests</h1>
+          <h1 className="text-2xl/9 font-normal md:text-[34px]/10">Requests</h1>
           <p className="text-secondary-dark mt-2 text-base/6 font-normal">
             Submit requests and track their status
           </p>
@@ -99,6 +100,6 @@ export default async function Page({ searchParams }: PageProps) {
           totalCount={requestsTotalCount}
         />
       </section>
-    </main>
+    </PageContainer>
   );
 }

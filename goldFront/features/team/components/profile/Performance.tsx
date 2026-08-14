@@ -105,7 +105,7 @@ export default function Performance({
         </div>
       </CardContent>
       <CardFooter className="mt-2 flex w-full flex-col gap-6">
-        <div className="borrder-[#D9D9D9] flex w-full items-center justify-between border-t py-4 pr-30 *:flex *:flex-col *:justify-start">
+        <div className="borrder-[#D9D9D9] flex w-full flex-wrap items-center justify-between gap-4 border-t py-4 pr-6 *:flex *:flex-col *:justify-start sm:pr-30">
           <div>
             <span className="text-secondary-dark text-base">Reviewed By</span>
             <span className="mt-1 text-base font-medium text-[#0F172A]">

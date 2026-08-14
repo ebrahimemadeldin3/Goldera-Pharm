@@ -53,7 +53,7 @@ export default function TeamList({
     <>
       {/* Manager-only Toggle Buttons */}
       {isManager && medicalReps && supervisors && stats && (
-        <div className="mb-6 flex w-fit items-center gap-2 rounded-full bg-[#EBF1FF] p-1 *:cursor-pointer">
+        <div className="mb-6 flex w-fit max-w-full flex-wrap items-center gap-2 rounded-full bg-[#EBF1FF] p-1 *:cursor-pointer">
           <button
             onClick={() => setActiveTab("reps")}
             className={`rounded-full px-4 py-1 text-sm font-medium ${

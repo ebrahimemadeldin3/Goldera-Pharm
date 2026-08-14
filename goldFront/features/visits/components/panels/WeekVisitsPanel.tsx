@@ -30,7 +30,7 @@ export default function WeekVisitsPanel({
             key={formatDateOnly(day)}
             className="overflow-hidden p-0 shadow-none"
           >
-            <div className="bg-system-primary flex items-center justify-between rounded-t-[10px] p-4 text-white">
+            <div className="bg-system-primary flex flex-wrap items-center justify-between gap-2 rounded-t-[10px] p-4 text-white">
               <p className="text-base/6 font-semibold">
                 {formatSaudiWeekday(day)}, {formatSaudiDateDisplay(day)}
               </p>

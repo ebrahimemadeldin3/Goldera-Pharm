@@ -17,10 +17,10 @@ export default function DayVisitsPanel({
 }) {
   return (
     <Card className="overflow-hidden border-none bg-transparent p-0 shadow-none">
-      <div className="from-system-gradient-from to-system-gradient-to flex items-center justify-between rounded-[10px] bg-linear-to-b px-5 py-5 text-white">
-        <div className="flex items-center gap-1 text-lg/6 font-semibold text-white">
+      <div className="from-system-gradient-from to-system-gradient-to flex flex-wrap items-center justify-between gap-2 rounded-[10px] bg-linear-to-b px-5 py-5 text-white">
+        <div className="flex min-w-0 items-center gap-1 text-lg/6 font-semibold text-white">
           {" "}
-          <Calendar size={20} /> {format(date, "EEEE, MMMM d, yyyy")}
+          <Calendar size={20} className="shrink-0" /> {format(date, "EEEE, MMMM d, yyyy")}
         </div>
         <div className="text-sm/5 font-semibold">{visits.length} visits</div>
       </div>

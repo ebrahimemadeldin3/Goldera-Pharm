@@ -37,8 +37,8 @@ export default function Preferences() {
 
         <div className="space-y-6">
           {/* Language */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Language
               </div>
@@ -47,7 +47,7 @@ export default function Preferences() {
               </div>
             </div>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="border-secondary-light w-[220px] justify-between border bg-white text-left text-sm font-normal text-black shadow-none">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -58,8 +58,8 @@ export default function Preferences() {
           </div>
 
           {/* Timezone */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Timezone
               </div>
@@ -68,7 +68,7 @@ export default function Preferences() {
               </div>
             </div>
             <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger className="border-secondary-light w-[220px] justify-between border bg-white text-left text-sm font-normal text-black shadow-none">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
               <SelectContent>

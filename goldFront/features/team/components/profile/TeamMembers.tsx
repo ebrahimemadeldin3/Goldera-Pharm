@@ -29,7 +29,7 @@ export default function TeamMembers({
           return (
             <div
               key={member.id}
-              className="border-secondary-light flex items-center justify-start gap-4 rounded-[10px] border p-3"
+              className="border-secondary-light flex flex-wrap items-center justify-start gap-4 rounded-[10px] border p-3"
             >
               <div
                 aria-hidden
@@ -37,7 +37,7 @@ export default function TeamMembers({
               >
                 {initials}
               </div>
-              <div className="flex flex-col font-normal">
+              <div className="flex min-w-0 flex-1 flex-col font-normal">
                 <span className="text-[16px] text-black">{member.name}</span>
                 <span className="text-secondary-dark text-[14px]">
                   {member.role === "MEDICAL_REP"

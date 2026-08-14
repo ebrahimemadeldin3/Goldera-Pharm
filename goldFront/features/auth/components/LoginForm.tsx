@@ -1,21 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardFooter,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -24,7 +18,14 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Eye, EyeOff, UserRound } from "lucide-react";
+import {
+  Eye,
+  EyeOff,
+  LoaderCircle,
+  LockKeyhole,
+  UserRound,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 import { loginAction } from "../api";
 import { LoginFormValues, loginSchema } from "../lib/schemas";
 
@@ -78,174 +79,215 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps = {}) {
   }
 
   return (
-    <div className="w-5xl rounded-2xl bg-white px-[80] pt-10 shadow-2xl">
-      <Card className="flex-1 border-0 bg-white shadow-none outline-0">
-        <CardHeader className="mb-2 flex items-center justify-center gap-6">
-          <Image
-            src={"/logos/logo.webp"}
-            width={110}
-            height={125}
-            alt={"Golderapharm"}
-          />
-          <div>
-            <h1 className="text-gold text-[34px]/10 font-normal -tracking-[0.8px]">
-              Golderapharm system
-            </h1>
-            <p className="text-secondary-dark text-base/6 font-normal">
-              Sign in to manage your pharmaceutical operations
-            </p>
-          </div>
-        </CardHeader>
+    <div className="auth-form-panel w-full max-w-[430px]">
+      <div className="text-center">
+        <h1
+          className="auth-stagger text-[26px] font-semibold text-[#F7F9FC] sm:text-[28px]"
+          style={{ "--auth-delay": "60ms" } as CSSProperties}
+        >
+          Welcome back
+        </h1>
+        <p
+          className="auth-stagger mx-auto mt-2 max-w-[330px] text-[15px] leading-6 text-[#AAB4C3]"
+          style={{ "--auth-delay": "110ms" } as CSSProperties}
+        >
+          Sign in to access your pharmaceutical operations dashboard.
+        </p>
+      </div>
 
-        <CardContent className="pb-6">
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="mx-auto max-w-[860px] space-y-4"
-            >
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="relative">
-                    <FormLabel className="text-[15px]/5 font-normal text-black">
+      <div className="mt-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field, fieldState }) => {
+                const hasFieldError = fieldState.invalid || Boolean(error);
+
+                return (
+                  <FormItem
+                    className="auth-stagger"
+                    style={{ "--auth-delay": "180ms" } as CSSProperties}
+                  >
+                    <FormLabel
+                      htmlFor="email"
+                      className="text-xs font-semibold text-[#DCE3EC]"
+                    >
                       Email
                     </FormLabel>
-                    <div className="bg-secondary-very-light relative">
+                    <div className="group relative">
                       <UserRound
-                        size={24}
-                        className="text-secondary-dark absolute inset-y-0 top-1/2 left-3 flex -translate-y-1/2 items-center"
+                        size={17}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[#8591A3] transition-colors duration-200 group-focus-within:text-[#D0A000]"
                       />
                       <FormControl>
                         <Input
                           {...field}
+                          id="email"
+                          type="email"
+                          autoComplete="email"
                           onChange={(e) => {
                             setError("");
                             field.onChange(e);
                           }}
-                          id="email"
                           disabled={isPending}
-                          className={`text-secondary-dark focus-visible:ring-light-blue h-[50px] pl-10 ${
-                            error
-                              ? "border-dashboard-red bg-light-red"
-                              : "border-secondary-light bg-secondary-very-light"
-                          }`}
+                          className={cn(
+                            "h-12 rounded-[9px] border border-white/[0.06] bg-[#272F3D] pl-11 text-[14px] font-medium text-[#F7F9FC] shadow-none transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#778294] hover:border-white/15 focus-visible:border-[#D0A000] focus-visible:bg-[#293241] focus-visible:ring-2 focus-visible:ring-[#D0A000]/20",
+                            hasFieldError
+                              ? "border-[#D9534F] bg-[#332A34] focus-visible:border-[#D9534F] focus-visible:ring-[#D9534F]/20"
+                              : "",
+                          )}
                           placeholder="example@golderapharm.com"
+                          aria-invalid={hasFieldError}
                         />
                       </FormControl>
                     </div>
-                    <FormMessage className="absolute right-15 bottom-4" />
+                    <FormMessage className="text-xs font-medium text-[#FCA5A5]" />
                   </FormItem>
-                )}
-              />
+                );
+              }}
+            />
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem className="relative mx-auto mt-6 max-w-[860px]">
-                    <FormLabel className="text-[15px]/5 font-normal text-black">
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field, fieldState }) => {
+                const hasFieldError = fieldState.invalid || Boolean(error);
+
+                return (
+                  <FormItem
+                    className="auth-stagger"
+                    style={{ "--auth-delay": "240ms" } as CSSProperties}
+                  >
+                    <FormLabel
+                      htmlFor="password"
+                      className="text-xs font-semibold text-[#DCE3EC]"
+                    >
                       Password
                     </FormLabel>
-                    <div className="bg-secondary-very-light relative">
-                      <Image
-                        src={"/icons/lock-password.svg"}
-                        width={20}
-                        height={20}
-                        className="text-secondary-dark absolute inset-y-0 top-1/2 left-3 flex -translate-y-1/2 items-center"
-                        alt={"Golderapharm"}
+                    <div className="group relative">
+                      <LockKeyhole
+                        size={17}
+                        aria-hidden="true"
+                        className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-[#8591A3] transition-colors duration-200 group-focus-within:text-[#D0A000]"
                       />
                       <FormControl>
                         <Input
                           {...field}
+                          id="password"
                           onChange={(e) => {
                             setError("");
                             field.onChange(e);
                           }}
-                          id="password"
                           type={showPassword ? "text" : "password"}
+                          autoComplete="current-password"
                           disabled={isPending}
-                          className={`text-secondary-dark focus-visible:ring-light-blue h-[50px] pr-10 pl-10 ${
-                            error
-                              ? "border-dashboard-red bg-light-red"
-                              : "border-secondary-light bg-secondary-very-light"
-                          }`}
-                          placeholder="••••••••"
+                          className={cn(
+                            "h-12 rounded-[9px] border border-white/[0.06] bg-[#272F3D] pr-12 pl-11 text-[14px] font-medium text-[#F7F9FC] shadow-none transition-[border-color,background-color,box-shadow] duration-200 placeholder:text-[#778294] hover:border-white/15 focus-visible:border-[#D0A000] focus-visible:bg-[#293241] focus-visible:ring-2 focus-visible:ring-[#D0A000]/20",
+                            hasFieldError
+                              ? "border-[#D9534F] bg-[#332A34] focus-visible:border-[#D9534F] focus-visible:ring-[#D9534F]/20"
+                              : "",
+                          )}
+                          placeholder="Enter your password"
+                          aria-invalid={hasFieldError}
                         />
                       </FormControl>
                       <button
                         type="button"
-                        aria-label="Toggle password visibility"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
                         onClick={() => setShowPassword((v) => !v)}
-                        className="absolute inset-y-0 right-2 flex cursor-pointer items-center text-slate-500 *:size-6"
+                        disabled={isPending}
+                        className="absolute top-1/2 right-2 flex size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-[#8C97A7] transition-colors duration-150 *:size-5 hover:bg-white/[0.04] hover:text-[#D0A000] focus-visible:ring-2 focus-visible:ring-[#D0A000]/35 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {showPassword ? <Eye /> : <EyeOff />}
                       </button>
                     </div>
-                    <FormMessage className="absolute right-15 bottom-4" />
+                    <FormMessage className="text-xs font-medium text-[#FCA5A5]" />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <div
+              className="auth-stagger flex flex-wrap items-center justify-between gap-3 pt-1"
+              style={{ "--auth-delay": "300ms" } as CSSProperties}
+            >
+              <FormField
+                control={form.control}
+                name="remember"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center gap-2">
+                    <FormControl>
+                      <Checkbox
+                        id="remember"
+                        checked={field.value}
+                        onCheckedChange={(v) => field.onChange(Boolean(v))}
+                        disabled={isPending}
+                        className="size-4 cursor-pointer rounded-[4px] border-white/15 bg-[#272F3D] text-[#101827] focus-visible:ring-2 focus-visible:ring-[#D0A000]/30 data-[state=checked]:border-[#D0A000] data-[state=checked]:bg-[#D0A000] data-[state=checked]:text-[#101827]"
+                      />
+                    </FormControl>
+                    <Label
+                      htmlFor="remember"
+                      className="mb-0 cursor-pointer text-[13px] font-medium text-[#C8D0DC]"
+                    >
+                      Remember Me
+                    </Label>
                   </FormItem>
                 )}
               />
 
-              <div className="flex items-center justify-between">
-                <FormField
-                  control={form.control}
-                  name="remember"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center">
-                      <FormControl>
-                        <Checkbox
-                          id="remember"
-                          checked={field.value}
-                          onCheckedChange={(v) => field.onChange(Boolean(v))}
-                          disabled={isPending}
-                          className="border-secondary-dark cursor-pointer border"
-                        />
-                      </FormControl>
-                      <Label
-                        htmlFor="remember"
-                        className="text-secondary-dark mb-0 cursor-pointer text-sm/4"
-                      >
-                        Remember Me
-                      </Label>
-                    </FormItem>
-                  )}
-                />
-
-                <Link
-                  href="#"
-                  className="text-dashboard-blue text-[12px] underline"
-                >
-                  Forget Password?
-                </Link>
-              </div>
-
-              {error && (
-                <p className="text-dashboard-red absolute left-1/2 mx-auto -translate-x-1/2 text-center text-lg font-bold">
-                  {error}
-                </p>
-              )}
-
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="hover:outline-dashboard-blue hover:text-dashboard-blue from-dashboard-blue mt-10 h-[50px] w-full cursor-pointer bg-linear-to-b to-[#1E3A8A] text-[23px]/6 font-medium text-white shadow-lg transition-colors duration-200 hover:from-white hover:to-white hover:shadow-none hover:outline-1 hover:outline-solid disabled:cursor-not-allowed disabled:opacity-50"
+              <Link
+                href="#"
+                className="auth-link rounded-md text-[13px] font-medium text-[#D0A000] transition-colors hover:text-[#E0B119] focus-visible:ring-2 focus-visible:ring-[#D0A000]/35 focus-visible:outline-none"
               >
-                {isPending ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
+                Forgot Password
+              </Link>
+            </div>
 
-        <CardFooter className="px-6 pb-6">
-          <p className="text-secondary-text w-full text-center text-sm/5">
-            Need help?{" "}
-            <span className="text-dashboard-blue text-base/5 font-medium">
-              Contact IT Support
-            </span>
-          </p>
-        </CardFooter>
-      </Card>
+            {error && (
+              <div
+                role="alert"
+                aria-live="polite"
+                className="auth-error rounded-[9px] border border-[#D9534F]/35 bg-[#D9534F]/10 px-4 py-3 text-center text-sm font-medium text-[#FCA5A5]"
+              >
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={isPending}
+              aria-busy={isPending}
+              className="auth-stagger h-[50px] w-full cursor-pointer rounded-[9px] bg-linear-to-br from-[#D8AC17] to-[#C99500] text-[14px] font-semibold text-[#101827] shadow-[0_10px_20px_rgba(201,149,0,0.18)] transition-all duration-200 hover:-translate-y-px hover:from-[#E0B119] hover:to-[#D0A000] hover:shadow-[0_14px_26px_rgba(201,149,0,0.22)] focus-visible:ring-4 focus-visible:ring-[#D0A000]/25 active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{ "--auth-delay": "360ms" } as CSSProperties}
+            >
+              {isPending ? (
+                <>
+                  <LoaderCircle className="size-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign In"
+              )}
+            </Button>
+          </form>
+        </Form>
+      </div>
+
+      <div className="mt-8">
+        <p
+          className="auth-stagger w-full text-center text-[13px] font-medium text-[#AAB4C3]"
+          style={{ "--auth-delay": "420ms" } as CSSProperties}
+        >
+          Need help?{" "}
+          <span className="auth-link font-semibold text-[#F7F9FC]">
+            Contact IT Support
+          </span>
+        </p>
+      </div>
     </div>
   );
 }

@@ -67,7 +67,7 @@ export function AppraisalContent({
           totalReviews: stats.totalReviews,
         }}
       />
-      <main className="border-secondary-light flex flex-col gap-8 rounded-[14px] border-[0.8px] bg-white p-6">
+      <div className="border-secondary-light flex flex-col gap-8 rounded-[14px] border-[0.8px] bg-white p-6">
         <AppraisalFilters
           period={period}
           location={location}
@@ -82,7 +82,7 @@ export function AppraisalContent({
         <div className="mt-4">
           <Pagination page={page} limit={limit} totalCount={totalCount} />
         </div>
-      </main>
+      </div>
     </>
   );
 }

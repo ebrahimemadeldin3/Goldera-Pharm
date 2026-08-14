@@ -78,8 +78,8 @@ export default function Details({
     <section className="flex w-full flex-col gap-6">
       <Card className="border-secondary-light w-full rounded-[14px] border-[0.8px] bg-white px-6 py-6 shadow-none">
         <CardContent className="flex flex-col gap-4">
-          <div className="flex w-full items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
+          <div className="flex w-full flex-wrap items-center justify-between gap-6">
+            <div className="flex flex-wrap items-center gap-4">
               {data.avatar ? (
                 <SafeCldImage
                   src={data.avatar}
@@ -98,13 +98,13 @@ export default function Details({
                   {getInitials(displayData.name)}
                 </div>
               )}
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3">
                   {isEditMode ? (
                     <Input
                       value={displayData.name || ""}
                       onChange={(e) => onFieldChange?.("name", e.target.value)}
-                      className="input h-8 w-64 text-[16px] font-normal"
+                      className="input h-8 w-full text-[16px] font-normal sm:w-64"
                       placeholder="Name"
                     />
                   ) : (
@@ -154,7 +154,7 @@ export default function Details({
                     </span>
                   )}
                 </div>
-                <div className="text-secondary-dark grid grid-cols-2 flex-wrap gap-4 text-[16px]">
+                <div className="text-secondary-dark grid grid-cols-1 gap-4 text-[16px] md:grid-cols-2">
                   <div className="text-secondary-dark flex items-center gap-2">
                     <MapPin size={16} />
                     {isEditMode ? (
@@ -262,7 +262,7 @@ export default function Details({
         </CardContent>
       </Card>
 
-      <section className="grid max-w-270.75 grid-cols-4 justify-between gap-6">
+      <section className="grid w-full max-w-[1083px] grid-cols-1 justify-between gap-6 sm:grid-cols-2 xl:grid-cols-4">
         <Card className="border-secondary-light flex flex-1 items-center justify-center rounded-[14px] border-[0.8px] bg-white text-center shadow-none">
           <CardContent className="flex flex-col gap-1">
             <p className="text-secondary-dark text-[16px] font-normal">

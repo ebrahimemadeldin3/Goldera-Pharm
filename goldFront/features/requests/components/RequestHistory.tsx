@@ -126,7 +126,7 @@ export default function RequestHistory({
   };
 
   return (
-    <main className="space-y-4">
+    <div className="space-y-4">
       <h2 className="text-[28px]/8 font-normal text-black">Request History</h2>
 
       <div className="space-y-4">
@@ -136,7 +136,7 @@ export default function RequestHistory({
             className="space-y-4 rounded-md border-[0.8px] bg-white p-8"
           >
             {/* Request Header */}
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-base/6 font-normal text-black">
                 {request.title}
               </h3>
@@ -163,7 +163,7 @@ export default function RequestHistory({
             )}
 
             {/* Core metadata */}
-            <div className="bg-secondary-very-light grid grid-cols-2 gap-2 rounded-md p-4 text-sm/5 text-black">
+            <div className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-4 text-sm/5 text-black sm:grid-cols-2">
               <p>
                 <span className="font-medium">Request ID:</span> {request.id}
               </p>
@@ -204,7 +204,7 @@ export default function RequestHistory({
                 <UserRound size={16} />
                 Request Owner
               </p>
-              <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                 <p>
                   <span className="font-medium">Name:</span>{" "}
                   {renderText(request.rep.name)}
@@ -236,7 +236,7 @@ export default function RequestHistory({
             </div>
 
             {/* Dates */}
-            <div className="text-secondary-dark grid grid-cols-2 gap-2 text-sm/5">
+            <div className="text-secondary-dark grid grid-cols-1 gap-2 text-sm/5 sm:grid-cols-2">
               <p className="flex items-center gap-1">
                 <Calendar size={14} />
                 <span className="font-medium">Submitted:</span>
@@ -258,7 +258,7 @@ export default function RequestHistory({
                   <Calendar size={16} />
                   Leave Details
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                   {request.leaveType && (
                     <p>
                       <span className="font-medium">Type:</span>{" "}
@@ -295,7 +295,7 @@ export default function RequestHistory({
                   <AlertCircle size={16} />
                   {request.type} Details
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                   <p>
                     <span className="font-medium">Budget:</span>{" "}
                     {formatMoney(request.budget)}
@@ -312,7 +312,7 @@ export default function RequestHistory({
                     (request.doctors ?? []).map((doctor) => (
                       <div
                         key={doctor.id}
-                        className="bg-secondary-very-light grid grid-cols-3 gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
                       >
                         <p>
                           <span className="font-medium">Doctor ID:</span>{" "}
@@ -345,7 +345,7 @@ export default function RequestHistory({
                   <AlertCircle size={16} />
                   Sample Details
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                   <p>
                     <span className="font-medium">Sample Items Count:</span>{" "}
                     {request.sampleData?.length ?? 0}
@@ -366,7 +366,7 @@ export default function RequestHistory({
                     (request.sampleData ?? []).map((item, index) => (
                       <div
                         key={`${item.productId}-${index}`}
-                        className="bg-secondary-very-light grid grid-cols-3 gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
                       >
                         <p>
                           <span className="font-medium">Product ID:</span>{" "}
@@ -394,7 +394,7 @@ export default function RequestHistory({
                   <AlertCircle size={16} />
                   Personal Expense Details
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                   <p>
                     <span className="font-medium">Visited City:</span>{" "}
                     {renderText(request.visitedCity)}
@@ -421,7 +421,7 @@ export default function RequestHistory({
                     (request.totalExpenseData ?? []).map((item, index) => (
                       <div
                         key={`${item.name}-${index}`}
-                        className="bg-secondary-very-light grid grid-cols-2 gap-2 rounded-md p-3 text-sm/5 text-black"
+                        className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-2"
                       >
                         <p>
                           <span className="font-medium">Item Name:</span>{" "}
@@ -451,7 +451,7 @@ export default function RequestHistory({
                   {(request.pdfs ?? []).map((pdf) => (
                     <div
                       key={pdf.public_id}
-                      className="bg-secondary-very-light grid grid-cols-[1fr,1fr,auto] items-center gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 items-center gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-[1fr,1fr,auto]"
                     >
                       <p>
                         <span className="font-medium">Name:</span> {pdf.name}
@@ -538,12 +538,12 @@ export default function RequestHistory({
           </div>
         ))}
       </div>
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-secondary-dark text-xs">
           Showing {requests.length} of {totalCount || requests.length} requests
         </p>
         <Pagination page={page} limit={limit} totalCount={totalCount || requests.length} />
       </div>
-    </main>
+    </div>
   );
 }

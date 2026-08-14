@@ -15,14 +15,14 @@ export default function SupervisorOwnPlanCard({
   plan,
 }: SupervisorOwnPlanCardProps) {
   return (
-    <div className="border-secondary-light flex gap-4 rounded-2xl border-[0.8px] bg-white p-6">
+    <div className="border-secondary-light flex flex-wrap gap-4 rounded-2xl border-[0.8px] bg-white p-6">
       {/* Header */}
       <div className="gradient-blue flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px]">
         <FileText size={24} className="text-white" />
       </div>
-      <main className="max-w-[828px] flex-1">
+      <div className="min-w-0 max-w-[828px] flex-1">
         <header className="flex flex-col items-start gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base/6 font-normal text-black">{plan.title}</h3>
             <span
               className={`rounded-md px-2 py-0.5 text-xs/4 font-medium text-white ${
@@ -60,7 +60,7 @@ export default function SupervisorOwnPlanCard({
         </div>
 
         {/* Info Grid */}
-        <div className="*:bg-secondary-very-light mt-4 flex items-center gap-4 *:w-[349px] *:rounded-md *:p-2">
+        <div className="*:bg-secondary-very-light mt-4 grid grid-cols-1 gap-4 *:rounded-md *:p-2 sm:grid-cols-2">
           <div>
             <p className="text-secondary-dark text-xs/4 font-normal">Period</p>
             <p className="mt-1 text-sm/5 font-normal text-black">
@@ -88,7 +88,7 @@ export default function SupervisorOwnPlanCard({
             className="bg-secondary-light *:bg-dashboard-blue h-2"
           />
         </div>
-      </main>
+      </div>
       <footer>
         <Button
           variant="outline"

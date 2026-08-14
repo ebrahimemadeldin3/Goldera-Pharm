@@ -10,7 +10,7 @@ export default function QuickActions() {
   const { quickActions } = useRoleUI();
 
   return (
-    <aside className="border-secondary-light rounded-[25px] border bg-white p-6 min-[1440px]:w-[345px]!">
+    <aside className="border-secondary-light w-full min-w-0 rounded-[25px] border bg-white p-6">
       <div className="flex items-center gap-3 px-1 pb-3">
         <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
           <Image src={zapIcon} alt="quick actions" width={24} height={24} />
@@ -31,7 +31,7 @@ export default function QuickActions() {
                   <Icon size={20} className="text-system-primary" />
                 </div>
 
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <div className="text-[17px]">{action.title}</div>
                   <div className="text-secondary-dark mt-1 text-[15px]">
                     {action.desc}

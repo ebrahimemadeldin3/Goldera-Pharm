@@ -38,9 +38,9 @@ export default function ProductsList({ products, page = 1, limit = 10, totalCoun
   }, [products, q]);
 
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6 min-[1440px]:w-270.75! lg:w-5xl">
+    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6">
      
-           <div className="mt-4 flex items-center justify-between">
+           <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
         <p className="text-secondary-dark text-xs">
           Showing {filtered.length} of {totalCount || products.length} products
         </p>
@@ -48,15 +48,15 @@ export default function ProductsList({ products, page = 1, limit = 10, totalCoun
       </div>
      
       {/* Filters */}
-      <header className="mb-6 flex items-center gap-4">
+      <header className="mb-6 flex flex-wrap items-center gap-4">
         <h2 className="text-xl font-semibold">Product Catalog</h2>
-        <div className="relative ml-auto">
+        <div className="relative ml-auto w-full max-w-[280px]">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#717182]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by name or reference..."
-            className="h-9 w-[280px] rounded-md border bg-white pl-10 text-sm"
+            className="h-9 w-full rounded-md border bg-white pl-10 text-sm"
           />
         </div>
       </header>

@@ -212,8 +212,8 @@ export function NewAppraisalDialog() {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Employee + Period */}
-            <div className="flex w-full justify-between">
-              <div className="space-y-1.5">
+            <div className="flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 flex-1 space-y-1.5">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                   <User className="h-4 w-4" /> Select Employee
                 </label>
@@ -236,7 +236,7 @@ export function NewAppraisalDialog() {
                   )}
                 />
               </div>
-              <div className="space-y-1.5">
+              <div className="min-w-0 flex-1 space-y-1.5">
                 <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
                   <Calendar className="h-4 w-4" /> Review Period
                 </label>
@@ -366,7 +366,7 @@ export function NewAppraisalDialog() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex flex-wrap justify-end gap-3 pt-2">
               <Button
                 type="button"
                 variant="outline"

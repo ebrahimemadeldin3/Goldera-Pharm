@@ -57,7 +57,7 @@ export function VisitsDialog({
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <h4 className="font-medium text-black">
                         {visit.visitType}
                       </h4>

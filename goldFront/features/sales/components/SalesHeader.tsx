@@ -121,9 +121,9 @@ export default function SalesHeader({
 
   return (
     <>
-      <header className="flex items-center justify-start gap-6">
-        <div>
-          <h1 className="text-[34px] font-normal text-black">Sales Data</h1>
+      <header className="flex w-full flex-wrap items-center justify-start gap-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-normal text-black md:text-[34px]">Sales Data</h1>
           <p className="text-secondary-dark text-[16px]">
             Track and analyze sales performance across all regions
           </p>
@@ -134,7 +134,7 @@ export default function SalesHeader({
       {(isManager || isRep) && (
         <form
           onSubmit={onApplyFilters}
-          className={`mt-4 mb-6 grid gap-3 ${isManager ? "grid-cols-3" : "grid-cols-2"}`}
+          className={`mt-4 mb-6 grid grid-cols-1 gap-3 ${isManager ? "md:grid-cols-3" : "md:grid-cols-2"}`}
         >
           {isManager && (
             <div>
@@ -190,13 +190,14 @@ export default function SalesHeader({
             <label className="mb-1 block text-sm font-medium text-black">
               Sheet Name
             </label>
-            <div className="flex items-center gap-2">
+            <div className="flex w-full items-center gap-2">
               <Input
                 value={sheetName}
                 onChange={(event) => setSheetName(event.target.value)}
                 placeholder="e.g. first sheet"
+                className="flex-1 min-w-0"
               />
-              <Button type="submit" className="bg-system-primary text-white">
+              <Button type="submit" className="bg-system-primary shrink-0 text-white">
                 Apply
               </Button>
             </div>

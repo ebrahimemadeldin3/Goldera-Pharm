@@ -135,7 +135,7 @@ export default function AddMemberDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] min-w-[977px] overflow-y-auto rounded-[10px] border-[#E2E8F0] px-6 py-4 shadow-md">
+      <DialogContent className="max-h-[90vh] overflow-y-auto rounded-[10px] border-[#E2E8F0] px-6 py-4 shadow-md sm:max-w-[977px]">
         <DialogHeader>
           <DialogTitle className="text-[18px] font-semibold">
             Add New Team Member

@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <main className="flex w-[1083px] flex-col pb-2">
+    <main className="flex w-full min-w-0 flex-1 flex-col pb-2">
       {children} <Footer />
     </main>
   );

@@ -16,22 +16,24 @@ export default async function DashboardLayout({
   }
 
   return (
-    <main className="relative mx-auto w-fit">
-      <RoleUIProvider
-        role={user.data.role}
-        user={{
-          name: user.data.name,
-          email: user.data.email,
-          profileImage: user.data.profileImage,
-        }}
-      >
-        <Header />
-        <main className="flex">
-          <AppSidebar />
-          {children}
-        </main>
-      </RoleUIProvider>
-      <Toaster />
-    </main>
+    <RoleUIProvider
+      role={user.data.role}
+      user={{
+        name: user.data.name,
+        email: user.data.email,
+        profileImage: user.data.profileImage,
+      }}
+    >
+      <main className="bg-secondary-very-light flex h-dvh min-h-dvh w-full items-stretch overflow-hidden">
+        <AppSidebar />
+        <section className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          <Header />
+          <main className="min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain">
+            {children}
+          </main>
+        </section>
+        <Toaster />
+      </main>
+    </RoleUIProvider>
   );
 }

@@ -1,0 +1,10 @@
+
+> golderapharm@0.1.0 start
+> next start --port 3003
+
+▲ Next.js 16.1.0
+- Local:         http://localhost:3003
+- Network:       http://192.168.8.120:3003
+
+✓ Starting...
+✓ Ready in 925ms

@@ -27,7 +27,7 @@ const SalesbyProduct = () => {
       <CardContent className="space-y-6">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto h-60.75 w-60.75"
+          className="mx-auto h-60.75 w-60.75 max-w-full"
         >
           <PieChart>
             <RechartsTooltip content={<ChartTooltipContent hideLabel />} />

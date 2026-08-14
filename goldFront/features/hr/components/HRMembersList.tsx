@@ -42,9 +42,9 @@ export function HRMembersList({
     <section className="mt-6 rounded-lg border-[.8px] border-[#E6EEF8] bg-white p-6">
       {/* Filter bar */}
       <div className="flex flex-col items-start gap-5">
-        <div className="flex w-full items-center justify-between gap-3">
+        <div className="flex w-full flex-wrap items-center justify-between gap-3">
           <h2 className="text-[20px]/6 font-semibold">Members Directory</h2>
-          <div className="relative">
+          <div className="relative w-full sm:w-90">
             <span className="text-secondary-text absolute top-1/2 left-3 -translate-y-1/2">
               <Search className="h-4 w-4" />
             </span>
@@ -52,11 +52,11 @@ export function HRMembersList({
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search by name, region, or email..."
-              className={`bg-secondary-very-light placeholder:text-secondary-text h-10 w-90 rounded-md border-[.8px] border-[#E2E8F0] px-4 pl-10 placeholder:text-sm placeholder:font-normal`}
+              className={`bg-secondary-very-light placeholder:text-secondary-text h-10 w-full rounded-md border-[.8px] border-[#E2E8F0] px-4 pl-10 placeholder:text-sm placeholder:font-normal`}
             />
           </div>
         </div>
-        <div className="flex items-center gap-2 rounded-full bg-[#EBF1FF] p-1 *:cursor-pointer">
+        <div className="flex flex-wrap items-center gap-2 rounded-full bg-[#EBF1FF] p-1 *:cursor-pointer">
           <button
             onClick={() => setTab("all")}
             className={`rounded-full px-4 py-1 text-sm font-medium ${

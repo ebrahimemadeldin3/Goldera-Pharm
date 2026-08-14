@@ -86,7 +86,7 @@ export function AppraisalsDialog({
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                       <div>
                         <p className="mb-1 text-xs text-slate-500">
                           Sales Performance

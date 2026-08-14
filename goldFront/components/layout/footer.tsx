@@ -37,7 +37,7 @@ const Footer = () => {
   }, []);
 
   return (
-    <footer className="border-secondary-light flex min-h-[53px] items-center justify-between rounded-md border bg-white px-6 text-[15px]/5 text-[#717182] min-[1440px]:mx-6 min-[1440px]:w-270.75! lg:w-5xl">
+    <footer className="border-secondary-light mx-4 flex min-h-[53px] flex-col justify-center gap-1 rounded-md border bg-white px-4 py-3 text-[13px]/5 text-[#717182] sm:mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-[15px]/5">
       <p>Last data refresh: {lastRefresh || "Loading..."}</p>
       <p>© 2026 GolderaPharm CRM. All rights reserved.</p>
     </footer>

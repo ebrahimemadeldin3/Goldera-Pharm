@@ -2,6 +2,7 @@ import DoctorsHeader from "@/features/doctors/components/DoctorsHeader";
 import DoctorsList from "@/features/doctors/components/DoctorsList";
 import { getDoctorsAction } from "@/features/doctors/api";
 import { DoctorApiResponse } from "@/features/doctors/lib/types/api";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -9,17 +10,17 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const page = searchParams?.page ? Number(searchParams.page) : 1;
   const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
 
-  let result = await getDoctorsAction(undefined, page, limit);
+  const result = await getDoctorsAction(undefined, page, limit);
 
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch doctors");
   }
   if (result.data == null) {
     return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <DoctorsHeader doctors={[]} />
       <DoctorsList doctors={[]} />
-    </main>
+    </PageContainer>
   );
   }
 
@@ -33,9 +34,9 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   }
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <DoctorsHeader doctors={doctors} />
       <DoctorsList doctors={doctors} page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </PageContainer>
   );
 }

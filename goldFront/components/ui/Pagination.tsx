@@ -59,11 +59,11 @@ export default function Pagination({ page = 1, limit = 10, totalCount = 0 }: Pag
 
   return (
     <>
-    <div ref={rootRef} data-pagination-root className="flex items-center justify-between gap-4">
+    <div ref={rootRef} data-pagination-root className="flex flex-col items-center justify-between gap-4 sm:flex-row sm:items-center">
       <div className="text-sm text-secondary-dark">
         Page {page} of {totalPages} • Showing {startItem}-{endItem} of {totalCount}
       </div>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
       <button
         className="rounded-md px-3 py-1 text-sm"
         onClick={() => pushPage(Math.max(1, page - 1))}

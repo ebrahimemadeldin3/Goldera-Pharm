@@ -21,10 +21,10 @@ export default function RepPlanCard({ plan }: PlanCardProps) {
       <div className="gradient-green flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px]">
         <Calendar size={24} className="text-white" />
       </div>
-      <main className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1">
         <header className="flex items-start gap-4">
           <div className="flex-1">
-            <div className="mb-2 flex items-center justify-start gap-2">
+            <div className="mb-2 flex flex-wrap items-center justify-start gap-2">
               <h3 className="text-base/6 font-normal text-[#0F172A]">
                 {plan.title}
               </h3>
@@ -154,7 +154,7 @@ export default function RepPlanCard({ plan }: PlanCardProps) {
             </p>
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }

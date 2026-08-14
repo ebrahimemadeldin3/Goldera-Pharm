@@ -69,7 +69,7 @@ export default function RecentActivity() {
   };
 
   return (
-    <Card className="border-secondary-light rounded-[25px] border bg-white py-6 shadow-none min-[1440px]:w-[530]">
+    <Card className="border-secondary-light w-full min-w-0 rounded-[25px] border bg-white py-6 shadow-none">
       <CardHeader className="flex items-center gap-4">
         <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
           <Image
@@ -97,7 +97,7 @@ export default function RecentActivity() {
                   {renderIcon(it.variant)}
                 </div>
 
-                <div className="truncate text-sm text-black">{it.text}</div>
+                <div className="min-w-0 flex-1 truncate text-sm text-black">{it.text}</div>
               </div>
 
               <div className="ml-4 shrink-0">

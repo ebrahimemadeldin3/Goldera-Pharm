@@ -19,8 +19,8 @@ const AllActiveTargets = () => {
       <CardContent className="space-y-3">
         {targets.map((target) => (
           <div key={target.id} className="border-[0.8px] border-[#E2E8F0] p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm/5 font-normal text-black">
                   {target.name}
                 </span>

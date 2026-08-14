@@ -1,6 +1,7 @@
 import { getAppraisalReviewsAction } from "@/features/appraisal/api";
 import { NewAppraisalDialog } from "@/features/appraisal/components/NewAppraisalDialog";
 import { AppraisalContent } from "@/features/appraisal/components/AppraisalContent";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +11,10 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const { reviews, stats, totalCount } = await getAppraisalReviewsAction(page, limit);
 
   return (
-    <main className="bg-secondary-very-light flex flex-col gap-6 p-5 *:min-[1440px]:w-270.75! *:lg:w-5xl">
-      <header className="flex items-center justify-between">
+    <PageContainer className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-between">
         <div>
-          <h1 className="text-[34px]/10 font-normal text-black">
+          <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">
             Performance Appraisals
           </h1>
           <p className="text-secondary-dark text-base/6">
@@ -29,6 +30,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
         limit={limit}
         totalCount={totalCount}
       />
-    </main>
+    </PageContainer>
   );
 }

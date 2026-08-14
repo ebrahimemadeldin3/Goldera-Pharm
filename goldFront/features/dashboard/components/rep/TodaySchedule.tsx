@@ -43,7 +43,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
 
   return (
     <div className="border-secondary-light relative flex flex-col rounded-[14px] border-[0.8px] bg-white p-6">
-      <header className="mb-6 flex items-center justify-between">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-2xl font-normal text-gray-900">
             Today&apos;s Schedule
@@ -85,7 +85,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
             return (
               <div
                 key={visitId}
-                className={`flex items-center gap-4 rounded-[14px] border-[0.8px] p-4 ${
+                className={`flex flex-wrap items-center gap-4 rounded-[14px] border-[0.8px] p-4 ${
                   isCompleted
                     ? "border-[#BBF7D0] bg-[#F0FDF4]"
                     : "border-[#E2E8F0] bg-[#FFFFFF]"
@@ -98,7 +98,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
                 >
                   {displayName} 
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-sm/5 font-normal text-black">
                     {displayName}
                   </h3>
@@ -107,7 +107,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
                       ? samples.join(", ")
                       : `Doctor ID: ${visit?.doctorId || "N/A"}`}
                   </p>
-                  <div className="mt-2 flex items-center gap-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
                     <Calendar size={12} className="text-secondary-text" />
                     <span className="text-secondary-text text-xs/4">
                       {timeLabel}
@@ -130,7 +130,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
                     {notesLabel}
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   {isCompleted ? (
                     <div className="bg-dashboard-green flex h-5.5 cursor-pointer items-center gap-1 rounded-md p-3 text-xs/4 font-medium text-white">
                       <CircleCheckBig size={16} />

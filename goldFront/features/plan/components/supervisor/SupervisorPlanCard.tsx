@@ -28,7 +28,7 @@ export default function SupervisorPlanCard({
   );
 
   return (
-    <div className="border-secondary-light flex gap-4 rounded-2xl border-[0.8px] bg-white p-6">
+    <div className="border-secondary-light flex flex-col gap-4 rounded-2xl border-[0.8px] bg-white p-6 lg:flex-row">
       <div
         className={`gradient-green flex h-12 w-12 shrink-0 items-center justify-center rounded-full`}
       >
@@ -36,9 +36,9 @@ export default function SupervisorPlanCard({
           {getInitials(repName)}
         </span>
       </div>
-      <main className="max-w-[828px] flex-1">
+      <div className="min-w-0 max-w-[828px] flex-1">
         <header className="flex flex-col items-start gap-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base/6 font-normal text-black">{plan.title}</h3>
             <span
               className={`rounded-md px-2 py-0.5 text-xs/4 font-medium text-white ${
@@ -80,7 +80,7 @@ export default function SupervisorPlanCard({
         </div>
 
         {/* Info Grid */}
-        <div className="*:bg-secondary-very-light mt-4 flex items-center gap-4 *:w-[169px] *:rounded-md *:p-2">
+        <div className="*:bg-secondary-very-light mt-4 grid grid-cols-1 gap-4 *:rounded-md *:p-2 sm:grid-cols-2 xl:grid-cols-4">
           <div>
             <p className="text-secondary-dark text-xs/4 font-normal">
               Target Doctors
@@ -180,9 +180,9 @@ export default function SupervisorPlanCard({
         )}
 
         {/* Action Buttons (for pending plans) */}
-      </main>
+      </div>
       {plan.status === "PENDING" && (
-        <div className="flex w-[97px] flex-col items-center gap-3 *:w-full">
+        <div className="flex w-full flex-col items-center gap-3 *:w-full lg:w-[140px]">
           <Button
             onClick={() => onApprove(plan.id)}
             className="bg-dashboard-green border-dashboard-green hover:text-dashboard-green cursor-pointer border text-white transition-colors hover:bg-white"

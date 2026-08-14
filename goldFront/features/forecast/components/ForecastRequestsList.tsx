@@ -170,7 +170,7 @@ export default function ForecastRequestsList({
 
   return (
     <>
-      <main className="space-y-6">
+      <div className="space-y-6">
 
 
         {forecasts.map((forecast) => (
@@ -184,9 +184,9 @@ export default function ForecastRequestsList({
         <Pagination page={page} limit={limit} totalCount={totalCount} />
       </div>
 
-            <header className="mb-4 flex items-start justify-between">
+            <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
-                <div className="mb-2 flex items-center gap-3">
+                <div className="mb-2 flex flex-wrap items-center gap-3">
                   <h3 className="text-lg/6 font-normal text-black">
                     {forecast.repName}
                   </h3>
@@ -209,7 +209,7 @@ export default function ForecastRequestsList({
               </div>
             </header>
 
-            <div className="mb-4 grid grid-cols-2 gap-4">
+            <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="border-secondary-light bg-secondary-very-light rounded-[10px] border p-3">
                 <p className="text-secondary-dark flex items-center gap-1 text-xs/5 font-normal">
                   <Users size={16} />
@@ -263,9 +263,9 @@ export default function ForecastRequestsList({
                     ).map((pf, index) => (
                       <div
                         key={`${forecast.id}-${index}`}
-                        className="border-secondary-light flex items-center justify-between rounded-lg border bg-[#F8FAFC] p-3"
+                        className="border-secondary-light flex items-center justify-between gap-3 rounded-lg border bg-[#F8FAFC] p-3"
                       >
-                        <div className="flex-1">
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm/5 font-medium text-black">
                             {pf.productName}
                           </p>
@@ -327,7 +327,7 @@ export default function ForecastRequestsList({
             )}
           </div>
         ))}
-      </main>
+      </div>
 
 
 

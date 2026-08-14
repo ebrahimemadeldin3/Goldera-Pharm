@@ -226,7 +226,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
         <p className="text-secondary-dark mb-4 text-xs">
           Date selection uses Saudi Arabia timezone (Asia/Riyadh).
         </p>
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <FormLabel>Hospital Filter</FormLabel>
             <Select
@@ -466,7 +466,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
             control={form.control}
             name="notes"
             render={({ field }) => (
-              <FormItem className="col-span-2">
+              <FormItem className="col-span-1 md:col-span-2">
                 <FormLabel>Visit Notes</FormLabel>
                 <FormControl>
                   <Textarea

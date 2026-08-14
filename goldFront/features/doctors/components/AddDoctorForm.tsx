@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { PageContainer } from "@/components/layout/page-container";
 
 export default function AddDoctorForm() {
   const router = useRouter();
@@ -108,16 +109,16 @@ export default function AddDoctorForm() {
     "bg-secondary-very-light border-[.8px] border-[#E2E8F0] px-4 placeholder:text-secondary-text placeholder:text-sm placeholder:font-normal";
 
   return (
-    <main className="flex flex-col gap-6 p-6 min-[1440px]:w-270.75! lg:w-5xl">
-      <header className="flex items-center justify-start gap-2">
+    <PageContainer className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-start gap-2">
         <Link
           href={getBackHref()}
-          className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
+          className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
         >
           <ArrowLeft size={16} />
         </Link>
-        <div className="ml-3">
-          <h1 className="font-nomral text-[34px] text-black">Add New Doctor</h1>
+        <div className="ml-3 min-w-0 flex-1">
+          <h1 className="font-nomral text-2xl text-black md:text-[34px]">Add New Doctor</h1>
           <p className="text-secondary-dark text-[16px]">
             Add a new doctor to the database
           </p>
@@ -130,13 +131,13 @@ export default function AddDoctorForm() {
         </div>
       )}
 
-      <section className="border-secondary-light rounded-[14px] border-[.8px] bg-white p-6 min-[1440px]:w-270.75! lg:w-5xl">
+      <section className="border-secondary-light rounded-[14px] border-[.8px] bg-white p-6">
         <h2 className="mb-6 text-[22px]/8 font-normal">Doctor Information</h2>
 
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
-            className="grid grid-cols-2 gap-4"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2"
           >
             <FormField
               control={form.control}
@@ -332,11 +333,11 @@ export default function AddDoctorForm() {
               )}
             />
 
-            <div className="col-span-2 mt-6">
+            <div className="col-span-1 mt-6 md:col-span-2">
               <Button
                 type="submit"
                 disabled={isPending}
-                className="bg-gold hover:border-gold hover:text-gold mb-10 inline-flex w-43.25 cursor-pointer items-center gap-2 border border-transparent text-white hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="bg-gold hover:border-gold hover:text-gold mb-10 inline-flex w-full cursor-pointer items-center justify-center gap-2 border border-transparent text-white hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-43.25"
               >
                 {isPending ? (
                   <Loader2 size={16} className="animate-spin" />
@@ -349,6 +350,6 @@ export default function AddDoctorForm() {
           </form>
         </Form>
       </section>
-    </main>
+    </PageContainer>
   );
 }

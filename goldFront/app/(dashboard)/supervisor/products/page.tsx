@@ -2,6 +2,7 @@ import ProductsHeader from "@/features/products/components/ProductsHeader";
 import ProductsList from "@/features/products/components/ProductsList";
 import { getProductsAction } from "@/features/products/api";
 import { extractProducts } from "@/features/products/lib/utils";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +18,16 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   const raw = result.data as unknown;
   const products = extractProducts(raw);
-  const totalCount = (raw && typeof raw === "object" && (raw as any).results) || products.length;
+  const rawResults =
+    raw && typeof raw === "object"
+      ? (raw as Record<string, unknown>).results
+      : undefined;
+  const totalCount = typeof rawResults === "number" ? rawResults : products.length;
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 *:min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <ProductsHeader products={products} />
       <ProductsList products={products} page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </PageContainer>
   );
 }

@@ -45,7 +45,7 @@ export function VisitReportsDialog({
                 className="rounded-lg border border-slate-200 bg-white p-4"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center gap-4">
+                  <div className="flex flex-wrap items-center gap-4">
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-slate-500" />
                       <span className="text-sm font-medium">

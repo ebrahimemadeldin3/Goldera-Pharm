@@ -1,141 +1,272 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
-import { useState } from "react";
-import { useLogout } from "@/features/auth/hooks/useLogout";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useMemo } from "react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
-import { getInitials, isActiveRoute } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
-import { LogoutDialog } from "../logout-dialog";
+import { cn, isActiveRoute } from "@/lib/utils";
+import { SheetClose } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  getAvailableSidebarItems,
+  getNavigationGroups,
+  getRoleBasePath,
+} from "../navigation-utils";
+import { SidebarUserMenu } from "./sidebar-user-menu";
 
 interface SidebarContentProps {
   onLinkClick?: () => void;
   variant?: "desktop" | "mobile";
+  collapsed?: boolean;
+  onCollapsedChange?: (collapsed: boolean) => void;
 }
 
 export function SidebarContent({
   onLinkClick,
   variant = "desktop",
+  collapsed = false,
+  onCollapsedChange,
 }: SidebarContentProps) {
   const pathname = usePathname() ?? "/manager";
-  const { logout, isPending } = useLogout();
-  const { sidebar, user, role } = useRoleUI();
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { sidebar, role } = useRoleUI();
+  const isCollapsed = variant === "desktop" && collapsed;
+  const availableSidebar = useMemo(
+    () => getAvailableSidebarItems(sidebar),
+    [sidebar],
+  );
+  const navigationGroups = useMemo(
+    () => getNavigationGroups(sidebar),
+    [sidebar],
+  );
+  const dashboardHref = getRoleBasePath(role);
 
-  const handleLogoutConfirm = () => {
-    logout();
-    setShowLogoutDialog(false);
-  };
+  const collapseLabel = isCollapsed ? "Expand sidebar" : "Collapse sidebar";
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <header className="border-secondary-light to-light-warning flex shrink-0 flex-row items-center gap-3 border bg-linear-to-b from-[#EFF6FF] px-5 py-3">
-        <span className="from-system-gradient-from to-system-gradient-to flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-linear-to-b text-base/6 text-white">
-          {getInitials(user.name)}
-        </span>
-        <div className="flex flex-col">
-          <span className="text-sm/5 font-normal text-black">{user.name}</span>
-          <span className="bg-system-primary mt-1 inline-block w-fit rounded-full px-4 py-0.5 text-xs/4 font-medium text-white">
-            {role === "MANAGER"
-              ? "Manager"
-              : role === "SUPERVISOR"
-                ? "Supervisor"
-                : "Medical Rep"}
+    <div className="flex h-full min-h-0 flex-col">
+      <header
+        className={cn(
+          "sidebar-brand-header flex shrink-0 border-b transition-all duration-[var(--motion-slow)] ease-[var(--ease-premium)]",
+          isCollapsed
+            ? "flex-col items-center gap-2 px-3 py-4"
+            : "items-center justify-between px-4 py-4",
+        )}
+      >
+        <Link
+          href={dashboardHref}
+          onClick={onLinkClick}
+          aria-label="GolderaPharm dashboard"
+          className={cn(
+            "sidebar-brand-link focus-visible:ring-brand-gold/35 flex min-w-0 items-center gap-3 rounded-xl focus-visible:ring-2 focus-visible:outline-none",
+            isCollapsed ? "justify-center" : "min-w-0 flex-1",
+          )}
+        >
+          <span className="sidebar-logo-shell ring-brand-gold/30 flex size-11 shrink-0 items-center justify-center rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.18)] ring-1">
+            <Image
+              src="/logos/logo.webp"
+              alt="GolderaPharm"
+              width={34}
+              height={40}
+              priority
+            />
           </span>
-        </div>
+          <span
+            className={cn(
+              "min-w-0 transition-all duration-[var(--motion-normal)] ease-[var(--ease-premium)]",
+              isCollapsed
+                ? "w-0 -translate-x-1 overflow-hidden opacity-0"
+                : "w-auto translate-x-0 opacity-100",
+            )}
+          >
+            <span className="sidebar-brand-name block truncate text-[15px] leading-tight font-semibold">
+              GolderaPharm
+            </span>
+            <span className="sidebar-brand-subtitle mt-1 block truncate text-[10px] font-semibold tracking-[0.16em] uppercase">
+              Pharmaceutical CRM
+            </span>
+          </span>
+        </Link>
+
+        {variant === "desktop" ? (
+          <Tooltip delayDuration={150}>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label={collapseLabel}
+                aria-expanded={!isCollapsed}
+                aria-controls="desktop-sidebar-navigation"
+                onClick={() => onCollapsedChange?.(!isCollapsed)}
+                className="premium-collapse-button focus-visible:ring-brand-gold/35 flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors duration-[var(--motion-fast)] focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <span className="relative block size-4">
+                  <ChevronLeft
+                    className={cn(
+                      "premium-collapse-icon absolute inset-0 size-4",
+                      isCollapsed
+                        ? "scale-75 rotate-90 opacity-0"
+                        : "scale-100 rotate-0 opacity-100",
+                    )}
+                    aria-hidden="true"
+                  />
+                  <ChevronRight
+                    className={cn(
+                      "premium-collapse-icon absolute inset-0 size-4",
+                      isCollapsed
+                        ? "scale-100 rotate-0 opacity-100"
+                        : "scale-75 -rotate-90 opacity-0",
+                    )}
+                    aria-hidden="true"
+                  />
+                </span>
+                <span className="sr-only">{collapseLabel}</span>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent
+              side={isCollapsed ? "right" : "bottom"}
+              sideOffset={10}
+              className="sidebar-tooltip rounded-lg border text-xs"
+            >
+              {collapseLabel}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <SheetClose asChild>
+            <button
+              type="button"
+              aria-label="Close navigation menu"
+              className="premium-collapse-button focus-visible:ring-brand-gold/35 flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-colors duration-[var(--motion-fast)] focus-visible:ring-2 focus-visible:outline-none"
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </SheetClose>
+        )}
       </header>
 
-      {/* Navigation */}
-      <div className="flex flex-1 flex-col overflow-y-auto bg-white">
-        <nav className="mt-2 mb-2">
-          <ul className="flex flex-col gap-3">
-            {sidebar.map((item) => {
-              const active = isActiveRoute(pathname, item.href, sidebar);
-              const Icon = item.icon;
-              const isDisabled = item.disabled === true;
+      <nav
+        id={
+          variant === "desktop"
+            ? "desktop-sidebar-navigation"
+            : "mobile-sidebar-navigation"
+        }
+        aria-label="Primary navigation"
+        data-collapsed={isCollapsed ? "true" : undefined}
+        className={cn(
+          "premium-nav-scroll min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+          isCollapsed ? "px-4 pt-3 pb-4" : "px-3 pt-4 pb-5",
+        )}
+      >
+        <div
+          className={cn("relative", isCollapsed ? "space-y-3" : "space-y-5")}
+        >
+          {navigationGroups.map((group) => (
+            <section key={group.id} aria-labelledby={`nav-${group.id}`}>
+              <h2
+                id={`nav-${group.id}`}
+                className={cn(
+                  "nav-section-label mb-1.5 overflow-hidden px-3 transition-all duration-[var(--motion-normal)] ease-[var(--ease-premium)]",
+                  isCollapsed && "mb-0 h-0 opacity-0",
+                )}
+              >
+                {group.label}
+              </h2>
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isDisabled = item.disabled === true;
+                  const active = isActiveRoute(
+                    pathname,
+                    item.href,
+                    availableSidebar,
+                  );
+                  const isActive = active && !isDisabled;
 
-              return (
-                <li key={item.id} className="flex justify-start gap-6.5">
-                  <div
-                    className={`h-9 w-1.5 rounded-tr-[5px] rounded-br-[5px] ${active ? "bg-system-primary" : "bg-transparent"}`}
-                  />
+                  const itemClassName = cn(
+                    "premium-nav-item relative z-20 flex h-10 items-center overflow-hidden rounded-lg text-sm font-medium outline-none transition-[background,color] duration-[var(--motion-fast)] ease-[var(--ease-premium)]",
+                    isCollapsed
+                      ? "w-11 justify-center px-0"
+                      : "w-full gap-3 px-3.5",
+                    isActive
+                      ? "text-nav-active-text"
+                      : "text-nav-normal hover:text-nav-text",
+                    isDisabled &&
+                      "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-nav-normal",
+                    "focus-visible:ring-brand-gold/35 focus-visible:ring-2",
+                  );
 
-                  {isDisabled ? (
-                    <div
-                      className={`flex w-55.25 cursor-not-allowed items-center gap-2 rounded-[5px] px-4 opacity-50 transition-colors`}
-                    >
+                  const navItemContent = (
+                    <>
+                      <Icon
+                        className="premium-nav-icon size-[18px] shrink-0"
+                        strokeWidth={1.8}
+                        aria-hidden="true"
+                      />
                       <span
-                        className={`text-secondary-dark flex h-8 w-8 items-center justify-center bg-transparent`}
-                      >
-                        <Icon size={20} />
-                      </span>
-                      <span
-                        className={`text-secondary-dark text-[15px]/5 font-normal`}
+                        className={cn(
+                          "premium-nav-label truncate transition-all duration-[var(--motion-normal)] ease-[var(--ease-premium)]",
+                          isCollapsed
+                            ? "w-0 -translate-x-1 overflow-hidden opacity-0"
+                            : "w-auto translate-x-0 opacity-100",
+                          isActive && "font-semibold",
+                        )}
                       >
                         {item.label}
                       </span>
+                    </>
+                  );
+
+                  const navItem = isDisabled ? (
+                    <div
+                      className={itemClassName}
+                      aria-disabled="true"
+                      title={item.label}
+                    >
+                      {navItemContent}
                     </div>
                   ) : (
                     <Link
                       href={item.href}
                       onClick={onLinkClick}
-                      className={`flex w-55.25 items-center gap-2 rounded-[5px] px-4 transition-colors ${
-                        active
-                          ? variant === "desktop"
-                            ? "from-system-gradient-from to-system-gradient-to bg-linear-to-b text-white"
-                            : "bg-system-primary text-white"
-                          : "hover:bg-system-primary-stroke hover:*:text-system-primary"
-                      } cursor-pointer`}
+                      className={itemClassName}
+                      aria-current={isActive ? "page" : undefined}
+                      data-nav-active={isActive ? "true" : undefined}
+                      title={isCollapsed ? item.label : undefined}
                     >
-                      <span
-                        className={`flex h-8 w-8 items-center justify-center ${
-                          active
-                            ? "text-white"
-                            : "text-secondary-dark bg-transparent"
-                        }`}
-                      >
-                        <Icon size={20} />
-                      </span>
-                      <span
-                        className={`text-[15px]/5 font-normal ${active ? "text-white" : "text-secondary-dark"}`}
-                      >
-                        {item.label}
-                      </span>
+                      {navItemContent}
                     </Link>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                  );
 
-        <Separator className="mx-auto max-w-62.5" />
+                  return (
+                    <li key={item.id}>
+                      {isCollapsed ? (
+                        <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>{navItem}</TooltipTrigger>
+                          <TooltipContent
+                            side="right"
+                            sideOffset={10}
+                            className="sidebar-tooltip rounded-lg border text-xs"
+                          >
+                            {item.label}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : (
+                        navItem
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </nav>
 
-        <button
-          className="text-dashboard-red mt-1 ml-11.5 flex w-fit cursor-pointer items-center gap-3 rounded-md px-3 py-3 pr-10 text-sm hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={() => setShowLogoutDialog(true)}
-          disabled={isPending}
-        >
-          <LogOut size={20} />
-          <span>{isPending ? "Signing out..." : "Sign out"}</span>
-        </button>
-      </div>
-
-      {/* Footer */}
-      <footer className="bg-secondary-very-light mt-auto w-full shrink-0 border border-[#E2E8F0] py-3 text-center text-[12px]">
-        <p className="font-medium text-[#94A3B8]">Goldera Pharma CRM</p>
-        <p className="text-[#CBD5E1]">v2.0 © 2025</p>
-      </footer>
-
-      <LogoutDialog
-        open={showLogoutDialog}
-        onOpenChange={setShowLogoutDialog}
-        onConfirm={handleLogoutConfirm}
-        isPending={isPending}
-      />
+      <SidebarUserMenu collapsed={isCollapsed} onLinkClick={onLinkClick} />
     </div>
   );
 }

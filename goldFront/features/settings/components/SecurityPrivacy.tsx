@@ -39,8 +39,8 @@ export default function SecurityPrivacy() {
 
         <div className="space-y-6">
           {/* Two-Factor Authentication */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Two-Factor Authentication
               </div>
@@ -51,13 +51,13 @@ export default function SecurityPrivacy() {
             <Switch
               checked={twoFA}
               onCheckedChange={setTwoFA}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
 
           {/* Session Timeout */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Session Timeout
               </div>
@@ -66,7 +66,7 @@ export default function SecurityPrivacy() {
               </div>
             </div>
             <Select value={timeout} onValueChange={setTimeoutVal}>
-              <SelectTrigger className="border-secondary-light w-[220px] justify-between border bg-white text-left text-sm font-normal text-black shadow-none">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
                 <SelectValue placeholder="Select timeout" />
               </SelectTrigger>
               <SelectContent>
@@ -78,8 +78,8 @@ export default function SecurityPrivacy() {
           </div>
 
           {/* Analytics & Data Sharing */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Analytics & Data Sharing
               </div>
@@ -90,7 +90,7 @@ export default function SecurityPrivacy() {
             <Switch
               checked={analytics}
               onCheckedChange={setAnalytics}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
         </div>

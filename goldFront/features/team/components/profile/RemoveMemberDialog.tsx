@@ -74,7 +74,7 @@ export default function RemoveMemberDialog({
           Remove {isSupervisor ? "Supervisor" : "Member"}
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className="w-125">
+      <AlertDialogContent className="w-full sm:max-w-125">
         <AlertDialogHeader>
           <AlertDialogTitle className="text-dashboard-red text-lg/7 font-semibold">
             Remove Team Member

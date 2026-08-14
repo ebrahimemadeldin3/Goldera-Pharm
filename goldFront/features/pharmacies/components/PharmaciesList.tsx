@@ -44,8 +44,8 @@ export default function PharmaciesList({ pharmacies, page = 1, limit = 10, total
   }, [pharmacies, regionFilter, q]);
 
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6 min-[1440px]:w-270.75! lg:w-5xl">
-                  <div className="mt-4 flex items-center justify-between">
+    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6">
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
         <p className="text-secondary-dark text-xs">
           Showing {filtered.length} of {totalCount || pharmacies.length} pharmacies
         </p>
@@ -55,10 +55,10 @@ export default function PharmaciesList({ pharmacies, page = 1, limit = 10, total
       
       
       {/* Filters */}
-      <header className="mb-6 flex items-center gap-4">
+      <header className="mb-6 flex flex-wrap items-center gap-4">
         <h2 className="text-xl font-semibold">Pharmacy Directory</h2>
         <Select value={regionFilter} onValueChange={setRegionFilter}>
-          <SelectTrigger className="border-secondary-light ml-auto h-9 w-44 cursor-pointer rounded-md border bg-white px-3 text-sm">
+          <SelectTrigger className="border-secondary-light ml-auto h-9 w-full cursor-pointer rounded-md border bg-white px-3 text-sm sm:w-44">
             <SelectValue placeholder="All Regions" />
           </SelectTrigger>
           <SelectContent>
@@ -69,13 +69,13 @@ export default function PharmaciesList({ pharmacies, page = 1, limit = 10, total
             ))}
           </SelectContent>
         </Select>
-        <div className="relative">
+        <div className="relative w-full max-w-[300px]">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#717182]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by name, city, or sub-region..."
-            className="h-9 w-[300px] rounded-md border bg-white pl-10 text-sm"
+            className="h-9 w-full rounded-md border bg-white pl-10 text-sm"
           />
         </div>
         

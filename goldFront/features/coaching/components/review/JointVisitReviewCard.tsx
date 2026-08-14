@@ -30,11 +30,11 @@ export default function JointVisitReviewCard({
   return (
     <Card className="border-secondary-light rounded-xl border-[0.8px] bg-white shadow-none">
       {/* Header */}
-      <CardHeader className="flex items-center justify-start gap-4">
+      <CardHeader className="flex flex-wrap items-center justify-start gap-4">
         <div className="from-system-gradient-from to-system-gradient-to flex size-14 items-center justify-center rounded-full bg-linear-to-b text-sm/5 font-medium text-white">
           {review.repInitials}
         </div>
-        <div className="flex flex-col">
+        <div className="flex min-w-0 flex-1 flex-col">
           <h2 className="text-base/6 font-normal text-black">
             {review.repName} & Dr. {review.doctorName}
           </h2>
@@ -64,7 +64,7 @@ export default function JointVisitReviewCard({
         </span>
       </CardHeader>
       <CardContent>
-        <div className="mb-4 grid grid-cols-2 gap-4">
+        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="bg-light-green-gradiant border-green-stroke rounded-[8px] border-[0.8px] p-4">
             <h3 className="text-dashboard-green mb-2.5 flex items-center gap-2 text-sm/6 font-medium">
               <ThumbsUp className="text-dashboard-green h-4 w-4" /> What Went
@@ -138,7 +138,7 @@ export default function JointVisitReviewCard({
           </p>
         </div>
       </CardContent>
-      <CardFooter className="gap-4">
+      <CardFooter className="flex-wrap gap-4">
         <Button
           variant="outline"
           className="border-secondary-light h-9 cursor-pointer rounded-md border bg-white px-4 text-sm/5 font-medium text-black hover:bg-gray-50"

@@ -69,7 +69,7 @@ export default function VisitReportsList({ reports, page = 1, limit = 10, totalC
           
           <div className="space-y-4">
             {/* Header with Doctor Info */}
-            <div className="flex items-start justify-between">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="flex items-center gap-3">
                 <div className="gradient-blue flex h-12 w-12 items-center justify-center rounded-[10px]">
                   <Stethoscope className="h-6 w-6 text-white" />
@@ -101,7 +101,7 @@ export default function VisitReportsList({ reports, page = 1, limit = 10, totalC
             </div>
 
             {/* Visit Details Grid */}
-            <div className="border-secondary-light bg-secondary-very-light grid grid-cols-3 gap-4 rounded-lg border p-4">
+            <div className="border-secondary-light bg-secondary-very-light grid grid-cols-1 gap-4 rounded-lg border p-4 sm:grid-cols-3">
               <div className="flex items-center gap-2">
                 <Calendar className="text-dashboard-blue h-4 w-4" />
                 <div>

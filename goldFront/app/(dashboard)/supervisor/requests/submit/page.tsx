@@ -9,6 +9,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { fetchProfile } from "@/features/profile/api";
 import { getRegionsAction } from "@/lib/requests/regions";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -58,8 +59,8 @@ export default async function Page() {
   ).length;
 
   return (
-    <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
-      <header className="mb-6 flex items-center justify-start gap-4">
+    <PageContainer>
+      <header className="mb-6 flex flex-wrap items-center justify-start gap-4">
         <Link
           href="/supervisor/requests"
           className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
@@ -67,7 +68,7 @@ export default async function Page() {
           <ArrowLeft size={16} />
         </Link>
         <div>
-          <h1 className="text-4xl/10 font-normal">Requests</h1>
+          <h1 className="text-2xl/9 font-normal md:text-[34px]/10">Requests</h1>
           <p className="text-secondary-dark mt-2 text-base/6 font-normal">
             Submit requests and track their status
           </p>
@@ -83,6 +84,6 @@ export default async function Page() {
         <SubmitRequestForm doctors={doctors} products={products} />
         <RequestHistory requests={requests} />
       </section>
-    </main>
+    </PageContainer>
   );
 }

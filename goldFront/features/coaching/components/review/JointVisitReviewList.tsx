@@ -17,7 +17,7 @@ export default function JointVisitReviewList({
 }: JointVisitReviewListProps) {
   return (
     <>
-      <h2 className="text-[36px]/10 font-normal text-black">
+      <h2 className="text-2xl md:text-[36px]/10 font-normal text-black">
         Recent Joint Visit Reviews
       </h2>
       <div className="space-y-6">

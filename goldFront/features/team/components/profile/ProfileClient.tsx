@@ -12,6 +12,7 @@ import { useRoleUI } from "@/core/ui/role-ui-context";
 import { Region } from "@/lib/types/regions";
 import { useState, useEffect } from "react";
 import { getRegionsAction } from "@/lib/requests/regions";
+import { PageContainer } from "@/components/layout/page-container";
 
 type ProfileClientProps = {
   memberDetails: User;
@@ -64,7 +65,7 @@ export default function ProfileClient({
   }, [isEditMode, regions.length]);
 
   return (
-    <main className="flex w-full flex-col gap-6 p-6">
+    <PageContainer className="flex flex-col gap-6">
       <ProfileHeader
         memberDetails={memberDetails}
         backUrl={backUrl}
@@ -168,6 +169,6 @@ export default function ProfileClient({
           </CardContent>
         </Card>
       )}
-    </main>
+    </PageContainer>
   );
 }

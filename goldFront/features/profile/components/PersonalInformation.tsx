@@ -1,17 +1,33 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useMemo, useState, useTransition, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
+import {
+  AlignLeft,
+  BriefcaseBusiness,
+  Building2,
+  CalendarCheck2,
+  GraduationCap,
+  Loader2,
+  Mail,
+  MapPin,
+  Phone,
+  Save,
+  UserRound,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Pencil, Save, X } from "lucide-react";
+import { cn, formatSaudiMonthYear } from "@/lib/utils";
 import { UserProfile } from "../lib/types";
 import { updateProfileAction } from "../api";
-import { formatSaudiDateTimeDisplay, formatSaudiMonthYear } from "@/lib/utils";
+import { formatRole, profileCardClass } from "../lib/utils";
+import { InfoField, MutedValue } from "./InfoField";
 
 type PersonalInformationProps = {
   profile: UserProfile;
+  editing: boolean;
+  onEditingChange: (editing: boolean) => void;
 };
 
 type ProfileFormState = {
@@ -22,9 +38,16 @@ type ProfileFormState = {
   bio: string;
 };
 
+const inputClass =
+  "mt-1.5 h-9 w-full rounded-lg border-[#E5E8EF] bg-[#F6F8FB] text-sm text-[#182033] shadow-none transition-[border-color,box-shadow] placeholder:text-[#667085] focus-visible:border-gold-300 focus-visible:ring-gold-300/30";
+
 export default function PersonalInformation({
   profile,
+  editing,
+  onEditingChange,
 }: PersonalInformationProps) {
+  const router = useRouter();
+
   const initial = useMemo(
     (): ProfileFormState => ({
       name: profile.name,
@@ -36,24 +59,18 @@ export default function PersonalInformation({
     [profile],
   );
 
-  const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<ProfileFormState>(initial);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>("");
 
-  const inputBase =
-    "bg-secondary-very-light border border-secondary-light py-1 px-3 text-black text-sm/[20px] font-normal shadow-none";
-
-  const labelClass = "font-medium text-sm/[14px] text-black";
-  const valueClass = "h-10 font-normal text-base/7 text-secondary-dark";
-
-  function handleCancel() {
+  const [lastEditing, setLastEditing] = useState(editing);
+  if (editing !== lastEditing) {
+    setLastEditing(editing);
     setForm(initial);
     setError("");
-    setEditing(false);
   }
 
-  async function handleSave() {
+  function handleSave() {
     setError("");
     startTransition(async () => {
       try {
@@ -66,7 +83,8 @@ export default function PersonalInformation({
         });
 
         if (result.success) {
-          setEditing(false);
+          onEditingChange(false);
+          router.refresh();
         } else if (result.error) {
           setError(result.error.message);
         }
@@ -76,261 +94,228 @@ export default function PersonalInformation({
     });
   }
 
-  // Format dates
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "-";
-    return formatSaudiMonthYear(new Date(dateString));
-  };
-
-  const formatDateTime = (dateString: string | null) => {
-    if (!dateString) return "-";
-    return formatSaudiDateTimeDisplay(new Date(dateString));
-  };
-
-  const joinDate = formatDate(profile.dateOfRecruitment);
-  const position = profile.role.toLowerCase().replace("_", " ");
-  const department = profile.department || "Not assigned";
+  const joinDate = formatSaudiMonthYear(new Date(profile.dateOfRecruitment));
 
   return (
-    <Card className="border-secondary-light h-fit w-[714px] gap-3 rounded-2xl border bg-white p-6 shadow-none">
-      <CardHeader className="flex flex-row items-center justify-between p-0">
-        <CardTitle className="font-smeibold text-xl/[30px]">
-          Personal Information
-        </CardTitle>
+    <section
+      aria-label="Personal information"
+      className={cn(
+        `${profileCardClass} profile-reveal p-5`,
+        editing && "profile-edit-active",
+      )}
+      style={{ "--profile-delay": "120ms" } as CSSProperties}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <span className="profile-section-icon bg-gold-50 text-gold-600 ring-gold-300/50 flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset">
+            <UserRound className="size-5" aria-hidden />
+          </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-[#182033]">
+                Personal Information
+              </h3>
+              {editing && (
+                <span className="profile-edit-badge bg-gold-50 text-gold-700 ring-gold-300/50 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset">
+                  Editing
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-[#667085]">
+              {editing
+                ? "Update the fields below and save your changes."
+                : "Identity, contact and professional details."}
+            </p>
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2">
-          {editing && (
-            <Button
-              type="button"
-              variant="outline"
-              className="border-secondary-light cursor-pointer rounded-lg"
-              onClick={handleCancel}
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-          )}
+        {editing && (
           <Button
             type="button"
-            onClick={() => (editing ? handleSave() : setEditing(true))}
+            onClick={handleSave}
             disabled={isPending}
-            className={`bg-system-primary border-system-primary hover:text-system-primary cursor-pointer gap-2 rounded-lg border text-white hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 ${editing ? "border-black bg-black text-white hover:text-black" : ""} `}
+            className="h-9 cursor-pointer gap-2 rounded-lg bg-[#C9A44C] px-4 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:bg-[#A67C1F] hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? (
-              "Saving..."
-            ) : editing ? (
               <>
-                <Save className="h-4 w-4" />
-                Save Changes
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+                Saving
               </>
             ) : (
               <>
-                <Pencil className="h-4 w-4" />
-                Edit Profile
+                <Save className="size-4" aria-hidden />
+                Save Changes
               </>
             )}
           </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0 pb-10">
-        <div className="bg-secondary-light mb-4 h-px w-full" />
-
-        {error && (
-          <div className="text-dashboard-red mb-4 rounded-md bg-red-50 p-3 text-sm">
-            {error}
-          </div>
         )}
+      </header>
 
-        <div className="space-y-5 text-sm">
-          {/* Full Name */}
-          <div>
-            <div className={labelClass}>Full Name</div>
-            {editing ? (
-              <Input
-                className={`${inputBase} mt-1`}
-                value={form.name ?? ""}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, name: e.target.value }))
-                }
-                placeholder="Enter full name"
-                disabled={isPending}
-              />
-            ) : (
-              <div className={`mt-1 ${valueClass}`}>{form.name}</div>
-            )}
-          </div>
-
-          {/* Email */}
-          <div>
-            <div className={`flex items-center gap-2 ${labelClass}`}>
-              <Mail className="h-4 w-4" />
-              Email Address
-            </div>
-            {editing ? (
-              <Input
-                type="email"
-                className={`${inputBase} mt-1`}
-                value={form.email ?? ""}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, email: e.target.value }))
-                }
-                placeholder="name@company.com"
-                disabled={isPending}
-              />
-            ) : (
-              <div className={`mt-1 ${valueClass}`}>{form.email}</div>
-            )}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <div className={`flex items-center gap-2 ${labelClass}`}>
-              <Phone className="h-4 w-4" />
-              Phone Number
-            </div>
-            {editing ? (
-              <Input
-                className={`${inputBase} mt-1`}
-                value={form.phone ?? ""}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, phone: e.target.value }))
-                }
-                placeholder="+966 50 000 0000"
-                disabled={isPending}
-              />
-            ) : (
-              <div className={`mt-1 ${valueClass}`}>{form.phone}</div>
-            )}
-          </div>
-
-          {/* Position */}
-          <div>
-            <div className={labelClass}>Position</div>
-            <div className={`mt-1 ${valueClass} capitalize`}>{position}</div>
-          </div>
-
-          {/* Join Date */}
-          <div>
-            <div className={labelClass}>Join Date</div>
-            <div className={`mt-1 ${valueClass}`}>{joinDate}</div>
-          </div>
-
-          {/* Department */}
-          <div>
-            <div className={labelClass}>Department</div>
-            <div className={`mt-1 ${valueClass}`}>{department}</div>
-          </div>
-
-          {/* Location */}
-          <div>
-            <div className={`flex items-center gap-2 ${labelClass}`}>
-              <MapPin className="h-4 w-4" />
-              Location
-            </div>
-            {editing ? (
-              <Input
-                className={`${inputBase} mt-1`}
-                value={form.location ?? ""}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, location: e.target.value }))
-                }
-                placeholder="City, Country"
-                disabled={isPending}
-              />
-            ) : (
-              <div className={`mt-1 ${valueClass}`}>
-                {form.location || "Not specified"}
-              </div>
-            )}
-          </div>
-
-          {/* Bio */}
-          <div>
-            <div className={labelClass}>Bio</div>
-            {editing ? (
-              <Textarea
-                className={`${inputBase} mt-1 h-24`}
-                value={form.bio ?? ""}
-                onChange={(e) =>
-                  setForm((s) => ({ ...s, bio: e.target.value }))
-                }
-                placeholder="Write a short bio..."
-                disabled={isPending}
-              />
-            ) : (
-              <p className={`mt-1 whitespace-pre-line ${valueClass}`}>
-                {form.bio || "No bio added yet"}
-              </p>
-            )}
-          </div>
-
-          <div className="bg-secondary-light my-2 h-px w-full" />
-
-          <div>
-            <div className="mb-2 text-base/6 font-semibold text-black">
-              Account Details
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className={labelClass}>Date of Birth</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {formatDate(profile.dateOfBirth)}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Account Status</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {profile.isActive ? "Active" : "Inactive"}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Iqama Number</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {profile.iqamaNumber?.trim() || "Not available"}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Passport Number</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {profile.passportNumber || "Not available"}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Last Login</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {formatDateTime(profile.lastLogin)}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Leave Days Total</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {profile.leaveDaysCountTotal}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Profile Created</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {formatDateTime(profile.createdAt)}
-                </div>
-              </div>
-
-              <div>
-                <div className={labelClass}>Last Updated</div>
-                <div className={`mt-1 ${valueClass}`}>
-                  {formatDateTime(profile.updatedAt)}
-                </div>
-              </div>
-            </div>
-          </div>
+      {error && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="text-dashboard-red mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm"
+        >
+          {error}
         </div>
-      </CardContent>
-    </Card>
+      )}
+
+      {editing ? (
+        <div className="mt-5 grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
+          <InfoField
+            label="Full Name"
+            icon={UserRound}
+            accent="gold"
+            delay={40}
+            span
+          >
+            <Input
+              className={inputClass}
+              value={form.name}
+              onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+              placeholder="Enter full name"
+              disabled={isPending}
+            />
+          </InfoField>
+
+          <InfoField label="Email Address" icon={Mail} accent="blue" delay={80}>
+            <Input
+              type="email"
+              className={inputClass}
+              value={form.email}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, email: e.target.value }))
+              }
+              placeholder="name@company.com"
+              disabled={isPending}
+            />
+          </InfoField>
+
+          <InfoField
+            label="Phone Number"
+            icon={Phone}
+            accent="teal"
+            delay={120}
+          >
+            <Input
+              className={inputClass}
+              value={form.phone}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, phone: e.target.value }))
+              }
+              placeholder="+966 50 000 0000"
+              disabled={isPending}
+            />
+          </InfoField>
+
+          <InfoField label="Location" icon={MapPin} accent="purple" delay={160}>
+            <Input
+              className={inputClass}
+              value={form.location}
+              onChange={(e) =>
+                setForm((s) => ({ ...s, location: e.target.value }))
+              }
+              placeholder="City, Country"
+              disabled={isPending}
+            />
+          </InfoField>
+
+          <InfoField
+            label="Bio"
+            icon={AlignLeft}
+            accent="green"
+            delay={200}
+            span
+          >
+            <Textarea
+              className={`${inputClass} min-h-20`}
+              value={form.bio}
+              onChange={(e) => setForm((s) => ({ ...s, bio: e.target.value }))}
+              placeholder="Write a short bio..."
+              disabled={isPending}
+            />
+          </InfoField>
+        </div>
+      ) : (
+        <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+          <InfoField label="Email" icon={Mail} accent="blue" delay={40}>
+            {profile.email}
+          </InfoField>
+
+          <InfoField label="Phone" icon={Phone} accent="teal" delay={80}>
+            {profile.phone?.trim() ? (
+              profile.phone
+            ) : (
+              <MutedValue>Not specified</MutedValue>
+            )}
+          </InfoField>
+
+          <InfoField
+            label="Department"
+            icon={Building2}
+            accent="purple"
+            delay={120}
+          >
+            {profile.department?.trim() ? (
+              profile.department
+            ) : (
+              <MutedValue>Not assigned</MutedValue>
+            )}
+          </InfoField>
+
+          <InfoField label="Location" icon={MapPin} accent="green" delay={160}>
+            {profile.location?.trim() ? (
+              profile.location
+            ) : (
+              <MutedValue>Not specified</MutedValue>
+            )}
+          </InfoField>
+
+          <InfoField
+            label="Position"
+            icon={BriefcaseBusiness}
+            accent="gold"
+            delay={200}
+          >
+            <span className="capitalize">{formatRole(profile.role)}</span>
+          </InfoField>
+
+          <InfoField
+            label="Join Date"
+            icon={CalendarCheck2}
+            accent="blue"
+            delay={240}
+          >
+            {joinDate}
+          </InfoField>
+
+          {profile.educationBackground?.trim() && (
+            <InfoField
+              label="Education"
+              icon={GraduationCap}
+              accent="purple"
+              delay={280}
+            >
+              {profile.educationBackground}
+            </InfoField>
+          )}
+
+          {profile.bio?.trim() && (
+            <InfoField
+              label="Bio"
+              icon={AlignLeft}
+              accent="green"
+              delay={320}
+              span
+            >
+              <span className="font-normal whitespace-pre-line">
+                {profile.bio}
+              </span>
+            </InfoField>
+          )}
+        </div>
+      )}
+    </section>
   );
 }

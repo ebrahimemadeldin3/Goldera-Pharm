@@ -2,6 +2,7 @@ import SalesHeader from "@/features/sales/components/SalesHeader";
 import SalesTable from "@/features/sales/components/SalesTable";
 import { getRepSalesAction } from "@/features/sales/api";
 import { extractSales } from "@/features/sales/lib/utils";
+import { PageContainer } from "@/components/layout/page-container";
 
 type PageProps = {
   searchParams: {
@@ -39,13 +40,13 @@ if(sales) {
 }
  
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 *:min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <SalesHeader
         sales={sales}
         selectedDate={date}
         selectedSheetName={sheetName}
       />
       <SalesTable sales={sales} page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </PageContainer>
   );
 }

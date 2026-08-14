@@ -95,7 +95,7 @@ export function HRMemberCard({ member }: HRMemberCardProps) {
   return (
     <>
       <div className="border-secondary-light rounded-[10px] border-[.8px] bg-white p-4">
-        <div className="flex items-start gap-6">
+        <div className="flex flex-wrap items-start gap-6">
           {/* Avatar */}
           <div className="shrink-0">
             {member.profileImage?.url ? (
@@ -117,8 +117,8 @@ export function HRMemberCard({ member }: HRMemberCardProps) {
             )}
           </div>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-base/6 font-semibold text-black">
                 {member.name}
               </h3>
@@ -141,7 +141,7 @@ export function HRMemberCard({ member }: HRMemberCardProps) {
             </div>
 
             {/* Main Info Grid */}
-            <div className="text-secondary-dark mt-4 grid grid-cols-3 gap-x-6 gap-y-3 text-sm/5">
+            <div className="text-secondary-dark mt-4 grid grid-cols-1 gap-y-3 sm:grid-cols-3 sm:gap-x-6 sm:gap-y-3 text-sm/5">
               {/* Column 1 */}
               <div className="flex flex-col gap-3">
                 <p className="flex items-center gap-2">

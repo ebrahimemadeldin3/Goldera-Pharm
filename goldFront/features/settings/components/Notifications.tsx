@@ -34,8 +34,8 @@ export default function Notifications() {
 
         <div className="space-y-6">
           {/* Email Notifications */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Email Notifications
               </div>
@@ -46,13 +46,13 @@ export default function Notifications() {
             <Switch
               checked={email}
               onCheckedChange={setEmail}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
 
           {/* Push Notifications */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Push Notifications
               </div>
@@ -63,13 +63,13 @@ export default function Notifications() {
             <Switch
               checked={push}
               onCheckedChange={setPush}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
 
           {/* Weekly Reports */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Weekly Reports
               </div>
@@ -80,13 +80,13 @@ export default function Notifications() {
             <Switch
               checked={weekly}
               onCheckedChange={setWeekly}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
 
           {/* Request Alerts */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Request Alerts
               </div>
@@ -97,13 +97,13 @@ export default function Notifications() {
             <Switch
               checked={requests}
               onCheckedChange={setRequests}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
 
           {/* Performance Alerts */}
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
               <div className="text-sm/[14px] font-medium text-black">
                 Performance Alerts
               </div>
@@ -114,7 +114,7 @@ export default function Notifications() {
             <Switch
               checked={performance}
               onCheckedChange={setPerformance}
-              className="data-[state=checked]:bg-system-primary cursor-pointer"
+              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
             />
           </div>
         </div>

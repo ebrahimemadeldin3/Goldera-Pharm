@@ -47,15 +47,15 @@ export default function ForecastHistory({
   }
 
   return (
-    <main className="space-y-6">
+    <div className="space-y-6">
       {forecasts.map((forecast) => (
         <div
           key={forecast.id}
           className="border-secondary-light rounded-[14px] border-[0.8px] bg-white p-6"
         >
-          <header className="mb-4 flex items-start justify-between">
+          <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="mb-2 flex items-center gap-3">
+              <div className="mb-2 flex flex-wrap items-center gap-3">
                 <h3 className="text-lg/6 font-normal text-black">
                   {forecast.period}
                 </h3>
@@ -76,7 +76,7 @@ export default function ForecastHistory({
               </p>
             </div>
           </header>
-          <div className="mb-4 grid grid-cols-2 gap-4">
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="border-secondary-light bg-secondary-very-light rounded-[10px] border p-3">
               <p className="text-secondary-text flex items-center gap-1 text-xs/5 font-normal">
                 <Users size={16} className="" />
@@ -113,7 +113,7 @@ export default function ForecastHistory({
               <p className="text-secondary-dark border-secondary-light mb-3 border-t-[0.8px] pt-4 text-sm/5 font-normal">
                 Distribution Details:
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {(expandedForecasts.has(forecast.id)
                   ? forecast.distributions
                   : forecast.distributions.slice(0, 4)
@@ -157,6 +157,6 @@ export default function ForecastHistory({
         </div>
       ))}
       <Pagination page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </div>
   );
 }

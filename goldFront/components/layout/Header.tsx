@@ -1,83 +1,216 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { Search, UserRound } from "lucide-react";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-} from "@/components/ui/select";
+import { usePathname } from "next/navigation";
+import { ChevronDown, LogOut, Settings, UserRound } from "lucide-react";
+import { useState } from "react";
 import Notifications from "./Notifications";
 import { SidebarMenu } from "@/components/layout/sidebar/sidebar-menu";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import { SafeCldImage } from "@/components/ui/safe-cld-image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { LogoutDialog } from "./logout-dialog";
+import { useLogout } from "@/features/auth/hooks/useLogout";
+import { getInitials } from "@/lib/utils";
+import {
+  getPageContext,
+  getRoleLabel,
+  getShortUserName,
+  getSidebarItem,
+} from "./navigation-utils";
 
-const Header = () => {
+function UserAvatar({
+  size = "md",
+  className = "",
+}: {
+  size?: "sm" | "md";
+  className?: string;
+}) {
   const { user } = useRoleUI();
+  const sizeClass = size === "sm" ? "size-9" : "size-10";
+  const imageSize = size === "sm" ? 36 : 40;
 
   return (
-    <header className="sticky top-0 z-50 mx-auto flex h-[82px] items-center justify-between border-b bg-white px-10 shadow-[0px_1px_4px_0px_rgba(0,0,0,0.25)] min-[1440px]:w-[1440px]! lg:mx-0! lg:w-5xl">
-      <SidebarMenu />
-      <Link href="/" className="flex items-center gap-3">
-        <Image
-          src="/logos/logo.webp"
-          alt="GolderaPharm"
-          width={35}
-          height={40}
+    <span
+      className={`bg-brand-gold-soft text-brand-gold-dark border-brand-gold/25 flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full border text-sm font-semibold ${className}`}
+    >
+      {user.profileImage?.public_id ? (
+        <SafeCldImage
+          src={user.profileImage.public_id}
+          fallbackUrl={user.profileImage.url}
+          alt={user.name}
+          width={imageSize}
+          height={imageSize}
+          className="h-full w-full object-cover object-center"
         />
-        <span className="text-gold text-[17px] font-normal">GolderaPharm</span>
-      </Link>
-      <div className="relative">
-        <Search
-          size={24}
-          className="text-secondary-dark absolute top-1/2 left-3 -translate-y-1/2"
-        />
-        <input
-          type="search"
-          aria-label="Search"
-          placeholder="Search doctors, reps, regions..."
-          className="border-secondary-light bg-secondary-very-light h-10 w-[300px] rounded-md border px-4 py-2 pl-10 text-xs focus:ring-2 focus:ring-sky-100 focus:outline-none min-[1440px]:w-[650px]"
-        />
-      </div>
-      <Select defaultValue="month">
-        <SelectTrigger className="border-secondary-light bg-secondary-very-light flex h-10 w-32 cursor-pointer items-center gap-2 rounded-md border px-3 py-1 text-sm">
-          <SelectValue placeholder="Timeline" />
-        </SelectTrigger>
-        <SelectContent className="rounded-[14px] p-4">
-          <SelectGroup className="*:w-[142px] *:cursor-pointer *:px-3 *:py-4">
-            <SelectItem value="day">Today</SelectItem>
-            <SelectItem value="week">7 Days</SelectItem>
-            <SelectItem value="month">30 Days</SelectItem>
-            <SelectItem value="custom">Custom</SelectItem>
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-      <div className="flex items-center gap-4">
-        <Notifications />
-        <div className="border-secondary-light flex h-10 w-10 overflow-hidden rounded-full border bg-slate-100">
-          {user.profileImage?.public_id ? (
-            <SafeCldImage
-              src={user.profileImage.public_id}
-              fallbackUrl={user.profileImage.url}
-              alt={user.name}
-              width={40}
-              height={40}
-              className="object-cover object-center"
-            />
-          ) : (
-            <UserRound className="text-slate-500" size={20} />
-          )}
+      ) : (
+        getInitials(user.name)
+      )}
+    </span>
+  );
+}
+
+const Header = () => {
+  const pathname = usePathname() ?? "/";
+  const { user, role, sidebar } = useRoleUI();
+  const { logout, isPending } = useLogout();
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const pageContext = getPageContext(pathname, sidebar);
+  const profileItem = getSidebarItem(sidebar, "profile");
+  const settingsItem = getSidebarItem(sidebar, "settings");
+  const shortName = getShortUserName(user.name);
+  const visibleBreadcrumbs =
+    pageContext.breadcrumbs.length > 2
+      ? pageContext.breadcrumbs
+      : [pageContext.groupLabel];
+
+  const handleLogoutConfirm = () => {
+    logout();
+    setShowLogoutDialog(false);
+  };
+
+  return (
+    <>
+      <header className="border-nav-border sticky top-0 z-40 flex h-[70px] shrink-0 items-center justify-between border-b bg-white/95 px-4 shadow-[0_1px_0_rgba(32,36,45,0.04)] backdrop-blur sm:px-6 lg:px-7">
+        <div className="flex min-w-0 items-center gap-3">
+          <SidebarMenu />
+          <div className="min-w-0">
+            <p className="text-brand-gold-dark text-sm font-semibold xl:hidden">
+              GolderaPharm
+            </p>
+            <nav
+              aria-label="Breadcrumb"
+              className="text-nav-muted hidden items-center gap-1 text-xs font-medium sm:flex"
+            >
+              {visibleBreadcrumbs.map((crumb, index) => (
+                <span key={`${crumb}-${index}`} className="flex items-center">
+                  {index > 0 && (
+                    <span className="text-brand-gold/70 mx-1.5">/</span>
+                  )}
+                  <span
+                    className={
+                      index === visibleBreadcrumbs.length - 1
+                        ? "text-brand-gold-dark"
+                        : ""
+                    }
+                  >
+                    {crumb}
+                  </span>
+                </span>
+              ))}
+            </nav>
+            <h1 className="text-nav-text truncate text-lg font-semibold">
+              {pageContext.pageTitle}
+            </h1>
+          </div>
         </div>
-        <div className="hidden flex-col text-left sm:flex">
-          <span className="text-[15px] font-semibold">{user.name}</span>
-          <span className="text-secondary-dark text-xs">{user.email}</span>
+
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <Notifications />
+
+          <DropdownMenu open={profileOpen} onOpenChange={setProfileOpen}>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label="Open user menu"
+                aria-expanded={profileOpen}
+                className="border-nav-border hover:bg-nav-hover focus-visible:ring-brand-gold/35 flex h-11 max-w-[230px] cursor-pointer items-center gap-2 rounded-2xl border bg-white px-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <UserAvatar size="sm" />
+                <span className="hidden min-w-0 flex-col sm:flex">
+                  <span className="text-nav-text truncate text-sm font-semibold">
+                    {shortName}
+                  </span>
+                  <span className="text-nav-muted truncate text-xs">
+                    {getRoleLabel(role)}
+                  </span>
+                </span>
+                <ChevronDown
+                  className="text-nav-muted hidden size-4 sm:block"
+                  aria-hidden="true"
+                />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              sideOffset={10}
+              className="premium-profile-menu border-nav-border w-[min(320px,calc(100vw-24px))] rounded-2xl bg-white p-2 shadow-[0_18px_44px_rgba(32,36,45,0.16)]"
+            >
+              <DropdownMenuLabel className="p-3">
+                <div className="flex items-center gap-3">
+                  <UserAvatar />
+                  <div className="min-w-0">
+                    <p className="text-nav-text truncate text-sm font-semibold">
+                      {shortName}
+                    </p>
+                    <p className="text-brand-gold-dark mt-0.5 truncate text-xs font-medium">
+                      {getRoleLabel(role)}
+                    </p>
+                    <p className="text-nav-muted mt-0.5 truncate text-xs font-normal">
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
+
+              {(profileItem || settingsItem) && (
+                <DropdownMenuSeparator className="bg-nav-border" />
+              )}
+
+              {profileItem && (
+                <DropdownMenuItem asChild className="cursor-pointer rounded-xl">
+                  <Link href={profileItem.href}>
+                    <UserRound className="size-4" aria-hidden="true" />
+                    My Profile
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              {settingsItem && (
+                <DropdownMenuItem asChild className="cursor-pointer rounded-xl">
+                  <Link href={settingsItem.href}>
+                    <Settings className="size-4" aria-hidden="true" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+              )}
+
+              <DropdownMenuSeparator className="bg-nav-border" />
+              <DropdownMenuItem
+                onSelect={(event) => {
+                  event.preventDefault();
+                  setProfileOpen(false);
+                  setShowLogoutDialog(true);
+                }}
+                disabled={isPending}
+                className="text-dashboard-red focus:text-dashboard-red cursor-pointer rounded-xl"
+              >
+                <LogOut
+                  className="text-dashboard-red size-4"
+                  aria-hidden="true"
+                />
+                {isPending ? "Signing out..." : "Sign out"}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      </div>
-    </header>
+      </header>
+
+      <LogoutDialog
+        open={showLogoutDialog}
+        onOpenChange={setShowLogoutDialog}
+        onConfirm={handleLogoutConfirm}
+        isPending={isPending}
+      />
+    </>
   );
 };
 

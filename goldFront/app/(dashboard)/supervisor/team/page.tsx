@@ -1,5 +1,6 @@
 import { getSupervisorTeamAction } from "@/features/team/api";
 import SupervisorTeamList from "@/features/team/components/profile/SupervisorTeamList";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -11,10 +12,10 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const totalCount = res.totalCount ?? members.length;
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5">
-      <header className="mb-6 flex items-start justify-between">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[34px]/10 font-normal text-black">My Team</h1>
+          <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">My Team</h1>
           <p className="text-secondary-dark text-base/6">
             View and monitor your medical representatives
           </p>
@@ -39,6 +40,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
           Failed to load team members
         </div>
       )}
-    </main>
+    </PageContainer>
   );
 }

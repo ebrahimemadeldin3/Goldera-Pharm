@@ -50,7 +50,7 @@ export default function RepPlansList({
         <Pagination page={page} limit={limit} totalCount={totalCount} />
       </div>
       {/* Tabs */}
-      <div className="flex w-fit items-center gap-2 rounded-[14px] bg-[#F1F5F9] p-1">
+      <div className="flex w-fit flex-wrap items-center gap-2 rounded-[14px] bg-[#F1F5F9] p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}

@@ -56,7 +56,7 @@ export function PlansDialog({
                 className="rounded-lg border border-slate-200 bg-white p-4"
               >
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <h4 className="font-medium text-black">{plan.title}</h4>
                     <span className="rounded-xl border border-slate-300 px-2 py-0.5 text-xs font-medium text-slate-600">
                       {plan.type}
@@ -71,7 +71,7 @@ export function PlansDialog({
                   <div className="space-y-2 text-sm text-slate-600">
                     <p>{plan.description}</p>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         <span>

@@ -133,7 +133,7 @@ function DoctorPicker({
                 </span>
               </div>
               {/* Doctor cards */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {hospital.doctors.map((d) => {
                   const checked = value.includes(d.id);
                   return (
@@ -364,7 +364,7 @@ export default function SubmitRequestForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-6">
           {/* Row 1: Title + Type */}
-          <div className="grid w-full grid-cols-2 gap-4 *:flex-1">
+          <div className="grid w-full grid-cols-1 gap-4 *:flex-1 md:grid-cols-2">
             <FormField
               control={form.control}
               name="title"
@@ -421,7 +421,7 @@ export default function SubmitRequestForm({
           </div>
 
           {/* Row 2: Urgency + Subject */}
-          <div className="grid grid-cols-2 gap-4 *:flex-1">
+          <div className="grid grid-cols-1 gap-4 *:flex-1 md:grid-cols-2">
             <FormField
               control={form.control}
               name="urgency"
@@ -513,7 +513,7 @@ export default function SubmitRequestForm({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Budget (EXPENSE) */}
                 <FormField
                   control={form.control}
@@ -564,7 +564,7 @@ export default function SubmitRequestForm({
               <p className="text-sm font-medium text-black">
                 Personal Expense Details
               </p>
-              <div className="flex gap-4 *:flex-1">
+              <div className="flex flex-col gap-4 *:flex-1 md:flex-row">
                 {/* Visit City */}
                 <FormField
                   control={form.control}
@@ -589,7 +589,7 @@ export default function SubmitRequestForm({
                   control={form.control}
                   name="visitDaysCount"
                   render={({ field }) => (
-                    <FormItem className="relative w-40">
+                    <FormItem className="relative w-full md:w-40">
                       <FormLabel className={labelBase}>
                         Number of Days *
                       </FormLabel>
@@ -623,7 +623,7 @@ export default function SubmitRequestForm({
                 {personalExpenseFields.map((fieldItem, index) => (
                   <div
                     key={fieldItem.id}
-                    className="bg-secondary-very-light grid grid-cols-[1fr_180px_1fr_auto] items-start gap-3 rounded-md p-3"
+                    className="bg-secondary-very-light grid grid-cols-1 items-start gap-3 rounded-md p-3 md:grid-cols-[1fr_180px_1fr_auto]"
                   >
                     <FormField
                       control={form.control}
@@ -786,7 +786,7 @@ export default function SubmitRequestForm({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 {/* Budget */}
                 <FormField
                   control={form.control}
@@ -838,7 +838,7 @@ export default function SubmitRequestForm({
               {sampleFields.map((fieldItem, index) => (
                 <div
                   key={fieldItem.id}
-                  className="bg-secondary-very-light flex w-full gap-3 rounded-md p-3 *:flex-1"
+                  className="bg-secondary-very-light flex w-full flex-col gap-3 rounded-md p-3 md:flex-row md:*:flex-1"
                 >
                   <FormField
                     control={form.control}
@@ -969,7 +969,7 @@ export default function SubmitRequestForm({
                   </FormItem>
                 )}
               />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="leaveStartDate"
@@ -1051,7 +1051,7 @@ export default function SubmitRequestForm({
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Button
               type="submit"
               disabled={isPending}

@@ -31,7 +31,7 @@ export default function ProfileHeader({
   const isManager = currentUserRole === "MANAGER";
 
   return (
-    <header className="flex items-center justify-start gap-6">
+    <header className="flex flex-wrap items-center justify-start gap-6">
       <Link
         href={backUrl}
         className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
@@ -39,8 +39,8 @@ export default function ProfileHeader({
         <ArrowLeft size={16} />
       </Link>
 
-      <div>
-        <h1 className="text-[34px]/10 font-normal text-black">
+      <div className="min-w-0">
+        <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">
           {currentUserRole === "SUPERVISOR"
             ? "Medical Rep Details"
             : `${isSupervisor ? "Supervisor" : "Medical Rep"} Member Details`}
@@ -50,7 +50,7 @@ export default function ProfileHeader({
         </p>
       </div>
 
-      <div className="ml-auto flex gap-2">
+      <div className="ml-auto flex flex-wrap gap-2">
         {isEditMode ? (
           <>
             <Button

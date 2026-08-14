@@ -121,7 +121,7 @@ export default function SalesTable({ sales, page, limit, totalCount }: SalesTabl
   const columns = useMemo(() => getColumns(sales), [sales]);
 
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6 min-[1440px]:w-270.75! lg:w-5xl">
+    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6">
       
             <div className="mt-4">
         <Pagination page={page} limit={limit} totalCount={totalCount ?? sales.length} />
@@ -148,13 +148,13 @@ export default function SalesTable({ sales, page, limit, totalCount }: SalesTabl
           ))}
         </div>
 
-        <div className="relative ml-auto">
+        <div className="relative ml-auto w-full sm:w-auto">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#717182]" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search sales..."
-            className="h-9 w-60 rounded-md border bg-white pl-10 text-sm"
+            className="h-9 w-full rounded-md border bg-white pl-10 text-sm sm:w-60"
           />
         </div>
       </header>

@@ -64,9 +64,9 @@ export default function DoctorsHeader({ doctors = [] } : { doctors: DoctorApiRes
 
   return (
     <>
-      <header className="flex items-center justify-start gap-6">
+      <header className="flex flex-wrap items-center justify-start gap-6">
         <div>
-          <h1 className="font-nomral text-[34px] text-black">
+          <h1 className="font-nomral text-2xl text-black md:text-[34px]">
             Doctors Database
           </h1>
           <p className="text-secondary-dark text-[16px]">

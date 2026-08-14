@@ -88,7 +88,7 @@ export default function VisitReportForm({
   return (
     <div className="flex flex-col gap-6">
       {/* Info Cards */}
-      <div className="border-secondary-light flex items-center gap-25 rounded-lg border-[0.8px] bg-white p-6">
+      <div className="border-secondary-light flex flex-wrap items-center gap-x-6 gap-y-4 rounded-lg border-[0.8px] bg-white p-6">
         <div className="flex items-center gap-3">
           <div className="gradient-blue flex h-12 w-12 items-center justify-center rounded-[10px]">
             <Stethoscope className="h-6 w-6 text-white" />
@@ -148,7 +148,7 @@ export default function VisitReportForm({
       <Form {...form}>
         <form
           onSubmit={form.handleSubmit(onSubmit)}
-          className="grid grid-cols-2 gap-6"
+          className="grid grid-cols-1 gap-6 xl:grid-cols-2"
         >
           {/* Left Panel - Visit Details */}
           <div className="border-secondary-light rounded-[14px] border bg-white p-6">
@@ -305,7 +305,7 @@ export default function VisitReportForm({
 
           {/* Right Panel - Samples Provided */}
           <div className="border-secondary-light rounded-[14px] border bg-white p-6">
-            <div className="mb-6 flex items-center justify-between">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2">
               <h2 className="text-xl/6 font-normal text-black">
                 Samples Provided
               </h2>
@@ -364,7 +364,7 @@ export default function VisitReportForm({
           </div>
 
           {/* Submit Button */}
-          <div className="col-span-2 flex justify-end">
+          <div className="flex justify-end xl:col-span-2">
             <Button
               type="submit"
               disabled={isPending}

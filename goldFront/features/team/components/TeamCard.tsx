@@ -20,7 +20,7 @@ export default function TeamCard({
   const isActive = true;
 
   return (
-    <Card className="border-secondary-light w-[345px] rounded-[14px] border-[0.8px] bg-white shadow-none">
+    <Card className="border-secondary-light w-full rounded-[14px] border-[0.8px] bg-white shadow-none">
       <CardHeader className="flex w-full items-center justify-between">
         <div className="flex items-center gap-4">
           {member.avatar ? (

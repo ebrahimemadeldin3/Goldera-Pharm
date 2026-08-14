@@ -6,6 +6,7 @@ import {
 import { getProductsAction } from "@/features/products/api";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PageContainer } from "@/components/layout/page-container";
 
 export default async function Page({
   searchParams,
@@ -26,17 +27,17 @@ export default async function Page({
     : [];
 
   return (
-    <main className="flex flex-col gap-6 p-6 *:min-[1440px]:w-270.75! *:lg:w-5xl">
+    <PageContainer className="flex flex-col gap-6">
       <div className="mx-auto max-w-300">
-        <header className="mb-6 flex items-center justify-start gap-2">
+        <header className="mb-6 flex flex-wrap items-center justify-start gap-2">
           <Link
             href="/rep/visits"
-            className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
+            className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
           >
             <ArrowLeft size={16} />
           </Link>
-          <div className="ml-3">
-            <h1 className="text-[34px]/10 font-normal text-black">
+          <div className="min-w-0">
+            <h1 className="text-2xl/10 font-normal text-black md:text-[34px]/10">
               Visit Report
             </h1>
             <p className="text-secondary-dark text-sm/6">
@@ -47,6 +48,6 @@ export default async function Page({
 
         <VisitReportForm visitData={visitData} products={products} />
       </div>
-    </main>
+    </PageContainer>
   );
 }

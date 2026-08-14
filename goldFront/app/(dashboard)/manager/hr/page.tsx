@@ -1,6 +1,7 @@
 import { getHRMembersAction } from "@/features/hr/api";
 import { HRStatsCards } from "@/features/hr/components/HRStatsCards";
 import { HRMembersList } from "@/features/hr/components/HRMembersList";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +16,10 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   // Handle error state
   if (!result.success || !result.data) {
     return (
-      <main className="bg-secondary-very-light min-h-[calc(100vh-150px)] w-full p-5">
-        <header className="flex items-center justify-start gap-6">
+      <PageContainer className="min-h-[calc(100vh-150px)]">
+        <header className="flex flex-wrap items-center justify-start gap-6">
           <div>
-            <h1 className="font-nomral text-[34px] text-black">
+            <h1 className="font-nomral text-2xl text-black md:text-[34px]">
               Human Resources Management
             </h1>
             <p className="text-secondary-dark text-[16px]">
@@ -32,17 +33,17 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
             {result.error?.message || "Failed to load HR members"}
           </p>
         </div>
-      </main>
+      </PageContainer>
     );
   }
 
   const { members, stats } = result.data;
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-150px)] w-full p-5">
-      <header className="flex items-center justify-start gap-6">
+    <PageContainer className="min-h-[calc(100vh-150px)]">
+      <header className="flex flex-wrap items-center justify-start gap-6">
         <div>
-          <h1 className="font-nomral text-[34px] text-black">
+          <h1 className="font-nomral text-2xl text-black md:text-[34px]">
             Human Resources Management
           </h1>
           <p className="text-secondary-dark text-[16px]">
@@ -58,6 +59,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
         limit={limit}
         totalCount={result.totalCount ?? members.length}
       />
-    </main>
+    </PageContainer>
   );
 }

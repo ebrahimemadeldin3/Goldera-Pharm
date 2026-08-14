@@ -7,6 +7,7 @@ import QuickActions from "@/features/dashboard/components/quickActions";
 import RecentRepRequests from "@/features/dashboard/components/recentRepRequests";
 import { SalesByRegion } from "@/features/dashboard/components/salesByRegion";
 import { redirect } from "next/navigation";
+import { PageContainer } from "@/components/layout/page-container";
 
 export default async function Home() {
   const user = await getCurrentUser();
@@ -19,8 +20,8 @@ export default async function Home() {
   const dashboardData = dashboardResult.success ? dashboardResult.data : null;
 
   return (
-    <main className="bg-secondary-very-light px-2 py-5 min-[1440px]:w-270.75! min-[1440px]:p-6 lg:w-5xl">
-      <header className="gradient-gold flex-col items-start justify-center rounded-[14px] p-6 min-[1440px]:w-270.75!">
+    <PageContainer>
+      <header className="gradient-gold w-full flex-col items-start justify-center rounded-[14px] p-6">
         <h1 className="text-2xl/8 font-medium text-white">
           Welcome back, Dr/ {user.data.name}
         </h1>
@@ -28,8 +29,8 @@ export default async function Home() {
           Golderapharm Manager
         </p>
       </header>
-      <section className="mt-6 flex gap-6 min-[1440px]:w-270.75! lg:w-5xl">
-        <div className="flex flex-col gap-6 min-[1440px]:w-[714px]!">
+      <section className="mt-6 grid w-full min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+        <div className="flex min-w-0 flex-col gap-6">
           <MainCards
             roleBasePath="/manager"
             totalSales={dashboardData?.totalSales}
@@ -43,7 +44,7 @@ export default async function Home() {
             viewAllHref="/manager/requests"
           />
         </div>
-        <aside className="flex flex-col gap-6">
+        <aside className="flex min-w-0 flex-col gap-6">
           <QuickActions />
           <ProductsPerformance
             productPerformance={dashboardData?.productPerformance}
@@ -54,10 +55,10 @@ export default async function Home() {
           />
         </aside>
       </section>
-      <section className="my-6 flex flex-row gap-6 *:flex-1 min-[1440px]:w-270.75!">
+      <section className="my-6 flex w-full flex-row gap-6 *:flex-1">
         {/* <RecentActivity /> */}
       </section>
       {/* <SupervisorsPerformanceRegional /> */}
-    </main>
+    </PageContainer>
   );
 }

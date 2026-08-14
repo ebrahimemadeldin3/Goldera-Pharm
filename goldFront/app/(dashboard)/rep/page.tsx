@@ -7,6 +7,7 @@ import RepPendingRequests from "@/features/dashboard/components/rep/RepPendingRe
 import Summary from "@/features/dashboard/components/rep/Summary";
 import TodaySchedule from "@/features/dashboard/components/rep/TodaySchedule";
 import { redirect } from "next/navigation";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -21,8 +22,8 @@ export default async function Home() {
   const dashboardData = dashboardResult.success ? dashboardResult.data : null;
 
   return (
-    <main className="bg-secondary-very-light px-2 py-5 min-[1440px]:w-270.75! min-[1440px]:p-6 lg:w-5xl">
-      <header className="gradient-green flex-col items-start justify-center rounded-[14px] p-6 min-[1440px]:w-270.75!">
+    <PageContainer>
+      <header className="gradient-green w-full flex-col items-start justify-center rounded-[14px] p-6">
         <h1 className="text-2xl/8 font-medium text-white">
           Welcome back, Dr/ {user.data.name}
         </h1>
@@ -33,8 +34,8 @@ export default async function Home() {
           )}
         </p>
       </header>
-      <section className="mt-6 flex gap-6 min-[1440px]:w-270.75! lg:w-5xl">
-        <div className="flex flex-col gap-6 min-[1440px]:w-178.5!">
+      <section className="mt-6 grid w-full min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] 2xl:grid-cols-[minmax(0,1fr)_minmax(360px,420px)]">
+        <div className="flex min-w-0 flex-col gap-6">
           <MainCards
             roleBasePath="/rep"
             coverage={dashboardData?.metrics?.coverage}
@@ -42,7 +43,7 @@ export default async function Home() {
             pendingRequestsCount={dashboardData?.metrics?.pendingRequestsCount}
             totalSales={dashboardData?.metrics?.totalSales}
           />
-          <section className="flex flex-row gap-6 *:flex-1">
+          <section className="grid grid-cols-1 gap-6 min-[1280px]:grid-cols-2">
             <MonthlyPerformance
               coverage={dashboardData?.metrics?.coverage}
               targetAchievement={dashboardData?.metrics?.targetAchievement}
@@ -56,7 +57,7 @@ export default async function Home() {
           </section>
           <TodaySchedule visits={dashboardData?.metrics?.todayVisits || []} />
         </div>
-        <aside className="flex flex-col gap-6">
+        <aside className="flex min-w-0 flex-col gap-6">
           <QuickActions />
           <Summary
             todayVisitsCount={dashboardData?.metrics?.todayVisitsCount}
@@ -64,6 +65,6 @@ export default async function Home() {
           />
         </aside>
       </section>
-    </main>
+    </PageContainer>
   );
 }

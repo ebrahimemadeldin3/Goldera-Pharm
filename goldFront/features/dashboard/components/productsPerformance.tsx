@@ -55,7 +55,7 @@ export function ProductsPerformance({
       }))
     : [];
   return (
-    <Card className="border-secondary-light rounded-[25px] border bg-white py-6 shadow-none">
+    <Card className="border-secondary-light w-full min-w-0 rounded-[25px] border bg-white py-6 shadow-none">
       <CardHeader className="flex items-center gap-4">
         <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
           <Image

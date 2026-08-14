@@ -74,8 +74,8 @@ const supervisors: Supervisor[] = [
 
 export default function SupervisorsPerformance() {
   return (
-    <Card className="border-secondary-light rounded-[25px] border bg-white shadow-none min-[1440px]:w-270.75!">
-      <CardHeader className="flex items-center justify-between gap-4 px-6">
+    <Card className="border-secondary-light rounded-[25px] border bg-white shadow-none ">
+      <CardHeader className="flex flex-wrap items-center justify-between gap-4 px-6">
         <div className="flex items-center gap-3">
           <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
             <Image
@@ -126,8 +126,8 @@ export default function SupervisorsPerformance() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 items-end">
-                    <div className="w-[276px]">
+                  <div className="grid w-full grid-cols-1 items-end gap-3 sm:grid-cols-2">
+                    <div className="w-full">
                       <div className="text-secondary-dark flex items-center justify-between gap-1 text-xs">
                         <Target size={12} className="" />
                         <span>Target</span>
@@ -143,7 +143,7 @@ export default function SupervisorsPerformance() {
                       </div>
                     </div>
 
-                    <div className="w-[276px]">
+                    <div className="w-full">
                       <div className="text-secondary-dark flex items-center justify-between text-xs">
                         <span>Coverage</span>
                         <span className="text-system-primary ml-auto text-[12px] font-semibold">
@@ -160,7 +160,7 @@ export default function SupervisorsPerformance() {
                   </div>
                 </div>
 
-                <div className="flex w-[150px] flex-col items-end justify-between">
+                <div className="flex shrink-0 flex-col items-end justify-between">
                   <div className="text-secondary-dark text-xs">Sales</div>
                   <div className="text-right">
                     <div className="text-[20px] font-semibold text-black">

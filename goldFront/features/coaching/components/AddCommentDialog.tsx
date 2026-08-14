@@ -54,7 +54,7 @@ export function AddCommentDialog({
           Add Comment
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[512px]! b">
+      <DialogContent className="sm:max-w-[512px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-black">
             Add Your Comment

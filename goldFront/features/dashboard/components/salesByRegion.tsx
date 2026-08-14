@@ -55,7 +55,7 @@ export function SalesByRegion({ salesByRegion }: SalesByRegionProps) {
   const yAxisMax = Math.ceil((maxValue * 1.2) / 10000) * 10000; // Add 20% padding and round up
 
   return (
-    <Card className="border-secondary-light h-[467px] rounded-[25px] border bg-white shadow-none min-[1440px]:w-[714px]">
+    <Card className="border-secondary-light h-[467px] w-full min-w-0 rounded-[25px] border bg-white shadow-none">
       <CardHeader className="flex flex-col items-start gap-4">
         <div className="flex items-center gap-6">
           <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
@@ -75,15 +75,15 @@ export function SalesByRegion({ salesByRegion }: SalesByRegionProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-2">
+      <CardContent className="min-w-0 overflow-hidden pt-2">
         {chartData.length === 0 ? (
           <div className="flex h-[260px] items-center justify-center text-sm text-gray-500">
             No sales data available
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[260px] w-[577px]">
+          <ChartContainer config={chartConfig} className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} className="w-[577px]">
+              <BarChart data={chartData}>
                 <CartesianGrid
                   vertical={false}
                   stroke="#F1F5F9"

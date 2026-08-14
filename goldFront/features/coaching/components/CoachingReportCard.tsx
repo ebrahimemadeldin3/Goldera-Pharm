@@ -58,12 +58,12 @@ export default function CoachingReportCard({
 
   return (
     <Card className="border-secondary-light gap-4 rounded-xl border bg-white p-6 shadow-none">
-      <CardHeader className="flex items-start justify-between gap-3 p-0">
+      <CardHeader className="flex flex-wrap items-start justify-between gap-3 p-0">
         <div className="flex items-start gap-3">
           <div className="gradient-green flex size-14 items-center justify-center rounded-full text-base/6 font-normal text-white">
             {r.rep.initials}
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="text-base/6 font-normal text-black">
                 {" "}
@@ -82,7 +82,7 @@ export default function CoachingReportCard({
                 {r.status}
               </span>
             </div>
-            <div className="text-secondary-dark mt-1 flex w-[500px] flex-wrap items-center gap-x-30 gap-y-1 text-sm/5">
+            <div className="text-secondary-dark mt-1 flex w-full flex-wrap items-center gap-x-30 gap-y-1 text-sm/5">
               <p className="flex items-center gap-1">
                 <User2 size={12} />
                 <span>Supervisor: {r.supervisor}</span>
@@ -174,7 +174,7 @@ export default function CoachingReportCard({
           )}
         </div>
         {isRep && r.status === "Pending Feedback" && (
-          <div className="mt-4 flex w-full gap-3 *:h-9 *:flex-1">
+          <div className="mt-4 flex w-full flex-wrap gap-3 *:h-9 *:flex-1">
             <Button
               onClick={handleAcceptSilently}
               disabled={isPending}

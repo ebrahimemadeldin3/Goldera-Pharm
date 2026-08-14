@@ -38,8 +38,8 @@ export default function DataManagement() {
         <div className="space-y-4">
           {/* Export Data */}
           <div className="bg-system-primary rounded-[10px] p-4 text-white">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-base/5 font-semibold text-white">
                   Export Data
                 </p>
@@ -51,7 +51,7 @@ export default function DataManagement() {
                 type="button"
                 variant="secondary"
                 onClick={handleExport}
-                className="text-system-primary h-8 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
+                className="text-system-primary h-8 shrink-0 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
               >
                 <Download className="h-4 w-4" />
                 Export
@@ -61,8 +61,8 @@ export default function DataManagement() {
 
           {/* Delete Account */}
           <div className="bg-dashboard-red rounded-[10px] p-4 text-white">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="min-w-0 flex-1">
                 <p className="text-base/5 font-semibold text-white">
                   Delete Account
                 </p>
@@ -74,7 +74,7 @@ export default function DataManagement() {
                 type="button"
                 variant="secondary"
                 onClick={handleDelete}
-                className="text-dashboard-red h-8 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
+                className="text-dashboard-red h-8 shrink-0 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete

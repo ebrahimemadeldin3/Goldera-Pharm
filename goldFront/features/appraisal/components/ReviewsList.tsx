@@ -31,13 +31,13 @@ export function ReviewsList({ reviews }: Props) {
       {reviews.map((r) => (
         <Card
           key={r.id}
-          className="border-secondary-light flex flex-row rounded-xl border-[.8px] bg-white p-6 shadow-none *:m-0 *:p-0"
+          className="border-secondary-light flex flex-row gap-4 rounded-xl border-[.8px] bg-white p-6 shadow-none *:m-0 *:p-0"
         >
-          <CardHeader className="gradient-blue flex size-14 items-center justify-center rounded-full text-base/6 font-normal text-white">
+          <CardHeader className="gradient-blue flex size-14 shrink-0 items-center justify-center rounded-full text-base/6 font-normal text-white">
             {r.initials}
           </CardHeader>
-          <CardContent className="flex flex-1 flex-col items-start gap-4 p-0">
-            <div className="flex items-center gap-2">
+          <CardContent className="flex min-w-0 flex-1 flex-col items-start gap-4 p-0">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-base/6 font-medium text-black">
                 {r.name}
               </span>
@@ -98,7 +98,7 @@ export function ReviewsList({ reviews }: Props) {
                 />
               </div>
             </div>
-            <div className="mt-3 grid w-full grid-cols-4 gap-2">
+            <div className="mt-3 grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
               {r.kpis.map((kpi) => (
                 <div
                   key={kpi.label}
@@ -113,7 +113,7 @@ export function ReviewsList({ reviews }: Props) {
                 </div>
               ))}
             </div>
-            <div className="text-secondary-dark flex items-start gap-5 text-xs/4">
+            <div className="text-secondary-dark flex flex-wrap items-start gap-5 text-xs/4">
               <p className="flex items-center gap-1">
                 <Calendar size={12} /> Last Review: {r.lastReview}
               </p>

@@ -2,7 +2,7 @@ import { Target, CircleCheckBig, TrendingUp, CircleAlert } from "lucide-react";
 
 const Stats = () => {
   return (
-    <section className="flex gap-6">
+    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <div className="flex flex-1 items-center justify-between rounded-[14px] border-[0.8px] border-[#E2E8F0] bg-linear-to-b from-[#EFF6FF] to-white p-4">
         <p className="flex flex-col">
           <span className="text-sm/5 font-normal text-secondary-text">

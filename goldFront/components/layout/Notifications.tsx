@@ -1,12 +1,13 @@
+"use client";
+
 import { Bell, X } from "lucide-react";
+import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuGroup,
-  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 
 import { NotificationItem } from "@/features/auth/lib/types";
@@ -15,137 +16,122 @@ import IconByType from "@/features/auth/lib/utils/IconByType";
 const NOTIFICATIONS: NotificationItem[] = [];
 
 const Notifications = () => {
+  const [open, setOpen] = useState(false);
   const unreadCount = NOTIFICATIONS.filter((n) => n.unread).length;
   const isEmpty = NOTIFICATIONS.length === 0;
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button
+          type="button"
           aria-label="Notifications"
           title="Notifications"
-          className="relative cursor-pointer rounded-full border-0 p-2 outline-0 hover:bg-gray-100"
+          className="border-nav-border text-nav-muted hover:bg-nav-hover hover:text-brand-gold-dark focus-visible:ring-brand-gold/35 relative flex size-10 cursor-pointer items-center justify-center rounded-xl border bg-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
         >
-          <Bell className="text-secondary-dark" size={24} />
+          <Bell size={18} aria-hidden="true" />
           {unreadCount > 0 && (
-            <span className="bg-dashboard-red absolute -top-0.5 -right-0.5 inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[12px] font-semibold text-white">
+            <span className="premium-notification-badge bg-dashboard-red absolute -top-1 -right-1 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold text-white">
               {unreadCount}
             </span>
           )}
         </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuPortal >
-        <DropdownMenuContent
-          // align="start"
-          side="bottom"
-          className="notify-panel -mr-37 mt-8 w-[345px] overflow-hidden rounded-xl border bg-white p-0 shadow-lg"
-        >
-          {/* Header (always shown) */}
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-3">
-              <Bell className="" size={24} />
-              <h4 className="text-[18px] font-semibold text-gray-900">
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="premium-profile-menu border-nav-border w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-2xl bg-white p-0 shadow-[0_18px_44px_rgba(32,36,45,0.16)]"
+      >
+        <div className="flex items-center justify-between px-4 py-3.5">
+          <div className="flex items-center gap-3">
+            <span className="bg-brand-gold-soft text-brand-gold-dark flex size-9 items-center justify-center rounded-xl">
+              <Bell size={18} aria-hidden="true" />
+            </span>
+            <div>
+              <h4 className="text-nav-text text-base font-semibold">
                 Notifications
               </h4>
-              {unreadCount > 0 && (
-                <span className="bg-dashboard-red ml-2 inline-flex items-center justify-center rounded-full px-2 py-0.5 text-[12px] font-semibold text-white">
-                  {unreadCount}
-                </span>
-              )}
+              <p className="text-nav-muted text-xs">
+                {isEmpty
+                  ? "No updates at the moment"
+                  : `${unreadCount} unread update${unreadCount === 1 ? "" : "s"}`}
+              </p>
             </div>
-            <button
-              aria-label="Close notifications"
-              className="rounded-full p-1 text-gray-500 hover:bg-gray-50"
-            >
-              <X size={16} />
-            </button>
           </div>
-
-          {/* Action row: shown only when there are notifications */}
-          {!isEmpty && (
-            <>
-              <div className="text-secondary-dark flex items-center justify-between px-4 py-2 text-sm">
-                <button className="cursor-pointer text-left text-sm hover:underline">
-                  Mark all as read
-                </button>
-                <button className="cursor-pointer text-sm hover:underline">
-                  Clear all
-                </button>
-              </div>
-
-              <DropdownMenuSeparator />
-            </>
-          )}
-
-          {/* Content */}
-          <div
-            className={`max-h-80 overflow-x-hidden overflow-y-auto ${isEmpty ? "" : ""}`}
+          <button
+            type="button"
+            aria-label="Close notifications"
+            onClick={() => setOpen(false)}
+            className="text-nav-muted hover:bg-nav-hover hover:text-brand-gold-dark focus-visible:ring-brand-gold/35 flex size-8 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
           >
-            {isEmpty ? (
-              <div className="flex flex-col items-center justify-center gap-2 px-6 py-10 text-center">
-                <Bell className="" size={24} />
-                <p className="text-secondary-dark text-sm font-normal">
-                  No notifications
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+
+        <DropdownMenuSeparator className="bg-nav-border my-0" />
+
+        <div className="max-h-80 overflow-x-hidden overflow-y-auto">
+          {isEmpty ? (
+            <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
+              <span className="bg-secondary-very-light text-nav-muted flex size-12 items-center justify-center rounded-2xl">
+                <Bell size={22} aria-hidden="true" />
+              </span>
+              <div>
+                <p className="text-nav-text text-sm font-semibold">
+                  You are all caught up
+                </p>
+                <p className="text-nav-muted mt-1 text-sm">
+                  New CRM updates will appear here when available.
                 </p>
               </div>
-            ) : (
-              <DropdownMenuGroup>
-                {NOTIFICATIONS.map((n) => (
-                  <div key={n.id}>
-                    <DropdownMenuItem
-                      className={`relative flex gap-3 px-4 py-4 hover:bg-gray-50 ${
-                        n.unread ? "bg-light-warning hover:bg-yellow-50" : ""
+            </div>
+          ) : (
+            <DropdownMenuGroup>
+              {NOTIFICATIONS.map((n) => (
+                <div key={n.id}>
+                  <div
+                    className={`relative flex gap-3 px-4 py-4 ${
+                      n.unread ? "bg-nav-active" : ""
+                    }`}
+                  >
+                    <div
+                      className={`flex size-10 items-center justify-center rounded-xl ${
+                        n.unread
+                          ? "bg-brand-gold-soft text-brand-gold-dark"
+                          : "text-nav-muted bg-slate-100"
                       }`}
                     >
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                          n.unread ? "bg-amber-100" : "bg-slate-100"
-                        }`}
-                      >
-                        {IconByType(n.type)}
+                      {IconByType(n.type)}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-nav-text truncate text-sm font-semibold">
+                          {n.title}
+                        </span>
+                        <span className="text-nav-muted shrink-0 text-xs">
+                          {n.time}
+                        </span>
                       </div>
 
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold">
-                            {n.title}
-                          </span>
-                          <span className="text-secondary-dark text-xs">
-                            {n.time}
-                          </span>
-                        </div>
+                      <p className="text-nav-muted mt-1 line-clamp-2 text-sm">
+                        {n.message}
+                      </p>
+                    </div>
 
-                        <p className="text-secondary-dark mt-1 text-sm">
-                          {n.message}
-                        </p>
-                      </div>
-
-                      {n.unread && (
-                        <span className="ml-3 inline-block h-2 w-2 self-start rounded-full bg-rose-500" />
-                      )}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator className="my-0 py-0" />
+                    {n.unread && (
+                      <span className="bg-brand-gold mt-1.5 size-2 shrink-0 rounded-full" />
+                    )}
                   </div>
-                ))}
-              </DropdownMenuGroup>
-            )}
-          </div>
 
-          {/* Footer action: show only when there are notifications */}
-          {!isEmpty && (
-            <>
-              <DropdownMenuSeparator />
-              <div className="px-4 py-3">
-                <button className="w-full rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium hover:bg-gray-50">
-                  View All Notifications
-                </button>
-              </div>
-            </>
+                  <DropdownMenuSeparator className="bg-nav-border my-0" />
+                </div>
+              ))}
+            </DropdownMenuGroup>
           )}
-        </DropdownMenuContent>
-      </DropdownMenuPortal>
+        </div>
+      </DropdownMenuContent>
     </DropdownMenu>
   );
 };

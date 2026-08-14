@@ -26,17 +26,17 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
     <Card className="border-secondary-light gap-4 bg-white p-5 shadow-none">
       <div className="flex items-start justify-between">
         <div className="flex w-full items-start gap-3">
-          <div className="bg-system-primary-light border-system-primary-stroke text-system-primary flex size-11 items-center justify-center rounded-[10px] border">
+          <div className="bg-system-primary-light border-system-primary-stroke text-system-primary flex size-11 shrink-0 items-center justify-center rounded-[10px] border">
             <UserRound size={20} />
           </div>
 
-          <div className="w-full">
-            <div className="flex items-center gap-2">
-              <div className="text-lg/[27px] font-semibold text-black">
+          <div className="w-full min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="min-w-0 text-lg/[27px] font-semibold text-black">
                 {visit.person}
               </div>
               <div
-                className={`ml-auto rounded-full px-2 py-0.5 text-xs/4 font-semibold ${s.badge} text-white`}
+                className={`ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs/4 font-semibold ${s.badge} text-white`}
               >
                 {visit.badge ||
                   (visit.status === "COMPLETED"
@@ -60,7 +60,7 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
         </div>
       </div>
 
-      <div className="border-secondary-light grid grid-cols-2 gap-3 rounded-lg border p-3 text-xs">
+      <div className="border-secondary-light grid grid-cols-1 gap-3 rounded-lg border p-3 text-xs sm:grid-cols-2">
         <div>
           <span className="text-secondary-dark">Visit ID:</span> {visit.id}
         </div>
@@ -90,11 +90,11 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
           <span className="text-secondary-dark">Creator ID:</span>{" "}
           {visit.createdById}
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-secondary-dark">Doctor (EN/AR):</span>{" "}
           {visit.doctorNameEN || "-"} / {visit.doctorNameAR || "-"}
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1 sm:col-span-2">
           <span className="text-secondary-dark">Samples:</span>{" "}
           {visit.samples.length > 0 ? visit.samples.join(", ") : "-"}
         </div>

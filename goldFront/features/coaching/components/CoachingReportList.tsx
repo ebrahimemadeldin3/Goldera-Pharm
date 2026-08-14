@@ -47,7 +47,7 @@ export default function CoachingReportList({
         <Pagination page={page} limit={limit} totalCount={totalCount} />
       </div>
       {/* Segmented filter */}
-      <CardHeader className="m-0 flex w-[430px] items-center gap-1 rounded-full bg-[#F1F5F9] p-1">
+      <CardHeader className="m-0 flex w-full max-w-[430px] flex-wrap items-center gap-1 rounded-full bg-[#F1F5F9] p-1">
         <SegmentedButton
           active={filter === "all"}
           onClick={() => setFilter("all")}

@@ -6,6 +6,7 @@ import AddMemberDialog from "./AddMemberDialog";
 import TeamList from "./TeamList";
 import { User } from "../lib/types";
 import { Region } from "@/lib/types/regions";
+import { PageContainer } from "@/components/layout/page-container";
 
 type TeamPageClientProps = {
   supervisors: User[];
@@ -53,10 +54,10 @@ export default function TeamPageClient({
   }, [openDialog, router]);
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5">
-      <header className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-[34px]/10 font-normal text-black">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">
             Meet the team
           </h1>
           <p className="text-secondary-dark text-base/6">
@@ -83,6 +84,6 @@ export default function TeamPageClient({
           Failed to load team members
         </div>
       )}
-    </main>
+    </PageContainer>
   );
 }

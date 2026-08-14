@@ -49,8 +49,8 @@ export default function RequestsList({
 
   if (role === "MANAGER")
     return (
-      <main className="border-secondary-light flex flex-col gap-7.5 rounded-[14px] border bg-white p-6">
-        <section className="flex items-center">
+      <div className="border-secondary-light flex flex-col gap-7.5 rounded-[14px] border bg-white p-6">
+        <section className="flex flex-wrap items-center gap-3">
           <h3 className="text-base/4 font-normal text-black">All Requests</h3>
           <FilterBar
             filters={[
@@ -94,17 +94,13 @@ export default function RequestsList({
         <div className="mt-4">
           <Pagination page={page} limit={limit} totalCount={totalCount} />
         </div>
-      </main>
+      </div>
     );
 
   if (role === "SUPERVISOR")
     return (
-      <main className="border-secondary-light flex flex-col gap-7.5 rounded-[14px] border bg-white p-6">
-                <div className="mt-4">
-          <Pagination page={page} limit={limit} totalCount={totalCount} />
-        </div>
-        
-        <section className="flex items-center">
+      <div className="border-secondary-light flex flex-col gap-7.5 rounded-[14px] border bg-white p-6">
+        <section className="flex flex-wrap items-center gap-3">
           <h3 className="text-base/4 font-normal text-black">
             {tab === "me" ? "My Requests" : "Reps Requests"}
           </h3>
@@ -144,7 +140,7 @@ export default function RequestsList({
         </section>
 
         {/* Tab switcher for supervisor */}
-        <div className="flex w-fit items-center gap-1 rounded-[14px] bg-[#F1F5F9] p-1 text-sm/5 font-medium *:cursor-pointer *:rounded-[14px] *:border-[0.8px] *:px-4 *:py-2">
+        <div className="flex w-fit max-w-full flex-wrap items-center gap-1 rounded-[14px] bg-[#F1F5F9] p-1 text-sm/5 font-medium *:cursor-pointer *:rounded-[14px] *:border-[0.8px] *:px-4 *:py-2">
           <button
             className={`${
               tab === "me"
@@ -179,6 +175,9 @@ export default function RequestsList({
           )}
         </div>
 
-      </main>
+        <div className="mt-4">
+          <Pagination page={page} limit={limit} totalCount={totalCount} />
+        </div>
+      </div>
     );
 }

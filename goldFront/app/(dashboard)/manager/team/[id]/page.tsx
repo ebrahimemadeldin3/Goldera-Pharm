@@ -3,6 +3,7 @@ import { User } from "@/features/team/lib/types";
 import ProfileClient from "@/features/team/components/profile/ProfileClient";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
+import { PageContainer } from "@/components/layout/page-container";
 
 type PageProps = {
   params: {
@@ -19,7 +20,7 @@ export default async function Page({ params }: PageProps) {
   // If API fails, show error state
   if (!res.success || !res.user) {
     return (
-      <main className="flex h-full w-full flex-col items-center justify-center gap-6 p-6">
+      <PageContainer className="flex h-full flex-col items-center justify-center gap-6">
         <div className="text-center">
           <h1 className="text-2xl font-semibold text-black">
             Team Member Not Found
@@ -35,7 +36,7 @@ export default async function Page({ params }: PageProps) {
             Back to Team
           </Link>
         </div>
-      </main>
+      </PageContainer>
     );
   }
 

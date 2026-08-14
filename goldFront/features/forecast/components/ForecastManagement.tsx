@@ -35,11 +35,11 @@ export default function ForecastManagement({
   };
 
   return (
-    <main className="border-secondary-light mt-6 rounded-[14px] border-[0.8px] bg-white p-6">
+    <div className="border-secondary-light mt-6 rounded-[14px] border-[0.8px] bg-white p-6">
       <h2 className="mb-6 text-base/4 font-normal text-black">
         Forecast Management
       </h2>
-      <div className="flex w-fit items-center gap-2 rounded-[14px] bg-[#F1F5F9] p-1">
+      <div className="flex w-fit flex-wrap items-center gap-2 rounded-[14px] bg-[#F1F5F9] p-1">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -57,8 +57,8 @@ export default function ForecastManagement({
         {activeTab === "create" ? (
           <>
             <div className="flex items-start gap-2 rounded-[10px] border-[0.8px] border-[#BFDBFE] bg-[#EFF6FF] p-4">
-              <TrendingUp className="text-dashboard-blue" size={14} />
-              <p className="text-sm/5 font-normal text-[#1E40AF]">
+              <TrendingUp className="text-dashboard-blue shrink-0" size={14} />
+              <p className="min-w-0 flex-1 text-sm/5 font-normal text-[#1E40AF]">
                 <span className="font-bold">Product Forecasting:</span>
                 Plan how you will distribute your allocated products across your
                 doctors. Ensure all products are distributed optimally based on
@@ -92,7 +92,7 @@ export default function ForecastManagement({
           />
         )}
       </div>
-    </main>
+    </div>
   );
 }
 

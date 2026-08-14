@@ -1,6 +1,7 @@
 import RequestsList from "@/features/requests/components/RequestsList";
 import RequestStats from "@/features/requests/components/RequestStats";
 import { getManagerTeamRequestsAction } from "@/features/requests/api";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -22,10 +23,10 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const rejected = requests.filter((r) => r.status === "REJECTED").length;
 
   return (
-    <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
-      <header className="mb-6 flex items-start justify-between">
+    <PageContainer>
+      <header className="mb-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-4xl/10 font-normal">
+          <h1 className="text-2xl/9 font-normal md:text-[34px]/10">
             Requests Review & Approval
           </h1>
           <p className="text-secondary-dark text-base/6 font-normal">
@@ -42,6 +43,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
         />
         <RequestsList role="MANAGER" requestsData={requests} page={page} limit={limit} totalCount={totalCount} />
       </section>
-    </main>
+    </PageContainer>
   );
 }

@@ -1,5 +1,6 @@
 import VisitReportsList from "@/features/reports/components/VisitReportsList";
 import { getAllVisitReportsAction } from "@/features/reports/api";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -14,23 +15,23 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   if (!result.success || !result.data) {
     return (
-      <main className="flex flex-col gap-6 p-6 *:min-[1440px]:w-270.75! *:lg:w-5xl">
+      <PageContainer className="flex flex-col gap-6">
         <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-sm">
             {!result.success && result.error ? result.error.message : "Failed to load visit reports"}
           </p>
         </div>
-      </main>
+      </PageContainer>
     );
   }
 
   const { reports, totalCount } = result.data!;
 
   return (
-    <main className="flex flex-col gap-6 p-6 *:min-[1440px]:w-270.75! *:lg:w-5xl">
-      <header className="flex items-start justify-between">
+    <PageContainer className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-[34px]/10 font-normal text-black">
+          <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">
             Visit Reports
           </h1>
           <p className="text-secondary-dark text-base/6">
@@ -43,6 +44,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
         </div>
       </header>
       <VisitReportsList reports={reports} page={page} limit={limit} totalCount={totalCount} />
-    </main>
+    </PageContainer>
   );
 }

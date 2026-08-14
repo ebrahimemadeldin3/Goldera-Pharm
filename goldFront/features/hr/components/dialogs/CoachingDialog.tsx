@@ -58,7 +58,7 @@ export function CoachingDialog({
                         key={coaching.id || idx}
                         className="rounded-lg border border-green-200 bg-green-50 p-4"
                       >
-                        <pre className="text-xs text-slate-600">
+                        <pre className="max-h-60 overflow-x-auto overflow-y-auto text-xs text-slate-600">
                           {JSON.stringify(coaching, null, 2)}
                         </pre>
                       </div>
@@ -78,7 +78,7 @@ export function CoachingDialog({
                         key={coaching.id || idx}
                         className="rounded-lg border border-blue-200 bg-blue-50 p-4"
                       >
-                        <pre className="text-xs text-slate-600">
+                        <pre className="max-h-60 overflow-x-auto overflow-y-auto text-xs text-slate-600">
                           {JSON.stringify(coaching, null, 2)}
                         </pre>
                       </div>

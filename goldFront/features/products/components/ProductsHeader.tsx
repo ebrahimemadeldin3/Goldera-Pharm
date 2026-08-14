@@ -65,9 +65,9 @@ export default function ProductsHeader({ products }: ProductsHeaderProps) {
 
   return (
     <>
-      <header className="flex items-center justify-start gap-6">
-        <div>
-          <h1 className="text-[34px] font-normal text-black">
+      <header className="flex flex-wrap items-center justify-start gap-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-normal text-black md:text-[34px]">
             Products Catalog
           </h1>
           <p className="text-secondary-dark text-[16px]">

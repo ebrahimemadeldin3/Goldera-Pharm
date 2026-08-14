@@ -35,7 +35,7 @@ const chartConfig = {
 
 export function SupervisorsPerformance() {
   return (
-    <Card className="border-secondary-light h-[480px] rounded-[25px] border bg-white shadow-none min-[1440px]:w-[714px]">
+    <Card className="border-secondary-light h-[480px] w-full min-w-0 rounded-[25px] border bg-white shadow-none">
       <CardHeader className="flex flex-col items-start gap-4">
         <div className="flex items-center gap-6">
           <div className="bg-system-primary flex size-11 items-center justify-center rounded-[15px]">
@@ -100,8 +100,8 @@ export function SupervisorsPerformance() {
         </ChartContainer>
       </CardContent>
 
-      <CardFooter className="flex items-center justify-between gap-4 pt-4">
-        <div className="flex items-center gap-8 pl-7">
+      <CardFooter className="flex flex-wrap items-center justify-between gap-4 pt-4">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-2 pl-7">
           <div className="flex items-center gap-2">
             <span className="bg-dashboard-green inline-flex h-3 w-3 items-center justify-center rounded-full" />
             <span className="text-dashboard-green text-[17px] font-semibold">

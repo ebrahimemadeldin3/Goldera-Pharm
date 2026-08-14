@@ -5,6 +5,7 @@ import { getSupervisorPlansAction } from "@/features/plan/api/get";
 import { calculateSupervisorPlanStats } from "@/features/plan/lib/utils";
 import { fetchProfile } from "@/features/profile/api";
 import { getRegionsAction } from "@/lib/requests/regions";
+import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
@@ -34,23 +35,23 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   if (!plansResult.success || !plansResult.repPlans) {
     return (
-      <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
+      <PageContainer>
         <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-sm">
             {plansResult.error?.message || "Failed to load plans"}
           </p>
         </div>
-      </main>
+      </PageContainer>
     );
   }
 
   const stats = calculateSupervisorPlanStats(plansResult.repPlans);
 
   return (
-    <main className="bg-secondary-very-light p-6 *:min-[1440px]:w-270.75! lg:w-5xl">
-      <header className="mb-6 flex items-center justify-between gap-4">
+    <PageContainer>
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-4xl/10 font-normal">Plans Management</h1>
+          <h1 className="text-2xl/9 font-normal md:text-[34px]/10">Plans Management</h1>
           <p className="text-secondary-dark mt-2 text-base/6 font-normal">
             Create your plans and approve medical rep plans
           </p>
@@ -68,6 +69,6 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
         limit={limit}
         totalCount={plansResult.totalCount ?? (plansResult.repPlans?.length ?? 0)}
       />
-    </main>
+    </PageContainer>
   );
 }

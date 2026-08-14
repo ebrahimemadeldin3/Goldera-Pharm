@@ -166,7 +166,7 @@ export default function RequestCard({
   };
 
   return (
-    <Card className="border-secondary-light flex flex-row justify-between border-[0.8px] bg-white p-6 shadow-none">
+    <Card className="border-secondary-light flex flex-row flex-wrap justify-between gap-4 border-[0.8px] bg-white p-6 shadow-none">
       <p
         className={`border-dashboard-blue text-dashboard-blue flex h-12 w-12 shrink-0 items-center justify-center rounded-[10px] border bg-white ${
           role === "SUPERVISOR"
@@ -180,9 +180,9 @@ export default function RequestCard({
       >
         <DollarSign size={24} />
       </p>
-      <div className="flex flex-1 gap-4">
-        <div className="flex flex-1 flex-col gap-6">
-          <div className="flex items-center">
+      <div className="flex min-w-0 flex-1 gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-6">
+          <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-base/6 font-normal text-black">
               {request.title}
             </h3>
@@ -213,7 +213,7 @@ export default function RequestCard({
             </p>
           )}
 
-          <div className="bg-secondary-very-light grid grid-cols-2 gap-2 rounded-md p-4 text-sm/5 text-black">
+          <div className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-4 text-sm/5 text-black sm:grid-cols-2">
             <p>
               <span className="font-medium">Request ID:</span> {request.id}
             </p>
@@ -248,7 +248,7 @@ export default function RequestCard({
             </p>
           </div>
 
-          <div className="text-secondary-dark grid w-full grid-cols-2 gap-2 text-sm/5 font-normal">
+          <div className="text-secondary-dark grid w-full grid-cols-1 gap-2 text-sm/5 font-normal sm:grid-cols-2">
             {role === "MANAGER" && (
               <>
                 <p className="flex items-center gap-1">
@@ -315,7 +315,7 @@ export default function RequestCard({
                 <Calendar size={16} />
                 Leave Details
               </p>
-              <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                 {request.leaveType && (
                   <p>
                     <span className="font-medium">Type:</span>{" "}
@@ -351,7 +351,7 @@ export default function RequestCard({
                 <AlertCircle size={16} />
                 {request.type} Details
               </p>
-              <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                 <p>
                   <span className="font-medium">Budget:</span>{" "}
                   {formatMoney(request.budget)}
@@ -378,7 +378,7 @@ export default function RequestCard({
                   (request.doctors ?? []).map((doctor) => (
                     <div
                       key={doctor.id}
-                      className="bg-secondary-very-light grid grid-cols-3 gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
                     >
                       <p>
                         <span className="font-medium">Doctor ID:</span>{" "}
@@ -410,7 +410,7 @@ export default function RequestCard({
                 <AlertCircle size={16} />
                 Sample Details
               </p>
-              <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                 <p>
                   <span className="font-medium">Sample Items Count:</span>{" "}
                   {request.sampleData?.length ?? 0}
@@ -431,7 +431,7 @@ export default function RequestCard({
                   (request.sampleData ?? []).map((item, index) => (
                     <div
                       key={`${item.productId}-${index}`}
-                      className="bg-secondary-very-light grid grid-cols-3 gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
                     >
                       <p>
                         <span className="font-medium">Product ID:</span>{" "}
@@ -458,7 +458,7 @@ export default function RequestCard({
                 <AlertCircle size={16} />
                 Personal Expense Details
               </p>
-              <div className="grid grid-cols-2 gap-2 text-sm/5 text-black">
+              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
                 <p>
                   <span className="font-medium">Visited City:</span>{" "}
                   {renderText(request.visitedCity)}
@@ -485,7 +485,7 @@ export default function RequestCard({
                   (request.totalExpenseData ?? []).map((item, index) => (
                     <div
                       key={`${item.name}-${index}`}
-                      className="bg-secondary-very-light grid grid-cols-2 gap-2 rounded-md p-3 text-sm/5 text-black"
+                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-2"
                     >
                       <p>
                         <span className="font-medium">Item Name:</span>{" "}
@@ -514,7 +514,7 @@ export default function RequestCard({
                 {(request.pdfs ?? []).map((pdf) => (
                   <div
                     key={pdf.public_id}
-                    className="bg-secondary-very-light grid grid-cols-[1fr,1fr,auto] items-center gap-2 rounded-md p-3 text-sm/5 text-black"
+                    className="bg-secondary-very-light grid grid-cols-1 items-center gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-[1fr,1fr,auto]"
                   >
                     <p>
                       <span className="font-medium">Name:</span> {pdf.name}
@@ -579,7 +579,7 @@ export default function RequestCard({
 
           {role === "MANAGER" && request.supervisorDecision ? (
             <div className="bg-dashboard-blue rounded-[10px] p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-sm/5 font-normal text-white">
                   Supervisor Decision
                 </p>
@@ -605,7 +605,7 @@ export default function RequestCard({
             request?.belongToWho === "rep" &&
             request.supervisorDecision?.decision !== "PENDING" && (
               <div className="bg-dashboard-blue rounded-[10px] p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm/5 font-normal text-white">
                     Supervisor Decision
                   </p>
@@ -634,7 +634,7 @@ export default function RequestCard({
       {request.status === "PENDING" && (
         <>
           {(request.belongToWho === "rep" || role === "MANAGER") && (
-            <div className="flex flex-col gap-2">
+            <div className="flex shrink-0 flex-col gap-2">
               <Button
                 onClick={() => openDialog("approve")}
                 disabled={isPending}

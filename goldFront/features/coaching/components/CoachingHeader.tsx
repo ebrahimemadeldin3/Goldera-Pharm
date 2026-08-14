@@ -21,7 +21,9 @@ const CoachingHeader = ({ data }: CoachingHeaderProps) => {
   return (
     <>
       <header className="flex flex-col items-start justify-start">
-        <h1 className="font-nomral text-[34px] text-black">Coaching Reports</h1>
+        <h1 className="font-nomral text-2xl text-black md:text-[34px]">
+          Coaching Reports
+        </h1>
         <p className="text-secondary-dark text-[16px]">
           View coaching reports from supervisors
         </p>

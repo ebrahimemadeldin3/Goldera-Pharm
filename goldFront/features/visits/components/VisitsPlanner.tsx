@@ -54,9 +54,9 @@ export default function VisitsPlanner({
   }, [weekRange, visits]);
 
   return (
-    <div className="grid grid-cols-[300px_1fr] gap-4">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-6">
       {/* Left: calendar + toggle */}
-      <div className="flex flex-col gap-6">
+      <div className="flex min-w-0 flex-col gap-6">
 
 
 
@@ -134,7 +134,7 @@ export default function VisitsPlanner({
 
 
       {/* Right: data view */}
-      <div className="space-y-4">
+      <div className="min-w-0 space-y-4">
         {mode === "day" ? (
           <DayVisitsPanel
             date={selected}
