@@ -8,7 +8,13 @@ import { DoctorApiResponse } from "../lib/types/api";
 import { useMemo } from "react";
 import type { StatCardConfig } from "@/core/ui/stat-card-types";
 
-export default function DoctorsHeader({ doctors = [] } : { doctors: DoctorApiResponse[]}) {
+export default function DoctorsHeader({
+  doctors = [],
+  totalCount,
+}: {
+  doctors: DoctorApiResponse[];
+  totalCount?: number;
+}) {
   const { features, role } = useRoleUI();
 
   // Determine add doctor link based on role
@@ -20,7 +26,7 @@ export default function DoctorsHeader({ doctors = [] } : { doctors: DoctorApiRes
 
   // Calculate dynamic stats and generate stat configs
   const { statsConfig, data } = useMemo(() => {
-    const totalDoctors = doctors.length;
+    const totalDoctors = totalCount ?? doctors.length;
 
     // Count doctors by subRegion
     const regionCounts: Record<string, number> = {};
@@ -60,7 +66,7 @@ export default function DoctorsHeader({ doctors = [] } : { doctors: DoctorApiRes
     });
 
     return { statsConfig, data: statsData };
-  }, [doctors]);
+  }, [doctors, totalCount]);
 
   return (
     <>

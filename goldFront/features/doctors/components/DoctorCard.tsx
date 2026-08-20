@@ -19,79 +19,117 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
     accountName,
     area,
   } = data;
-  const { features } = useRoleUI();
+  const { features, role } = useRoleUI();
 
   const displayName = nameEN || nameAR;
+  const secondaryName = nameEN && nameAR ? nameAR : null;
   const patientsPerDayText = avgPatientsPerDay
     ? `${avgPatientsPerDay} patients/day`
-    : "N/A";
+    : null;
+
+  const profilePath =
+    role === "MANAGER"
+      ? `/manager/doctors/${id}`
+      : role === "SUPERVISOR"
+        ? `/supervisor/doctors/${id}`
+        : `/rep/doctors/${id}`;
+
+  const addVisitPath =
+    role === "MANAGER"
+      ? `/manager/visits/add?doctorId=${id}`
+      : role === "SUPERVISOR"
+        ? `/supervisor/visits/add?doctorId=${id}`
+        : `/rep/visits/add?doctorId=${id}`;
 
   return (
-    <Card className="border-secondary-light flex w-full flex-row gap-4 rounded-[10px] border-[0.8px] bg-white p-4 shadow-none">
-      <header className="flex size-12 items-center justify-center rounded-full bg-linear-to-br from-[#2563EB] to-[#1E3A8A] text-white">
+    <Card className="border-secondary-light flex w-full flex-col gap-4 rounded-[10px] border-[0.8px] bg-white p-4 shadow-none sm:flex-row">
+      <header className="flex size-12 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[#2563EB] to-[#1E3A8A] text-white">
         <Stethoscope size={24} />
       </header>
-      <CardContent className="flex flex-1 flex-col items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <h3 className="text-base/6 font-normal text-black">{displayName}</h3>
-          <span className="border-dashboard-blue text-dashboard-blue rounded-xl border px-2 py-0.5 text-xs/4 font-medium">
-            {specialty}
-          </span>
-          <span className="bg-dashboard-blue rounded-xl px-2 py-0.5 text-xs/4 font-medium text-white">
-            {subRegion}
-          </span>
-          <span className="border-dashboard-blue text-dashboard-blue rounded-xl border px-2 py-0.5 text-xs/4 font-medium">
-            Grade {grade}
-          </span>
+      <CardContent className="flex flex-1 flex-col items-start justify-between gap-3 p-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-base/6 font-semibold text-black">
+            {displayName}
+            {secondaryName && (
+              <span className="ml-1.5 text-xs font-normal text-slate-500">
+                ({secondaryName})
+              </span>
+            )}
+          </h3>
+          {specialty && (
+            <span className="rounded-md border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700">
+              {specialty}
+            </span>
+          )}
+          {grade && (
+            <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">
+              Grade {grade}
+            </span>
+          )}
+          {subRegion && (
+            <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">
+              {subRegion}
+            </span>
+          )}
         </div>
 
-        <div className="text-secondary-dark grid grid-cols-2 gap-2 gap-x-56 text-sm/5">
-          <div className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
-            <span>{phone}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Mail className="h-4 w-4" />
-            <span>{email || "N/A"}</span>
-          </div>
-          <span>{patientsPerDayText}</span>
-          {area && <span>{area}</span>}
+        <div className="text-secondary-dark grid grid-cols-1 gap-2 text-sm/5 md:grid-cols-2">
+          {phone && (
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+              <span>{phone}</span>
+            </div>
+          )}
+          {email && (
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+              <span>{email}</span>
+            </div>
+          )}
+          {patientsPerDayText && (
+            <div className="text-xs text-slate-500">
+              Avg volume: <span className="font-medium text-slate-700">{patientsPerDayText}</span>
+            </div>
+          )}
+          {area && (
+            <div className="text-xs text-slate-500">
+              Area: <span className="font-medium text-slate-700">{area}</span>
+            </div>
+          )}
         </div>
 
         {accountName && (
-          <div>
-            <div className="mb-2 text-sm/5 font-normal text-black">
-              Account Name:
-            </div>
-            <div className="flex gap-5">
-              <div className="flex w-78.75 items-start gap-2 rounded-lg border border-[#DBEAFE] bg-[#F5F9FF] px-3 py-3">
-                <Building2 size={16} className="text-dashboard-blue" />
-                <div className="flex flex-col">
-                  <div className="flex items-center text-sm/5 font-normal text-black">
-                    {accountName}
-                  </div>
-                  <div className="text-secondary-dark mt-1 text-xs/4 font-normal">
-                    {subRegion}
-                    {area ? `, ${area}` : ""}
-                  </div>
+          <div className="w-full">
+            <div className="flex w-full max-w-[340px] items-start gap-2 rounded-lg border border-blue-stroke bg-light-blue-gradiant px-3 py-2.5">
+              <Building2 size={16} className="text-dashboard-blue mt-0.5 shrink-0" />
+              <div className="flex flex-col">
+                <div className="text-sm font-medium text-black">
+                  {accountName}
+                </div>
+                <div className="text-secondary-dark text-xs font-normal">
+                  {subRegion}
+                  {area ? `, ${area}` : ""}
                 </div>
               </div>
             </div>
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex flex-col items-start justify-start gap-2 rounded-xl text-sm font-medium *:cursor-pointer">
+      <CardFooter className="flex flex-row items-center justify-start gap-2 rounded-xl text-sm font-medium sm:flex-col sm:items-stretch sm:justify-start">
         {features.doctors.canView && (
           <Link
-            href={`doctors/${id}`}
-            className="bg-dashboard-blue hover:border-dashboard-blue hover:text-dashboard-blue w-28 rounded-md border border-transparent py-2 text-center text-white hover:bg-white"
+            href={profilePath}
+            className="bg-dashboard-blue hover:border-dashboard-blue hover:text-dashboard-blue inline-flex h-9 min-w-[120px] items-center justify-center rounded-md border border-transparent px-3 text-center text-sm font-medium text-white transition-colors hover:bg-white"
           >
             View Profile
           </Link>
         )}
         {features.visits.canScheduleVisit && (
-          <Link href={`visits/add?doctorId=${id}`}>
-            <Button variant="outline" className="w-28 cursor-pointer py-2">
+          <Link href={addVisitPath}>
+            <Button
+              variant="outline"
+              className="h-9 min-w-[120px] cursor-pointer px-3 text-sm font-medium"
+            >
               Schedule Visit
             </Button>
           </Link>

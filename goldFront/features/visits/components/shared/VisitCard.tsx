@@ -110,7 +110,7 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
 
       {visit.notes && (
         <div
-          className={`rounded-lg border border-[#BBF7D0] p-3 text-xs ${s.bg} `}
+          className={`rounded-lg border border-green-stroke p-3 text-xs ${s.bg} `}
         >
           <div className="text-sm/[21px] font-semibold">Notes</div>
           <div className="text-secondary-dark text-sm/[21px] font-normal">

@@ -17,7 +17,7 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   const raw = result.data as unknown;
   const products = extractProducts(raw);
-  const totalCount = (raw && typeof raw === "object" && (raw as any).results) || products.length;
+  const totalCount = (raw && typeof raw === "object" && typeof (raw as Record<string, unknown>).results === "number" ? (raw as Record<string, unknown>).results as number : undefined) || products.length;
 
   return (
     <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 *:min-[1440px]:w-270.75! lg:w-5xl">

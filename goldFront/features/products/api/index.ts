@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
-import { buildPaginationQuery } from "@/lib/utils";
 import type {
   GetProductsResponse,
   ProductApiResponse,

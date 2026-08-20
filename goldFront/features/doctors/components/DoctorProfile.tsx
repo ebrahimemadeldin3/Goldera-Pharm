@@ -20,7 +20,6 @@ import InactivateDoctorDialog from "./dialogs/InactivateDoctorDialog";
 import { useEditDoctor } from "../hooks/useEditDoctor";
 import { Input } from "@/components/ui/input";
 import type { VisitApiResponse } from "@/features/visits/lib/types/api";
-import type { CoachingReportApiResponse } from "@/features/coaching/api";
 import { formatSaudiDateDisplay, parseDateValue } from "@/lib/utils";
 
 type DoctorProfileProps = {
@@ -435,7 +434,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
 
           <div className="flex flex-col gap-4">
             {doctor.accountName ? (
-              <div className="flex w-full items-start gap-3 rounded-lg border border-[#DBEAFE] bg-[#F5F9FF] px-4 py-3">
+              <div className="flex w-full items-start gap-3 rounded-lg border border-blue-stroke bg-light-blue-gradiant px-4 py-3">
                 <Building2 size={18} className="text-dashboard-blue mt-1" />
                 <div className="flex-1">
                   <div className="flex items-center text-sm font-normal text-black">

@@ -4,7 +4,6 @@ import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
 import { buildPaginationQuery } from "@/lib/utils";
 import { HRMember, HRStats, HRUsersApiResponse } from "../lib/types";
-import { revalidatePath } from "next/cache";
 
 /**
  * Fetch all users from /api/managers/users endpoint

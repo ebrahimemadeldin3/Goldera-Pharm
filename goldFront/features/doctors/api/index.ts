@@ -2,7 +2,6 @@
 
 import { apiFetch } from "@/services/http";
 import type { PaginatedApiResponse } from "@/lib/types";
-import { buildPaginationQuery } from "@/lib/utils";
 import { ApiError } from "@/services/api-error";
 import {
   DoctorApiResponse,

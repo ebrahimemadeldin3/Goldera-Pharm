@@ -1,5 +1,4 @@
 import { Progress } from "@/components/ui/progress";
-import { MoveUp } from "lucide-react";
 
 interface MonthlyPerformanceProps {
   coverage?: string;
