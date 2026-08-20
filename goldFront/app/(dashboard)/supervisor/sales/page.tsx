@@ -34,8 +34,8 @@ export default async function Page({ searchParams }: PageProps) {
   }
 
   const sales = extractSales(result.data);
-  const raw = result.data as { results?: number; length?: number };
-  const totalCount = (raw && (raw.results || raw.length)) || sales.length;
+  const raw = result.data as Record<string, unknown> | unknown[];
+  const totalCount = (raw && typeof raw === "object" && !Array.isArray(raw) && typeof raw.results === "number" ? raw.results : Array.isArray(raw) ? raw.length : undefined) || sales.length;
 
   let repOptions: { id: string; name: string }[] = [];
   if (repsRes.success && repsRes.members && repsRes.members.length > 0) {

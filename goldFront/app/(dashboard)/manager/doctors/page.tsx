@@ -6,13 +6,18 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; limit?: string; subRegion?: string }> | { page?: string; limit?: string; subRegion?: string };
+}) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
+  const subRegion: string | undefined = params?.subRegion || undefined;
 
-  const result = await getDoctorsAction(undefined, page, limit);
+  const result = await getDoctorsAction(subRegion, page, limit);
 
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch doctors");
@@ -32,9 +37,13 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   if (result.data) {
     const res = result.data as unknown as { data?: DoctorApiResponse[]; results?: number };
-    doctors = Array.isArray((res.data as unknown)) ? (res.data as DoctorApiResponse[]) : (res as unknown as DoctorApiResponse[]);
-   }
-  
+    doctors = Array.isArray(res.data as unknown)
+      ? (res.data as DoctorApiResponse[])
+      : Array.isArray(result.data)
+      ? (result.data as DoctorApiResponse[])
+      : [];
+  }
+
   if (result.results !== undefined) {
     totalCount = result.results;
   }

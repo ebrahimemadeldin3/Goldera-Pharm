@@ -34,7 +34,7 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   return (
     <PageContainer className="min-h-[calc(100vh-80px)]">
       <PharmaciesHeader pharmacies={pharmacies} />
-      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={totalCount} />
+      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={(raw && typeof raw === 'object' && typeof (raw as Record<string, unknown>).results === 'number' ? (raw as Record<string, unknown>).results as number : undefined) || pharmacies.length} />
     </PageContainer>
   );
 }

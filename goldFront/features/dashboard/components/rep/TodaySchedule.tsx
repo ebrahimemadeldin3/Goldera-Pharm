@@ -87,7 +87,7 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
                 key={visitId}
                 className={`flex flex-wrap items-center gap-4 rounded-[14px] border-[0.8px] p-4 ${
                   isCompleted
-                    ? "border-[#BBF7D0] bg-[#F0FDF4]"
+                    ? "border-green-stroke bg-[#F0FDF4]"
                     : "border-[#E2E8F0] bg-[#FFFFFF]"
                 }`}
               >

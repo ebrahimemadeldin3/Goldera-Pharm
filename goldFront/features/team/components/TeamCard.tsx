@@ -91,7 +91,7 @@ export default function TeamCard({
         </div>
 
         {/* <div
-          className={`mt-auto ${!isActive ? "border-secondary-light bg-secondary-very-light" : isSupervisor ? "border-[#DBEAFE] bg-[#F5F9FF]" : "border-[#BBF7D0] bg-[#E7FFF7]"} mt-2 flex justify-between rounded-[10px] border p-4`}
+          className={`mt-auto ${!isActive ? "border-secondary-light bg-secondary-very-light" : isSupervisor ? "border-blue-stroke bg-light-blue-gradiant" : "border-green-stroke bg-[#E7FFF7]"} mt-2 flex justify-between rounded-[10px] border p-4`}
         >
           <div className="flex flex-col items-start gap-1">
             <p className="text-secondary-dark text-xs/4 font-normal">Sales</p>

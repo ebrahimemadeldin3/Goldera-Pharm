@@ -6,22 +6,21 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
-  const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<{ page?: string; limit?: string; subRegion?: string }> | { page?: string; limit?: string; subRegion?: string };
+}) {
+  const params = await searchParams;
 
-  const result = await getDoctorsAction(undefined, page, limit);
+  const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
+  const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
+  const subRegion: string | undefined = params?.subRegion || undefined;
+
+  const result = await getDoctorsAction(subRegion, page, limit);
 
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch doctors");
-  }
-  if (result.data == null) {
-    return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
-      <DoctorsHeader doctors={[]} />
-      <DoctorsList doctors={[]} />
-    </PageContainer>
-  );
   }
 
   let doctors: DoctorApiResponse[] = [];
@@ -29,14 +28,27 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   if (result.data) {
     const res = result.data as unknown as { data?: DoctorApiResponse[]; results?: number };
-    doctors = Array.isArray((res.data as unknown)) ? (res.data as DoctorApiResponse[]) : (res as unknown as DoctorApiResponse[]);
-    totalCount = res.results ?? (Array.isArray(doctors) ? doctors.length : 0);
+    doctors = Array.isArray(res.data as unknown)
+      ? (res.data as DoctorApiResponse[])
+      : Array.isArray(result.data)
+      ? (result.data as DoctorApiResponse[])
+      : [];
+  }
+
+  if (result.results !== undefined) {
+    totalCount = result.results;
   }
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
-      <DoctorsHeader doctors={doctors} />
-      <DoctorsList doctors={doctors} page={page} limit={limit} totalCount={totalCount} />
-    </PageContainer>
+    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 min-[1440px]:w-270.75! lg:w-5xl">
+      <DoctorsHeader doctors={doctors} totalCount={totalCount} />
+      <DoctorsList
+        doctors={doctors}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        selectedSubRegion={subRegion}
+      />
+    </main>
   );
 }
