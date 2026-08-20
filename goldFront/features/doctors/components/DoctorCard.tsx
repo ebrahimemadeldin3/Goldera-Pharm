@@ -114,12 +114,6 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
             </div>
           </div>
         )}
-
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </CardContent>
       <CardFooter className="flex flex-row items-center justify-start gap-2 rounded-xl text-sm font-medium sm:flex-col sm:items-stretch sm:justify-start">
         {features.doctors.canView && (

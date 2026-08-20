@@ -175,9 +175,6 @@ export default function DoctorsList({
         </div>
       </header>
 
-        </div>
-      </header>
-
       {/* Honest Search Info Pill */}
       {q.trim() !== "" && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-700">
