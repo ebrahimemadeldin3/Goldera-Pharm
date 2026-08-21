@@ -26,15 +26,12 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
     else if (Array.isArray(raw)) pharmacies = raw as PharmacyApiResponse[];
   }
 
-  const rawResults = raw && typeof raw === "object"
-    ? (raw as Record<string, unknown>).results
-    : undefined;
-  const totalCount = typeof rawResults === "number" ? rawResults : pharmacies.length;
+  const totalCount = typeof result.results === "number" ? result.results : pharmacies.length;
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)]">
       <PharmaciesHeader pharmacies={pharmacies} />
-      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={(raw && typeof raw === 'object' && typeof (raw as Record<string, unknown>).results === 'number' ? (raw as Record<string, unknown>).results as number : undefined) || pharmacies.length} />
+      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={totalCount} />
     </PageContainer>
   );
 }

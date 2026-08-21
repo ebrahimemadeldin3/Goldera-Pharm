@@ -66,7 +66,7 @@ export default function SecurityPrivacy() {
               </div>
             </div>
             <Select value={timeout} onValueChange={setTimeoutVal}>
-              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select timeout" />
               </SelectTrigger>
               <SelectContent>

@@ -47,7 +47,7 @@ export default function Preferences() {
               </div>
             </div>
             <Select value={language} onValueChange={setLanguage}>
-              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
               <SelectContent>
@@ -68,7 +68,7 @@ export default function Preferences() {
               </div>
             </div>
             <Select value={timezone} onValueChange={setTimezone}>
-              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-[220px]">
+              <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>
               <SelectContent>

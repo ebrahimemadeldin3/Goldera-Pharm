@@ -50,7 +50,7 @@ export default function ProductsList({ products, page = 1, limit = 10, totalCoun
       {/* Filters */}
       <header className="mb-6 flex flex-wrap items-center gap-4">
         <h2 className="text-xl font-semibold">Product Catalog</h2>
-        <div className="relative ml-auto w-full max-w-[280px]">
+        <div className="relative ml-auto w-full max-w-70">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#717182]" />
           <input
             value={q}

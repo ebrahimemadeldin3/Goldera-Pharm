@@ -1,6 +1,7 @@
 "use client";
 
-import { CheckCircle, Stethoscope } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle, XCircle, Stethoscope, ChevronDown, ChevronUp, Calendar, User } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -8,11 +9,19 @@ import { getInitials } from "@/lib/utils";
 import { planTypeConfig, statusConfig } from "../../lib/constants";
 import { VisitPlan } from "@/features/plan/api/get";
 import { groupSelectedDoctorsByDay } from "../../lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type SupervisorPlanCardProps = {
   plan: VisitPlan;
   onApprove: (planId: string) => void;
-  onReject: (planId: string) => void;
+  onReject: (planId: string, feedback?: string) => void;
 };
 
 export default function SupervisorPlanCard({
@@ -20,185 +29,285 @@ export default function SupervisorPlanCard({
   onApprove,
   onReject,
 }: SupervisorPlanCardProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [rejectFeedback, setRejectFeedback] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const repName = plan.rep?.name || "Unknown Rep";
   const doctorGroups = groupSelectedDoctorsByDay(plan.selectedDoctors);
-  const selectedDoctorsCount = doctorGroups.reduce(
-    (count, group) => count + group.doctors.length,
-    0,
-  );
+  const selectedDoctors = plan.selectedDoctors || [];
+  const selectedDoctorsCount = selectedDoctors.length;
+  
+  // Compact 6-doctor preview
+  const previewDoctors = selectedDoctors.slice(0, 6);
+  const remainingCount = Math.max(0, selectedDoctorsCount - 6);
+
+  const isPending = plan.status === "PENDING";
+  const isApproved = plan.status === "APPROVED";
+  const isRejected = plan.status === "REJECTED";
+
+  const handleConfirmReject = () => {
+    setIsSubmitting(true);
+    onReject(plan.id, rejectFeedback.trim() || undefined);
+    setRejectDialogOpen(false);
+    setIsSubmitting(false);
+  };
+
+  const startDateFormatted = plan.startDate ? format(new Date(plan.startDate), "MMM d, yyyy") : "N/A";
+  const endDateFormatted = plan.endDate ? format(new Date(plan.endDate), "MMM d, yyyy") : "N/A";
 
   return (
-    <div className="border-secondary-light flex flex-col gap-4 rounded-2xl border-[0.8px] bg-white p-6 lg:flex-row">
+    <>
       <div
-        className={`gradient-green flex h-12 w-12 shrink-0 items-center justify-center rounded-full`}
+        className={`border-secondary-light flex flex-col justify-between gap-4 rounded-xl border-[0.8px] bg-white p-4 transition-all shadow-2xs ${
+          isApproved ? "opacity-95 bg-slate-50/40" : isRejected ? "opacity-90 bg-slate-50/60 border-slate-200" : ""
+        }`}
       >
-        <span className="text-base/6 font-normal text-white">
-          {getInitials(repName)}
-        </span>
-      </div>
-      <div className="min-w-0 max-w-[828px] flex-1">
-        <header className="flex flex-col items-start gap-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-base/6 font-normal text-black">{plan.title}</h3>
-            <span
-              className={`rounded-md px-2 py-0.5 text-xs/4 font-medium text-white ${
-                planTypeConfig[plan.planType].className
-              }`}
-            >
-              {planTypeConfig[plan.planType].label}
-            </span>
-            <span
-              className={`rounded-md px-2 py-0.5 text-xs/4 font-medium text-white ${
-                statusConfig[plan.status].className
-              }`}
-            >
-              {statusConfig[plan.status].label}
-            </span>
-          </div>
-          <p className="mt-1 text-sm/5 font-normal text-black">
-            Rep:
-            <span className="text-secondary-dark">{repName}</span>
-          </p>
-          <p className="text-secondary-dark text-sm/5 font-normal">
-            {plan.description}
-          </p>
-        </header>
-
-        {/* Objectives */}
-        <div className="mt-4">
-          <p className="text-sm/5 font-medium text-black">Objectives:</p>
-          <ul className="mt-2 space-y-1">
-            {plan.objectives.map((objective, index) => (
-              <li
-                key={index}
-                className="text-secondary-dark text-sm/5 font-normal"
+        <div className="flex flex-col gap-3">
+          {/* Header Row: Rep Avatar + Plan Title + Badges */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 min-w-0 flex-1">
+              <div
+                className={`flex size-10 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold ${
+                  isApproved ? "bg-emerald-600" : isRejected ? "bg-slate-500" : "gradient-green"
+                }`}
               >
-                {objective}
-              </li>
-            ))}
-          </ul>
-        </div>
+                {getInitials(repName)}
+              </div>
 
-        {/* Info Grid */}
-        <div className="*:bg-secondary-very-light mt-4 grid grid-cols-1 gap-4 *:rounded-md *:p-2 sm:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <p className="text-secondary-dark text-xs/4 font-normal">
-              Target Doctors
-            </p>
-            <p className="mt-1 text-sm/5 font-normal text-black">
-              {plan.targetDoctors || 0}
-            </p>
-          </div>
-          <div>
-            <p className="text-secondary-dark text-xs/4 font-normal">
-              Target Visits
-            </p>
-            <p className="mt-1 text-sm/5 font-normal text-black">
-              {plan.targetVisits || 0}
-            </p>
-          </div>
-          <div>
-            <p className="text-secondary-dark text-xs/4 font-normal">
-              Start Date
-            </p>
-            <p className="mt-1 text-sm/5 font-normal text-black">
-              {format(new Date(plan.startDate), "MM/dd/yyyy")}
-            </p>
-          </div>
-          <div>
-            <p className="text-secondary-dark text-xs/4 font-normal">
-              End Date
-            </p>
-            <p className="mt-1 text-sm/5 font-normal text-black">
-              {format(new Date(plan.endDate), "MM/dd/yyyy")}
-            </p>
-          </div>
-        </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-semibold text-slate-900 leading-snug truncate">
+                    {plan.title || "Untitled Visit Plan"}
+                  </h3>
 
-        {/* Progress Bar (if progress is available) */}
-        {plan.progress !== undefined && (
-          <div className="mt-4">
-            <p className="mb-2 flex items-center justify-between">
-              <span className="text-secondary-dark text-xs/4 font-normal">
-                Progress
-              </span>
-              <span className="text-xs/4 font-normal text-black">
-                {plan.progress}%
-              </span>
-            </p>
-            <Progress
-              value={plan.progress}
-              className="bg-secondary-light *:bg-dashboard-green h-2"
-            />
-          </div>
-        )}
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-[11px] font-medium text-white ${
+                      planTypeConfig[plan.planType]?.className || "bg-slate-600"
+                    }`}
+                  >
+                    {planTypeConfig[plan.planType]?.label || plan.planType}
+                  </span>
 
-        {/* Selected Doctors */}
-        {plan.selectedDoctors && plan.selectedDoctors.length > 0 && (
-          <div className="mt-4">
-            <p className="mb-3 text-sm/5 font-normal text-black">
-              Selected Doctors: {selectedDoctorsCount} selected
-            </p>
-            <div className="max-h-[420px] space-y-4 overflow-y-auto pr-1">
-              {doctorGroups.map((group) => (
-                <div key={`${plan.id}-${group.day}`}>
-                  <p className="text-secondary-dark mb-2 text-xs/4 font-medium">
-                    {group.day === "No Date"
-                      ? "No Date"
-                      : format(new Date(group.day), "EEE, MMM d, yyyy")}
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    {group.doctors.map((doctor) => (
-                      <div
-                        key={`${group.day}-${doctor.id}`}
-                        className="border-green-stroke flex w-full max-w-[240px] flex-col gap-1.5 rounded-md border-[0.8px] bg-[#F0FDF4] p-3"
-                      >
-                        <div className="flex items-start gap-2">
-                          <Stethoscope
-                            size={14}
-                            className="text-dashboard-green mt-0.5 shrink-0"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate text-sm/5 font-normal text-black">
-                              {doctor.nameEN} - {doctor.nameAR}
-                            </p>
-                            <p className="text-secondary-dark truncate text-xs/4 font-normal">
-                              {doctor.accountName || "Unassigned hospital"}
-                            </p>
-                          </div>
-                        </div>
-                        {/* <p className="text-secondary-dark truncate text-xs/4 font-normal">
-                          {doctor.specialty || "Specialty not set"}
-                        </p> */}
-                      </div>
-                    ))}
-                  </div>
+                  <span
+                    className={`rounded-md px-2 py-0.5 text-[11px] font-medium text-white ${
+                      statusConfig[plan.status]?.className || "bg-slate-600"
+                    }`}
+                  >
+                    {statusConfig[plan.status]?.label || plan.status}
+                  </span>
                 </div>
-              ))}
+
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <User size={13} className="text-slate-400" />
+                    <span>Rep: <strong>{repName}</strong></span>
+                  </span>
+
+                  <span className="flex items-center gap-1">
+                    <Calendar size={13} className="text-slate-400" />
+                    <span>{startDateFormatted} – {endDateFormatted}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Actions for Pending Plans */}
+            {isPending && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  size="sm"
+                  onClick={() => onApprove(plan.id)}
+                  className="bg-dashboard-green hover:bg-emerald-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium text-white shadow-2xs"
+                >
+                  <CheckCircle size={14} />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setRejectDialogOpen(true)}
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium"
+                >
+                  <XCircle size={14} />
+                  Reject
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Description & Objectives */}
+          {plan.description && (
+            <p className="text-xs text-slate-600 line-clamp-2 pl-0.5">
+              {plan.description}
+            </p>
+          )}
+
+          {plan.objectives && plan.objectives.length > 0 && (
+            <div className="text-xs text-slate-600 pl-0.5">
+              <span className="font-medium text-slate-700">Objectives: </span>
+              <span>{plan.objectives.join(" · ")}</span>
+            </div>
+          )}
+
+          {/* Compact Metadata Strip (Section 5) */}
+          <div className="flex flex-wrap items-center gap-4 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-100 text-xs text-slate-700">
+            <div>
+              <span className="text-slate-500">Target Doctors: </span>
+              <span className="font-semibold text-slate-900">{plan.targetDoctors || 0}</span>
+            </div>
+            <div className="h-3 w-px bg-slate-200" />
+            <div>
+              <span className="text-slate-500">Target Visits: </span>
+              <span className="font-semibold text-slate-900">{plan.targetVisits || 0}</span>
+            </div>
+            <div className="h-3 w-px bg-slate-200" />
+            <div>
+              <span className="text-slate-500">Selected Doctors: </span>
+              <span className="font-semibold text-slate-900">{selectedDoctorsCount}</span>
             </div>
           </div>
-        )}
 
-        {/* Action Buttons (for pending plans) */}
-      </div>
-      {plan.status === "PENDING" && (
-        <div className="flex w-full flex-col items-center gap-3 *:w-full lg:w-[140px]">
-          <Button
-            onClick={() => onApprove(plan.id)}
-            className="bg-dashboard-green border-dashboard-green hover:text-dashboard-green cursor-pointer border text-white transition-colors hover:bg-white"
-          >
-            <CheckCircle size={16} className="" />
-            Approve
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onReject(plan.id)}
-            className="border-dashboard-red text-dashboard-red hover:bg-dashboard-red cursor-pointer transition-colors hover:text-white"
-          >
-            Reject
-          </Button>
+          {/* Progress Bar (if available) */}
+          {plan.progress !== undefined && (
+            <div className="mt-0.5">
+              <div className="mb-1 flex items-center justify-between text-xs">
+                <span className="text-slate-500">Execution Progress</span>
+                <span className="font-medium text-slate-700">{plan.progress}%</span>
+              </div>
+              <Progress value={plan.progress} className="h-1.5 bg-slate-100" />
+            </div>
+          )}
+
+          {/* Selected Doctors Progressive Disclosure (Section 3) */}
+          {selectedDoctorsCount > 0 && (
+            <div className="mt-1 border-t border-slate-100 pt-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-slate-700">
+                  Selected Doctors ({selectedDoctorsCount})
+                </span>
+
+                {selectedDoctorsCount > 6 && (
+                  <button
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                  >
+                    {isExpanded ? (
+                      <>
+                        <span>Show compact preview</span>
+                        <ChevronUp size={14} />
+                      </>
+                    ) : (
+                      <>
+                        <span>View all {selectedDoctorsCount} doctors (+{remainingCount} more)</span>
+                        <ChevronDown size={14} />
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+
+              {/* Collapsed State: Compact Preview Grid (4-6 items) */}
+              {!isExpanded ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                  {previewDoctors.map((doc, idx) => (
+                    <div
+                      key={`${doc.id}-${idx}`}
+                      className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50/60 px-2.5 py-1.5 text-xs min-w-0"
+                    >
+                      <Stethoscope size={13} className="text-emerald-600 shrink-0" />
+                      <div className="min-w-0 flex-1 truncate">
+                        <span className="font-medium text-slate-900 truncate block">
+                          {doc.nameEN || doc.nameAR || "Doctor"}
+                        </span>
+                        <span className="text-[11px] text-slate-500 truncate block">
+                          {doc.accountName || doc.specialty || "Unassigned"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* Expanded State: Full Doctor Groups by Day */
+                <div className="max-h-95 space-y-3 overflow-y-auto pr-1">
+                  {doctorGroups.map((group) => (
+                    <div key={`${plan.id}-${group.day}`}>
+                      <p className="mb-1.5 text-[11px] font-semibold text-slate-600 uppercase tracking-wider">
+                        {group.day === "No Date"
+                          ? "No Date Assigned"
+                          : format(new Date(group.day), "EEEE, MMM d, yyyy")}
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {group.doctors.map((doctor) => (
+                          <div
+                            key={`${group.day}-${doctor.id}`}
+                            className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50/50 px-2.5 py-1.5 text-xs min-w-0"
+                          >
+                            <Stethoscope size={13} className="text-emerald-600 shrink-0" />
+                            <div className="min-w-0 flex-1 truncate">
+                              <span className="font-medium text-slate-900 truncate block">
+                                {doctor.nameEN || doctor.nameAR}
+                              </span>
+                              <span className="text-[11px] text-slate-500 truncate block">
+                                {doctor.accountName || "Unassigned hospital"}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
-    </div>
+      </div>
+
+      {/* Rejection Confirmation Dialog (Section 8) */}
+      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
+        <DialogContent className="sm:max-w-106.25">
+          <DialogHeader>
+            <DialogTitle className="text-red-700">Confirm Plan Rejection</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to reject this visit plan submitted by <strong>{repName}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-2">
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Rejection Reason / Feedback (Optional):
+            </label>
+            <textarea
+              value={rejectFeedback}
+              onChange={(e) => setRejectFeedback(e.target.value)}
+              placeholder="Provide constructive feedback for the medical rep..."
+              className="w-full rounded-md border border-slate-200 p-2.5 text-xs text-slate-800 focus:outline-none min-h-20"
+            />
+          </div>
+
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setRejectDialogOpen(false)}
+              disabled={isSubmitting}
+              className="h-8 text-xs"
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleConfirmReject}
+              disabled={isSubmitting}
+              className="h-8 bg-red-600 hover:bg-red-700 text-white text-xs"
+            >
+              Confirm Rejection
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

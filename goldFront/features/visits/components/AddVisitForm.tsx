@@ -48,7 +48,7 @@ import {
   parseDateValue,
 } from "@/lib/utils";
 
-type RoleBasedAddVisitFormProps =
+type RoleBasedAddVisitFormProps = (
   | {
       role: "MANAGER";
       doctors: DoctorApiResponse[];
@@ -63,12 +63,19 @@ type RoleBasedAddVisitFormProps =
   | {
       role: "MEDICAL_REP";
       doctors: DoctorApiResponse[];
-    };
+    }
+) & {
+  isModal?: boolean;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  initialDoctorId?: string;
+  initialDate?: Date;
+};
 
 // Shared constants
 
 export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
-  const { role, doctors } = props;    
+  const { role, doctors, isModal = false, onSuccess, onCancel, initialDoctorId, initialDate } = props;    
 
  
   const supervisors = "supervisors" in props ? props.supervisors : [];
@@ -76,7 +83,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedDoctorId = searchParams.get("doctorId");
+  const preselectedDoctorId = initialDoctorId || searchParams.get("doctorId") || "";
   const { createVisit, isPending } = useCreateVisit();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedHospital, setSelectedHospital] = useState<string>("all");
@@ -164,20 +171,21 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     );
   }, [doctors, selectedHospital]);
 
+  // Preselect date if initialDate prop is passed
   useEffect(() => {
-    if (!preselectedDoctorId) {
-      return;
+    if (initialDate) {
+      form.setValue("date", initialDate);
     }
+  }, [initialDate, form]);
 
-    const preselectedDoctor = doctors.find(
-      (doctor) => doctor.id === preselectedDoctorId,
-    );
-    if (!preselectedDoctor) {
-      return;
+  useEffect(() => {
+    if (preselectedDoctorId) {
+      const selected = doctors.find((d) => d.id === preselectedDoctorId);
+      if (selected && selected.accountName) {
+        setSelectedHospital(selected.accountName);
+      }
     }
-
-    setSelectedHospital(preselectedDoctor.accountName || "Unassigned");
-  }, [doctors, preselectedDoctorId]);
+  }, [preselectedDoctorId, doctors]);
 
   useEffect(() => {
     const selectedDoctorId = form.getValues("doctorId");
@@ -202,8 +210,12 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
 
     if (result.success) {
       toast.success({ title: "Visit scheduled successfully" });
-      router.push(redirectPath);
-      router.refresh();
+      if (onSuccess) {
+        onSuccess();
+      } else {
+        router.push(redirectPath);
+        router.refresh();
+      }
     } else {
       toast.error({
         title: "Failed to schedule visit",
@@ -481,11 +493,22 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           />
         </div>
 
-        <div className="mt-4">
+        <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+          {isModal && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isPending}
+              className="h-9 px-4 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-system-primary border-system-primary hover:text-system-primary inline-flex cursor-pointer items-center gap-2 border hover:bg-white"
+            className="bg-system-primary hover:bg-blue-700 h-9 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-medium text-white disabled:opacity-50"
           >
             <Plus className="h-4 w-4" />
             {isPending ? "Scheduling..." : "Schedule Visit"}

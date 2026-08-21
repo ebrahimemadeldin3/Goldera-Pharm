@@ -54,7 +54,7 @@ export function AddCommentDialog({
           Add Comment
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[512px]">
+      <DialogContent className="sm:max-w-128">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-black">
             Add Your Comment
@@ -115,7 +115,7 @@ export function AddCommentDialog({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Examples:&#10;• Thank you for the feedback! I'll work on improving my objection handling.&#10;• I appreciate your guidance. Could you recommend specific resources for...&#10;• I've already started implementing your suggestions and seeing positive results."
-              className="placeholder:text-secondary-text min-h-[120px] max-h-[200px] border-[0.8px] border-[#E2E8F0] bg-secondary-very-light px-3 py-2 text-sm font-normal shadow-none"
+              className="placeholder:text-secondary-text min-h-30 max-h-50 border border-slate-200 bg-secondary-very-light px-3 py-2 text-sm font-normal shadow-none"
             />
             <p className="text-secondary-dark mt-2 text-xs/4">
               You can express thanks, ask questions, or share progress updates.

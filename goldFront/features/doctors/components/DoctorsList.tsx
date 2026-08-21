@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-
 import Pagination from "@/components/ui/Pagination";
 
 interface DoctorsListProps {
@@ -73,7 +72,7 @@ export default function DoctorsList({
 
   const activeSubRegion = selectedSubRegion || "ALL";
 
-  // Available sub-regions (known options + currently active)
+  // Available sub-regions
   const subRegionOptions = [
     { value: "ALL", label: "All Sub-Regions" },
     { value: "Riyadh 1", label: "Riyadh 1" },
@@ -105,35 +104,31 @@ export default function DoctorsList({
   const endItem = Math.min(page * limit, totalCount);
 
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[.8px] bg-white p-6">
-      <div className="mt-4">
-        <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </div>
-
-      {/* Header & Controls */}
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-black">Doctor Directory</h2>
+    <section className="border-secondary-light mt-4 rounded-xl border bg-white p-4 sm:p-5">
+      {/* Header & Directory Toolbar */}
+      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3.5">
+        <div className="flex items-center gap-3 shrink-0">
+          <h2 className="text-lg font-semibold text-black">Doctor Directory</h2>
           {isPending && (
             <span className="text-xs font-normal text-slate-400">Loading...</span>
           )}
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
           {/* Sub-Region Selector */}
           <div className="flex items-center gap-2">
-            <Filter size={16} className="text-slate-400" />
+            <Filter size={15} className="text-slate-400 shrink-0" />
             <Select
               value={activeSubRegion}
               onValueChange={handleSubRegionChange}
               disabled={isPending}
             >
-              <SelectTrigger className="border-secondary-light h-9 w-44 cursor-pointer rounded-md border bg-white px-3 text-sm font-medium">
+              <SelectTrigger className="border-secondary-light h-8.5 w-40 cursor-pointer rounded-md border bg-white px-3 text-xs font-medium">
                 <SelectValue placeholder="All Sub-Regions" />
               </SelectTrigger>
               <SelectContent>
                 {subRegionOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -142,13 +137,13 @@ export default function DoctorsList({
           </div>
 
           {/* Search Input */}
-          <div className="relative w-full max-w-[320px]">
-            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#717182]" />
+          <div className="relative w-full sm:w-65 md:w-75">
+            <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#717182]" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Filter page by name, specialty..."
-              className="h-9 w-full rounded-md border border-slate-200 bg-white pr-8 pl-9 text-sm focus:border-blue-500 focus:outline-none"
+              className="h-8.5 w-full rounded-md border border-slate-200 bg-white pr-8 pl-8.5 text-xs "
             />
             {q && (
               <button
@@ -166,16 +161,16 @@ export default function DoctorsList({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="h-9 cursor-pointer gap-1.5 text-xs text-slate-600 hover:bg-slate-100"
+              className="h-8.5 cursor-pointer gap-1.5 text-xs text-slate-600 hover:bg-slate-100 px-2.5"
             >
-              <RotateCcw size={14} />
+              <RotateCcw size={13} />
               Reset Filters
             </Button>
           )}
         </div>
       </header>
 
-      {/* Honest Search Info Pill */}
+      {/* Scope-Honest Search Info Pill */}
       {q.trim() !== "" && (
         <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-700">
           <span>
@@ -191,15 +186,15 @@ export default function DoctorsList({
         </div>
       )}
 
-      {/* Doctors List */}
-      <section className="flex flex-col gap-4">
+      {/* 2-Column Doctor Cards Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
         {filtered.map((d) => (
           <DoctorCard key={d.id} data={d} />
         ))}
 
-        {/* Empty States */}
+        {/* Distinct Empty States */}
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+          <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
             <p className="text-sm font-medium text-slate-700">
               {q.trim()
                 ? `No doctors matching "${q}" found on page ${page}.`
@@ -225,17 +220,17 @@ export default function DoctorsList({
             )}
           </div>
         )}
-      </section>
+      </div>
 
-      {/* Bottom Footer Pagination */}
-      <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+      {/* Subtle Inline Results Pagination */}
+      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-3">
         <p className="text-xs text-slate-500 font-normal">
-          Showing <span className="font-medium text-slate-700">{startItem}</span> to{" "}
+          Showing <span className="font-medium text-slate-700">{startItem}</span>–
           <span className="font-medium text-slate-700">{endItem}</span> of{" "}
           <span className="font-medium text-slate-700">{totalCount}</span> doctors
         </p>
         <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </footer>
+      </div>
     </section>
   );
 }

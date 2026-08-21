@@ -29,7 +29,7 @@ export default function MonthlyPerformance({
           </p>
           <Progress
             value={targetValue}
-            className="*:bg-dashboard-blue h-2 bg-[#2563EB33] *:rounded-full"
+            className="*:bg-dashboard-blue h-2 *:rounded-full"
           />
         </div>
         <div>
@@ -43,7 +43,7 @@ export default function MonthlyPerformance({
           </p>
           <Progress
             value={coverageValue}
-            className="*:bg-dashboard-green h-2 bg-[#2563EB33] *:rounded-full"
+            className="*:bg-dashboard-green h-2 *:rounded-full"
           />
         </div>
       </div>

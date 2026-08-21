@@ -82,7 +82,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
             <button
               onClick={isEditMode ? saveChanges : toggleEditMode}
               disabled={isPending}
-              className="border-secondary-dark text-secondary-dark hover:bg-secondary-light ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+              className="border-secondary-dark text-secondary-dark hover:bg-secondary-light ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
               {isEditMode ? (
                 <>
@@ -101,7 +101,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
               <button
                 onClick={cancelEdit}
                 disabled={isPending}
-                className="border-secondary-light inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-secondary-light inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
                 Cancel

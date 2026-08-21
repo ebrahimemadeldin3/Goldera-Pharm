@@ -59,7 +59,7 @@ export default function PharmaciesHeader({
 
   return (
     <>
-      <header className="flex flex-wrap items-center justify-start gap-6">
+      <header className="flex flex-wrap items-center justify-between gap-6">
         <div className="min-w-0">
           <h1 className="text-2xl font-normal text-black md:text-[34px]">
             Pharmacies Database

@@ -40,7 +40,7 @@ export default async function Page({
   }
 
   return (
-    <main className="bg-secondary-very-light min-h-[calc(100vh-80px)] p-5 min-[1440px]:w-270.75! lg:w-5xl">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
       <DoctorsHeader doctors={doctors} totalCount={totalCount} />
       <DoctorsList
         doctors={doctors}
@@ -49,6 +49,6 @@ export default async function Page({
         totalCount={totalCount}
         selectedSubRegion={subRegion}
       />
-    </main>
+    </PageContainer>
   );
 }

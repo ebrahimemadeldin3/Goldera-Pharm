@@ -30,7 +30,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
 
-export default function AddDoctorForm() {
+type AddDoctorFormProps = {
+  isModal?: boolean;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+};
+
+export default function AddDoctorForm({
+  isModal = false,
+  onSuccess,
+  onCancel,
+}: AddDoctorFormProps) {
   const router = useRouter();
   const { role } = useRoleUI();
   const [isPending, startTransition] = useTransition();
@@ -42,7 +52,6 @@ export default function AddDoctorForm() {
     const fetchSubRegions = async () => {
       const result = await getRegionsAction();
       if (result.success && result.regions) {
-        // Flatten all subregions from all regions
         const allSubRegions = result.regions.flatMap(
           (region) => region.subRegions,
         );
@@ -90,11 +99,15 @@ export default function AddDoctorForm() {
             ? parseInt(values.avgPatients)
             : undefined,
           accountName: values.accountName,
-          subRegion: values.subRegion, // Send subRegion name
+          subRegion: values.subRegion,
         });
         if (result.success) {
-          router.push(getBackHref());
-          router.refresh();
+          if (onSuccess) {
+            onSuccess();
+          } else {
+            router.push(getBackHref());
+            router.refresh();
+          }
         } else if (result.error) {
           setError(result.error.message);
         }
@@ -107,6 +120,245 @@ export default function AddDoctorForm() {
   const inputBase =
     "bg-secondary-very-light border-[.8px] border-[#E2E8F0] px-4 placeholder:text-secondary-text placeholder:text-sm placeholder:font-normal";
 
+  const formContent = (
+    <Form {...form}>
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="grid grid-cols-1 gap-4 md:grid-cols-2"
+      >
+        <FormField
+          control={form.control}
+          name="nameEN"
+          render={() => (
+            <FormItem>
+              <FormLabel>English Name *</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="Dr. Mohammed Al-Rashid"
+                  {...form.register("nameEN", { required: true })}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="nameAR"
+          render={() => (
+            <FormItem>
+              <FormLabel>Arabic Name *</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="د. محمد الراشد"
+                  {...form.register("nameAR", { required: true })}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="specialty"
+          render={() => (
+            <FormItem>
+              <FormLabel>Specialty *</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="e.g. Cardiology"
+                  {...form.register("specialty", { required: true })}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="grade"
+          render={() => (
+            <FormItem>
+              <FormLabel>Grade *</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={(v) => form.setValue("grade", v)}
+                  defaultValue=""
+                >
+                  <SelectTrigger className={`${inputBase} w-full cursor-pointer`}>
+                    <SelectValue placeholder="Select grade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="A">A</SelectItem>
+                    <SelectItem value="B">B</SelectItem>
+                    <SelectItem value="C">C</SelectItem>
+                    <SelectItem value="D">D</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="subRegion"
+          render={() => (
+            <FormItem>
+              <FormLabel>Area *</FormLabel>
+              <FormControl>
+                <Select
+                  onValueChange={(v) => form.setValue("subRegion", v)}
+                  defaultValue=""
+                >
+                  <SelectTrigger className={`${inputBase} w-full cursor-pointer`}>
+                    <SelectValue placeholder="Select area" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subRegions.map((subRegion) => (
+                      <SelectItem key={subRegion.id} value={subRegion.name}>
+                        {subRegion.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="accountName"
+          render={() => (
+            <FormItem>
+              <FormLabel>Account Name *</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="King Faisal Hospital"
+                  {...form.register("accountName", { required: true })}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="license"
+          render={() => (
+            <FormItem>
+              <FormLabel>License Number</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="License number"
+                  {...form.register("license")}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={() => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="doctor@hospital.sa"
+                  {...form.register("email")}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phone"
+          render={() => (
+            <FormItem>
+              <FormLabel>Phone Number *</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  placeholder="+966 50 123 4567"
+                  {...form.register("phone", { required: true })}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="avgPatients"
+          render={() => (
+            <FormItem>
+              <FormLabel>Avg. Patients Per Day</FormLabel>
+              <FormControl>
+                <Input
+                  className={inputBase}
+                  type="number"
+                  placeholder="50"
+                  {...form.register("avgPatients")}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        {/* Modal Action Footer */}
+        <div className="col-span-1 mt-4 border-t border-slate-100 pt-4 md:col-span-2 flex items-center justify-end gap-3">
+          {isModal && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isPending}
+              className="h-9 px-4 text-xs font-medium cursor-pointer"
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            disabled={isPending}
+            className="bg-system-primary hover:bg-blue-700 h-9 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-medium text-white disabled:opacity-50"
+          >
+            {isPending ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Plus size={16} />
+            )}
+            {isPending ? "Adding Doctor..." : "Add Doctor"}
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
+
+  if (isModal) {
+    return (
+      <div className="space-y-4">
+        {error && (
+          <div className="text-dashboard-red rounded-lg border border-red-200 bg-red-50 p-3 text-xs">
+            {error}
+          </div>
+        )}
+        {formContent}
+      </div>
+    );
+  }
+
   return (
     <PageContainer className="flex flex-col gap-6">
       <header className="flex flex-wrap items-center justify-start gap-2">
@@ -117,8 +369,8 @@ export default function AddDoctorForm() {
           <ArrowLeft size={16} />
         </Link>
         <div className="ml-3 min-w-0 flex-1">
-          <h1 className="font-nomral text-2xl text-black md:text-[34px]">Add New Doctor</h1>
-          <p className="text-secondary-dark text-[16px]">
+          <h1 className="font-normal text-2xl text-black md:text-[34px]">Add New Doctor</h1>
+          <p className="text-secondary-dark text-sm">
             Add a new doctor to the database
           </p>
         </div>
@@ -132,222 +384,7 @@ export default function AddDoctorForm() {
 
       <section className="border-secondary-light rounded-[14px] border-[.8px] bg-white p-6">
         <h2 className="mb-6 text-[22px]/8 font-normal">Doctor Information</h2>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="grid grid-cols-1 gap-4 md:grid-cols-2"
-          >
-            <FormField
-              control={form.control}
-              name="nameEN"
-              render={() => (
-                <FormItem>
-                  <FormLabel>English Name *</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="Dr. Mohammed Al-Rashid"
-                      {...form.register("nameEN", { required: true })}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="nameAR"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Arabic Name *</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="د. محمد الراشد"
-                      {...form.register("nameAR", { required: true })}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="specialty"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Specialty *</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="e.g. Cardiology"
-                      {...form.register("specialty", { required: true })}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="grade"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Grade *</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(v) => form.setValue("grade", v)}
-                      defaultValue=""
-                    >
-                      <SelectTrigger
-                        className={`${inputBase} w-full cursor-pointer`}
-                      >
-                        <SelectValue placeholder="Select grade" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="A">A</SelectItem>
-                        <SelectItem value="B">B</SelectItem>
-                        <SelectItem value="C">C</SelectItem>
-                        <SelectItem value="D">D</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="subRegion"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Area *</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={(v) => form.setValue("subRegion", v)}
-                      defaultValue=""
-                    >
-                      <SelectTrigger
-                        className={`${inputBase} w-full cursor-pointer`}
-                      >
-                        <SelectValue placeholder="Select area" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subRegions.map((subRegion) => (
-                          <SelectItem key={subRegion.id} value={subRegion.name}>
-                            {subRegion.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="accountName"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Account Name *</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="King Faisal Hospital"
-                      {...form.register("accountName", { required: true })}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="license"
-              render={() => (
-                <FormItem>
-                  <FormLabel>License Number</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="License number"
-                      {...form.register("license")}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="doctor@hospital.sa"
-                      {...form.register("email")}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="phone"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Phone Number *</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      placeholder="+966 50 123 4567"
-                      {...form.register("phone", { required: true })}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="avgPatients"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Avg. Patients Per Day</FormLabel>
-                  <FormControl>
-                    <Input
-                      className={inputBase}
-                      type="number"
-                      placeholder="50"
-                      {...form.register("avgPatients")}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            <div className="col-span-1 mt-6 md:col-span-2">
-              <Button
-                type="submit"
-                disabled={isPending}
-                className="bg-gold hover:border-gold hover:text-gold mb-10 inline-flex w-full cursor-pointer items-center justify-center gap-2 border border-transparent text-white hover:bg-white disabled:cursor-not-allowed disabled:opacity-50 sm:w-43.25"
-              >
-                {isPending ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Plus size={16} />
-                )}
-                {isPending ? "Adding..." : "Add Doctor"}
-              </Button>
-            </div>
-          </form>
-        </Form>
+        {formContent}
       </section>
     </PageContainer>
   );

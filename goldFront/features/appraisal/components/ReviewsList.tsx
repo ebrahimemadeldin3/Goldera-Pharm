@@ -29,12 +29,12 @@ export function ReviewsList({ reviews }: Props) {
       {reviews.map((r) => (
         <Card
           key={r.id}
-          className="border-secondary-light flex flex-row gap-4 rounded-xl border-[.8px] bg-white p-6 shadow-none *:m-0 *:p-0"
+          className="border-secondary-light flex flex-row gap-4 rounded-xl border-[.8px] bg-white p-6 shadow-none *:m-0"
         >
           <CardHeader className="gradient-blue flex size-14 shrink-0 items-center justify-center rounded-full text-base/6 font-normal text-white">
             {r.initials}
           </CardHeader>
-          <CardContent className="flex min-w-0 flex-1 flex-col items-start gap-4 p-0">
+          <CardContent className="flex min-w-0 flex-1 flex-col items-start gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-base/6 font-medium text-black">
                 {r.name}

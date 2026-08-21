@@ -1,6 +1,15 @@
-import { Calendar } from "lucide-react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Calendar, CheckCircle, Clock, Plus } from "lucide-react";
 import Link from "next/link";
 import { UserRole } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import AddVisitDialog from "./AddVisitDialog";
+import { getDoctorsAction } from "@/features/doctors/api";
+import { getManagerTeamAction } from "@/features/team/api";
+import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
+import type { User } from "@/features/team/lib/types";
 
 type VisitsHeaderProps = {
   role: UserRole;
@@ -12,6 +21,11 @@ type VisitsHeaderProps = {
 };
 
 export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [doctors, setDoctors] = useState<DoctorApiResponse[]>([]);
+  const [supervisors, setSupervisors] = useState<User[]>([]);
+  const [medicalReps, setMedicalReps] = useState<User[]>([]);
+
   const addVisitPath =
     role === "MANAGER"
       ? "/manager/visits/add"
@@ -19,44 +33,88 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
         ? "/supervisor/visits/add"
         : "/rep/visits/add";
 
+  useEffect(() => {
+    if (dialogOpen && doctors.length === 0) {
+      const fetchData = async () => {
+        const doctorsRes = await getDoctorsAction(undefined, undefined, undefined, false);
+        if (doctorsRes.success && doctorsRes.data) {
+          setDoctors(doctorsRes.data);
+        }
+
+        if (role === "MANAGER" || role === "SUPERVISOR") {
+          const teamRes = await getManagerTeamAction();
+          if (teamRes.success) {
+            setSupervisors(teamRes.supervisors || []);
+            setMedicalReps(teamRes.medicalReps || []);
+          }
+        }
+      };
+      fetchData();
+    }
+  }, [dialogOpen, doctors.length, role]);
+
   return (
     <>
-      <header className="flex w-full flex-wrap items-center justify-start gap-6">
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-nomral text-2xl text-black md:text-[34px]">Visit Calendar</h1>
-          <p className="text-secondary-dark text-[16px]">
-            Track and manage medical rep visits and appointments
+          <h1 className="font-normal text-2xl text-black md:text-[32px]">
+            Visit Calendar
+          </h1>
+          <p className="text-secondary-dark text-sm text-slate-600 mt-0.5">
+            Track and manage medical rep visits, schedules, and completion reports
           </p>
+
+          {/* Compact Inline Metadata Summary */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
+            <span className="inline-flex items-center gap-1.5 font-medium text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-md shadow-2xs">
+              <Calendar size={14} className="text-dashboard-blue" />
+              {stats.total} Total {stats.total === 1 ? "Visit" : "Visits"}
+            </span>
+
+            <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+              <CheckCircle size={14} className="text-emerald-600" />
+              {stats.completed} Completed
+            </span>
+
+            <span className="inline-flex items-center gap-1.5 font-medium text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md">
+              <Clock size={14} className="text-blue-600" />
+              {stats.today} Today
+            </span>
+          </div>
         </div>
-        <Link
-          href={addVisitPath}
-          type="button"
-          className="bg-system-primary hover:text-system-primary hover:border-system-primary ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-transparent"
-        >
-          <Calendar className="h-4 w-4" />
-          Add Visit
-        </Link>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            className="bg-system-primary hover:bg-blue-700 cursor-pointer inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Add Visit
+          </Button>
+
+          {/* Fallback direct link accessible via screen readers or right-click */}
+          <Link
+            href={addVisitPath}
+            className="sr-only"
+            tabIndex={-1}
+          >
+            Add Visit Page
+          </Link>
+        </div>
       </header>
-      <section className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
-        <div className="border-secondary-light flex flex-col items-start gap-2 rounded-[10px] border-[.8px] bg-white p-5">
-          <h3 className="text-secondary-dark text-sm/5 font-normal">
-            Total Visits
-          </h3>
-          <p className="text-[32px]/12 font-semibold">{stats.total}</p>
-        </div>
-        <div className="border-secondary-light flex flex-col items-start gap-2 rounded-[10px] border-[.8px] bg-white p-5">
-          <h3 className="text-dashboard-green text-sm/5 font-normal">
-            Completed
-          </h3>
-          <p className="text-[32px]/12 font-semibold">{stats.completed}</p>
-        </div>
-        <div className="border-secondary-light flex flex-col items-start gap-2 rounded-[10px] border-[.8px] bg-white p-5">
-          <h3 className="text-dashboard-blue text-sm/5 font-normal">
-            Today&apos;s Visits
-          </h3>
-          <p className="text-[32px]/12 font-semibold">{stats.today}</p>
-        </div>
-      </section>
+
+      {/* Add Visit Modal Overlay */}
+      {dialogOpen && (
+        <AddVisitDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          role={role as "MANAGER" | "SUPERVISOR" | "MEDICAL_REP"}
+          doctors={doctors}
+          supervisors={supervisors}
+          medicalReps={medicalReps}
+        />
+      )}
     </>
   );
 }

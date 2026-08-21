@@ -21,16 +21,15 @@ export default async function Page({ searchParams }: { searchParams?: { page: st
   // Handle different possible response shapes
   const raw = result.data as unknown;
   let pharmacies: PharmacyApiResponse[] = [];
-  let totalCount = 0;
   if (raw && typeof raw === "object") {
     const r = raw as Record<string, unknown>;
     if (Array.isArray(r.data)) pharmacies = r.data as PharmacyApiResponse[];
     else if (Array.isArray(r.pharmacies))
       pharmacies = r.pharmacies as PharmacyApiResponse[];
     else if (Array.isArray(raw)) pharmacies = raw as PharmacyApiResponse[];
-
   }
-    totalCount =  result.results as number ?? pharmacies.length;
+
+  const totalCount = typeof result.results === "number" ? result.results : pharmacies.length;
 
 
   return (

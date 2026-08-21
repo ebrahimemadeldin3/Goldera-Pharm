@@ -67,7 +67,7 @@ export function AddPharmacyDialog() {
           Add Pharmacy
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-120">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store size={18} />

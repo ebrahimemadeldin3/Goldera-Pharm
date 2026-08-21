@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { getLastRefreshTimeAction } from "@/lib/utils/get-last-refresh-time";
 
 const Footer = () => {
   const [lastRefresh, setLastRefresh] = useState<string>("");
+  const pathname = usePathname();
+
+  // Hide footer completely on CRM feature pages per user request
+  const hideFooterRoutes = ["/doctors", "/pharmacies", "/plan", "/visits"];
+  const isHidden = hideFooterRoutes.some((route) => pathname?.includes(route));
 
   useEffect(() => {
+    if (isHidden) return;
     const fetchLastRefreshTime = async () => {
       try {
         const data = await getLastRefreshTimeAction();
@@ -34,7 +41,11 @@ const Footer = () => {
     const interval = setInterval(fetchLastRefreshTime, 10000); // Refresh every 10 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isHidden]);
+
+  if (isHidden) {
+    return null;
+  }
 
   return (
     <footer className="border-secondary-light mx-4 flex min-h-[53px] flex-col justify-center gap-1 rounded-md border bg-white px-4 py-3 text-[13px]/5 text-[#717182] sm:mx-6 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:text-[15px]/5">
