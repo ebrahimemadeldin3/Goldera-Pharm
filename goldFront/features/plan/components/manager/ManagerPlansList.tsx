@@ -3,11 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/utils/toast";
-import Pagination from "@/components/ui/Pagination";
 import type { VisitPlan } from "@/features/plan/api/get";
 import { updatePlanStatusAction, rejectPlanAction } from "@/features/plan/api/handle";
 import SupervisorPlanCard from "@/features/plan/components/supervisor/SupervisorPlanCard";
-import { RotateCcw } from "lucide-react";
+import { SectionContainer } from "@/components/ui/SectionContainer";
+import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
+import { ResultsFooter } from "@/components/ui/ResultsFooter";
 
 type ManagerPlansListProps = {
   plans: VisitPlan[];
@@ -48,31 +49,23 @@ export default function ManagerPlansList({
   const handleApprove = (planId: string) => {
     startTransition(async () => {
       const result = await updatePlanStatusAction(planId, "APPROVED");
-
       if (result.success) {
         toast.success({ title: "Plan approved successfully" });
         router.refresh();
       } else {
-        toast.error({
-          title: "Failed to approve plan",
-          description: result.error?.message || "Please try again",
-        });
+        toast.error({ title: result.error?.message || "Failed to approve plan" });
       }
     });
   };
 
-  const handleReject = (planId: string, feedback?: string) => {
+  const handleReject = (planId: string, reason?: string) => {
     startTransition(async () => {
-      const result = await rejectPlanAction(planId, feedback);
-
+      const result = await rejectPlanAction(planId, reason);
       if (result.success) {
         toast.success({ title: "Plan rejected successfully" });
         router.refresh();
       } else {
-        toast.error({
-          title: "Failed to reject plan",
-          description: result.error?.message || "Please try again",
-        });
+        toast.error({ title: result.error?.message || "Failed to reject plan" });
       }
     });
   };
@@ -84,15 +77,12 @@ export default function ManagerPlansList({
     { id: "REJECTED", label: "Rejected", count: counts.rejected },
   ];
 
-  const startItem = totalCount > 0 ? (page - 1) * limit + 1 : 0;
-  const endItem = Math.min(page * limit, totalCount);
-
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[0.8px] bg-white p-5 sm:p-6">
+    <SectionContainer className="mt-6">
       {/* Tabs Header Toolbar */}
       <header className="mb-5 flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-xl font-semibold text-black">Team Plans</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Team Plans</h2>
           {isPending && (
             <span className="text-xs font-normal text-slate-400">Updating...</span>
           )}
@@ -104,7 +94,7 @@ export default function ManagerPlansList({
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               disabled={isPending}
-              className={`relative flex cursor-pointer items-center gap-2 rounded-lg border-[0.8px] px-3 py-1.5 text-xs font-medium transition-all 0 ${
+              className={`relative flex cursor-pointer items-center gap-2 rounded-lg border-[0.8px] px-3 py-1.5 text-xs font-medium transition-all ${
                 activeTab === tab.id
                   ? "border-slate-200 bg-white text-slate-900 shadow-2xs"
                   : "border-transparent text-slate-600 hover:text-slate-900"
@@ -118,8 +108,6 @@ export default function ManagerPlansList({
                       ? "bg-amber-100 text-amber-800"
                       : tab.id === "APPROVED"
                       ? "bg-emerald-100 text-emerald-800"
-                      : tab.id === "REJECTED"
-                      ? "bg-red-100 text-red-800"
                       : "bg-slate-200 text-slate-700"
                   }`}
                 >
@@ -131,21 +119,12 @@ export default function ManagerPlansList({
         </div>
       </header>
 
-      {/* Scope-Honest Info Pill */}
+      {/* Scope-Honest Info Banner */}
       {activeTab !== "all" && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-700">
-          <span>
-            Filtering currently loaded page slice by status (&quot;<strong>{activeTab}</strong>&quot;).
-            Showing {filteredPlans.length} of {plans.length} loaded plans.
-          </span>
-          <button
-            onClick={() => setActiveTab("all")}
-            className="font-medium underline hover:text-blue-900 cursor-pointer inline-flex items-center gap-1"
-          >
-            <RotateCcw size={12} />
-            Show all
-          </button>
-        </div>
+        <ScopeInfoBanner onReset={() => setActiveTab("all")} resetLabel="Show all">
+          Filtering currently loaded page slice by status (&quot;<strong className="text-slate-700 font-medium">{activeTab}</strong>&quot;).
+          Showing {filteredPlans.length} of {plans.length} loaded plans.
+        </ScopeInfoBanner>
       )}
 
       {/* Plans List Container */}
@@ -153,17 +132,11 @@ export default function ManagerPlansList({
         {filteredPlans.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
             <p className="text-sm font-medium text-slate-700">
-              No {activeTab !== "all" ? activeTab.toLowerCase() : ""} plans found on page {page}.
+              No plans found matching filter &quot;{activeTab}&quot;
             </p>
-            {activeTab !== "all" && (
-              <button
-                onClick={() => setActiveTab("all")}
-                className="mt-2 text-xs text-blue-600 hover:underline inline-flex items-center gap-1 cursor-pointer font-medium"
-              >
-                <RotateCcw size={12} />
-                Reset status filter
-              </button>
-            )}
+            <p className="text-xs text-slate-500 mt-1">
+              Select &quot;All Plans&quot; tab to see all loaded visit plans
+            </p>
           </div>
         ) : (
           filteredPlans.map((plan) => (
@@ -177,15 +150,8 @@ export default function ManagerPlansList({
         )}
       </div>
 
-      {/* Bottom Footer Pagination */}
-      <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-        <p className="text-secondary-dark text-xs font-normal">
-          Showing <span className="font-medium text-slate-700">{startItem}</span> to{" "}
-          <span className="font-medium text-slate-700">{endItem}</span> of{" "}
-          <span className="font-medium text-slate-700">{totalCount}</span> plans
-        </p>
-        <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </footer>
-    </section>
+      {/* Bottom Pagination Footer */}
+      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+    </SectionContainer>
   );
 }

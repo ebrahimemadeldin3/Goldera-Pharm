@@ -31,8 +31,8 @@ export default function RepPlanCard({ plan }: PlanCardProps) {
 
   return (
     <div
-      className={`border-secondary-light flex flex-col justify-between gap-3.5 rounded-xl border-[0.8px] bg-white p-4 transition-all shadow-2xs ${
-        isApproved ? "bg-slate-50/40 opacity-95" : isRejected ? "bg-slate-50/60 border-slate-200 opacity-90" : ""
+      className={`border-slate-200 flex flex-col justify-between gap-3.5 rounded-xl border bg-white p-4 transition-all shadow-none hover:border-slate-300 ${
+        isApproved ? "bg-slate-50/40 opacity-95" : isRejected ? "bg-slate-50/60 opacity-90" : ""
       }`}
     >
       <div className="flex flex-col gap-3">

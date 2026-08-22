@@ -7,6 +7,8 @@ import { useRoleUI } from "@/core/ui/role-ui-context";
 import { DoctorApiResponse } from "../lib/types/api";
 import { Button } from "@/components/ui/button";
 import AddDoctorDialog from "./AddDoctorDialog";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MetadataBadge } from "@/components/ui/MetadataBadge";
 
 export default function DoctorsHeader({
   doctors = [],
@@ -46,58 +48,45 @@ export default function DoctorsHeader({
 
   return (
     <>
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-normal text-2xl text-black md:text-[32px]">
-            Doctors Database
-          </h1>
-          <p className="text-secondary-dark text-sm mt-0.5">
-            Manage doctor contacts, locations, and visit history across all regions
-          </p>
-
-          {/* Compact Inline Metadata Summary */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
-            <span className="inline-flex items-center gap-1.5 font-medium text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-md shadow-2xs">
-              <Stethoscope size={14} className="text-dashboard-blue" />
+      <PageHeader
+        title="Doctors Database"
+        subtitle="Manage doctor contacts, locations, and visit history across all regions"
+        metadata={
+          <>
+            <MetadataBadge variant="primary" icon={<Stethoscope size={14} className="text-blue-600" />}>
               {totalDoctors} {totalDoctors === 1 ? "Doctor" : "Doctors"}
-            </span>
+            </MetadataBadge>
 
             {topRegions.map(([regionName, count]) => (
-              <span
-                key={regionName}
-                className="inline-flex items-center gap-1.5 bg-slate-100/80 border border-slate-200/60 px-2 py-0.5 rounded-md text-slate-700"
-              >
-                <MapPin size={12} className="text-slate-400" />
-                <span>
-                  <strong>{count}</strong> in {regionName}
-                </span>
-              </span>
+              <MetadataBadge key={regionName} variant="neutral" icon={<MapPin size={12} className="text-slate-400" />}>
+                <strong>{count}</strong> in {regionName}
+              </MetadataBadge>
             ))}
-          </div>
-        </div>
+          </>
+        }
+        action={
+          features.doctors.canAdd ? (
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="bg-slate-900 hover:bg-slate-800 h-9 px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-colors cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:pointer-events-none"
+              >
+                <Plus className="h-4 w-4" />
+                Add Doctor
+              </Button>
 
-        {features.doctors.canAdd && (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              onClick={() => setDialogOpen(true)}
-              className="bg-system-primary hover:bg-blue-700 cursor-pointer inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Add Doctor
-            </Button>
-
-            {/* Fallback direct link accessible via screen readers or right-click */}
-            <Link
-              href={getAddDoctorLink()}
-              className="sr-only"
-              tabIndex={-1}
-            >
-              Add Doctor Page
-            </Link>
-          </div>
-        )}
-      </header>
+              <Link
+                href={getAddDoctorLink()}
+                className="sr-only"
+                tabIndex={-1}
+              >
+                Add Doctor Page
+              </Link>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Add Doctor Modal Overlay */}
       <AddDoctorDialog open={dialogOpen} onOpenChange={setDialogOpen} />

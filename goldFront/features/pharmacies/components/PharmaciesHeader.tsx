@@ -1,12 +1,12 @@
 "use client";
 
-import { Store, MapPin, Globe } from "lucide-react";
-import { StatCards } from "@/core/ui/StatCards";
+import { Store, MapPin } from "lucide-react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import { PharmacyApiResponse } from "../lib/types";
 import { useMemo } from "react";
-import type { StatCardConfig } from "@/core/ui/stat-card-types";
 import { AddPharmacyDialog } from "./AddPharmacyDialog";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MetadataBadge } from "@/components/ui/MetadataBadge";
 
 interface PharmaciesHeaderProps {
   pharmacies: PharmacyApiResponse[];
@@ -18,7 +18,7 @@ export default function PharmaciesHeader({
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
 
-  const { statsConfig, data } = useMemo(() => {
+  const { totalPharmacies, topRegions } = useMemo(() => {
     const total = pharmacies.length;
 
     const regionCounts: Record<string, number> = {};
@@ -27,50 +27,31 @@ export default function PharmaciesHeader({
       regionCounts[region] = (regionCounts[region] || 0) + 1;
     });
 
-    const topRegions = Object.entries(regionCounts)
+    const top = Object.entries(regionCounts)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 2);
+      .slice(0, 3);
 
-    const statsConfig: StatCardConfig[] = [
-      {
-        id: "total-pharmacies",
-        label: "Total Pharmacies",
-        dataKey: "total",
-        icon: Store,
-        bgColor: "bg-dashboard-blue",
-      },
-    ];
-
-    const statsData: Record<string, number> = { total };
-    topRegions.forEach(([regionName, count], index) => {
-      const key = `region${index}`;
-      statsConfig.push({
-        id: `region-${index}`,
-        label: regionName,
-        dataKey: key,
-        icon: index === 0 ? MapPin : Globe,
-        bgColor: index === 0 ? "bg-dashboard-green" : "bg-gold",
-      });
-      statsData[key] = count;
-    });
-
-    return { statsConfig, data: statsData };
+    return { totalPharmacies: total, topRegions: top };
   }, [pharmacies]);
 
   return (
-    <>
-      <header className="flex flex-wrap items-center justify-between gap-6">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-normal text-black md:text-[34px]">
-            Pharmacies Database
-          </h1>
-          <p className="text-secondary-dark text-[16px]">
-            Manage pharmacy accounts across all regions
-          </p>
-        </div>
-        {isManager && <AddPharmacyDialog />}
-      </header>
-      <StatCards stats={statsConfig} data={data} />
-    </>
+    <PageHeader
+      title="Pharmacies Database"
+      subtitle="Manage pharmacy accounts across all regions"
+      metadata={
+        <>
+          <MetadataBadge variant="primary" icon={<Store size={14} className="text-blue-600" />}>
+            {totalPharmacies} {totalPharmacies === 1 ? "Pharmacy" : "Pharmacies"}
+          </MetadataBadge>
+
+          {topRegions.map(([regionName, count]) => (
+            <MetadataBadge key={regionName} variant="neutral" icon={<MapPin size={12} className="text-slate-400" />}>
+              <strong>{count}</strong> in {regionName}
+            </MetadataBadge>
+          ))}
+        </>
+      }
+      action={isManager ? <AddPharmacyDialog /> : undefined}
+    />
   );
 }

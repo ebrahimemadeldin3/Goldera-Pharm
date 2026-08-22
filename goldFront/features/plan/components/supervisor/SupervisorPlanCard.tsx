@@ -60,8 +60,8 @@ export default function SupervisorPlanCard({
   return (
     <>
       <div
-        className={`border-secondary-light flex flex-col justify-between gap-4 rounded-xl border-[0.8px] bg-white p-4 transition-all shadow-2xs ${
-          isApproved ? "opacity-95 bg-slate-50/40" : isRejected ? "opacity-90 bg-slate-50/60 border-slate-200" : ""
+        className={`border-slate-200 flex flex-col justify-between gap-4 rounded-xl border bg-white p-4 transition-all shadow-none hover:border-slate-300 ${
+          isApproved ? "opacity-95 bg-slate-50/40" : isRejected ? "opacity-90 bg-slate-50/60" : ""
         }`}
       >
         <div className="flex flex-col gap-3">
@@ -119,7 +119,7 @@ export default function SupervisorPlanCard({
                 <Button
                   size="sm"
                   onClick={() => onApprove(plan.id)}
-                  className="bg-dashboard-green hover:bg-emerald-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium text-white shadow-2xs"
+                  className="bg-emerald-600 hover:bg-emerald-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium text-white shadow-2xs transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:outline-none"
                 >
                   <CheckCircle size={14} />
                   Approve
@@ -128,7 +128,7 @@ export default function SupervisorPlanCard({
                   size="sm"
                   variant="outline"
                   onClick={() => setRejectDialogOpen(true)}
-                  className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium"
+                  className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:outline-none"
                 >
                   <XCircle size={14} />
                   Reject
@@ -182,26 +182,28 @@ export default function SupervisorPlanCard({
 
           {/* Selected Doctors Progressive Disclosure (Section 3) */}
           {selectedDoctorsCount > 0 && (
-            <div className="mt-1 border-t border-slate-100 pt-2.5">
+            <div className="mt-1 border-t border-slate-200/80 pt-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-700">
+                <span className="text-xs font-semibold text-slate-700">
                   Selected Doctors ({selectedDoctorsCount})
                 </span>
 
                 {selectedDoctorsCount > 6 && (
                   <button
+                    type="button"
+                    aria-expanded={isExpanded}
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-800 transition-colors cursor-pointer"
+                    className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-800 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none rounded-md px-2 py-1 bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/60"
                   >
                     {isExpanded ? (
                       <>
                         <span>Show compact preview</span>
-                        <ChevronUp size={14} />
+                        <ChevronUp size={13} className="text-blue-600 shrink-0" />
                       </>
                     ) : (
                       <>
                         <span>View all {selectedDoctorsCount} doctors (+{remainingCount} more)</span>
-                        <ChevronDown size={14} />
+                        <ChevronDown size={13} className="text-blue-600 shrink-0" />
                       </>
                     )}
                   </button>

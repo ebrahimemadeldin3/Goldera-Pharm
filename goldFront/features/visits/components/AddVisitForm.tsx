@@ -17,6 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Combobox, ComboboxOption } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
@@ -171,6 +172,35 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     );
   }, [doctors, selectedHospital]);
 
+  const hospitalOptions: ComboboxOption[] = useMemo(() => {
+    return [
+      { value: "all", label: "All Hospitals" },
+      ...hospitals.map((h) => ({
+        value: h,
+        label: h,
+      })),
+    ];
+  }, [hospitals]);
+
+  const doctorOptions: ComboboxOption[] = useMemo(() => {
+    return filteredDoctors.map((d) => ({
+      value: d.id,
+      label: d.nameEN || d.nameAR || "Unnamed Doctor",
+      subText: d.nameAR && d.nameEN ? d.nameAR : undefined,
+      metadata: [d.specialty, d.subRegion, d.accountName].filter(Boolean).join(" • "),
+      badge: d.specialty || undefined,
+    }));
+  }, [filteredDoctors]);
+
+  const productOptions: ComboboxOption[] = useMemo(() => {
+    return products.map((p) => ({
+      value: p.name,
+      label: p.name,
+      metadata: p.category || p.internalRef || undefined,
+      badge: p.category || undefined,
+    }));
+  }, [products]);
+
   // Preselect date if initialDate prop is passed
   useEffect(() => {
     if (initialDate) {
@@ -241,22 +271,16 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
             <FormLabel>Hospital Filter</FormLabel>
-            <Select
-              value={selectedHospital}
-              onValueChange={setSelectedHospital}
-            >
-              <SelectTrigger className="input mt-2 w-full">
-                <SelectValue placeholder="All hospitals" />
-              </SelectTrigger>
-              <SelectContent className="max-h-75">
-                <SelectItem value="all">All Hospitals</SelectItem>
-                {hospitals.map((hospital) => (
-                  <SelectItem key={hospital} value={hospital}>
-                    {hospital}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="mt-2">
+              <Combobox
+                options={hospitalOptions}
+                value={selectedHospital}
+                onChange={setSelectedHospital}
+                placeholder="Search hospital..."
+                searchPlaceholder="Type hospital name..."
+                emptyText="No hospitals found"
+              />
+            </div>
           </div>
 
           <div />
@@ -267,27 +291,17 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
             name="doctorId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Doctor *</FormLabel>
+                <FormLabel>Doctor <span className="text-red-500">*</span></FormLabel>
                 <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className={`input w-full`}>
-                      <SelectValue placeholder="Select doctor" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-75">
-                      {filteredDoctors.length === 0 ? (
-                        <div className="text-secondary-dark px-3 py-2 text-sm">
-                          No doctors available for selected hospital
-                        </div>
-                      ) : (
-                        filteredDoctors.map((d) => (
-                          <SelectItem key={d.id} value={d.id}>
-                            {d.nameEN} - {d.nameAR} (
-                            {d.accountName || "Unassigned"})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={doctorOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Search doctor by name, specialty, or area..."
+                    searchPlaceholder="Type doctor name or specialty..."
+                    emptyText="No doctors matching search"
+                    startTypingText="Start typing to search doctors..."
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -302,18 +316,15 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
               <FormItem>
                 <FormLabel>Products/Samples</FormLabel>
                 <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="input w-full">
-                      <SelectValue placeholder="Select product" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-75">
-                      {products.map((product) => (
-                        <SelectItem key={product.id} value={product.name}>
-                          {product.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Combobox
+                    options={productOptions}
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Search product/sample..."
+                    searchPlaceholder="Type product name or category..."
+                    emptyText="No products found"
+                    startTypingText="Start typing to search products..."
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

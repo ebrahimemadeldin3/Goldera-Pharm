@@ -32,7 +32,7 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
   const isCompleted = visit.status === "COMPLETED";
 
   return (
-    <Card className="border-secondary-light flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-none transition-shadow hover:shadow-2xs">
+    <Card className="border-slate-200 flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-none hover:border-slate-300 hover:shadow-xs transition-all duration-150 focus-within:ring-2 focus-within:ring-slate-900 focus-within:outline-none">
       {/* Top Header Row: Avatar + Doctor Name + Status + Primary Action */}
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -55,16 +55,18 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
             </div>
 
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-              <span className="flex items-center gap-1 truncate">
+              <span className="flex items-center gap-1.5 truncate">
                 <MapPin size={13} className="text-slate-400 shrink-0" />
                 <span className="truncate">{visit.place || "Unassigned location"}</span>
               </span>
 
-              <span className="flex items-center gap-1">
-                <Clock3 size={13} className="text-slate-400 shrink-0" />
-                <span>{visit.timeLabel}</span>
-                {visit.duration && <span className="text-slate-400">({visit.duration})</span>}
-              </span>
+              {(visit.timeLabel || visit.duration) && (
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <Clock3 size={13} className="text-slate-400 shrink-0" />
+                  <span>{visit.timeLabel || "Scheduled"}</span>
+                  {visit.duration && <span className="text-slate-400">({visit.duration})</span>}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -73,7 +75,7 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
         {reportBasePath && !isCompleted && (
           <Link
             href={`${reportBasePath}?visitId=${visit.id}`}
-            className="bg-emerald-600 hover:bg-emerald-700 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-medium text-white transition-colors shadow-2xs"
+            className="bg-emerald-600 hover:bg-emerald-700 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-medium text-white transition-colors duration-150 shadow-2xs focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:outline-none"
           >
             <CircleCheckBig size={14} />
             <span>Complete Visit</span>

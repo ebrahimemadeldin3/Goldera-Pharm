@@ -29,6 +29,17 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
 
+  // Strict Data Sanitization (Prevent literal 'undefined' or 'null' strings)
+  const isClean = (val?: string | null): val is string =>
+    Boolean(val && typeof val === "string" && val.trim() !== "" && !val.toLowerCase().includes("undefined") && !val.toLowerCase().includes("null"));
+
+  const cleanEmail = isClean(email) ? email : null;
+  const cleanPhone = isClean(phone) ? phone : null;
+  const cleanGrade = isClean(grade) ? grade : null;
+  const cleanArea = isClean(area) ? area : null;
+  const cleanAccount = isClean(accountName) ? accountName : null;
+  const cleanSubRegion = isClean(subRegion) ? subRegion : null;
+
   const displayName = nameEN || nameAR || "Unnamed Doctor";
   const secondaryName = nameEN && nameAR ? nameAR : null;
   const patientsPerDayText = avgPatientsPerDay
@@ -61,7 +72,7 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
 
   return (
     <>
-      <Card className="border-secondary-light flex flex-col justify-between gap-3 rounded-lg border bg-white p-4 shadow-none transition-shadow hover:shadow-2xs">
+      <Card className="border-slate-200 flex flex-col justify-between gap-3 rounded-xl border bg-white p-4 shadow-none hover:border-slate-300 hover:shadow-xs transition-all duration-150">
         <div className="flex flex-col gap-2.5">
           {/* Top Header: Avatar + Doctor Name & Badges */}
           <div className="flex items-start gap-3">
@@ -71,7 +82,7 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
 
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-1.5">
-                <h3 className="text-base font-semibold text-black leading-snug truncate">
+                <h3 className="text-base font-semibold text-slate-900 leading-snug truncate">
                   {displayName}
                 </h3>
                 {secondaryName && (
@@ -86,13 +97,15 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
                   {specialty || "General Doctor"}
                 </span>
 
-                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
-                  {grade ? `Grade ${grade}` : "Grade: Not specified"}
-                </span>
+                {cleanGrade && (
+                  <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                    Grade {cleanGrade}
+                  </span>
+                )}
 
-                {subRegion && (
+                {cleanSubRegion && (
                   <span className="rounded-md border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                    {subRegion}
+                    {cleanSubRegion}
                   </span>
                 )}
               </div>
@@ -103,35 +116,39 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 bg-slate-50/60 p-2.5 rounded-lg border border-slate-100">
             <div className="flex items-center gap-2 truncate">
               <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <span className={phone ? "text-slate-700" : "italic text-slate-400"}>
-                {phone || "No phone provided"}
+              <span className={cleanPhone ? "text-slate-700" : "italic text-slate-400"}>
+                {cleanPhone || "No phone provided"}
               </span>
             </div>
 
             <div className="flex items-center gap-2 truncate">
               <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <span className={email ? "text-slate-700 truncate" : "italic text-slate-400"}>
-                {email || "No email provided"}
+              <span className={cleanEmail ? "text-slate-700 truncate" : "italic text-slate-400"}>
+                {cleanEmail || "No email provided"}
               </span>
             </div>
 
-            <div className="text-slate-500 truncate">
-              Volume: <span className="font-medium text-slate-700">{patientsPerDayText || "Not specified"}</span>
-            </div>
+            {patientsPerDayText && (
+              <div className="text-slate-500 truncate">
+                Volume: <span className="font-medium text-slate-700">{patientsPerDayText}</span>
+              </div>
+            )}
 
-            <div className="text-slate-500 truncate">
-              Area: <span className="font-medium text-slate-700">{area || "Not specified"}</span>
-            </div>
+            {cleanArea && (
+              <div className="text-slate-500 truncate">
+                Area: <span className="font-medium text-slate-700">{cleanArea}</span>
+              </div>
+            )}
           </div>
 
           {/* Hospital / Account Section */}
-          {accountName ? (
+          {cleanAccount ? (
             <div className="flex items-center gap-2 rounded-md border border-blue-stroke bg-light-blue-gradiant px-3 py-1.5 text-xs">
               <Building2 size={15} className="text-dashboard-blue shrink-0" />
               <div className="min-w-0 flex-1">
-                <span className="font-medium text-slate-900 truncate block">{accountName}</span>
+                <span className="font-medium text-slate-900 truncate block">{cleanAccount}</span>
                 <span className="text-[11px] text-slate-500 block truncate">
-                  {subRegion || "Region N/A"}{area ? `, ${area}` : ""}
+                  {cleanSubRegion || "Region N/A"}{cleanArea ? `, ${cleanArea}` : ""}
                 </span>
               </div>
             </div>
@@ -147,7 +164,7 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
           {features.doctors.canView && (
             <Link
               href={profilePath}
-              className="bg-dashboard-blue hover:bg-blue-700 inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-medium text-white transition-colors"
+              className="border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 inline-flex h-8 items-center justify-center rounded-md px-3 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
             >
               View Profile
             </Link>
@@ -155,9 +172,9 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
           {features.visits.canScheduleVisit && (
             <div className="flex items-center">
               <Button
-                variant="outline"
+                type="button"
                 onClick={handleOpenSchedule}
-                className="h-8 cursor-pointer px-3 text-xs font-medium gap-1"
+                className="bg-blue-600 hover:bg-blue-700 text-white h-8 cursor-pointer px-3 text-xs font-medium gap-1.5 transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none shadow-2xs"
               >
                 <Calendar size={13} />
                 Schedule Visit

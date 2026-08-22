@@ -54,6 +54,19 @@ export default function WeekVisitsPanel({
         const dateKey = formatDateOnly(day);
         const dayVisits = visits.filter((v) => isSameDay(v.date, day));
         const hasVisits = dayVisits.length > 0;
+
+        const completedCount = dayVisits.filter((v) => v.status === "COMPLETED").length;
+        const scheduledCount = dayVisits.length - completedCount;
+
+        const statusSummaryText = hasVisits
+          ? `${dayVisits.length} ${dayVisits.length === 1 ? "visit" : "visits"}${
+              completedCount > 0 || scheduledCount > 0
+                ? ` · ${scheduledCount > 0 ? `${scheduledCount} scheduled` : ""}${
+                    scheduledCount > 0 && completedCount > 0 ? " · " : ""
+                  }${completedCount > 0 ? `${completedCount} completed` : ""}`
+                : ""
+            }`
+          : "0 visits";
         
         // Sensible Default: selected/current day is expanded, other days collapsed (unless searching with results)
         const isSelectedDay = selectedDate ? isSameDay(day, selectedDate) : false;
@@ -68,14 +81,24 @@ export default function WeekVisitsPanel({
         return (
           <Card
             key={dateKey}
-            className={`overflow-hidden border shadow-2xs transition-all ${
+            className={`overflow-hidden border shadow-2xs transition-all duration-150 ${
               hasVisits ? "border-slate-200 bg-white" : "border-slate-200/60 bg-slate-50/50"
             }`}
           >
             {/* Lightweight Integrated Day Header Bar */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-expanded={!isCollapsed}
+              aria-controls={`day-visits-panel-${dateKey}`}
               onClick={() => toggleDayAccordion(dateKey)}
-              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors ${
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  toggleDayAccordion(dateKey);
+                }
+              }}
+              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none ${
                 hasVisits
                   ? "bg-white text-slate-800 hover:bg-slate-50"
                   : "bg-slate-50/80 text-slate-600 hover:bg-slate-100/70"
@@ -88,13 +111,13 @@ export default function WeekVisitsPanel({
 
               <div className="flex items-center gap-2.5 text-xs">
                 <span
-                  className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium ${
                     hasVisits
-                      ? "bg-blue-50 text-blue-700 border border-blue-200"
-                      : "bg-slate-100 text-slate-500 border border-slate-200"
+                      ? "bg-slate-100 text-slate-700 border border-slate-200/80"
+                      : "bg-slate-50 text-slate-400 border border-slate-200/50"
                   }`}
                 >
-                  {dayVisits.length} {dayVisits.length === 1 ? "visit" : "visits"}
+                  {statusSummaryText}
                 </span>
 
                 {isCollapsed ? (
@@ -107,7 +130,7 @@ export default function WeekVisitsPanel({
 
             {/* Visit Cards Section when Expanded */}
             {!isCollapsed && (
-              <div className="p-3.5 border-t border-slate-100 space-y-3">
+              <div id={`day-visits-panel-${dateKey}`} className="p-3.5 border-t border-slate-100 space-y-3">
                 {dayVisits.length === 0 ? (
                   <div className="py-2.5 text-center text-xs text-slate-400 italic">
                     No visits scheduled for {format(day, "EEEE, MMM d")}
@@ -134,7 +157,7 @@ export default function WeekVisitsPanel({
                             e.stopPropagation();
                             toggleDayVisitsLimit(dateKey);
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-150 cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
                         >
                           {isVisitsExpanded ? (
                             <>

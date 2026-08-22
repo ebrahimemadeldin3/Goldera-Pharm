@@ -12,10 +12,11 @@ import {
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SearchInput } from "@/components/ui/SearchInput";
 import DayVisitsPanel from "@/features/visits/components/panels/DayVisitsPanel";
 import WeekVisitsPanel from "@/features/visits/components/panels/WeekVisitsPanel";
 import { Visit } from "@/features/visits/lib/types/ui";
-import { Search, X, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
 
 type VisitsPlannerProps = {
   visits: Visit[];
@@ -87,7 +88,7 @@ export default function VisitsPlanner({
   }, [activeVisits, searchQuery]);
 
   return (
-    <section className="border-secondary-light rounded-xl border bg-white p-4 sm:p-5 lg:h-[calc(100vh-170px)] lg:overflow-hidden flex flex-col">
+    <section className="border-slate-200 rounded-xl border bg-white p-5 lg:h-[calc(100vh-170px)] lg:overflow-hidden flex flex-col">
       <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start flex-1 min-h-0">
         {/* Left Column: Fixed/Scrollable Calendar Navigation & Status Legend (280px fixed width on desktop) */}
         <div className="w-full lg:w-70 shrink-0 flex flex-col gap-4 lg:h-full lg:overflow-y-auto pr-1">
@@ -175,23 +176,12 @@ export default function VisitsPlanner({
           {/* Integrated Search & 7-Day Navigation Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 shrink-0">
             {/* Search Input */}
-            <div className="relative w-full sm:w-65">
-              <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-              <input
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search visits..."
-                className="h-8.5 w-full rounded-md border border-slate-200 bg-white pr-8 pl-8.5 text-xs focus:border-blue-500 focus:outline-none"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                  <X size={14} />
-                </button>
-              )}
-            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search visits..."
+              className="w-full sm:w-65"
+            />
 
             {/* Synchronized 7-Day Week Navigation (in Week mode) */}
             {mode === "week" && (

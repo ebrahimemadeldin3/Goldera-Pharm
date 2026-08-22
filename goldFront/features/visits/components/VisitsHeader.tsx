@@ -10,6 +10,8 @@ import { getDoctorsAction } from "@/features/doctors/api";
 import { getManagerTeamAction } from "@/features/team/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { MetadataBadge } from "@/components/ui/MetadataBadge";
 
 type VisitsHeaderProps = {
   role: UserRole;
@@ -55,54 +57,45 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
 
   return (
     <>
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-normal text-2xl text-black md:text-[32px]">
-            Visit Calendar
-          </h1>
-          <p className="text-secondary-dark text-sm text-slate-600 mt-0.5">
-            Track and manage medical rep visits, schedules, and completion reports
-          </p>
-
-          {/* Compact Inline Metadata Summary */}
-          <div className="mt-2.5 flex flex-wrap items-center gap-2.5 text-xs text-slate-600">
-            <span className="inline-flex items-center gap-1.5 font-medium text-slate-900 bg-white border border-slate-200 px-2.5 py-1 rounded-md shadow-2xs">
-              <Calendar size={14} className="text-dashboard-blue" />
+      <PageHeader
+        title="Visit Calendar"
+        subtitle="Track and manage medical rep visits, schedules, and completion reports"
+        metadata={
+          <>
+            <MetadataBadge variant="primary" icon={<Calendar size={14} className="text-blue-600" />}>
               {stats.total} Total {stats.total === 1 ? "Visit" : "Visits"}
-            </span>
+            </MetadataBadge>
 
-            <span className="inline-flex items-center gap-1.5 font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
-              <CheckCircle size={14} className="text-emerald-600" />
+            <MetadataBadge variant="success" icon={<CheckCircle size={14} className="text-emerald-600" />}>
               {stats.completed} Completed
-            </span>
+            </MetadataBadge>
 
-            <span className="inline-flex items-center gap-1.5 font-medium text-blue-800 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-md">
-              <Clock size={14} className="text-blue-600" />
+            <MetadataBadge variant="info" icon={<Clock size={14} className="text-blue-600" />}>
               {stats.today} Today
-            </span>
+            </MetadataBadge>
+          </>
+        }
+        action={
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={() => setDialogOpen(true)}
+              className="bg-slate-900 hover:bg-slate-800 h-9 px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-colors cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:pointer-events-none"
+            >
+              <Plus className="h-4 w-4" />
+              Add Visit
+            </Button>
+
+            <Link
+              href={addVisitPath}
+              className="sr-only"
+              tabIndex={-1}
+            >
+              Add Visit Page
+            </Link>
           </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="bg-system-primary hover:bg-blue-700 cursor-pointer inline-flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium text-white transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Add Visit
-          </Button>
-
-          {/* Fallback direct link accessible via screen readers or right-click */}
-          <Link
-            href={addVisitPath}
-            className="sr-only"
-            tabIndex={-1}
-          >
-            Add Visit Page
-          </Link>
-        </div>
-      </header>
+        }
+      />
 
       {/* Add Visit Modal Overlay */}
       {dialogOpen && (

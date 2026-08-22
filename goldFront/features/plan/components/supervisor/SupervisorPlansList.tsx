@@ -3,88 +3,92 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/lib/utils/toast";
-import Pagination from "@/components/ui/Pagination";
+import type { VisitPlan } from "@/features/plan/api/get";
+import { updatePlanStatusAction, rejectPlanAction } from "@/features/plan/api/handle";
 import SupervisorPlanCard from "./SupervisorPlanCard";
-import SupervisorOwnPlanCard from "./SupervisorOwnPlanCard";
-import { Plan, VisitPlan } from "@/features/plan/api/get";
-import {
-  approvePlanAction,
-  rejectPlanAction,
-} from "@/features/plan/api/handle";
+import { SectionContainer } from "@/components/ui/SectionContainer";
+import { ResultsFooter } from "@/components/ui/ResultsFooter";
 
 type SupervisorPlansListProps = {
-  repPlans: VisitPlan[];
-  myPlans: Plan[];
+  plans?: VisitPlan[] | Record<string, unknown>[];
+  myPlans?: VisitPlan[] | Record<string, unknown>[];
+  repPlans?: VisitPlan[] | Record<string, unknown>[];
   page?: number;
   limit?: number;
   totalCount?: number;
 };
 
-type TabType = "repPlans" | "myPlans";
+type TabType = "all" | "myPlans" | "repPlans";
 
 export default function SupervisorPlansList({
+  plans,
+  myPlans,
   repPlans = [],
-  myPlans = [],
   page = 1,
   limit = 10,
   totalCount = 0,
 }: SupervisorPlansListProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabType>("repPlans");
+  const [activeTab, setActiveTab] = useState<TabType>("all");
   const [isPending, startTransition] = useTransition();
 
-  const pendingCount = useMemo(() => {
-    return repPlans.filter((p) => p.status === "PENDING").length;
-  }, [repPlans]);
+  const ownPlans = useMemo(() => plans || myPlans || [], [plans, myPlans]);
 
-  const tabs: Array<{ id: TabType; label: string; count?: number }> = [
-    { id: "repPlans", label: "Rep Plans to Approve", count: pendingCount },
-    { id: "myPlans", label: "My Plans" },
+  const allCombined = useMemo(() => {
+    return [...ownPlans, ...repPlans];
+  }, [ownPlans, repPlans]);
+
+  const displayPlans = useMemo(() => {
+    if (activeTab === "myPlans") return ownPlans;
+    if (activeTab === "repPlans") return repPlans;
+    return allCombined;
+  }, [activeTab, ownPlans, repPlans, allCombined]);
+
+  const counts = useMemo(
+    () => ({
+      all: allCombined.length,
+      myPlans: ownPlans.length,
+      repPlans: repPlans.length,
+    }),
+    [allCombined, ownPlans, repPlans],
+  );
+
+  const tabs: Array<{ id: TabType; label: string; count: number }> = [
+    { id: "all", label: "All Plans", count: counts.all },
+    { id: "myPlans", label: "My Plans", count: counts.myPlans },
+    { id: "repPlans", label: "Team Rep Plans", count: counts.repPlans },
   ];
-
-  const displayPlans = activeTab === "repPlans" ? repPlans : myPlans;
 
   const handleApprove = (planId: string) => {
     startTransition(async () => {
-      const result = await approvePlanAction(planId);
-
+      const result = await updatePlanStatusAction(planId, "APPROVED");
       if (result.success) {
         toast.success({ title: "Plan approved successfully" });
         router.refresh();
       } else {
-        toast.error({
-          title: "Failed to approve plan",
-          description: result.error?.message || "Please try again",
-        });
+        toast.error({ title: result.error?.message || "Failed to approve plan" });
       }
     });
   };
 
-  const handleReject = (planId: string, feedback?: string) => {
+  const handleReject = (planId: string, reason?: string) => {
     startTransition(async () => {
-      const result = await rejectPlanAction(planId, feedback);
-
+      const result = await rejectPlanAction(planId, reason);
       if (result.success) {
         toast.success({ title: "Plan rejected successfully" });
         router.refresh();
       } else {
-        toast.error({
-          title: "Failed to reject plan",
-          description: result.error?.message || "Please try again",
-        });
+        toast.error({ title: result.error?.message || "Failed to reject plan" });
       }
     });
   };
 
-  const startItem = totalCount > 0 ? (page - 1) * limit + 1 : 0;
-  const endItem = Math.min(page * limit, totalCount);
-
   return (
-    <section className="border-secondary-light mt-6 rounded-[14px] border-[0.8px] bg-white p-5 sm:p-6">
+    <SectionContainer className="mt-6">
       {/* Tabs Header Toolbar */}
       <header className="mb-5 flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-xl font-semibold text-black">Plans Directory</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Plans Directory</h2>
           {isPending && (
             <span className="text-xs font-normal text-slate-400">Updating...</span>
           )}
@@ -123,34 +127,23 @@ export default function SupervisorPlansList({
             <p className="text-xs text-slate-500 mt-1">
               {activeTab === "repPlans"
                 ? "No plans submitted by reps for approval on page " + page
-                : "You don't have any personal plans on page " + page}
+                : "No visit plans available"}
             </p>
           </div>
-        ) : activeTab === "repPlans" ? (
+        ) : (
           displayPlans.map((plan) => (
             <SupervisorPlanCard
-              key={plan.id}
+              key={(plan as { id: string }).id}
               plan={plan as VisitPlan}
               onApprove={handleApprove}
               onReject={handleReject}
             />
           ))
-        ) : (
-          displayPlans.map((plan) => (
-            <SupervisorOwnPlanCard key={plan.id} plan={plan as Plan} />
-          ))
         )}
       </div>
 
-      {/* Bottom Footer Pagination */}
-      <footer className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-        <p className="text-secondary-dark text-xs font-normal">
-          Showing <span className="font-medium text-slate-700">{startItem}</span> to{" "}
-          <span className="font-medium text-slate-700">{endItem}</span> of{" "}
-          <span className="font-medium text-slate-700">{totalCount}</span> plans
-        </p>
-        <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </footer>
-    </section>
+      {/* Bottom Pagination Footer */}
+      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+    </SectionContainer>
   );
 }

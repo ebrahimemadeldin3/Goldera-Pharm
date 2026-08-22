@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { Search, X, Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw } from "lucide-react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import DoctorCard from "./DoctorCard";
 import { DoctorCardData } from "../lib/types";
@@ -15,7 +15,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import Pagination from "@/components/ui/Pagination";
+import { SectionContainer } from "@/components/ui/SectionContainer";
+import { SearchInput } from "@/components/ui/SearchInput";
+import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
+import { ResultsFooter } from "@/components/ui/ResultsFooter";
 
 interface DoctorsListProps {
   doctors?: DoctorApiResponse[];
@@ -70,7 +73,8 @@ export default function DoctorsList({
     });
   };
 
-  const activeSubRegion = selectedSubRegion || "ALL";
+  const currentSubRegionParam = searchParams.toString() ? new URLSearchParams(searchParams.toString()).get("subRegion") : null;
+  const activeSubRegion = currentSubRegionParam || selectedSubRegion || "ALL";
 
   // Available sub-regions
   const subRegionOptions = [
@@ -100,15 +104,12 @@ export default function DoctorsList({
 
   const hasActiveFilters = Boolean(q.trim() || selectedSubRegion);
 
-  const startItem = totalCount > 0 ? (page - 1) * limit + 1 : 0;
-  const endItem = Math.min(page * limit, totalCount);
-
   return (
-    <section className="border-secondary-light mt-4 rounded-xl border bg-white p-4 sm:p-5">
+    <SectionContainer>
       {/* Header & Directory Toolbar */}
       <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3.5">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-lg font-semibold text-black">Doctor Directory</h2>
+          <h2 className="text-lg font-semibold text-slate-900">Doctor Directory</h2>
           {isPending && (
             <span className="text-xs font-normal text-slate-400">Loading...</span>
           )}
@@ -137,23 +138,12 @@ export default function DoctorsList({
           </div>
 
           {/* Search Input */}
-          <div className="relative w-full sm:w-65 md:w-75">
-            <Search className="absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-[#717182]" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Filter page by name, specialty..."
-              className="h-8.5 w-full rounded-md border border-slate-200 bg-white pr-8 pl-8.5 text-xs "
-            />
-            {q && (
-              <button
-                onClick={() => setQ("")}
-                className="absolute top-1/2 right-2.5 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
+          <SearchInput
+            value={q}
+            onChange={setQ}
+            placeholder="Filter page by name, specialty..."
+            disabled={isPending}
+          />
 
           {/* Clear Filters Button */}
           {hasActiveFilters && (
@@ -170,20 +160,12 @@ export default function DoctorsList({
         </div>
       </header>
 
-      {/* Scope-Honest Search Info Pill */}
+      {/* Scope-Honest Search Info Banner */}
       {q.trim() !== "" && (
-        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-700">
-          <span>
-            Filtering currently loaded page slice for &quot;<strong>{q}</strong>&quot;.
-            Showing {filtered.length} of {doctors.length} loaded records.
-          </span>
-          <button
-            onClick={() => setQ("")}
-            className="font-medium underline hover:text-blue-900"
-          >
-            Clear filter
-          </button>
-        </div>
+        <ScopeInfoBanner onReset={() => setQ("")} resetLabel="Clear filter">
+          Filtering currently loaded page slice for &quot;<strong className="text-slate-700 font-medium">{q}</strong>&quot;.
+          Showing {filtered.length} of {doctors.length} loaded records.
+        </ScopeInfoBanner>
       )}
 
       {/* 2-Column Doctor Cards Grid */}
@@ -222,15 +204,8 @@ export default function DoctorsList({
         )}
       </div>
 
-      {/* Subtle Inline Results Pagination */}
-      <div className="mt-5 flex flex-wrap items-center justify-between gap-3 pt-3">
-        <p className="text-xs text-slate-500 font-normal">
-          Showing <span className="font-medium text-slate-700">{startItem}</span>–
-          <span className="font-medium text-slate-700">{endItem}</span> of{" "}
-          <span className="font-medium text-slate-700">{totalCount}</span> doctors
-        </p>
-        <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </div>
-    </section>
+      {/* Subtle Inline Results Pagination Footer */}
+      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+    </SectionContainer>
   );
 }

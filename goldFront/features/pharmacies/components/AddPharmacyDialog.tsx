@@ -62,7 +62,7 @@ export function AddPharmacyDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-system-primary hover:text-system-primary hover:border-system-primary ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-transparent">
+        <Button className="bg-slate-900 hover:bg-slate-800 h-9 px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-colors cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:pointer-events-none ml-auto">
           <Plus className="h-4 w-4" />
           Add Pharmacy
         </Button>
@@ -81,7 +81,7 @@ export function AddPharmacyDialog() {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Pharmacy Name</FormLabel>
+                  <FormLabel>Pharmacy Name <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. C0001-صيدلية الشفاء" {...field} />
                   </FormControl>
@@ -94,7 +94,7 @@ export function AddPharmacyDialog() {
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>City <span className="text-red-500">*</span></FormLabel>
                   <FormControl>
                     <Input placeholder="e.g. Riyadh" {...field} />
                   </FormControl>
@@ -108,7 +108,7 @@ export function AddPharmacyDialog() {
                 name="subRegion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sub-Region</FormLabel>
+                    <FormLabel>Sub-Region <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Taif" {...field} />
                     </FormControl>
@@ -121,7 +121,7 @@ export function AddPharmacyDialog() {
                 name="region"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Region</FormLabel>
+                    <FormLabel>Region <span className="text-red-500">*</span></FormLabel>
                     <FormControl>
                       <Input placeholder="e.g. Western Area" {...field} />
                     </FormControl>
