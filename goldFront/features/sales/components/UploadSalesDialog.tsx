@@ -61,7 +61,7 @@ export function UploadSalesDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-system-primary hover:text-system-primary hover:border-system-primary ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-transparent">
+        <Button className="inline-flex h-10 w-full cursor-pointer items-center gap-2 rounded-[10px] border border-transparent bg-[#C9A44C] px-4 text-sm font-semibold text-white shadow-none transition-all duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto">
           <Upload className="h-4 w-4" />
           Upload Sales
         </Button>
