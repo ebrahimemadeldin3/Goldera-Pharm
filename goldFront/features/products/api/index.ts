@@ -2,7 +2,7 @@
 
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
-import { buildPaginationQuery } from "@/lib/utils";
+import { revalidatePath } from "next/cache";
 import type {
   GetProductsResponse,
   ProductApiResponse,
@@ -83,6 +83,11 @@ export async function getProductsAction(page?: number, limit?: number) {
 export async function createProductAction(data: CreateProductDto) {
   try {
     const response = await createProduct(data);
+
+    revalidatePath("/manager/products");
+    revalidatePath("/supervisor/products");
+    revalidatePath("/rep/products");
+
     return {
       success: true,
       data: response,

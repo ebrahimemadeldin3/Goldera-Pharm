@@ -18,7 +18,13 @@ type PageProps = {
 export const dynamic = "force-dynamic";
 
 export default async function Page({ searchParams }: PageProps) {
-  const { repId, date, sheetName, page: pageStr, limit: limitStr } = await searchParams;
+  const {
+    repId,
+    date,
+    sheetName,
+    page: pageStr,
+    limit: limitStr,
+  } = await searchParams;
   const page = pageStr ? Number(pageStr) : 1;
   const limit = limitStr ? Number(limitStr) : 10;
 
@@ -44,9 +50,9 @@ export default async function Page({ searchParams }: PageProps) {
       name: rep.name,
     }));
   }
-  
+
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
+    <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
       <SalesHeader
         sales={sales}
         repOptions={repOptions}
@@ -54,7 +60,12 @@ export default async function Page({ searchParams }: PageProps) {
         selectedDate={date}
         selectedSheetName={sheetName}
       />
-      <SalesTable sales={sales} page={page} limit={limit} totalCount={totalCount} />
+      <SalesTable
+        sales={sales}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+      />
     </PageContainer>
   );
 }

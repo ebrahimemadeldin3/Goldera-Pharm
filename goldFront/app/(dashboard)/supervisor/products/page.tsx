@@ -6,7 +6,11 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: { page?: string; limit?: string };
+}) {
   const page = searchParams?.page ? Number(searchParams.page) : 1;
   const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
 
@@ -18,16 +22,18 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   const raw = result.data as unknown;
   const products = extractProducts(raw);
-  const rawResults =
-    raw && typeof raw === "object"
-      ? (raw as Record<string, unknown>).results
-      : undefined;
-  const totalCount = typeof rawResults === "number" ? rawResults : products.length;
+  const totalCount =
+    typeof result.results === "number" ? result.results : products.length;
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
-      <ProductsHeader products={products} />
-      <ProductsList products={products} page={page} limit={limit} totalCount={totalCount} />
+    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+      <ProductsHeader />
+      <ProductsList
+        products={products}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+      />
     </PageContainer>
   );
 }

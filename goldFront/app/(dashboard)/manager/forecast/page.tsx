@@ -1,24 +1,38 @@
-import ForecastRequestsList from "@/features/forecast/components/ForecastRequestsList";
+import { AlertCircle } from "lucide-react";
+import ForecastApprovalCenter from "@/features/forecast/components/ForecastApprovalCenter";
 import { getAllForecastsAction } from "@/features/forecast/api/management";
 import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
-   const params = await searchParams;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: { page?: string; limit?: string };
+}) {
+  const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
-  
+
   const result = await getAllForecastsAction(page, limit);
 
   if (!result.success || !result.data) {
     return (
-      <PageContainer className="flex flex-col gap-6">
-        <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm">
-            {result.error?.message || "Failed to load forecast requests"}
-          </p>
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+        <div className="flex items-start gap-3 rounded-[16px] border border-[#F5C9C5] bg-[#FFF1F0] p-5 text-[#B42318] shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white">
+            <AlertCircle className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h1 className="text-base font-semibold">
+              Failed to load forecast requests
+            </h1>
+            <p className="mt-1 text-sm font-medium">
+              {result.error?.message ||
+                "Please refresh the page or try again later."}
+            </p>
+          </div>
         </div>
       </PageContainer>
     );
@@ -27,22 +41,8 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const { data, results } = result.data;
 
   return (
-    <PageContainer className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl/9 font-normal text-black md:text-[34px]/10">
-            Forecast Requests
-          </h1>
-          <p className="text-secondary-dark text-base/6">
-            Review and manage forecast submissions from medical representatives
-          </p>
-        </div>
-        <div className="bg-system-primary rounded-lg px-4 py-2">
-          <p className="text-xs text-white opacity-80">Total Requests</p>
-          <p className="text-2xl font-semibold text-white">{results}</p>
-        </div>
-      </header>
-      <ForecastRequestsList
+    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+      <ForecastApprovalCenter
         forecasts={data}
         page={page}
         limit={limit}
