@@ -32,6 +32,11 @@ export type SalesQueryParams = {
   limit?: number;
 };
 
+export type SalesDateRangeFilter = {
+  from?: string | Date | null;
+  to?: string | Date | null;
+};
+
 export type SalesApiEnvelope = {
   status?: string;
   message?: string;

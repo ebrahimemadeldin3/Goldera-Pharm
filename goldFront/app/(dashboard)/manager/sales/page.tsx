@@ -1,7 +1,11 @@
 import SalesHeader from "@/features/sales/components/SalesHeader";
 import SalesTable from "@/features/sales/components/SalesTable";
 import { getManagerRepSalesAction, getSalesAction } from "@/features/sales/api";
-import { extractSales } from "@/features/sales/lib/utils";
+import {
+  extractSales,
+  getSalesTotalCount,
+  normalizeSalesDateFilter,
+} from "@/features/sales/lib/utils";
 import { getManagerTeamAction } from "@/features/team/api";
 import { PageContainer } from "@/components/layout/page-container";
 
@@ -9,7 +13,11 @@ type PageProps = {
   searchParams: {
     repId?: string;
     date?: string;
+    dateFrom?: string;
+    dateTo?: string;
     sheetName?: string;
+    timeFilter?: string;
+    q?: string;
     page?: string;
     limit?: string;
   };
@@ -19,18 +27,24 @@ export const dynamic = "force-dynamic";
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
-  
-  
-  const { repId, date, sheetName } = params;
-  
-  
+
+  const { repId, date, dateFrom, dateTo, sheetName, timeFilter, q } = params;
+  const selectedTimeFilter = normalizeSalesDateFilter(timeFilter);
+  const searchQuery = q ?? "";
+  const apiDate = dateFrom || dateTo ? undefined : date;
+
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
   const [result, repsRes] = await Promise.all([
     repId
-      ? getManagerRepSalesAction(repId, { date, sheetName, page, limit })
-      : getSalesAction({ date, sheetName, page, limit }),
+      ? getManagerRepSalesAction(repId, {
+          date: apiDate,
+          sheetName,
+          page,
+          limit,
+        })
+      : getSalesAction({ date: apiDate, sheetName, page, limit }),
     getManagerTeamAction("MEDICAL_REP"),
   ]);
 
@@ -38,27 +52,71 @@ export default async function Page({ searchParams }: PageProps) {
     throw new Error(result.error?.message || "Failed to fetch sales");
   }
 
-  const sales = extractSales(result.data);
+  let sales = extractSales(result.data);
+  const totalCount = getSalesTotalCount(result.data, sales.length);
 
-   let totalCount = 0;
-if(sales) {
-  totalCount = Object(result.data).results as number || sales.length;
-}
+  if (totalCount !== sales.length) {
+    const allSalesResult = repId
+      ? await getManagerRepSalesAction(repId, {
+          date: apiDate,
+          sheetName,
+          page: 1,
+          limit: totalCount,
+        })
+      : await getSalesAction({
+          date: apiDate,
+          sheetName,
+          page: 1,
+          limit: totalCount,
+        });
+
+    if (!allSalesResult.success) {
+      throw new Error(
+        allSalesResult.error?.message || "Failed to fetch all sales",
+      );
+    }
+
+    sales = extractSales(allSalesResult.data);
+  }
+
   const repOptions = (repsRes.medicalReps ?? []).map((rep) => ({
     id: rep.id,
     name: rep.name,
   }));
+  const hasAppliedFilters = Boolean(
+    repId ||
+    date ||
+    dateFrom ||
+    dateTo ||
+    sheetName ||
+    selectedTimeFilter !== "all" ||
+    searchQuery.trim(),
+  );
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
+    <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
       <SalesHeader
         sales={sales}
         repOptions={repOptions}
         selectedRepId={repId}
         selectedDate={date}
+        selectedDateFrom={dateFrom}
+        selectedDateTo={dateTo}
         selectedSheetName={sheetName}
+        selectedTimeFilter={selectedTimeFilter}
+        searchQuery={searchQuery}
       />
-      <SalesTable sales={sales} page={page} limit={limit} totalCount={totalCount} />
+      <SalesTable
+        sales={sales}
+        page={page}
+        limit={limit}
+        selectedDate={date}
+        selectedDateFrom={dateFrom}
+        selectedDateTo={dateTo}
+        selectedTimeFilter={selectedTimeFilter}
+        searchQuery={searchQuery}
+        hasAppliedFilters={hasAppliedFilters}
+      />
     </PageContainer>
   );
 }

@@ -1,13 +1,17 @@
 "use client";
 
-import { TrendingUp, BarChart3, Calendar as CalendarIcon } from "lucide-react";
-import { StatCards } from "@/core/ui/StatCards";
+import {
+  BarChart3,
+  Calendar as CalendarIcon,
+  Filter,
+  TrendingUp,
+} from "lucide-react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import type { SaleApiResponse, SalesRepOption } from "../lib/types";
 import { useMemo, useState } from "react";
-import type { StatCardConfig } from "@/core/ui/stat-card-types";
+import type { CSSProperties } from "react";
 import { UploadSalesDialog } from "./UploadSalesDialog";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,25 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  formatDateOnly,
-  formatSaudiDateDisplay,
-  getSaudiYearMonthKey,
-  parseDateValue,
-} from "@/lib/utils";
+import { filterSales, isSaleWithinDateFilter } from "../lib/utils";
+import type { DateFilter } from "../lib/types";
+import { SalesDateFilter } from "./SalesDateFilter";
 
 interface SalesHeaderProps {
   sales: SaleApiResponse[];
   repOptions?: SalesRepOption[];
   selectedRepId?: string;
   selectedDate?: string;
+  selectedDateFrom?: string;
+  selectedDateTo?: string;
   selectedSheetName?: string;
+  selectedTimeFilter?: DateFilter;
+  searchQuery?: string;
 }
 
 export default function SalesHeader({
@@ -43,169 +42,218 @@ export default function SalesHeader({
   repOptions = [],
   selectedRepId = "",
   selectedDate = "",
+  selectedDateFrom = "",
+  selectedDateTo = "",
   selectedSheetName = "",
+  selectedTimeFilter = "all",
+  searchQuery = "",
 }: SalesHeaderProps) {
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
   const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [repId, setRepId] = useState(selectedRepId || "all");
   const [sheetName, setSheetName] = useState(selectedSheetName || "");
-  const [selectedDateValue, setSelectedDateValue] = useState<Date | undefined>(
-    selectedDate ? parseDateValue(selectedDate) : undefined,
+
+  const filteredSales = useMemo(
+    () =>
+      filterSales(sales, {
+        dateRange: {
+          from: selectedDateFrom || selectedDate,
+          to: selectedDateTo || selectedDateFrom || selectedDate,
+        },
+        dateFilter: selectedTimeFilter,
+        query: searchQuery,
+      }),
+    [
+      sales,
+      searchQuery,
+      selectedDate,
+      selectedDateFrom,
+      selectedDateTo,
+      selectedTimeFilter,
+    ],
   );
 
-  const { statsConfig, data } = useMemo(() => {
-    const total = sales.length;
+  const stats = useMemo(() => {
+    const total = filteredSales.length;
+    const thisMonth = filteredSales.filter((sale) =>
+      isSaleWithinDateFilter(sale, "month"),
+    ).length;
+    const thisYear = filteredSales.filter((sale) =>
+      isSaleWithinDateFilter(sale, "year"),
+    ).length;
 
-    const statsConfig: StatCardConfig[] = [
+    return [
       {
         id: "total-records",
         label: "Total Records",
-        dataKey: "total",
+        value: total,
         icon: BarChart3,
-        bgColor: "bg-dashboard-blue",
+        iconClassName: "bg-[#EEF4FF] text-[#3972D5]",
       },
       {
         id: "this-month",
-        label: "This Month",
-        dataKey: "thisMonth",
+        label: "Sales This Month",
+        value: thisMonth,
         icon: CalendarIcon,
-        bgColor: "bg-dashboard-green",
+        iconClassName: "bg-[#EAF8F2] text-[#20A66A]",
       },
       {
         id: "this-year",
-        label: "This Year",
-        dataKey: "thisYear",
+        label: "Sales This Year",
+        value: thisYear,
         icon: TrendingUp,
-        bgColor: "bg-gold",
+        iconClassName: "bg-[#FFF7E0] text-[#B18732]",
       },
     ];
-
-    const now = new Date();
-    const currentMonthKey = getSaudiYearMonthKey(now);
-    const currentYear = currentMonthKey.slice(0, 4);
-    const thisMonth = sales.filter((s) => {
-      const dateField =
-        s.date || s.createdAt || s.saleDate || s.soldAt || s.updatedAt;
-      if (!dateField) return false;
-      return getSaudiYearMonthKey(new Date(dateField)) === currentMonthKey;
-    }).length;
-
-    const thisYear = sales.filter((s) => {
-      const dateField =
-        s.date || s.createdAt || s.saleDate || s.soldAt || s.updatedAt;
-      if (!dateField) return false;
-      return getSaudiYearMonthKey(new Date(dateField)).startsWith(currentYear);
-    }).length;
-
-    return {
-      statsConfig,
-      data: { total, thisMonth, thisYear },
-    };
-  }, [sales]);
+  }, [filteredSales]);
 
   const onApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const date = selectedDateValue ? formatDateOnly(selectedDateValue) : "";
 
-    const query = new URLSearchParams();
+    const query = new URLSearchParams(Array.from(searchParams.entries()));
     if (isManager && repId && repId !== "all") query.set("repId", repId);
-    if (date) query.set("date", date);
+    else query.delete("repId");
+
     if (sheetName.trim()) query.set("sheetName", sheetName.trim());
+    else query.delete("sheetName");
+
+    query.set("page", "1");
 
     const qs = query.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
   return (
-    <>
-      <header className="flex w-full flex-wrap items-center justify-start gap-6">
+    <div className="space-y-5">
+      <header className="sales-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-2xl font-normal text-black md:text-[34px]">Sales Data</h1>
-          <p className="text-secondary-dark text-[16px]">
-            Track and analyze sales performance across all regions
+          <p className="text-[11px] font-semibold tracking-[0.08em] text-[#B18732] uppercase">
+            Commercial
+          </p>
+          <h1 className="mt-1 text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
+            Sales Data
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
+            Track and analyze sales performance across all regions and
+            representatives.
           </p>
         </div>
-        {isManager && <UploadSalesDialog />}
+        {isManager && (
+          <div className="w-full sm:w-auto">
+            <UploadSalesDialog />
+          </div>
+        )}
       </header>
 
       {(isManager || isRep) && (
         <form
           onSubmit={onApplyFilters}
-          className={`mt-4 mb-6 grid grid-cols-1 gap-3 ${isManager ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+          className="sales-page-enter sales-page-enter-delay-1 rounded-2xl border border-[#E5E8EF] bg-white p-5 shadow-none sm:p-6"
         >
-          {isManager && (
-            <div>
-              <label className="mb-1 block text-sm font-medium text-black">
-                Medical Rep
-              </label>
-              <Select value={repId} onValueChange={setRepId}>
-                <SelectTrigger className="bg-secondary-very-light h-10 w-full rounded-md border-[0.8px] border-[#E2E8F0] text-sm">
-                  <SelectValue placeholder="All reps" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All reps</SelectItem>
-                  {repOptions.map((rep) => (
-                    <SelectItem key={rep.id} value={rep.id}>
-                      {rep.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-black">
-              Date
-            </label>
-            <p className="text-secondary-dark mb-1 text-xs">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-[#182033]">Filters</h2>
+            <p className="mt-0.5 text-xs text-[#667085]">
               Uses Saudi Arabia timezone (Asia/Riyadh).
             </p>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="bg-secondary-very-light h-10 w-full justify-start border-[0.8px] border-[#E2E8F0] text-left text-sm font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {selectedDateValue
-                    ? formatSaudiDateDisplay(selectedDateValue)
-                    : "Pick a date"}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={selectedDateValue}
-                  onSelect={setSelectedDateValue}
-                />
-              </PopoverContent>
-            </Popover>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-black">
-              Sheet Name
-            </label>
-            <div className="flex w-full items-center gap-2">
+          <div
+            className={`grid grid-cols-1 gap-4 ${isManager ? "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto]" : "lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"}`}
+          >
+            {isManager && (
+              <div className="min-w-0">
+                <label className="mb-2 block text-xs font-semibold text-[#344054]">
+                  Medical Rep
+                </label>
+                <Select value={repId} onValueChange={setRepId}>
+                  <SelectTrigger className="h-11 w-full rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm text-[#182033] shadow-none transition-colors focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10">
+                    <SelectValue placeholder="All Representatives" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Representatives</SelectItem>
+                    {repOptions.map((rep) => (
+                      <SelectItem key={rep.id} value={rep.id}>
+                        {rep.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-xs font-semibold text-[#344054]">
+                Date
+              </label>
+              <SalesDateFilter
+                selectedDate={selectedDate}
+                selectedDateFrom={selectedDateFrom}
+                selectedDateTo={selectedDateTo}
+              />
+            </div>
+
+            <div className="min-w-0">
+              <label className="mb-2 block text-xs font-semibold text-[#344054]">
+                Sheet Name
+              </label>
               <Input
                 value={sheetName}
                 onChange={(event) => setSheetName(event.target.value)}
                 placeholder="e.g. first sheet"
-                className="flex-1 min-w-0"
+                className="h-11 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-medium text-[#182033] shadow-none transition-colors placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
               />
-              <Button type="submit" className="bg-system-primary shrink-0 text-white">
-                Apply
+            </div>
+
+            <div className="flex items-end">
+              <Button
+                type="submit"
+                className="h-11 w-full rounded-[10px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-none transition-all duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0 lg:w-auto"
+              >
+                <Filter className="h-4 w-4" />
+                Apply Filters
               </Button>
             </div>
           </div>
         </form>
       )}
 
-      <StatCards stats={statsConfig} data={data} />
-    </>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+
+          return (
+            <div
+              key={stat.id}
+              className="sales-page-enter rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none"
+              style={
+                {
+                  "--sales-enter-delay": `${160 + index * 55}ms`,
+                } as CSSProperties
+              }
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    {stat.label}
+                  </p>
+                  <p className="mt-2 text-2xl leading-none font-semibold text-[#182033]">
+                    {stat.value.toLocaleString()}
+                  </p>
+                </div>
+                <div
+                  className={`${stat.iconClassName} flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px]`}
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+    </div>
   );
 }
