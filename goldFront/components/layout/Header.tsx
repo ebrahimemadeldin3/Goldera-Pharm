@@ -67,10 +67,10 @@ const Header = () => {
   const profileItem = getSidebarItem(sidebar, "profile");
   const settingsItem = getSidebarItem(sidebar, "settings");
   const shortName = getShortUserName(user.name);
-  const visibleBreadcrumbs =
+  const contextLabel =
     pageContext.breadcrumbs.length > 2
-      ? pageContext.breadcrumbs
-      : [pageContext.groupLabel];
+      ? pageContext.breadcrumbs.slice(0, -1).join(" / ")
+      : pageContext.groupLabel;
 
   const handleLogoutConfirm = () => {
     logout();
@@ -83,33 +83,12 @@ const Header = () => {
         <div className="flex min-w-0 items-center gap-3">
           <SidebarMenu />
           <div className="min-w-0">
-            <p className="text-brand-gold-dark text-sm font-semibold xl:hidden">
-              GolderaPharm
-            </p>
-            <nav
-              aria-label="Breadcrumb"
-              className="text-nav-muted hidden items-center gap-1 text-xs font-medium sm:flex"
-            >
-              {visibleBreadcrumbs.map((crumb, index) => (
-                <span key={`${crumb}-${index}`} className="flex items-center">
-                  {index > 0 && (
-                    <span className="text-brand-gold/70 mx-1.5">/</span>
-                  )}
-                  <span
-                    className={
-                      index === visibleBreadcrumbs.length - 1
-                        ? "text-brand-gold-dark"
-                        : ""
-                    }
-                  >
-                    {crumb}
-                  </span>
-                </span>
-              ))}
-            </nav>
-            <h1 className="text-nav-text truncate text-lg font-semibold">
+            <h1 className="text-nav-text truncate text-base leading-tight font-semibold sm:text-lg">
               {pageContext.pageTitle}
             </h1>
+            <p className="text-nav-muted mt-0.5 truncate text-xs leading-tight font-medium">
+              {contextLabel}
+            </p>
           </div>
         </div>
 

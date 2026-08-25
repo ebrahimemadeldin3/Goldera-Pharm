@@ -1,32 +1,35 @@
 import Image from "next/image";
 import {
   BarChart3,
-  ClipboardCheck,
   MapPinned,
-  ShieldCheck,
+  PackageSearch,
+  TrendingUp,
 } from "lucide-react";
 import type { CSSProperties } from "react";
 import { LoginForm } from "@/features/auth/components/LoginForm";
 
 const brandFeatures = [
   {
-    label: "Secure Access",
-    description: "Role-based access for your pharmaceutical teams.",
-    icon: ShieldCheck,
-  },
-  {
-    label: "Territory Management",
-    description: "Manage field operations and customer coverage.",
+    label: "Field Operations",
+    description:
+      "Manage visits, plans, doctors and pharmacies across your field teams.",
     icon: MapPinned,
   },
   {
-    label: "Visits & Sales",
-    description: "Keep field visits and commercial activity connected.",
-    icon: ClipboardCheck,
+    label: "Sales & Products",
+    description:
+      "Track sales activity and manage your pharmaceutical product portfolio.",
+    icon: PackageSearch,
   },
   {
-    label: "Analytics & Reports",
-    description: "Monitor performance across your organization.",
+    label: "Forecasting",
+    description:
+      "Plan product distribution and submit forecasts for management approval.",
+    icon: TrendingUp,
+  },
+  {
+    label: "Performance & Reports",
+    description: "Monitor teams, coaching, appraisals and operational reports.",
     icon: BarChart3,
   },
 ];
@@ -97,8 +100,8 @@ export default function Page() {
             </h1>
 
             <p className="mt-5 max-w-[430px] text-[16px] leading-7 text-[#D7DDE7]">
-              A secure workspace for pharmaceutical field operations, customer
-              engagement, sales visibility and team performance.
+              A centralized workspace for pharmaceutical field operations,
+              sales management, forecasting and team performance.
             </p>
 
             <BrandFeatures />
