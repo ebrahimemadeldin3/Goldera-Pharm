@@ -1,5 +1,5 @@
 import { ForecastSkeleton } from "@/components/ui/skeletons/ForecastSkeleton";
 
-export default function ManagerForecastLoading() {
+export default function SupervisorForecastLoading() {
   return <ForecastSkeleton />;
 }

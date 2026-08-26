@@ -60,8 +60,8 @@ export default function SupervisorPlanCard({
   return (
     <>
       <div
-        className={`border-slate-200 flex flex-col justify-between gap-4 rounded-xl border bg-white p-4 transition-all shadow-none hover:border-slate-300 ${
-          isApproved ? "opacity-95 bg-slate-50/40" : isRejected ? "opacity-90 bg-slate-50/60" : ""
+        className={`flex flex-col justify-between gap-4 rounded-[14px] border border-[#E5E8EF] bg-white p-5 transition-all shadow-none hover:border-[#E9DDB8] ${
+          isApproved ? "opacity-95 bg-[#FBFCFE]/60" : isRejected ? "opacity-90 bg-[#F9FAFB]/80" : ""
         }`}
       >
         <div className="flex flex-col gap-3">
@@ -69,8 +69,12 @@ export default function SupervisorPlanCard({
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-start gap-3 min-w-0 flex-1">
               <div
-                className={`flex size-10 shrink-0 items-center justify-center rounded-full text-white text-xs font-semibold ${
-                  isApproved ? "bg-emerald-600" : isRejected ? "bg-slate-500" : "gradient-green"
+                className={`flex size-10 shrink-0 items-center justify-center rounded-[10px] text-xs font-bold shadow-2xs ${
+                  isApproved
+                    ? "bg-[#E9F8F1] text-[#168557] border border-[#CBEFDD]"
+                    : isRejected
+                    ? "bg-[#FFF1F0] text-[#B42318] border border-[#F5C9C5]"
+                    : "bg-[#FFF8E5] text-[#8A6515] border border-[#E9DDB8]"
                 }`}
               >
                 {getInitials(repName)}
@@ -78,35 +82,37 @@ export default function SupervisorPlanCard({
 
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-base font-semibold text-slate-900 leading-snug truncate">
+                  <h3 className="text-base font-semibold text-[#182033] leading-snug truncate">
                     {plan.title || "Untitled Visit Plan"}
                   </h3>
 
                   <span
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-medium text-white ${
-                      planTypeConfig[plan.planType]?.className || "bg-slate-600"
-                    }`}
+                    className={`rounded-md px-2.5 py-0.5 text-[11px] font-semibold text-[#344054] border border-[#E5E8EF] bg-[#F6F8FB]`}
                   >
                     {planTypeConfig[plan.planType]?.label || plan.planType}
                   </span>
 
                   <span
-                    className={`rounded-md px-2 py-0.5 text-[11px] font-medium text-white ${
-                      statusConfig[plan.status]?.className || "bg-slate-600"
+                    className={`rounded-md px-2.5 py-0.5 text-[11px] font-semibold border ${
+                      isApproved
+                        ? "bg-[#E9F8F1] text-[#168557] border-[#CBEFDD]"
+                        : isRejected
+                        ? "bg-[#FFF1F0] text-[#B42318] border-[#F5C9C5]"
+                        : "bg-[#FFF8E5] text-[#8A6515] border-[#F5DFAC]"
                     }`}
                   >
                     {statusConfig[plan.status]?.label || plan.status}
                   </span>
                 </div>
 
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
+                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#667085]">
                   <span className="flex items-center gap-1">
-                    <User size={13} className="text-slate-400" />
-                    <span>Rep: <strong>{repName}</strong></span>
+                    <User size={13} className="text-[#8A94A6]" />
+                    <span>Rep: <strong className="text-[#182033]">{repName}</strong></span>
                   </span>
 
                   <span className="flex items-center gap-1">
-                    <Calendar size={13} className="text-slate-400" />
+                    <Calendar size={13} className="text-[#8A94A6]" />
                     <span>{startDateFormatted} – {endDateFormatted}</span>
                   </span>
                 </div>
@@ -119,7 +125,7 @@ export default function SupervisorPlanCard({
                 <Button
                   size="sm"
                   onClick={() => onApprove(plan.id)}
-                  className="bg-emerald-600 hover:bg-emerald-700 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium text-white shadow-2xs transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:outline-none"
+                  className="bg-[#168557] hover:bg-[#107349] h-9 cursor-pointer gap-1.5 px-3.5 text-xs font-semibold text-white shadow-2xs rounded-[10px] transition-colors duration-170 focus-visible:ring-2 focus-visible:ring-[#168557]/30 focus-visible:outline-none"
                 >
                   <CheckCircle size={14} />
                   Approve
@@ -128,7 +134,7 @@ export default function SupervisorPlanCard({
                   size="sm"
                   variant="outline"
                   onClick={() => setRejectDialogOpen(true)}
-                  className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 h-8 cursor-pointer gap-1.5 px-3 text-xs font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:outline-none"
+                  className="border-[#F5C9C5] text-[#B42318] hover:bg-[#FFF1F0] hover:border-[#B42318]/30 h-9 cursor-pointer gap-1.5 px-3.5 text-xs font-semibold rounded-[10px] transition-colors duration-170 focus-visible:ring-2 focus-visible:ring-[#B42318]/30 focus-visible:outline-none"
                 >
                   <XCircle size={14} />
                   Reject
@@ -139,33 +145,33 @@ export default function SupervisorPlanCard({
 
           {/* Description & Objectives */}
           {plan.description && (
-            <p className="text-xs text-slate-600 line-clamp-2 pl-0.5">
+            <p className="text-xs text-[#667085] line-clamp-2 pl-0.5">
               {plan.description}
             </p>
           )}
 
           {plan.objectives && plan.objectives.length > 0 && (
-            <div className="text-xs text-slate-600 pl-0.5">
-              <span className="font-medium text-slate-700">Objectives: </span>
+            <div className="text-xs text-[#667085] pl-0.5">
+              <span className="font-semibold text-[#182033]">Objectives: </span>
               <span>{plan.objectives.join(" · ")}</span>
             </div>
           )}
 
           {/* Compact Metadata Strip (Section 5) */}
-          <div className="flex flex-wrap items-center gap-4 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-100 text-xs text-slate-700">
+          <div className="flex flex-wrap items-center gap-4 bg-[#F9FAFB] px-3.5 py-2.5 rounded-[10px] border border-[#EEF1F6] text-xs text-[#344054]">
             <div>
-              <span className="text-slate-500">Target Doctors: </span>
-              <span className="font-semibold text-slate-900">{plan.targetDoctors || 0}</span>
+              <span className="text-[#667085] uppercase tracking-[0.04em] text-[11px] font-semibold">Target Doctors: </span>
+              <span className="font-semibold text-[#182033] ml-1">{plan.targetDoctors || 0}</span>
             </div>
-            <div className="h-3 w-px bg-slate-200" />
+            <div className="h-3 w-px bg-[#E5E8EF]" />
             <div>
-              <span className="text-slate-500">Target Visits: </span>
-              <span className="font-semibold text-slate-900">{plan.targetVisits || 0}</span>
+              <span className="text-[#667085] uppercase tracking-[0.04em] text-[11px] font-semibold">Target Visits: </span>
+              <span className="font-semibold text-[#182033] ml-1">{plan.targetVisits || 0}</span>
             </div>
-            <div className="h-3 w-px bg-slate-200" />
+            <div className="h-3 w-px bg-[#E5E8EF]" />
             <div>
-              <span className="text-slate-500">Selected Doctors: </span>
-              <span className="font-semibold text-slate-900">{selectedDoctorsCount}</span>
+              <span className="text-[#667085] uppercase tracking-[0.04em] text-[11px] font-semibold">Selected Doctors: </span>
+              <span className="font-semibold text-[#182033] ml-1">{selectedDoctorsCount}</span>
             </div>
           </div>
 
@@ -193,17 +199,17 @@ export default function SupervisorPlanCard({
                     type="button"
                     aria-expanded={isExpanded}
                     onClick={() => setIsExpanded(!isExpanded)}
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-700 hover:text-blue-800 transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none rounded-md px-2 py-1 bg-blue-50/70 hover:bg-blue-100/70 border border-blue-200/60"
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8A6515] hover:text-[#B18732] transition-colors duration-150 cursor-pointer focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:outline-none rounded-[8px] px-2.5 py-1 bg-[#FFF8E5] hover:bg-[#FBF7EA] border border-[#E9DDB8]"
                   >
                     {isExpanded ? (
                       <>
                         <span>Show compact preview</span>
-                        <ChevronUp size={13} className="text-blue-600 shrink-0" />
+                        <ChevronUp size={13} className="text-[#8A6515] shrink-0" />
                       </>
                     ) : (
                       <>
                         <span>View all {selectedDoctorsCount} doctors (+{remainingCount} more)</span>
-                        <ChevronDown size={13} className="text-blue-600 shrink-0" />
+                        <ChevronDown size={13} className="text-[#8A6515] shrink-0" />
                       </>
                     )}
                   </button>

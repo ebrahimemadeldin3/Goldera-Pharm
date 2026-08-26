@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
-import { ResultsFooter } from "@/components/ui/ResultsFooter";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 
 interface PharmaciesListProps {
   pharmacies?: PharmacyApiResponse[];
@@ -69,24 +69,24 @@ export default function PharmaciesList({
   const hasActiveFilters = Boolean(q.trim() || regionFilter !== "All Regions");
 
   return (
-    <SectionContainer className="mt-6">
+    <SectionContainer className="mt-6 p-0 overflow-hidden border border-[#E5E8EF] rounded-[16px] bg-white shadow-none">
       {/* Directory Toolbar Header */}
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EEF1F6] bg-[#FBFCFE]/60 px-5 py-4">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900">Pharmacy Directory</h2>
+          <h2 className="text-base font-semibold text-[#182033]">Pharmacy Directory</h2>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 sm:justify-end">
           {/* Region Filter */}
           <div className="flex items-center gap-2">
-            <Filter size={16} className="text-slate-400 shrink-0" />
+            <Filter size={15} className="text-[#8A94A6] shrink-0" />
             <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="border-secondary-light h-8.5 w-44 cursor-pointer rounded-md border bg-white px-3 text-xs font-medium">
+              <SelectTrigger className="h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033] hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30">
                 <SelectValue placeholder="All Regions" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {regions.map((r) => (
-                  <SelectItem key={r} value={r} className="text-xs">
+                  <SelectItem key={r} value={r} className="text-xs font-medium cursor-pointer">
                     {r}
                   </SelectItem>
                 ))}
@@ -107,7 +107,7 @@ export default function PharmaciesList({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="h-8.5 cursor-pointer gap-1.5 text-xs text-slate-600 hover:bg-slate-100"
+              className="h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033] px-3 rounded-[10px]"
             >
               <RotateCcw size={14} />
               Reset Filters
@@ -118,72 +118,74 @@ export default function PharmaciesList({
 
       {/* Scope-Honest Filter Info Banner */}
       {hasActiveFilters && (
-        <ScopeInfoBanner onReset={handleResetFilters}>
-          Filtering currently loaded page slice
-          {regionFilter !== "All Regions" && (
-            <> (Region: <strong className="text-slate-700 font-medium">&quot;{regionFilter}&quot;</strong>)</>
-          )}
-          {q.trim() !== "" && (
-            <> for <strong className="text-slate-700 font-medium">&quot;{q}&quot;</strong></>
-          )}. Showing {filtered.length} of {pharmacies.length} loaded records.
-        </ScopeInfoBanner>
+        <div className="px-5 pt-4">
+          <ScopeInfoBanner onReset={handleResetFilters}>
+            Filtering currently loaded page slice
+            {regionFilter !== "All Regions" && (
+              <> (Region: <strong className="text-[#182033] font-semibold">&quot;{regionFilter}&quot;</strong>)</>
+            )}
+            {q.trim() !== "" && (
+              <> for <strong className="text-[#182033] font-semibold">&quot;{q}&quot;</strong></>
+            )}. Showing {filtered.length} of {pharmacies.length} loaded records.
+          </ScopeInfoBanner>
+        </div>
       )}
 
       {/* Enterprise Table Section */}
-      <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto rounded-lg border border-slate-200 shadow-2xs">
-        <table className="w-full min-w-160 text-xs text-slate-700">
-          <thead className="sticky top-0 z-10 bg-slate-100/90 backdrop-blur-xs border-b border-slate-200 text-xs font-semibold text-slate-700">
+      <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+        <table className="w-full min-w-160 text-xs text-[#182033]">
+          <thead className="sticky top-0 z-10 bg-[#F9FAFB] border-b border-[#E5E8EF] text-[11px] font-semibold uppercase tracking-[0.04em] text-[#667085]">
             <tr className="text-left">
-              <th className="py-3 px-4 font-semibold text-slate-900">#</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">Pharmacy Name</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">City</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">Sub-Region</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">Region</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">Country</th>
-              <th className="py-3 px-4 font-semibold text-slate-900">Added Date</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">#</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">Pharmacy Name</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">City</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">Sub-Region</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">Region</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">Country</th>
+              <th className="py-3 px-4 font-semibold text-[#667085]">Added Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 bg-white">
+          <tbody className="divide-y divide-[#EEF1F6] bg-white">
             {filtered.map((pharmacy, index) => (
               <tr
                 key={pharmacy.id}
-                className="transition-colors duration-150 hover:bg-slate-50/90"
+                className="transition-colors duration-150 hover:bg-[#FFFDF7]"
               >
-                <td className="py-3 px-4 text-xs text-slate-400 font-medium">
+                <td className="py-3.5 px-4 text-xs text-[#8A94A6] font-medium">
                   {(page - 1) * limit + index + 1}
                 </td>
-                <td className="py-3 px-4 font-semibold text-slate-900">
+                <td className="py-3.5 px-4 font-semibold text-[#182033]">
                   {pharmacy.name || "Unnamed Pharmacy"}
                 </td>
-                <td className="py-3 px-4 text-slate-700">
+                <td className="py-3.5 px-4 text-[#344054]">
                   {pharmacy.city ? (
                     pharmacy.city
                   ) : (
-                    <span className="italic text-slate-400 text-xs">No city specified</span>
+                    <span className="italic text-[#8A94A6] text-xs">No city specified</span>
                   )}
                 </td>
-                <td className="py-3 px-4 text-slate-700">
+                <td className="py-3.5 px-4 text-[#344054]">
                   {pharmacy.subRegion ? (
                     pharmacy.subRegion
                   ) : (
-                    <span className="italic text-slate-400 text-xs">No sub-region specified</span>
+                    <span className="italic text-[#8A94A6] text-xs">No sub-region specified</span>
                   )}
                 </td>
-                <td className="py-3 px-4 text-slate-700">
+                <td className="py-3.5 px-4 text-[#344054]">
                   {pharmacy.region ? (
                     pharmacy.region
                   ) : (
-                    <span className="italic text-slate-400 text-xs">No region specified</span>
+                    <span className="italic text-[#8A94A6] text-xs">No region specified</span>
                   )}
                 </td>
-                <td className="py-3 px-4 text-slate-700">
+                <td className="py-3.5 px-4 text-[#344054]">
                   {pharmacy.country || "Saudi Arabia"}
                 </td>
-                <td className="py-3 px-4 text-slate-500">
+                <td className="py-3.5 px-4 text-[#667085] font-medium">
                   {pharmacy.createdAt ? (
                     format(new Date(pharmacy.createdAt), "MMM d, yyyy")
                   ) : (
-                    <span className="italic text-slate-400 text-xs">No date recorded</span>
+                    <span className="italic text-[#8A94A6] text-xs">No date recorded</span>
                   )}
                 </td>
               </tr>
@@ -193,8 +195,8 @@ export default function PharmaciesList({
 
         {/* Distinct Empty States */}
         {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
-            <p className="text-sm font-medium text-slate-700">
+          <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] m-5 p-10 text-center">
+            <p className="text-sm font-semibold text-[#182033]">
               {q.trim()
                 ? `No pharmacies matching "${q}" found on page ${page}.`
                 : regionFilter !== "All Regions"
@@ -202,7 +204,7 @@ export default function PharmaciesList({
                 : "No pharmacies found in the database."}
             </p>
             {q.trim() && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#667085]">
                 Matching pharmacies may exist on another server page or region.
               </p>
             )}
@@ -211,7 +213,7 @@ export default function PharmaciesList({
                 variant="outline"
                 size="sm"
                 onClick={handleResetFilters}
-                className="mt-2 gap-1.5 text-xs"
+                className="mt-2 gap-1.5 text-xs font-semibold rounded-[10px]"
               >
                 <RotateCcw size={14} />
                 Reset Active Filters
@@ -222,7 +224,13 @@ export default function PharmaciesList({
       </div>
 
       {/* Bottom Footer Pagination */}
-      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        itemLabel="pharmacies"
+        ariaLabel="Pharmacies directory pagination"
+      />
     </SectionContainer>
   );
 }

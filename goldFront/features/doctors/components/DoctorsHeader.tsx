@@ -70,9 +70,9 @@ export default function DoctorsHeader({
               <Button
                 type="button"
                 onClick={() => setDialogOpen(true)}
-                className="bg-slate-900 hover:bg-slate-800 h-9 px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-colors cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:pointer-events-none"
+                className="h-10 px-5 rounded-[10px] bg-[#C9A44C] hover:bg-[#B18732] text-white text-sm font-semibold shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-all duration-170 hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 disabled:opacity-50 disabled:pointer-events-none"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 stroke-[2.5]" />
                 Add Doctor
               </Button>
 

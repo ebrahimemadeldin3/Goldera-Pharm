@@ -273,6 +273,18 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps = {}) {
                 "Sign In"
               )}
             </Button>
+
+            {isPending && (
+              <div className="mt-3 flex flex-col items-center justify-center gap-1.5 rounded-[10px] border border-[#D0A000]/20 bg-[#D0A000]/10 p-3.5 text-center text-xs font-semibold text-[#D0A000] animate-in fade-in duration-200">
+                <div className="flex items-center gap-2">
+                  <LoaderCircle className="size-4 animate-spin" />
+                  <span>Preparing your workspace...</span>
+                </div>
+                <span className="text-[11px] font-normal text-[#AAB4C3]">
+                  Connecting to GolderaPharm secure session
+                </span>
+              </div>
+            )}
           </form>
         </Form>
       </div>

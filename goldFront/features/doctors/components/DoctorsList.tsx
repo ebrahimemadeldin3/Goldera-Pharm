@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
-import { ResultsFooter } from "@/components/ui/ResultsFooter";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 
 interface DoctorsListProps {
   doctors?: DoctorApiResponse[];
@@ -73,21 +73,40 @@ export default function DoctorsList({
     });
   };
 
-  const currentSubRegionParam = searchParams.toString() ? new URLSearchParams(searchParams.toString()).get("subRegion") : null;
+  const currentSubRegionParam = searchParams.get("subRegion");
   const activeSubRegion = currentSubRegionParam || selectedSubRegion || "ALL";
 
-  // Available sub-regions
-  const subRegionOptions = [
-    { value: "ALL", label: "All Sub-Regions" },
-    { value: "Riyadh 1", label: "Riyadh 1" },
-    { value: "Riyadh 2", label: "Riyadh 2" },
-    { value: "Jeddah 1", label: "Jeddah 1" },
-    { value: "Jeddah 2", label: "Jeddah 2" },
-    { value: "Eastern 1", label: "Eastern 1" },
-    { value: "Eastern 2", label: "Eastern 2" },
-    { value: "Southern 1", label: "Southern 1" },
-    { value: "Northern 1", label: "Northern 1" },
-  ];
+  // Dynamic available sub-regions
+  const subRegionOptions = useMemo(() => {
+    const baseList = [
+      { value: "ALL", label: "All Sub-Regions" },
+      { value: "Riyadh 1", label: "Riyadh 1" },
+      { value: "Riyadh 2", label: "Riyadh 2" },
+      { value: "Jeddah 1", label: "Jeddah 1" },
+      { value: "Jeddah 2", label: "Jeddah 2" },
+      { value: "Eastern 1", label: "Eastern 1" },
+      { value: "Eastern 2", label: "Eastern 2" },
+      { value: "Southern 1", label: "Southern 1" },
+      { value: "Northern 1", label: "Northern 1" },
+    ];
+
+    const set = new Set<string>();
+    doctors.forEach((d) => {
+      if (d.subRegion) set.add(d.subRegion);
+    });
+    if (activeSubRegion && activeSubRegion !== "ALL") {
+      set.add(activeSubRegion);
+    }
+
+    const result = [...baseList];
+    set.forEach((sr) => {
+      if (!result.some((item) => item.value === sr)) {
+        result.push({ value: sr, label: sr });
+      }
+    });
+
+    return result;
+  }, [doctors, activeSubRegion]);
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -102,34 +121,34 @@ export default function DoctorsList({
     });
   }, [q, doctorsData]);
 
-  const hasActiveFilters = Boolean(q.trim() || selectedSubRegion);
+  const hasActiveFilters = Boolean(q.trim() || (activeSubRegion && activeSubRegion !== "ALL"));
 
   return (
-    <SectionContainer>
+    <SectionContainer className="p-0 overflow-hidden border border-[#E5E8EF] rounded-[16px] bg-white shadow-none">
       {/* Header & Directory Toolbar */}
-      <header className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3.5">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-[#EEF1F6] bg-[#FBFCFE]/60 px-5 py-4">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900">Doctor Directory</h2>
+          <h2 className="text-base font-semibold text-[#182033]">Doctor Directory</h2>
           {isPending && (
-            <span className="text-xs font-normal text-slate-400">Loading...</span>
+            <span className="text-xs font-medium text-[#8A94A6]">Loading...</span>
           )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 sm:justify-end">
           {/* Sub-Region Selector */}
           <div className="flex items-center gap-2">
-            <Filter size={15} className="text-slate-400 shrink-0" />
+            <Filter size={15} className="text-[#8A94A6] shrink-0" />
             <Select
               value={activeSubRegion}
               onValueChange={handleSubRegionChange}
               disabled={isPending}
             >
-              <SelectTrigger className="border-secondary-light h-8.5 w-40 cursor-pointer rounded-md border bg-white px-3 text-xs font-medium">
+              <SelectTrigger className="h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033] hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30">
                 <SelectValue placeholder="All Sub-Regions" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-60">
                 {subRegionOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value} className="text-xs">
+                  <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium cursor-pointer">
                     {opt.label}
                   </SelectItem>
                 ))}
@@ -151,7 +170,7 @@ export default function DoctorsList({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="h-8.5 cursor-pointer gap-1.5 text-xs text-slate-600 hover:bg-slate-100 px-2.5"
+              className="h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033] px-3 rounded-[10px]"
             >
               <RotateCcw size={13} />
               Reset Filters
@@ -162,30 +181,32 @@ export default function DoctorsList({
 
       {/* Scope-Honest Search Info Banner */}
       {q.trim() !== "" && (
-        <ScopeInfoBanner onReset={() => setQ("")} resetLabel="Clear filter">
-          Filtering currently loaded page slice for &quot;<strong className="text-slate-700 font-medium">{q}</strong>&quot;.
-          Showing {filtered.length} of {doctors.length} loaded records.
-        </ScopeInfoBanner>
+        <div className="px-5 pt-4">
+          <ScopeInfoBanner onReset={() => setQ("")} resetLabel="Clear filter">
+            Filtering currently loaded page slice for &quot;<strong className="text-[#182033] font-semibold">{q}</strong>&quot;.
+            Showing {filtered.length} of {doctors.length} loaded records.
+          </ScopeInfoBanner>
+        </div>
       )}
 
       {/* 2-Column Doctor Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3.5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 p-5">
         {filtered.map((d) => (
           <DoctorCard key={d.id} data={d} />
         ))}
 
         {/* Distinct Empty States */}
         {filtered.length === 0 && (
-          <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
-            <p className="text-sm font-medium text-slate-700">
+          <div className="col-span-full flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] p-10 text-center">
+            <p className="text-sm font-semibold text-[#182033]">
               {q.trim()
                 ? `No doctors matching "${q}" found on page ${page}.`
-                : selectedSubRegion
-                ? `No doctors found in sub-region "${selectedSubRegion}".`
+                : activeSubRegion && activeSubRegion !== "ALL"
+                ? `No doctors found in sub-region "${activeSubRegion}".`
                 : "No doctors found in the database."}
             </p>
             {q.trim() && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-[#667085]">
                 Matching doctors may exist on another server page or sub-region.
               </p>
             )}
@@ -194,7 +215,7 @@ export default function DoctorsList({
                 variant="outline"
                 size="sm"
                 onClick={handleResetFilters}
-                className="mt-2 gap-1.5 text-xs"
+                className="mt-2 gap-1.5 text-xs font-semibold rounded-[10px]"
               >
                 <RotateCcw size={14} />
                 Reset Active Filters
@@ -204,8 +225,14 @@ export default function DoctorsList({
         )}
       </div>
 
-      {/* Subtle Inline Results Pagination Footer */}
-      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+      {/* Table Pagination Footer */}
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        itemLabel="doctors"
+        ariaLabel="Doctors directory pagination"
+      />
     </SectionContainer>
   );
 }

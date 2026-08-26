@@ -165,7 +165,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
             <Button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className="visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-[#C9A44C] px-5 text-sm font-semibold text-[#182033] shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_12px_26px_rgba(201,164,76,0.24)] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
+              className="visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
             >
               <CalendarPlus
                 className="visits-add-trigger-icon h-4 w-4"

@@ -318,13 +318,12 @@ export default function AddDoctorForm({
 
         {/* Modal Action Footer */}
         <div className="col-span-1 mt-4 border-t border-slate-100 pt-4 md:col-span-2 flex items-center justify-end gap-3">
-          {isModal && onCancel && (
+          {onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
-              disabled={isPending}
-              className="h-9 px-4 text-xs font-medium cursor-pointer"
+              className="h-10 border-[#E5E8EF] bg-white text-[#182033] hover:bg-[#F9FAFB] px-5 text-xs font-semibold rounded-[10px]"
             >
               Cancel
             </Button>
@@ -332,7 +331,7 @@ export default function AddDoctorForm({
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-system-primary hover:bg-blue-700 h-9 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-medium text-white disabled:opacity-50"
+            className="bg-[#C9A44C] hover:bg-[#B18732] text-white h-10 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-semibold rounded-[10px] shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-all duration-170 disabled:opacity-50"
           >
             {isPending ? (
               <Loader2 size={16} className="animate-spin" />

@@ -62,8 +62,8 @@ export function AddPharmacyDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-slate-900 hover:bg-slate-800 h-9 px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-colors cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:pointer-events-none ml-auto">
-          <Plus className="h-4 w-4" />
+        <Button className="h-10 px-5 rounded-[10px] bg-[#C9A44C] hover:bg-[#B18732] text-white text-sm font-semibold shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-all duration-170 hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] cursor-pointer inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 disabled:opacity-50 disabled:pointer-events-none ml-auto">
+          <Plus className="h-4 w-4 stroke-[2.5]" />
           Add Pharmacy
         </Button>
       </DialogTrigger>
@@ -149,13 +149,14 @@ export function AddPharmacyDialog() {
                 variant="outline"
                 onClick={() => setOpen(false)}
                 disabled={isPending}
+                className="h-10 border-[#E5E8EF] bg-white text-[#182033] hover:bg-[#F9FAFB] px-5 text-xs font-semibold rounded-[10px]"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
                 disabled={isPending}
-                className="bg-system-primary text-white"
+                className="bg-[#C9A44C] hover:bg-[#B18732] text-white h-10 px-5 text-xs font-semibold rounded-[10px] shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-all duration-170 disabled:opacity-50"
               >
                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Add Pharmacy
