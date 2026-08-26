@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { format } from "date-fns";
-import { Card } from "@/components/ui/card";
 import VisitCard from "../shared/VisitCard";
 import { Calendar, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Visit } from "@/features/visits/lib/types/ui";
@@ -39,7 +38,12 @@ export default function DayVisitsPanel({
 
   const handleOpenSchedule = async () => {
     if (doctorsList.length === 0) {
-      const doctorsRes = await getDoctorsAction(undefined, undefined, undefined, false);
+      const doctorsRes = await getDoctorsAction(
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
       if (doctorsRes.success && doctorsRes.data) {
         setDoctorsList(doctorsRes.data);
       }
@@ -49,87 +53,76 @@ export default function DayVisitsPanel({
 
   // Progressive Disclosure: Max 2 visits by default unless searching or expanded
   const INITIAL_LIMIT = 2;
-  const visibleVisits = isSearching || expanded ? visits : visits.slice(0, INITIAL_LIMIT);
+  const visibleVisits =
+    isSearching || expanded ? visits : visits.slice(0, INITIAL_LIMIT);
   const remainingCount = visits.length - INITIAL_LIMIT;
 
   return (
     <>
-      <Card className="overflow-hidden border-none bg-transparent p-0 shadow-none space-y-3">
-        {/* Lightweight Day Section Header Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-2xs">
-          <div className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-800">
-            <Calendar size={15} className="text-slate-500 shrink-0" />
-            <span>{format(date, "EEEE, MMMM d, yyyy")}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2.5 py-0.5 rounded-full text-xs font-medium">
-              {visits.length} {visits.length === 1 ? "visit" : "visits"}
-            </span>
+      {visits.length === 0 ? (
+        <div className="visits-empty-state flex min-h-[238px] flex-col items-center justify-center rounded-[14px] border border-dashed border-[#DDE3EE] bg-[#FBFCFE] px-5 py-8 text-center">
+          <span className="flex size-12 items-center justify-center rounded-full bg-[#FFF8E5] text-[#B18732]">
+            <Calendar className="size-5" aria-hidden="true" />
+          </span>
+          <h4 className="mt-4 text-base font-semibold text-[#182033]">
+            No visits scheduled for {format(date, "MMM d, yyyy")}
+          </h4>
+          <p className="mt-2 max-w-[360px] text-sm leading-6 font-medium text-[#667085]">
+            You can schedule a medical visit for this day.
+          </p>
+          <div className="mt-5 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenSchedule}
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#C9A44C] bg-white px-4 text-sm font-semibold text-[#8A6515] shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              Schedule Visit
+            </button>
+            <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
+              Schedule Visit Page
+            </Link>
           </div>
         </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+            {visibleVisits.map((v, index) => (
+              <VisitCard
+                key={v.id}
+                visit={v}
+                reportBasePath={reportBasePath}
+                animationDelay={`${Math.min(index * 24, 120)}ms`}
+              />
+            ))}
+          </div>
 
-        {/* Visits Grid / Contextual Empty State */}
-        <div>
-          {visits.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2.5 rounded-xl border border-dashed border-slate-200 bg-white p-6 text-center">
-              <Calendar className="text-slate-300" size={36} />
-              <div>
-                <p className="text-sm font-medium text-slate-700">
-                  No visits scheduled for {format(date, "MMM d, yyyy")}
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  You can schedule a new medical visit for this day using the form.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 mt-1">
-                <button
-                  type="button"
-                  onClick={handleOpenSchedule}
-                  className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 border border-blue-200 px-3.5 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100 transition-colors cursor-pointer"
-                >
-                  <Plus size={14} />
-                  Schedule Visit for this Day
-                </button>
-                <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
-                  Schedule Visit Page
-                </Link>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {/* 2-Column Responsive Visit Grid */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
-                {visibleVisits.map((v) => (
-                  <VisitCard key={v.id} visit={v} reportBasePath={reportBasePath} />
-                ))}
-              </div>
-
-              {/* Progressive Disclosure Toggle Button (Show N More / Show Less) */}
-              {!isSearching && visits.length > INITIAL_LIMIT && (
-                <div className="flex justify-center pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setExpanded(!expanded)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer shadow-2xs"
-                  >
-                    {expanded ? (
-                      <>
-                        <span>Show less</span>
-                        <ChevronUp size={14} />
-                      </>
-                    ) : (
-                      <>
-                        <span>Show {remainingCount} more {remainingCount === 1 ? "visit" : "visits"}</span>
-                        <ChevronDown size={14} />
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+          {!isSearching && visits.length > INITIAL_LIMIT && (
+            <div className="flex justify-center pt-1">
+              <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                {expanded ? (
+                  <>
+                    <span>Show less</span>
+                    <ChevronUp className="size-3.5" aria-hidden="true" />
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      Show {remainingCount} more{" "}
+                      {remainingCount === 1 ? "visit" : "visits"}
+                    </span>
+                    <ChevronDown className="size-3.5" aria-hidden="true" />
+                  </>
+                )}
+              </button>
             </div>
           )}
         </div>
-      </Card>
+      )}
 
       {/* Schedule Visit Modal Overlay with date preselected */}
       {scheduleDialogOpen && (

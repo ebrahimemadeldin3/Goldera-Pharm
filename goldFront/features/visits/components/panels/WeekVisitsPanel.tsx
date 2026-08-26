@@ -2,15 +2,30 @@
 
 import { useState } from "react";
 import { eachDayOfInterval, isSameDay, format } from "date-fns";
-import { Card } from "@/components/ui/card";
 import VisitCard from "@/features/visits/components/shared/VisitCard";
 import { Visit } from "@/features/visits/lib/types/ui";
+import type { VisitStatus } from "@/lib/types";
 import {
+  cn,
   formatDateOnly,
   formatSaudiDateDisplay,
   formatSaudiWeekday,
 } from "@/lib/utils";
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
+
+const VISIT_STATUS_ORDER: VisitStatus[] = [
+  "COMPLETED",
+  "IN_PROGRESS",
+  "SCHEDULED",
+  "CANCELLED",
+];
+
+const visitStatusDotStyles: Record<VisitStatus, string> = {
+  COMPLETED: "bg-[#20A66A]",
+  IN_PROGRESS: "bg-[#3972D5]",
+  SCHEDULED: "bg-[#C9A44C]",
+  CANCELLED: "bg-[#D92D20]",
+};
 
 export default function WeekVisitsPanel({
   range,
@@ -26,11 +41,13 @@ export default function WeekVisitsPanel({
   isSearching?: boolean;
 }) {
   const days = eachDayOfInterval(range);
-  
-  // Track open/collapsed days (Default: Only selected/current day expands, others collapse)
-  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
-  // Track per-day progressive disclosure expansion (max 2 visits by default)
-  const [expandedVisitsPerDay, setExpandedVisitsPerDay] = useState<Record<string, boolean>>({});
+
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [expandedVisitsPerDay, setExpandedVisitsPerDay] = useState<
+    Record<string, boolean>
+  >({});
 
   const toggleDayAccordion = (dateKey: string) => {
     setCollapsedDays((prev) => ({
@@ -54,41 +71,42 @@ export default function WeekVisitsPanel({
         const dateKey = formatDateOnly(day);
         const dayVisits = visits.filter((v) => isSameDay(v.date, day));
         const hasVisits = dayVisits.length > 0;
-
-        const completedCount = dayVisits.filter((v) => v.status === "COMPLETED").length;
-        const scheduledCount = dayVisits.length - completedCount;
+        const isSelectedDay = selectedDate
+          ? isSameDay(day, selectedDate)
+          : false;
+        const completedCount = dayVisits.filter(
+          (v) => v.status === "COMPLETED",
+        ).length;
+        const dayStatuses = VISIT_STATUS_ORDER.filter((status) =>
+          dayVisits.some((visit) => visit.status === status),
+        );
 
         const statusSummaryText = hasVisits
-          ? `${dayVisits.length} ${dayVisits.length === 1 ? "visit" : "visits"}${
-              completedCount > 0 || scheduledCount > 0
-                ? ` · ${scheduledCount > 0 ? `${scheduledCount} scheduled` : ""}${
-                    scheduledCount > 0 && completedCount > 0 ? " · " : ""
-                  }${completedCount > 0 ? `${completedCount} completed` : ""}`
-                : ""
-            }`
+          ? `${dayVisits.length} ${
+              dayVisits.length === 1 ? "visit" : "visits"
+            }${completedCount > 0 ? ` - ${completedCount} completed` : ""}`
           : "0 visits";
-        
-        // Sensible Default: selected/current day is expanded, other days collapsed (unless searching with results)
-        const isSelectedDay = selectedDate ? isSameDay(day, selectedDate) : false;
+
         const defaultCollapsed = isSearching ? !hasVisits : !isSelectedDay;
         const isCollapsed = collapsedDays[dateKey] ?? defaultCollapsed;
-
-        // Progressive disclosure for visits inside expanded day
         const isVisitsExpanded = expandedVisitsPerDay[dateKey] ?? false;
-        const visibleVisits = isSearching || isVisitsExpanded ? dayVisits : dayVisits.slice(0, INITIAL_LIMIT);
+        const visibleVisits =
+          isSearching || isVisitsExpanded
+            ? dayVisits
+            : dayVisits.slice(0, INITIAL_LIMIT);
         const remainingCount = dayVisits.length - INITIAL_LIMIT;
 
         return (
-          <Card
+          <article
             key={dateKey}
-            className={`overflow-hidden border shadow-2xs transition-all duration-150 ${
-              hasVisits ? "border-slate-200 bg-white" : "border-slate-200/60 bg-slate-50/50"
-            }`}
+            className={cn(
+              "visits-week-day overflow-hidden rounded-[14px] border bg-white shadow-none transition-[background-color,border-color,box-shadow,transform] duration-[170ms]",
+              hasVisits ? "border-[#E5E8EF]" : "border-[#E7EAF0] bg-[#FBFCFE]",
+              isSelectedDay && "border-[#E9DDB8] bg-[#FFFDF7]",
+            )}
           >
-            {/* Lightweight Integrated Day Header Bar */}
-            <div
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-expanded={!isCollapsed}
               aria-controls={`day-visits-panel-${dateKey}`}
               onClick={() => toggleDayAccordion(dateKey)}
@@ -98,57 +116,95 @@ export default function WeekVisitsPanel({
                   toggleDayAccordion(dateKey);
                 }
               }}
-              className={`flex items-center justify-between px-4 py-2.5 cursor-pointer transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none ${
+              className={cn(
+                "visits-week-day-header flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,color] duration-[150ms] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none",
                 hasVisits
-                  ? "bg-white text-slate-800 hover:bg-slate-50"
-                  : "bg-slate-50/80 text-slate-600 hover:bg-slate-100/70"
-              }`}
+                  ? "text-[#182033] hover:bg-[#FFFDF7]"
+                  : "text-[#667085] hover:bg-[#F4F6FA]",
+              )}
             >
-              <div className="flex items-center gap-2 text-xs font-semibold">
-                <Calendar size={14} className={hasVisits ? "text-blue-600" : "text-slate-400"} />
-                <span>{formatSaudiWeekday(day)}, {formatSaudiDateDisplay(day)}</span>
+              <div className="flex min-w-0 items-center gap-3">
+                <span
+                  className={cn(
+                    "flex size-9 shrink-0 items-center justify-center rounded-[10px]",
+                    isSelectedDay
+                      ? "bg-[#101D36] text-white"
+                      : hasVisits
+                        ? "bg-[#EEF4FF] text-[#3972D5]"
+                        : "bg-[#F4F6FA] text-[#98A2B3]",
+                  )}
+                >
+                  <Calendar className="size-4" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">
+                    {formatSaudiWeekday(day)}, {formatSaudiDateDisplay(day)}
+                  </p>
+                  <div className="mt-1 flex min-w-0 flex-wrap items-center gap-1.5">
+                    {dayStatuses.length > 0 && (
+                      <span
+                        className="inline-flex items-center gap-1"
+                        aria-hidden="true"
+                      >
+                        {dayStatuses.map((status) => (
+                          <span
+                            key={status}
+                            className={cn(
+                              "size-1.5 rounded-full",
+                              visitStatusDotStyles[status],
+                            )}
+                          />
+                        ))}
+                      </span>
+                    )}
+                    <span className="truncate text-xs font-medium text-[#667085]">
+                      {statusSummaryText}
+                    </span>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2.5 text-xs">
+              <div className="flex shrink-0 items-center gap-2">
                 <span
-                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-medium ${
+                  className={cn(
+                    "inline-flex h-7 items-center rounded-full border px-2.5 text-[11px] font-bold",
                     hasVisits
-                      ? "bg-slate-100 text-slate-700 border border-slate-200/80"
-                      : "bg-slate-50 text-slate-400 border border-slate-200/50"
-                  }`}
+                      ? "border-[#E5E8EF] bg-white text-[#344054]"
+                      : "border-[#E7EAF0] bg-[#F9FAFB] text-[#98A2B3]",
+                  )}
                 >
-                  {statusSummaryText}
+                  {dayVisits.length}
                 </span>
-
                 {isCollapsed ? (
-                  <ChevronDown size={15} className="text-slate-400" />
+                  <ChevronDown className="size-4 text-[#98A2B3]" />
                 ) : (
-                  <ChevronUp size={15} className="text-slate-400" />
+                  <ChevronUp className="size-4 text-[#98A2B3]" />
                 )}
               </div>
-            </div>
+            </button>
 
-            {/* Visit Cards Section when Expanded */}
             {!isCollapsed && (
-              <div id={`day-visits-panel-${dateKey}`} className="p-3.5 border-t border-slate-100 space-y-3">
+              <div
+                id={`day-visits-panel-${dateKey}`}
+                className="visits-week-day-body space-y-3 border-t border-[#EEF1F6] p-3.5"
+              >
                 {dayVisits.length === 0 ? (
-                  <div className="py-2.5 text-center text-xs text-slate-400 italic">
+                  <div className="rounded-[12px] border border-dashed border-[#DDE3EE] bg-[#FBFCFE] px-4 py-4 text-center text-xs font-medium text-[#8A94A6]">
                     No visits scheduled for {format(day, "EEEE, MMM d")}
                   </div>
                 ) : (
                   <>
-                    {/* 2-Column Responsive Visit Grid */}
-                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
-                      {visibleVisits.map((v) => (
+                    <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                      {visibleVisits.map((v, index) => (
                         <VisitCard
                           key={v.id}
                           visit={v}
                           reportBasePath={reportBasePath}
+                          animationDelay={`${Math.min(index * 24, 120)}ms`}
                         />
                       ))}
                     </div>
 
-                    {/* Progressive Disclosure Toggle Button (Show N More / Show Less) */}
                     {!isSearching && dayVisits.length > INITIAL_LIMIT && (
                       <div className="flex justify-center pt-1">
                         <button
@@ -157,17 +213,26 @@ export default function WeekVisitsPanel({
                             e.stopPropagation();
                             toggleDayVisitsLimit(dateKey);
                           }}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors duration-150 cursor-pointer shadow-2xs focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:outline-none"
+                          className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-3.5 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                         >
                           {isVisitsExpanded ? (
                             <>
                               <span>Show less</span>
-                              <ChevronUp size={13} />
+                              <ChevronUp
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
                             </>
                           ) : (
                             <>
-                              <span>Show {remainingCount} more {remainingCount === 1 ? "visit" : "visits"}</span>
-                              <ChevronDown size={13} />
+                              <span>
+                                Show {remainingCount} more{" "}
+                                {remainingCount === 1 ? "visit" : "visits"}
+                              </span>
+                              <ChevronDown
+                                className="size-3.5"
+                                aria-hidden="true"
+                              />
                             </>
                           )}
                         </button>
@@ -177,7 +242,7 @@ export default function WeekVisitsPanel({
                 )}
               </div>
             )}
-          </Card>
+          </article>
         );
       })}
     </div>

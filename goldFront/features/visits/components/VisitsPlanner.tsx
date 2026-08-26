@@ -1,22 +1,40 @@
 "use client";
 
-import { useMemo, useState } from "react";
 import {
-  startOfWeek,
-  endOfWeek,
-  isSameDay,
-  isWithinInterval,
-  format,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+} from "react";
+import {
   addWeeks,
+  endOfWeek,
+  format,
+  isAfter,
+  isBefore,
+  isSameDay,
+  isSameMonth,
+  isWithinInterval,
+  startOfMonth,
+  startOfWeek,
 } from "date-fns";
+import type { DayButtonProps } from "react-day-picker";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { SearchInput } from "@/components/ui/SearchInput";
 import DayVisitsPanel from "@/features/visits/components/panels/DayVisitsPanel";
 import WeekVisitsPanel from "@/features/visits/components/panels/WeekVisitsPanel";
 import { Visit } from "@/features/visits/lib/types/ui";
-import { RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import type { VisitStatus } from "@/lib/types";
+import { cn, formatDateOnly } from "@/lib/utils";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  Search,
+  X,
+} from "lucide-react";
 
 type VisitsPlannerProps = {
   visits: Visit[];
@@ -26,13 +44,112 @@ type VisitsPlannerProps = {
   totalCount?: number;
 };
 
+type VisitMode = "day" | "week";
+type MonthMotion = "next" | "previous";
+
+const VISIT_STATUS_ORDER: VisitStatus[] = [
+  "COMPLETED",
+  "IN_PROGRESS",
+  "SCHEDULED",
+  "CANCELLED",
+];
+
+const visitStatusDotStyles: Record<VisitStatus, string> = {
+  COMPLETED: "bg-[#20A66A]",
+  IN_PROGRESS: "bg-[#3972D5]",
+  SCHEDULED: "bg-[#C9A44C]",
+  CANCELLED: "bg-[#D92D20]",
+};
+
+const statusLegend: Array<{ status: VisitStatus; label: string }> = [
+  { status: "COMPLETED", label: "Completed" },
+  { status: "IN_PROGRESS", label: "In Progress" },
+  { status: "SCHEDULED", label: "Scheduled" },
+  { status: "CANCELLED", label: "Cancelled" },
+];
+
+function VisitCalendarDayButton({
+  className,
+  day,
+  modifiers,
+  statusDotsByDate,
+  children,
+  ...props
+}: DayButtonProps & { statusDotsByDate: Map<string, VisitStatus[]> }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dateKey = formatDateOnly(day.date);
+  const statusDots = statusDotsByDate.get(dateKey) ?? [];
+
+  useEffect(() => {
+    if (modifiers.focused) buttonRef.current?.focus();
+  }, [modifiers.focused]);
+
+  return (
+    <button
+      ref={buttonRef}
+      data-day={dateKey}
+      data-selected-single={
+        modifiers.selected &&
+        !modifiers.range_start &&
+        !modifiers.range_end &&
+        !modifiers.range_middle
+      }
+      data-range-start={modifiers.range_start}
+      data-range-end={modifiers.range_end}
+      data-range-middle={modifiers.range_middle}
+      className={cn(
+        "visit-calendar-day-button relative flex aspect-square size-auto min-h-[var(--cell-size)] w-full min-w-[var(--cell-size)] flex-col items-center justify-center gap-0.5 rounded-[10px] border border-transparent bg-transparent text-sm leading-none font-semibold text-[#344054] transition-[background-color,border-color,color,box-shadow,transform] duration-[150ms] ease-out outline-none focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 data-[range-end=true]:rounded-[10px] data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-[#F8F1DC] data-[range-start=true]:rounded-[10px] data-[selected-single=true]:border-transparent data-[selected-single=true]:bg-[#101D36] data-[selected-single=true]:text-white data-[selected-single=true]:shadow-[0_6px_14px_rgba(16,29,54,0.22)]",
+        className,
+      )}
+      {...props}
+    >
+      <span className="visit-calendar-day-number">{children}</span>
+      {statusDots.length > 0 && (
+        <span className="visit-calendar-status-dots" aria-hidden="true">
+          {statusDots.map((status) => (
+            <span
+              key={status}
+              className={cn(
+                "visit-calendar-status-dot",
+                visitStatusDotStyles[status],
+              )}
+            />
+          ))}
+        </span>
+      )}
+    </button>
+  );
+}
+
 export default function VisitsPlanner({
   visits = [],
   reportBasePath,
 }: VisitsPlannerProps) {
-  const [mode, setMode] = useState<"day" | "week">("day");
+  const [mode, setMode] = useState<VisitMode>("day");
   const [selected, setSelected] = useState<Date>(new Date());
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
+    startOfMonth(new Date()),
+  );
+  const [monthMotion, setMonthMotion] = useState<MonthMotion>("next");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const statusDotsByDate = useMemo(() => {
+    const statusSetsByDate = new Map<string, Set<VisitStatus>>();
+
+    visits.forEach((visit) => {
+      const dateKey = formatDateOnly(visit.date);
+      const existing = statusSetsByDate.get(dateKey) ?? new Set<VisitStatus>();
+      existing.add(visit.status);
+      statusSetsByDate.set(dateKey, existing);
+    });
+
+    return new Map(
+      Array.from(statusSetsByDate.entries()).map(([dateKey, statuses]) => [
+        dateKey,
+        VISIT_STATUS_ORDER.filter((status) => statuses.has(status)),
+      ]),
+    );
+  }, [visits]);
 
   const dayVisits = useMemo<Visit[]>(() => {
     return visits
@@ -57,23 +174,12 @@ export default function VisitsPlanner({
       .sort((a, b) => a.date.getTime() - b.date.getTime());
   }, [weekRange, visits]);
 
-  // Synchronized 7-day week navigation (moves in discrete 7-day periods)
-  const handlePrevWeek = () => {
-    const newSelected = addWeeks(selected, -1);
-    setSelected(startOfWeek(newSelected, { weekStartsOn: 6 }));
-  };
-
-  const handleNextWeek = () => {
-    const newSelected = addWeeks(selected, 1);
-    setSelected(startOfWeek(newSelected, { weekStartsOn: 6 }));
-  };
-
-  // Client-side search filtering on current mode dataset
   const activeVisits = mode === "day" ? dayVisits : weekVisits;
-  const isSearching = searchQuery.trim() !== "";
-  
+  const trimmedSearchQuery = searchQuery.trim();
+  const isSearching = trimmedSearchQuery !== "";
+
   const filteredVisits = useMemo(() => {
-    const term = searchQuery.trim().toLowerCase();
+    const term = trimmedSearchQuery.toLowerCase();
     if (!term) return activeVisits;
 
     return activeVisits.filter((v) => {
@@ -85,156 +191,288 @@ export default function VisitsPlanner({
       if (v.visitType?.toLowerCase().includes(term)) return true;
       return false;
     });
-  }, [activeVisits, searchQuery]);
+  }, [activeVisits, trimmedSearchQuery]);
+
+  function selectDate(nextDate: Date) {
+    const nextMonth = startOfMonth(nextDate);
+
+    if (!isSameMonth(nextDate, calendarMonth)) {
+      setMonthMotion(isBefore(nextMonth, calendarMonth) ? "previous" : "next");
+      setCalendarMonth(nextMonth);
+    }
+
+    setSelected(nextDate);
+  }
+
+  function handleMonthChange(nextMonth: Date) {
+    if (isSameMonth(nextMonth, calendarMonth)) return;
+
+    setMonthMotion(isAfter(nextMonth, calendarMonth) ? "next" : "previous");
+    setCalendarMonth(nextMonth);
+  }
+
+  function handlePrevWeek() {
+    const newSelected = addWeeks(selected, -1);
+    selectDate(startOfWeek(newSelected, { weekStartsOn: 6 }));
+  }
+
+  function handleNextWeek() {
+    const newSelected = addWeeks(selected, 1);
+    selectDate(startOfWeek(newSelected, { weekStartsOn: 6 }));
+  }
+
+  function handleModeKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      setMode(mode === "day" ? "week" : "day");
+    }
+  }
+
+  const modeIndex = mode === "day" ? 0 : 1;
+  const selectedDateLabel = format(selected, "EEEE, MMMM d, yyyy");
+  const shortSelectedDateLabel = format(selected, "MMM d, yyyy");
+  const weekRangeLabel = `${format(weekRange.start, "MMM d")} - ${format(
+    weekRange.end,
+    "MMM d, yyyy",
+  )}`;
+  const resultsTitle = mode === "day" ? selectedDateLabel : weekRangeLabel;
+  const resultsHelper =
+    mode === "day" ? "Daily visit schedule" : "Weekly visit schedule";
+  const countLabel = `${filteredVisits.length} ${
+    filteredVisits.length === 1 ? "visit" : "visits"
+  }`;
+  const recordsSummary = `Showing ${filteredVisits.length} of ${
+    activeVisits.length
+  } ${mode === "day" ? "day" : "week"} visits`;
+  const resultsMotionKey = `${mode}-${formatDateOnly(selected)}-${trimmedSearchQuery}-${filteredVisits.length}`;
 
   return (
-    <section className="border-slate-200 rounded-xl border bg-white p-5 lg:h-[calc(100vh-170px)] lg:overflow-hidden flex flex-col">
-      <div className="flex flex-col lg:flex-row gap-5 lg:gap-6 items-start flex-1 min-h-0">
-        {/* Left Column: Fixed/Scrollable Calendar Navigation & Status Legend (280px fixed width on desktop) */}
-        <div className="w-full lg:w-70 shrink-0 flex flex-col gap-4 lg:h-full lg:overflow-y-auto pr-1">
-          {/* Day / Week Mode Selector */}
-          <div className="flex w-full items-center gap-1.5 rounded-xl bg-slate-100 p-1 shrink-0">
-            <Button
-              size="sm"
-              variant="ghost"
-              className={`h-8.5 flex-1 cursor-pointer rounded-lg text-xs font-semibold transition-all focus-visible:outline-none ${
-                mode === "day"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200 hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-900"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 focus-visible:ring-2 focus-visible:ring-slate-400"
-              }`}
-              onClick={() => setMode("day")}
-            >
-              Day View
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              className={`h-8.5 flex-1 cursor-pointer rounded-lg text-xs font-semibold transition-all focus-visible:outline-none ${
-                mode === "week"
-                  ? "bg-white text-slate-900 shadow-2xs border border-slate-200 hover:bg-white hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-slate-900"
-                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 focus-visible:ring-2 focus-visible:ring-slate-400"
-              }`}
-              onClick={() => setMode("week")}
-            >
-              Week View
-            </Button>
+    <section className="visits-page-enter visits-page-enter-delay-2 overflow-hidden rounded-[18px] border border-[#E5E8EF] bg-white shadow-none">
+      <div className="border-b border-[#EEF1F6] px-4 py-5 sm:px-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#FBF7EA] text-[#B18732]">
+                <CalendarDays className="size-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-semibold text-[#182033]">
+                  Visit Workspace
+                </h2>
+                <p
+                  key={recordsSummary}
+                  className="visits-count-refresh mt-1 text-xs font-medium text-[#667085]"
+                >
+                  {recordsSummary}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Full-Width Calendar Card */}
-          <Card className="relative p-3 border border-slate-200 shadow-none w-full shrink-0">
-            <div className="mb-2 px-1 text-xs font-semibold text-slate-900">
-              {mode === "day"
-                ? format(selected, "EEEE, d MMMM yyyy")
-                : `${format(weekRange.start, "MMM d")} - ${format(
-                    weekRange.end,
-                    "MMM d, yyyy",
-                  )}`}
+          <div className="grid w-full gap-3 sm:grid-cols-[minmax(0,240px)_minmax(260px,320px)] xl:w-auto">
+            <div
+              role="tablist"
+              aria-label="Visit calendar view"
+              className="visits-mode-switch relative grid h-11 grid-cols-2 items-center overflow-hidden rounded-[13px] border border-[#E7EAF0] bg-[#F5F7FA] p-1"
+              style={
+                {
+                  "--visits-mode-index": modeIndex,
+                } as CSSProperties
+              }
+            >
+              <span
+                className="visits-mode-switch-indicator"
+                aria-hidden="true"
+              />
+              {(["day", "week"] as VisitMode[]).map((viewMode) => {
+                const isActive = mode === viewMode;
+                const label = viewMode === "day" ? "Day View" : "Week View";
+
+                return (
+                  <button
+                    key={viewMode}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    aria-controls="visits-results-panel"
+                    tabIndex={isActive ? 0 : -1}
+                    onClick={() => setMode(viewMode)}
+                    onKeyDown={handleModeKeyDown}
+                    className={`visits-mode-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+                      isActive ? "text-[#182033]" : "text-[#667085]"
+                    }`}
+                  >
+                    <span className="truncate">{label}</span>
+                  </button>
+                );
+              })}
             </div>
 
+            <div className="visits-search-field relative min-w-0">
+              <Search
+                className="visits-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]"
+                aria-hidden="true"
+              />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search visits..."
+                aria-label="Search visits"
+                className="visits-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  aria-label="Clear visit search"
+                  className="visits-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#98A2B3] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                >
+                  <X className="size-3.5" aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {isSearching && (
+        <div className="visits-search-scope border-b border-[#EEF1F6] bg-[#FBFCFE] px-4 py-3 sm:px-5">
+          <div className="flex flex-col gap-2 text-xs font-medium text-[#667085] sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Filtering current {mode} view for{" "}
+              <strong className="font-semibold text-[#182033]">
+                &quot;{searchQuery}&quot;
+              </strong>
+              . Showing {filteredVisits.length} matching records.
+            </span>
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] duration-[150ms] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+            >
+              <RotateCcw className="size-3.5" aria-hidden="true" />
+              Clear search
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(260px,31%)_minmax(0,1fr)] xl:grid-cols-[minmax(280px,30%)_minmax(0,1fr)]">
+        <aside className="visits-calendar-panel rounded-[16px] border border-[#E5E8EF] bg-[#FBFCFE] p-4">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-[#182033]">
+                {format(calendarMonth, "MMMM yyyy")}
+              </h3>
+              <p className="mt-1 text-xs font-medium text-[#667085]">
+                {mode === "day"
+                  ? shortSelectedDateLabel
+                  : `${weekRangeLabel} selected`}
+              </p>
+            </div>
+            <span className="inline-flex rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2.5 py-1 text-[11px] font-bold text-[#8A6515]">
+              STATUS
+            </span>
+          </div>
+
+          <div
+            key={`${format(calendarMonth, "yyyy-MM")}-${monthMotion}`}
+            className={`visits-calendar-grid-${monthMotion}`}
+          >
             <ShadCalendar
               mode="single"
               selected={selected}
-              onSelect={(d) => d && setSelected(d)}
-              className="rounded-md p-0 w-full"
-              classNames={{
-                today: "bg-blue-50 text-blue-700 font-bold rounded-md",
-                selected:
-                  "bg-dashboard-blue! text-white! rounded-md font-medium",
-                day: "cursor-pointer hover:bg-slate-100 rounded-md text-xs h-7 w-7",
+              month={calendarMonth}
+              onMonthChange={handleMonthChange}
+              onSelect={(d) => d && selectDate(d)}
+              className="visits-calendar rounded-none bg-transparent p-0"
+              components={{
+                DayButton: (dayButtonProps) => (
+                  <VisitCalendarDayButton
+                    {...dayButtonProps}
+                    statusDotsByDate={statusDotsByDate}
+                  />
+                ),
               }}
             />
+          </div>
 
-            {/* Visit Status Legend */}
-            <div className="mt-3 border-t border-slate-100 pt-2.5">
-              <p className="mb-1.5 text-[11px] font-semibold text-slate-800 uppercase tracking-wider">
-                Status Legend
-              </p>
-              <div className="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-emerald-500 size-2 rounded-full shrink-0" />
-                  <span>Completed</span>
+          <div className="mt-4 border-t border-[#E5E8EF] pt-3">
+            <p className="mb-2 text-[10px] font-bold tracking-[0.08em] text-[#667085] uppercase">
+              Status
+            </p>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] font-medium text-[#667085]">
+              {statusLegend.map((item) => (
+                <div
+                  key={item.status}
+                  className="flex min-w-0 items-center gap-2"
+                >
+                  <span
+                    className={cn(
+                      "size-2 shrink-0 rounded-full",
+                      visitStatusDotStyles[item.status],
+                    )}
+                    aria-hidden="true"
+                  />
+                  <span className="truncate">{item.label}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-blue-500 size-2 rounded-full shrink-0" />
-                  <span>In Progress</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-amber-500 size-2 rounded-full shrink-0" />
-                  <span>Scheduled</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-red-500 size-2 rounded-full shrink-0" />
-                  <span>Cancelled</span>
-                </div>
-              </div>
+              ))}
             </div>
-          </Card>
-        </div>
+          </div>
+        </aside>
 
-        {/* Right Column: Integrated Fixed Toolbar & Scrollable Visit Results Area */}
-        <div className="flex-1 min-w-0 w-full flex flex-col gap-3 lg:h-full lg:overflow-hidden">
-          {/* Integrated Search & 7-Day Navigation Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3 shrink-0">
-            {/* Search Input */}
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Search visits..."
-              className="w-full sm:w-65"
-            />
+        <section
+          id="visits-results-panel"
+          className="visits-results-panel min-w-0 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white"
+        >
+          <div className="flex flex-col gap-3 border-b border-[#EEF1F6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-semibold text-[#182033]">
+                {resultsTitle}
+              </h3>
+              <p className="mt-1 text-xs font-medium text-[#667085]">
+                {resultsHelper}
+              </p>
+            </div>
 
-            {/* Synchronized 7-Day Week Navigation (in Week mode) */}
-            {mode === "week" && (
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg p-1 text-xs">
-                <button
-                  type="button"
-                  onClick={handlePrevWeek}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-slate-700 hover:bg-white hover:text-slate-900 transition-colors cursor-pointer font-medium"
-                  title="Previous 7 days"
-                >
-                  <ChevronLeft size={14} />
-                  <span>Prev Week</span>
-                </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {mode === "week" && (
+                <div className="visits-week-nav inline-flex h-9 items-center gap-1 rounded-[11px] border border-[#E5E8EF] bg-[#F9FAFB] p-1">
+                  <button
+                    type="button"
+                    onClick={handlePrevWeek}
+                    aria-label="Previous week"
+                    title="Previous week"
+                    className="visits-week-nav-button visits-week-nav-button-prev inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-white hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                  >
+                    <ChevronLeft className="size-4" aria-hidden="true" />
+                  </button>
+                  <span className="px-2 text-xs font-semibold whitespace-nowrap text-[#182033]">
+                    {format(weekRange.start, "MMM d")} -{" "}
+                    {format(weekRange.end, "MMM d")}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleNextWeek}
+                    aria-label="Next week"
+                    title="Next week"
+                    className="visits-week-nav-button visits-week-nav-button-next inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-white hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                  >
+                    <ChevronRight className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              )}
 
-                <span className="px-2 font-semibold text-slate-900">
-                  {format(weekRange.start, "MMM d")} – {format(weekRange.end, "MMM d")}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={handleNextWeek}
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-slate-700 hover:bg-white hover:text-slate-900 transition-colors cursor-pointer font-medium"
-                  title="Next 7 days"
-                >
-                  <span>Next Week</span>
-                  <ChevronRight size={14} />
-                </button>
-              </div>
-            )}
-
-            <div className="text-xs text-slate-500 font-medium">
-              Showing {filteredVisits.length} of {activeVisits.length} {mode === "day" ? "day" : "week"} visits
+              <span className="inline-flex h-8 items-center rounded-full border border-[#E5E8EF] bg-[#F9FAFB] px-3 text-xs font-bold text-[#344054]">
+                {countLabel}
+              </span>
             </div>
           </div>
 
-          {/* Scope Info Pill when Searching */}
-          {isSearching && (
-            <div className="flex items-center justify-between rounded-lg border border-blue-100 bg-blue-50/70 px-3.5 py-2 text-xs text-blue-700 shrink-0">
-              <span>
-                Filtering current {mode} view for &quot;<strong>{searchQuery}</strong>&quot;. Showing {filteredVisits.length} matching records.
-              </span>
-              <button
-                onClick={() => setSearchQuery("")}
-                className="font-medium underline hover:text-blue-900 cursor-pointer inline-flex items-center gap-1"
-              >
-                <RotateCcw size={12} />
-                Clear search
-              </button>
-            </div>
-          )}
-
-          {/* Scrollable Visit Results Area (ONLY THIS CONTAINER SCROLLS ON DESKTOP) */}
-          <div className="flex-1 min-h-0 lg:overflow-y-auto pr-1 space-y-3">
+          <div
+            key={resultsMotionKey}
+            className="visits-results-content-enter p-4 sm:p-5"
+          >
             {mode === "day" ? (
               <DayVisitsPanel
                 date={selected}
@@ -252,7 +490,7 @@ export default function VisitsPlanner({
               />
             )}
           </div>
-        </div>
+        </section>
       </div>
     </section>
   );

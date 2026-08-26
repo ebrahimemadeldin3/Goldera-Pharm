@@ -8,7 +8,7 @@ import { updatePlanStatusAction, rejectPlanAction } from "@/features/plan/api/ha
 import SupervisorPlanCard from "@/features/plan/components/supervisor/SupervisorPlanCard";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
-import { ResultsFooter } from "@/components/ui/ResultsFooter";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 
 type ManagerPlansListProps = {
   plans: VisitPlan[];
@@ -78,37 +78,39 @@ export default function ManagerPlansList({
   ];
 
   return (
-    <SectionContainer className="mt-6">
+    <SectionContainer className="mt-6 p-0 overflow-hidden border border-[#E5E8EF] rounded-[16px] bg-white shadow-none">
       {/* Tabs Header Toolbar */}
-      <header className="mb-5 flex flex-col gap-4 border-b border-slate-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-4 border-b border-[#EEF1F6] bg-[#FBFCFE]/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-lg font-semibold text-slate-900">Team Plans</h2>
+          <h2 className="text-base font-semibold text-[#182033]">Team Plans</h2>
           {isPending && (
-            <span className="text-xs font-normal text-slate-400">Updating...</span>
+            <span className="text-xs font-medium text-[#8A94A6]">Updating...</span>
           )}
         </div>
 
-        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-xl bg-slate-100 p-1">
+        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-[12px] bg-[#F6F8FB] border border-[#E5E8EF] p-1">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               disabled={isPending}
-              className={`relative flex cursor-pointer items-center gap-2 rounded-lg border-[0.8px] px-3 py-1.5 text-xs font-medium transition-all ${
+              className={`relative flex cursor-pointer items-center gap-2 rounded-[9px] px-3.5 py-1.5 text-xs font-semibold transition-all disabled:opacity-60 ${
                 activeTab === tab.id
-                  ? "border-slate-200 bg-white text-slate-900 shadow-2xs"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
+                  ? "bg-[#FFF8E5] text-[#8A6515] border border-[#E9DDB8] shadow-2xs"
+                  : "bg-white border border-transparent text-[#667085] hover:text-[#182033]"
               }`}
             >
               {tab.label}
               {tab.count > 0 && (
                 <span
-                  className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[11px] font-medium ${
+                  className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold ${
                     tab.id === "PENDING"
-                      ? "bg-amber-100 text-amber-800"
+                      ? "bg-[#FFF8E5] text-[#8A6515] border border-[#F5DFAC]"
                       : tab.id === "APPROVED"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-200 text-slate-700"
+                      ? "bg-[#E9F8F1] text-[#168557] border border-[#CBEFDD]"
+                      : tab.id === "REJECTED"
+                      ? "bg-[#FFF1F0] text-[#B42318] border border-[#F5C9C5]"
+                      : "bg-[#F6F8FB] text-[#667085] border border-[#E5E8EF]"
                   }`}
                 >
                   {tab.count}
@@ -121,20 +123,22 @@ export default function ManagerPlansList({
 
       {/* Scope-Honest Info Banner */}
       {activeTab !== "all" && (
-        <ScopeInfoBanner onReset={() => setActiveTab("all")} resetLabel="Show all">
-          Filtering currently loaded page slice by status (&quot;<strong className="text-slate-700 font-medium">{activeTab}</strong>&quot;).
-          Showing {filteredPlans.length} of {plans.length} loaded plans.
-        </ScopeInfoBanner>
+        <div className="px-5 pt-4">
+          <ScopeInfoBanner onReset={() => setActiveTab("all")} resetLabel="Show all">
+            Filtering currently loaded page slice by status (&quot;<strong className="text-[#182033] font-semibold">{activeTab}</strong>&quot;).
+            Showing {filteredPlans.length} of {plans.length} loaded plans.
+          </ScopeInfoBanner>
+        </div>
       )}
 
       {/* Plans List Container */}
-      <div className="space-y-4">
+      <div className="space-y-4 p-5">
         {filteredPlans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
-            <p className="text-sm font-medium text-slate-700">
+          <div className="flex flex-col items-center justify-center rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] p-10 text-center">
+            <p className="text-sm font-semibold text-[#182033]">
               No plans found matching filter &quot;{activeTab}&quot;
             </p>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-[#667085] mt-1">
               Select &quot;All Plans&quot; tab to see all loaded visit plans
             </p>
           </div>
@@ -151,7 +155,13 @@ export default function ManagerPlansList({
       </div>
 
       {/* Bottom Pagination Footer */}
-      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        itemLabel="plans"
+        ariaLabel="Manager plans directory pagination"
+      />
     </SectionContainer>
   );
 }

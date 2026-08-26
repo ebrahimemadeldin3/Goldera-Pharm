@@ -5,18 +5,14 @@ import {
   useEffect,
   useMemo,
   useState,
-  useTransition,
   type ButtonHTMLAttributes,
   type CSSProperties,
 } from "react";
 import Image from "next/image";
-import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import {
   CalendarDays,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Check,
   Pencil,
   Leaf,
@@ -63,6 +59,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { AddProductDialog } from "./AddProductDialog";
 import type { ProductApiResponse } from "../lib/types";
 import {
@@ -93,7 +90,6 @@ type SummaryCardProps = {
   tone: "blue" | "green" | "gold";
   animationDelay?: string;
 };
-type PaginationItem = number | "ellipsis-start" | "ellipsis-end";
 type PriceRange = [number, number];
 type PriceLimits = {
   min: number;
@@ -322,32 +318,32 @@ function SummaryCard({
 }: SummaryCardProps) {
   return (
     <article
-      className="products-kpi-card products-upper-kpi-enter group/kpi flex min-h-[108px] items-center gap-4 rounded-[12px] border border-[#E5E8EF] bg-white px-4 py-4 shadow-[0_1px_2px_rgba(16,24,40,0.03)]"
+      className="products-kpi-card products-upper-kpi-enter group/kpi flex min-h-[118px] items-start justify-between gap-4 rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none"
       style={
         {
           "--products-upper-delay": animationDelay,
         } as CSSProperties
       }
     >
+      <div className="min-w-0">
+        <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+          {label}
+        </p>
+        <p className="mt-2 text-2xl leading-none font-semibold text-[#182033]">
+          {value}
+        </p>
+        <p className="mt-2 truncate text-xs font-medium text-[#8A94A6]">
+          {helper}
+        </p>
+      </div>
       <span
-        className={`products-kpi-icon-shell products-kpi-icon-shell-${tone} flex size-12 shrink-0 items-center justify-center rounded-full ${summaryToneStyles[tone]}`}
+        className={`products-kpi-icon-shell products-kpi-icon-shell-${tone} flex size-10 shrink-0 items-center justify-center rounded-[10px] ${summaryToneStyles[tone]}`}
       >
         <Icon
           className={`products-kpi-icon products-kpi-icon-${tone} size-5`}
           aria-hidden="true"
         />
       </span>
-      <div className="min-w-0">
-        <p className="text-[10px] font-semibold tracking-[0.06em] text-[#8A94A6] uppercase">
-          {label}
-        </p>
-        <p className="mt-1 text-[20px] leading-tight font-semibold text-[#182033]">
-          {value}
-        </p>
-        <p className="mt-1 truncate text-xs font-medium text-[#8A94A6]">
-          {helper}
-        </p>
-      </div>
     </article>
   );
 }
@@ -883,234 +879,6 @@ function ProductActionsButton({
   );
 }
 
-function getPaginationItems(
-  currentPage: number,
-  totalPages: number,
-): PaginationItem[] {
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  if (currentPage <= 4) {
-    return [1, 2, 3, 4, 5, "ellipsis-end", totalPages];
-  }
-
-  if (currentPage >= totalPages - 3) {
-    return [
-      1,
-      "ellipsis-start",
-      totalPages - 4,
-      totalPages - 3,
-      totalPages - 2,
-      totalPages - 1,
-      totalPages,
-    ];
-  }
-
-  return [
-    1,
-    "ellipsis-start",
-    currentPage - 1,
-    currentPage,
-    currentPage + 1,
-    "ellipsis-end",
-    totalPages,
-  ];
-}
-
-function ProductPagination({
-  page,
-  limit,
-  totalCount,
-}: Required<Pick<ProductsListProps, "page" | "limit" | "totalCount">>) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startPageTransition] = useTransition();
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  const currentPage = Math.min(Math.max(page, 1), totalPages);
-  const paginationItems = getPaginationItems(currentPage, totalPages);
-  const activePageIndex = Math.max(
-    0,
-    paginationItems.findIndex((item) => item === currentPage),
-  );
-
-  function pushPage(newPage: number) {
-    const clampedPage = Math.min(Math.max(newPage, 1), totalPages);
-    if (isPending || clampedPage === currentPage) {
-      return;
-    }
-
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
-    params.set("page", String(clampedPage));
-    params.set("limit", String(limit));
-    startPageTransition(() => {
-      router.push(`${window.location.pathname}?${params.toString()}`);
-    });
-  }
-
-  const startItem = totalCount === 0 ? 0 : (currentPage - 1) * limit + 1;
-  const endItem = Math.min(totalCount, currentPage * limit);
-  const isFirstPage = currentPage <= 1;
-  const isLastPage = currentPage >= totalPages;
-  const arrowButtonClassName =
-    "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-[#667085] transition-[background-color,color,transform,opacity] duration-[160ms] ease-out focus-visible:ring-4 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-x-0 disabled:hover:bg-transparent disabled:hover:text-[#667085] motion-reduce:transition-none motion-reduce:hover:translate-x-0";
-  const pageButtonClassName =
-    "relative z-10 flex size-9 shrink-0 items-center justify-center rounded-[10px] text-sm font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out focus-visible:ring-4 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-wait motion-reduce:transition-none motion-reduce:hover:translate-y-0";
-  const progressWidth = `${(currentPage / totalPages) * 100}%`;
-
-  return (
-    <nav
-      aria-label="Product catalog pagination"
-      aria-busy={isPending}
-      className="border-t border-[#E5E8EF] bg-[#FBFCFE]/80 px-4 py-3 sm:px-5"
-    >
-      <div className="hidden items-center justify-between gap-4 md:flex">
-        <div
-          key={`${startItem}-${endItem}-${totalCount}`}
-          className="products-pagination-count-enter min-w-0"
-        >
-          <p className="text-sm font-semibold text-[#182033]">
-            Showing{" "}
-            <span className="font-semibold text-[#182033]">
-              {startItem}-{endItem}
-            </span>{" "}
-            <span className="font-medium text-[#7B8498]">of</span>{" "}
-            <span className="font-semibold text-[#182033]">{totalCount}</span>
-            <span className="font-medium text-[#7B8498]"> products</span>
-          </p>
-          <p className="mt-1 text-xs font-medium text-[#8A94A6]">
-            Page {currentPage} of {totalPages}
-          </p>
-        </div>
-
-        <div className="inline-flex flex-col gap-2">
-          <div className="inline-flex items-center gap-1 rounded-[16px] border border-[#E5E8EF] bg-white/90 p-1.5 shadow-[0_4px_16px_rgba(16,27,51,0.05)] backdrop-blur-sm">
-            <button
-              type="button"
-              onClick={() => pushPage(currentPage - 1)}
-              disabled={isPending || isFirstPage}
-              aria-label="Previous page"
-              className={`${arrowButtonClassName} hover:-translate-x-0.5 hover:bg-[#F8F1DC] hover:text-[#B18732]`}
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-            </button>
-
-            <div
-              className="relative flex items-center gap-1"
-              style={
-                {
-                  "--products-active-page-index": activePageIndex,
-                } as CSSProperties
-              }
-            >
-              <span
-                className="pointer-events-none absolute top-0 left-0 z-0 size-9 rounded-[10px] bg-[linear-gradient(135deg,#D9B95B_0%,#C9A44C_55%,#B98B32_100%)] opacity-100 shadow-[0_5px_14px_rgba(185,139,50,0.22)] transition-transform duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                style={{
-                  transform: `translateX(calc(var(--products-active-page-index) * 40px))`,
-                }}
-                aria-hidden="true"
-              />
-
-              {paginationItems.map((item) =>
-                typeof item === "number" ? (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => pushPage(item)}
-                    disabled={isPending}
-                    aria-label={`Go to page ${item}`}
-                    aria-current={item === currentPage ? "page" : undefined}
-                    className={`${pageButtonClassName} ${
-                      item === currentPage
-                        ? "text-white"
-                        : "text-[#667085] hover:-translate-y-px hover:bg-[#F8F1DC] hover:text-[#A67C2D]"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ) : (
-                  <span
-                    key={item}
-                    className="relative z-10 flex size-9 shrink-0 items-center justify-center text-sm font-semibold text-[#A1A8B5]"
-                    aria-hidden="true"
-                  >
-                    &hellip;
-                  </span>
-                ),
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => pushPage(currentPage + 1)}
-              disabled={isPending || isLastPage}
-              aria-label="Next page"
-              className={`${arrowButtonClassName} hover:translate-x-0.5 hover:bg-[#F8F1DC] hover:text-[#B18732]`}
-            >
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-          {totalPages > 1 && (
-            <div className="h-0.5 overflow-hidden rounded-full bg-[#EEF1F5]">
-              <span
-                className="block h-full rounded-full bg-[linear-gradient(90deg,#D9B95B,#B98B32)] transition-[width] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                style={{ width: progressWidth }}
-                aria-hidden="true"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="md:hidden">
-        <div
-          key={`${startItem}-${endItem}-${totalCount}-mobile`}
-          className="products-pagination-count-enter text-center text-sm font-medium text-[#7B8498]"
-        >
-          <span className="font-semibold text-[#182033]">
-            {startItem}-{endItem}
-          </span>{" "}
-          of <span className="font-semibold text-[#182033]">{totalCount}</span>{" "}
-          products
-        </div>
-        <div className="mt-3 grid grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3 rounded-[16px] border border-[#E5E8EF] bg-white/90 p-2 shadow-[0_4px_16px_rgba(16,27,51,0.05)] backdrop-blur-sm">
-          <button
-            type="button"
-            onClick={() => pushPage(currentPage - 1)}
-            disabled={isPending || isFirstPage}
-            aria-label="Previous page"
-            className={`${arrowButtonClassName} size-10 hover:-translate-x-0.5 hover:bg-[#F8F1DC] hover:text-[#B18732]`}
-          >
-            <ChevronLeft className="size-4" aria-hidden="true" />
-          </button>
-
-          <p className="mx-auto inline-flex h-9 min-w-[120px] items-center justify-center rounded-[11px] bg-[#F8F1DC] px-4 text-sm font-semibold text-[#8A6515]">
-            Page {currentPage} / {totalPages}
-          </p>
-
-          <button
-            type="button"
-            onClick={() => pushPage(currentPage + 1)}
-            disabled={isPending || isLastPage}
-            aria-label="Next page"
-            className={`${arrowButtonClassName} size-10 hover:translate-x-0.5 hover:bg-[#F8F1DC] hover:text-[#B18732]`}
-          >
-            <ChevronRight className="size-4" aria-hidden="true" />
-          </button>
-        </div>
-        {totalPages > 1 && (
-          <div className="mt-2 h-0.5 overflow-hidden rounded-full bg-[#EEF1F5]">
-            <span
-              className="block h-full rounded-full bg-[linear-gradient(90deg,#D9B95B,#B98B32)] transition-[width] duration-[260ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-              style={{ width: progressWidth }}
-              aria-hidden="true"
-            />
-          </div>
-        )}
-      </div>
-    </nav>
-  );
-}
 export default function ProductsList({
   products,
   page = 1,
@@ -1421,193 +1189,15 @@ export default function ProductsList({
   }
 
   return (
-    <section className="products-page-enter products-page-enter-delay-2 mt-5 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <header className="flex flex-col gap-4 px-4 pt-5 pb-4 sm:px-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,520px)] lg:items-start lg:gap-6">
-        <div className="products-catalog-header-copy-enter min-w-0">
-          <div className="flex items-center gap-2">
-            <span
-              className="products-catalog-eyebrow-line h-px w-8 rounded-full bg-[#C9A44C]"
-              aria-hidden="true"
-            />
-            <p className="text-[11px] leading-none font-semibold tracking-[0.1em] text-[#C9A44C] uppercase">
-              Product Management
-            </p>
-          </div>
-          <h2 className="mt-3 text-[26px] leading-tight font-semibold text-[#182033] sm:text-[28px]">
-            Product Catalog
-          </h2>
-          <p className="mt-2 max-w-[520px] text-sm leading-5 font-medium text-[#7B879D] lg:whitespace-nowrap">
-            Manage, search and organize your pharmaceutical portfolio.
-          </p>
-          <span
-            key={`${filtered.length}-${safeTotalCount}`}
-            className="products-catalog-count-chip products-catalog-count-chip-enter mt-3 inline-flex w-fit items-center gap-2 rounded-full border border-[#E9DDB8] bg-[#FFFBF1] px-3 py-1.5 text-xs font-semibold text-[#6F5A20]"
-          >
-            <span
-              className="size-1.5 rounded-full bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
-              aria-hidden="true"
-            />
-            <span>
-              Showing <span className="text-[#B18732]">{filtered.length}</span>{" "}
-              of {safeTotalCount} products
-              {hasSearchQuery && (
-                <>
-                  {" "}
-                  matching{" "}
-                  <span className="text-[#182033]">
-                    &quot;{trimmedQuery}&quot;
-                  </span>
-                </>
-              )}
-            </span>
-          </span>
-        </div>
-
-        <div className="products-catalog-controls-enter grid w-full grid-cols-[minmax(0,1fr)_136px] gap-2 lg:max-w-[520px]">
-          <div className="products-catalog-search-field group/search relative min-w-0">
-            <Search
-              className="products-catalog-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A94A6]"
-              aria-hidden="true"
-            />
-            <input
-              value={q}
-              onChange={(event) => setQ(event.target.value)}
-              placeholder="Search by name or reference..."
-              className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm text-[#182033] outline-none placeholder:text-[#98A2B3]"
-            />
-            {q && (
-              <button
-                type="button"
-                onClick={() => setQ("")}
-                aria-label="Clear product search"
-                className="products-catalog-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#8A94A6] transition-[background-color,color] duration-[150ms] ease-out hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none"
-              >
-                <X className="size-3.5" aria-hidden="true" />
-              </button>
-            )}
-          </div>
-
-          {isMobileFilterPanel ? (
-            <Sheet open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
-              <SheetTrigger asChild>
-                <FilterTriggerButton
-                  activeFilterCount={activeFilterCount}
-                  isOpen={isFilterOpen}
-                />
-              </SheetTrigger>
-              <SheetContent
-                side="bottom"
-                className="products-catalog-filter-sheet rounded-t-[18px] border-[#E5E8EF] bg-white p-0 shadow-[0_-18px_46px_rgba(16,24,40,0.18)]"
-                hideCloseButton
-              >
-                <SheetHeader className="sr-only">
-                  <SheetTitle>Filter Products</SheetTitle>
-                  <SheetDescription>
-                    Refine the product catalog by category, sales price, and
-                    added date.
-                  </SheetDescription>
-                </SheetHeader>
-                <ProductFilterPanel
-                  mode="mobile"
-                  categoryOptions={categoryOptions}
-                  selectedCategories={effectiveDraftSelectedCategories}
-                  onCategoryToggle={handleDraftCategoryToggle}
-                  priceLimits={priceLimits}
-                  priceRange={draftActivePriceRange}
-                  priceStep={priceStep}
-                  onPriceRangeChange={handleDraftPriceRangeChange}
-                  dateFilter={draftDateFilter}
-                  onDateFilterChange={setDraftDateFilter}
-                  draftFilterCount={draftFilterCount}
-                  resultCount={draftFiltered.length}
-                  onReset={resetDraftFilters}
-                  onApply={applyDraftFilters}
-                  onClose={() => setIsFilterOpen(false)}
-                />
-              </SheetContent>
-            </Sheet>
-          ) : (
-            <Popover open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
-              <PopoverTrigger asChild>
-                <FilterTriggerButton
-                  activeFilterCount={activeFilterCount}
-                  isOpen={isFilterOpen}
-                />
-              </PopoverTrigger>
-              <PopoverContent
-                align="end"
-                sideOffset={10}
-                className="products-catalog-filter-panel w-[min(430px,calc(100vw-2rem))] overflow-visible rounded-[16px] border-[#E5E8EF] bg-white p-0 shadow-[0_18px_46px_rgba(16,24,40,0.16)]"
-              >
-                <ProductFilterPanel
-                  mode="desktop"
-                  categoryOptions={categoryOptions}
-                  selectedCategories={effectiveDraftSelectedCategories}
-                  onCategoryToggle={handleDraftCategoryToggle}
-                  priceLimits={priceLimits}
-                  priceRange={draftActivePriceRange}
-                  priceStep={priceStep}
-                  onPriceRangeChange={handleDraftPriceRangeChange}
-                  dateFilter={draftDateFilter}
-                  onDateFilterChange={setDraftDateFilter}
-                  draftFilterCount={draftFilterCount}
-                  resultCount={draftFiltered.length}
-                  onReset={resetDraftFilters}
-                  onApply={applyDraftFilters}
-                  onClose={() => setIsFilterOpen(false)}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-      </header>
-
-      {hasActiveFilters && (
-        <div className="products-catalog-active-filters border-t border-[#EEF1F5] bg-[#FBFCFE] px-4 py-3 sm:px-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <span className="mr-1 text-xs font-bold tracking-[0.04em] text-[#667085] uppercase">
-                Active filters
-              </span>
-              {effectiveSelectedCategories.map((category) => (
-                <ActiveFilterChip
-                  key={category}
-                  label={category}
-                  onRemove={() => removeCategoryFilter(category)}
-                />
-              ))}
-              {hasPriceFilter && (
-                <ActiveFilterChip
-                  label={formatFilterPriceRange(activePriceRange)}
-                  onRemove={() => setPriceRange(null)}
-                />
-              )}
-              {hasDateFilter && (
-                <ActiveFilterChip
-                  label={dateFilterLabels[dateFilter]}
-                  onRemove={() => setDateFilter("any")}
-                />
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="w-fit rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] duration-[150ms] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none"
-            >
-              Clear all
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 border-y border-[#E5E8EF] bg-[#FBFCFE] px-4 py-4 sm:px-5 md:grid-cols-3">
+    <div className="products-page-enter products-page-enter-delay-1 mt-5 space-y-5 sm:mt-6 sm:space-y-6">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard
           label="Total Products"
           value={numberFormatter.format(summary.totalProducts)}
           helper="Active pharmaceutical items"
           icon={Package}
           tone="blue"
-          animationDelay="180ms"
+          animationDelay="120ms"
         />
         <SummaryCard
           label="Average Sales Price"
@@ -1615,7 +1205,7 @@ export default function ProductsList({
           helper="Across all products"
           icon={TrendingUp}
           tone="green"
-          animationDelay="240ms"
+          animationDelay="175ms"
         />
         <SummaryCard
           label="Categories"
@@ -1623,215 +1213,395 @@ export default function ProductsList({
           helper="Product categories"
           icon={Tag}
           tone="gold"
-          animationDelay="300ms"
+          animationDelay="230ms"
         />
-      </div>
+      </section>
 
-      {filtered.length > 0 ? (
-        <div
-          key={criteriaSignature}
-          className="products-catalog-results-refresh"
-        >
-          <div className="hidden overflow-x-auto md:block">
-            <table className="w-full min-w-[920px] text-left text-sm">
-              <thead className="bg-[#F8FAFC]">
-                <tr className="border-b border-[#E5E8EF]">
-                  <th className="w-[56px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    #
-                  </th>
-                  <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Product Name
-                  </th>
-                  <th className="w-[140px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Internal Ref
-                  </th>
-                  <th className="w-[220px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Category
-                  </th>
-                  <th className="w-[170px] px-5 py-3 text-right text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Sales Price (SAR)
-                  </th>
-                  <th className="w-[150px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Added Date
-                  </th>
-                  <th className="w-[88px] px-5 py-3 text-center text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((product, index) => {
-                  const category = getProductCategory(product.internalRef);
-
-                  return (
-                    <tr
-                      key={product.id}
-                      className="products-catalog-row-enter group border-b border-[#EDF0F5] transition-colors duration-[180ms] last:border-0 hover:bg-[#F8FAFC]"
-                      style={
-                        {
-                          "--products-row-delay": `${index * 22}ms`,
-                        } as CSSProperties
-                      }
-                    >
-                      <td className="px-5 py-4 text-xs font-medium text-[#667085]">
-                        {(displayedPage - 1) * limit + index + 1}
-                      </td>
-                      <td className="max-w-[360px] px-5 py-4">
-                        <div className="flex min-w-0 items-center gap-3">
-                          <ProductThumbnail
-                            product={product}
-                            storedProductImages={storedProductImages}
-                          />
-                          <ProductName product={product} />
-                        </div>
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className="inline-flex max-w-[116px] items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
-                          dir="ltr"
-                          title={product.internalRef || undefined}
-                        >
-                          <span className="truncate">
-                            {product.internalRef || "N/A"}
-                          </span>
-                        </span>
-                      </td>
-                      <td className="px-5 py-4">
-                        <CategoryBadge category={category} />
-                      </td>
-                      <td className="px-5 py-4 text-right font-semibold whitespace-nowrap text-[#182033]">
-                        {formatProductPrice(product.salesPrice)}
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap text-[#667085]">
-                        {formatProductDate(product.createdAt)}
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        <ProductActionsButton
-                          product={product}
-                          canManageProducts={canManageProducts}
-                          onEdit={setEditingProduct}
-                          onRemove={setProductPendingRemoval}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="grid gap-3 p-4 md:hidden">
-            {filtered.map((product, index) => {
-              const category = getProductCategory(product.internalRef);
-
-              return (
-                <article
-                  key={product.id}
-                  className="products-catalog-row-enter group rounded-[12px] border border-[#E5E8EF] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-colors duration-[180ms] hover:bg-[#F8FAFC]"
-                  style={
-                    {
-                      "--products-row-delay": `${index * 22}ms`,
-                    } as CSSProperties
-                  }
-                >
-                  <div className="flex min-w-0 items-start gap-3">
-                    <ProductThumbnail
-                      product={product}
-                      storedProductImages={storedProductImages}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <ProductName product={product} />
-                      <p className="mt-2 text-xs font-medium text-[#98A2B3]">
-                        #{(displayedPage - 1) * limit + index + 1}
-                      </p>
-                    </div>
-                    <ProductActionsButton
-                      product={product}
-                      canManageProducts={canManageProducts}
-                      onEdit={setEditingProduct}
-                      onRemove={setProductPendingRemoval}
-                    />
-                  </div>
-
-                  <dl className="mt-4 grid gap-3 text-sm">
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
-                      <dt className="text-xs font-semibold text-[#8A94A6]">
-                        Ref
-                      </dt>
-                      <dd>
-                        <span
-                          className="inline-flex max-w-full items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
-                          dir="ltr"
-                          title={product.internalRef || undefined}
-                        >
-                          <span className="truncate">
-                            {product.internalRef || "N/A"}
-                          </span>
-                        </span>
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
-                      <dt className="text-xs font-semibold text-[#8A94A6]">
-                        Category
-                      </dt>
-                      <dd className="min-w-0">
-                        <CategoryBadge category={category} />
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
-                      <dt className="text-xs font-semibold text-[#8A94A6]">
-                        Price
-                      </dt>
-                      <dd className="font-semibold text-[#182033]">
-                        {formatProductPrice(product.salesPrice)}
-                      </dd>
-                    </div>
-                    <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
-                      <dt className="text-xs font-semibold text-[#8A94A6]">
-                        Added
-                      </dt>
-                      <dd className="font-medium text-[#667085]">
-                        {formatProductDate(product.createdAt)}
-                      </dd>
-                    </div>
-                  </dl>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      ) : (
-        <div
-          key={criteriaSignature}
-          className="products-catalog-empty-state products-catalog-results-refresh m-4 rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#FBFCFE] px-5 py-10 text-center"
-        >
-          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#FFF8E5] text-[#B18732]">
-            <Search className="size-5" aria-hidden="true" />
-          </span>
-          <h3 className="mt-4 text-base font-bold text-[#182033]">
-            No products found
-          </h3>
-          <p className="mx-auto mt-2 max-w-[340px] text-sm leading-6 font-medium text-[#667085]">
-            We couldn&apos;t find products matching your current search and
-            filters.
-          </p>
-          {hasActiveCriteria && (
-            <button
-              type="button"
-              onClick={clearAllCriteria}
-              className="mt-5 h-10 rounded-[10px] border border-[#C9A44C] bg-[#C9A44C] px-4 text-sm font-bold text-[#182033] shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#D7B861] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+      <section className="products-page-enter products-page-enter-delay-2 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+        <header className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,520px)] lg:items-start lg:gap-6">
+          <div className="products-catalog-header-copy-enter min-w-0">
+            <h2 className="text-[21px] leading-tight font-semibold text-[#182033] sm:text-[23px]">
+              Product Catalog
+            </h2>
+            <p className="mt-1.5 max-w-[520px] text-sm leading-5 font-medium text-[#667085] lg:whitespace-nowrap">
+              Manage, search and organize your pharmaceutical portfolio.
+            </p>
+            <p
+              key={`${filtered.length}-${safeTotalCount}`}
+              className="products-catalog-count-chip-enter mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-medium text-[#667085]"
             >
-              Clear Filters
-            </button>
-          )}
-        </div>
-      )}
+              <span
+                className="size-1.5 rounded-full bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
+                aria-hidden="true"
+              />
+              <span>
+                Showing{" "}
+                <span className="font-semibold text-[#182033]">
+                  {filtered.length}
+                </span>{" "}
+                of{" "}
+                <span className="font-semibold text-[#182033]">
+                  {safeTotalCount}
+                </span>{" "}
+                products
+                {hasSearchQuery && (
+                  <>
+                    {" "}
+                    matching{" "}
+                    <span className="text-[#182033]">
+                      &quot;{trimmedQuery}&quot;
+                    </span>
+                  </>
+                )}
+              </span>
+            </p>
+          </div>
 
-      <ProductPagination
-        page={displayedPage}
-        limit={limit}
-        totalCount={displayedTotalCount}
-      />
+          <div className="products-catalog-controls-enter grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_136px] lg:max-w-[520px]">
+            <div className="products-catalog-search-field relative min-w-0">
+              <Search
+                className="products-catalog-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]"
+                aria-hidden="true"
+              />
+              <input
+                value={q}
+                onChange={(event) => setQ(event.target.value)}
+                placeholder="Search by name or reference..."
+                className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-3 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+              />
+            </div>
+
+            {isMobileFilterPanel ? (
+              <Sheet open={isFilterOpen} onOpenChange={handleFilterOpenChange}>
+                <SheetTrigger asChild>
+                  <FilterTriggerButton
+                    activeFilterCount={activeFilterCount}
+                    isOpen={isFilterOpen}
+                    className="products-catalog-filter-field products-catalog-filter-button"
+                    aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
+                  />
+                </SheetTrigger>
+                <SheetContent
+                  side="bottom"
+                  className="products-catalog-filter-sheet rounded-t-[18px] border-[#E5E8EF] bg-white p-0 shadow-[0_-18px_46px_rgba(16,24,40,0.18)]"
+                  hideCloseButton
+                >
+                  <SheetHeader className="sr-only">
+                    <SheetTitle>Filter Products</SheetTitle>
+                    <SheetDescription>
+                      Refine the product catalog by category, sales price, and
+                      added date.
+                    </SheetDescription>
+                  </SheetHeader>
+                  <ProductFilterPanel
+                    mode="mobile"
+                    categoryOptions={categoryOptions}
+                    selectedCategories={effectiveDraftSelectedCategories}
+                    onCategoryToggle={handleDraftCategoryToggle}
+                    priceLimits={priceLimits}
+                    priceRange={draftActivePriceRange}
+                    priceStep={priceStep}
+                    onPriceRangeChange={handleDraftPriceRangeChange}
+                    dateFilter={draftDateFilter}
+                    onDateFilterChange={setDraftDateFilter}
+                    draftFilterCount={draftFilterCount}
+                    resultCount={draftFiltered.length}
+                    onReset={resetDraftFilters}
+                    onApply={applyDraftFilters}
+                    onClose={() => setIsFilterOpen(false)}
+                  />
+                </SheetContent>
+              </Sheet>
+            ) : (
+              <Popover
+                open={isFilterOpen}
+                onOpenChange={handleFilterOpenChange}
+              >
+                <PopoverTrigger asChild>
+                  <FilterTriggerButton
+                    activeFilterCount={activeFilterCount}
+                    isOpen={isFilterOpen}
+                    className="products-catalog-filter-field products-catalog-filter-button"
+                    aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
+                  />
+                </PopoverTrigger>
+                <PopoverContent
+                  align="end"
+                  sideOffset={10}
+                  className="products-catalog-filter-panel w-[min(430px,calc(100vw-2rem))] overflow-visible rounded-[16px] border-[#E5E8EF] bg-white p-0 shadow-[0_18px_46px_rgba(16,24,40,0.16)]"
+                >
+                  <ProductFilterPanel
+                    mode="desktop"
+                    categoryOptions={categoryOptions}
+                    selectedCategories={effectiveDraftSelectedCategories}
+                    onCategoryToggle={handleDraftCategoryToggle}
+                    priceLimits={priceLimits}
+                    priceRange={draftActivePriceRange}
+                    priceStep={priceStep}
+                    onPriceRangeChange={handleDraftPriceRangeChange}
+                    dateFilter={draftDateFilter}
+                    onDateFilterChange={setDraftDateFilter}
+                    draftFilterCount={draftFilterCount}
+                    resultCount={draftFiltered.length}
+                    onReset={resetDraftFilters}
+                    onApply={applyDraftFilters}
+                    onClose={() => setIsFilterOpen(false)}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        </header>
+
+        {hasActiveFilters && (
+          <div className="products-catalog-active-filters border-t border-[#EEF1F5] bg-[#FBFCFE] px-4 py-3 sm:px-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                <span className="mr-1 text-xs font-bold tracking-[0.04em] text-[#667085] uppercase">
+                  Active filters
+                </span>
+                {effectiveSelectedCategories.map((category) => (
+                  <ActiveFilterChip
+                    key={category}
+                    label={category}
+                    onRemove={() => removeCategoryFilter(category)}
+                  />
+                ))}
+                {hasPriceFilter && (
+                  <ActiveFilterChip
+                    label={formatFilterPriceRange(activePriceRange)}
+                    onRemove={() => setPriceRange(null)}
+                  />
+                )}
+                {hasDateFilter && (
+                  <ActiveFilterChip
+                    label={dateFilterLabels[dateFilter]}
+                    onRemove={() => setDateFilter("any")}
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="w-fit rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] duration-[150ms] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none"
+              >
+                Clear all
+              </button>
+            </div>
+          </div>
+        )}
+
+        {filtered.length > 0 ? (
+          <div
+            key={criteriaSignature}
+            className="products-catalog-results-refresh"
+          >
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-[#F8FAFC]">
+                  <tr className="border-b border-[#E5E8EF]">
+                    <th className="w-[56px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      #
+                    </th>
+                    <th className="px-5 py-3 text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Product Name
+                    </th>
+                    <th className="w-[140px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Internal Ref
+                    </th>
+                    <th className="w-[220px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Category
+                    </th>
+                    <th className="w-[170px] px-5 py-3 text-right text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Sales Price (SAR)
+                    </th>
+                    <th className="w-[150px] px-5 py-3 text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Added Date
+                    </th>
+                    <th className="w-[88px] px-5 py-3 text-center text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((product, index) => {
+                    const category = getProductCategory(product.internalRef);
+
+                    return (
+                      <tr
+                        key={product.id}
+                        className="products-catalog-row-enter group border-b border-[#EDF0F5] transition-colors duration-[180ms] last:border-0 hover:bg-[#F8FAFC]"
+                        style={
+                          {
+                            "--products-row-delay": `${index * 22}ms`,
+                          } as CSSProperties
+                        }
+                      >
+                        <td className="px-5 py-4 text-xs font-medium text-[#667085]">
+                          {(displayedPage - 1) * limit + index + 1}
+                        </td>
+                        <td className="max-w-[360px] px-5 py-4">
+                          <div className="flex min-w-0 items-center gap-3">
+                            <ProductThumbnail
+                              product={product}
+                              storedProductImages={storedProductImages}
+                            />
+                            <ProductName product={product} />
+                          </div>
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className="inline-flex max-w-[116px] items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
+                            dir="ltr"
+                            title={product.internalRef || undefined}
+                          >
+                            <span className="truncate">
+                              {product.internalRef || "N/A"}
+                            </span>
+                          </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          <CategoryBadge category={category} />
+                        </td>
+                        <td className="px-5 py-4 text-right font-semibold whitespace-nowrap text-[#182033]">
+                          {formatProductPrice(product.salesPrice)}
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap text-[#667085]">
+                          {formatProductDate(product.createdAt)}
+                        </td>
+                        <td className="px-5 py-4 text-center">
+                          <ProductActionsButton
+                            product={product}
+                            canManageProducts={canManageProducts}
+                            onEdit={setEditingProduct}
+                            onRemove={setProductPendingRemoval}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid gap-3 p-4 md:hidden">
+              {filtered.map((product, index) => {
+                const category = getProductCategory(product.internalRef);
+
+                return (
+                  <article
+                    key={product.id}
+                    className="products-catalog-row-enter group rounded-[12px] border border-[#E5E8EF] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-colors duration-[180ms] hover:bg-[#F8FAFC]"
+                    style={
+                      {
+                        "--products-row-delay": `${index * 22}ms`,
+                      } as CSSProperties
+                    }
+                  >
+                    <div className="flex min-w-0 items-start gap-3">
+                      <ProductThumbnail
+                        product={product}
+                        storedProductImages={storedProductImages}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <ProductName product={product} />
+                        <p className="mt-2 text-xs font-medium text-[#98A2B3]">
+                          #{(displayedPage - 1) * limit + index + 1}
+                        </p>
+                      </div>
+                      <ProductActionsButton
+                        product={product}
+                        canManageProducts={canManageProducts}
+                        onEdit={setEditingProduct}
+                        onRemove={setProductPendingRemoval}
+                      />
+                    </div>
+
+                    <dl className="mt-4 grid gap-3 text-sm">
+                      <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+                        <dt className="text-xs font-semibold text-[#8A94A6]">
+                          Ref
+                        </dt>
+                        <dd>
+                          <span
+                            className="inline-flex max-w-full items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
+                            dir="ltr"
+                            title={product.internalRef || undefined}
+                          >
+                            <span className="truncate">
+                              {product.internalRef || "N/A"}
+                            </span>
+                          </span>
+                        </dd>
+                      </div>
+                      <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+                        <dt className="text-xs font-semibold text-[#8A94A6]">
+                          Category
+                        </dt>
+                        <dd className="min-w-0">
+                          <CategoryBadge category={category} />
+                        </dd>
+                      </div>
+                      <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+                        <dt className="text-xs font-semibold text-[#8A94A6]">
+                          Price
+                        </dt>
+                        <dd className="font-semibold text-[#182033]">
+                          {formatProductPrice(product.salesPrice)}
+                        </dd>
+                      </div>
+                      <div className="grid grid-cols-[88px_minmax(0,1fr)] items-center gap-2">
+                        <dt className="text-xs font-semibold text-[#8A94A6]">
+                          Added
+                        </dt>
+                        <dd className="font-medium text-[#667085]">
+                          {formatProductDate(product.createdAt)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div
+            key={criteriaSignature}
+            className="products-catalog-empty-state products-catalog-results-refresh m-4 rounded-[14px] border border-dashed border-[#D0D5DD] bg-[#FBFCFE] px-5 py-10 text-center"
+          >
+            <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-[#FFF8E5] text-[#B18732]">
+              <Search className="size-5" aria-hidden="true" />
+            </span>
+            <h3 className="mt-4 text-base font-bold text-[#182033]">
+              No products found
+            </h3>
+            <p className="mx-auto mt-2 max-w-[360px] text-sm leading-6 font-medium text-[#667085]">
+              We couldn&apos;t find products matching your current search and
+              filters.
+            </p>
+            {hasActiveCriteria && (
+              <div className="mt-5">
+                <button
+                  type="button"
+                  onClick={clearAllCriteria}
+                  className="h-10 rounded-[10px] border border-[#C9A44C] bg-[#C9A44C] px-4 text-sm font-bold text-[#182033] shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#D7B861] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <TablePaginationFooter
+          page={displayedPage}
+          limit={limit}
+          totalCount={displayedTotalCount}
+          itemLabel="products"
+          ariaLabel="Product catalog pagination"
+          pageNavAriaLabel="Product catalog pages"
+        />
+      </section>
 
       {canManageProducts && editingProduct && (
         <AddProductDialog
@@ -1881,6 +1651,6 @@ export default function ProductsList({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </section>
+    </div>
   );
 }

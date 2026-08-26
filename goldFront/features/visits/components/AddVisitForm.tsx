@@ -3,7 +3,17 @@
 import { useMemo, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calendar as CalendarIcon, Plus } from "lucide-react";
+import {
+  Building2,
+  CalendarCheck2,
+  Calendar as CalendarIcon,
+  Clock3,
+  Loader2,
+  PackageSearch,
+  Stethoscope,
+  UserCheck,
+  Users,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "@/lib/utils/toast";
 import { getProductsAction } from "@/features/forecast/api";
@@ -44,6 +54,7 @@ import { useCreateVisit } from "@/features/visits/hooks/useCreateVisit";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
 import {
+  cn,
   formatDateOnly,
   formatSaudiDateDisplay,
   parseDateValue,
@@ -73,18 +84,46 @@ type RoleBasedAddVisitFormProps = (
   initialDate?: Date;
 };
 
-// Shared constants
+const labelClassName = "text-xs font-semibold text-[#344054]";
+const fieldClassName =
+  "h-11 w-full rounded-[11px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
+const fieldButtonClassName = cn(
+  fieldClassName,
+  "w-full justify-start text-left hover:bg-[#FFFDF7] hover:text-[#182033]",
+);
+const selectContentClassName =
+  "visits-add-select-content rounded-[12px] border border-[#E5E8EF] bg-white text-[#182033] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
+const selectItemClassName =
+  "rounded-[9px] text-sm font-medium text-[#344054] focus:bg-[#FFF8E5] focus:text-[#8A6515] data-[state=checked]:text-[#182033] [&_svg]:text-[#B18732]";
+const comboboxTriggerClassName =
+  "visits-add-combobox-trigger h-11 rounded-[11px] border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none hover:border-[#D8DEE8] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
+const comboboxDropdownClassName =
+  "visits-add-combobox-dropdown rounded-[12px] border-[#E5E8EF] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
+const comboboxSelectedClassName = "bg-[#FFF8E5] text-[#182033]";
+const comboboxBadgeClassName = "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]";
+
+function RequiredMark() {
+  return <span className="text-[#D92D20]">*</span>;
+}
 
 export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
-  const { role, doctors, isModal = false, onSuccess, onCancel, initialDoctorId, initialDate } = props;    
+  const {
+    role,
+    doctors,
+    isModal = false,
+    onSuccess,
+    onCancel,
+    initialDoctorId,
+    initialDate,
+  } = props;
 
- 
   const supervisors = "supervisors" in props ? props.supervisors : [];
   const medicalReps = "medicalReps" in props ? props.medicalReps : [];
 
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedDoctorId = initialDoctorId || searchParams.get("doctorId") || "";
+  const preselectedDoctorId =
+    initialDoctorId || searchParams.get("doctorId") || "";
   const { createVisit, isPending } = useCreateVisit();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedHospital, setSelectedHospital] = useState<string>("all");
@@ -100,7 +139,6 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     fetchProducts();
   }, []);
 
-  // Select schema and config based on role
   const { schema, defaultValues, redirectPath, hasVisitType } = useMemo(() => {
     const doctorId =
       preselectedDoctorId && doctors.some((d) => d.id === preselectedDoctorId)
@@ -187,7 +225,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
       value: d.id,
       label: d.nameEN || d.nameAR || "Unnamed Doctor",
       subText: d.nameAR && d.nameEN ? d.nameAR : undefined,
-      metadata: [d.specialty, d.subRegion, d.accountName].filter(Boolean).join(" • "),
+      metadata: [d.specialty, d.subRegion, d.accountName]
+        .filter(Boolean)
+        .join(" - "),
       badge: d.specialty || undefined,
     }));
   }, [filteredDoctors]);
@@ -258,260 +298,420 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   const showMedicalRepField =
     (role === "MANAGER" || role === "SUPERVISOR") && visitType === "COACHING";
 
+  const renderComboboxProps = {
+    triggerClassName: comboboxTriggerClassName,
+    dropdownClassName: comboboxDropdownClassName,
+    searchShellClassName: "bg-[#FBFCFE] border-[#EEF1F6]",
+    searchInputClassName: "text-sm placeholder:text-[#98A2B3]",
+    optionClassName:
+      "rounded-[9px] px-3 py-2.5 text-sm hover:bg-[#FFFDF7] hover:text-[#8A6515]",
+    selectedOptionClassName: comboboxSelectedClassName,
+    badgeClassName: comboboxBadgeClassName,
+    clearButtonClassName: "hover:bg-[#FFF8E5] hover:text-[#8A6515]",
+    chevronClassName: "text-[#8A94A6]",
+    checkClassName: "text-[#B18732]",
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="border-secondary-light rounded-[14px] border-[0.8px] bg-white p-6"
+        className={cn(
+          isModal
+            ? "flex min-h-0 flex-1 flex-col overflow-hidden"
+            : "rounded-[16px] border border-[#E5E8EF] bg-white p-6 shadow-none",
+        )}
       >
-        <h3 className="mb-4 text-lg font-medium">Visit Information</h3>
-        <p className="text-secondary-dark mb-4 text-xs">
-          Date selection uses Saudi Arabia timezone (Asia/Riyadh).
-        </p>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
-            <FormLabel>Hospital Filter</FormLabel>
-            <div className="mt-2">
-              <Combobox
-                options={hospitalOptions}
-                value={selectedHospital}
-                onChange={setSelectedHospital}
-                placeholder="Search hospital..."
-                searchPlaceholder="Type hospital name..."
-                emptyText="No hospitals found"
+        <div
+          className={cn(
+            isModal
+              ? "visits-add-form-body min-h-0 flex-1 overflow-y-auto bg-[#FBFCFE] px-5 py-5 sm:px-6"
+              : "",
+          )}
+        >
+          <section>
+            <div className="mb-5">
+              <h3 className="text-base font-semibold text-[#182033]">
+                Visit Information
+              </h3>
+              <p className="mt-1 text-xs leading-5 font-medium text-[#667085]">
+                All times are in Saudi Arabia timezone (Asia/Riyadh).
+              </p>
+            </div>
+
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4",
+                !isModal && "md:grid-cols-2",
+              )}
+            >
+              <div className={cn(!isModal && "md:col-span-2")}>
+                <label className={cn("block", labelClassName)}>
+                  Hospital Filter
+                </label>
+                <div className="mt-2">
+                  <Combobox
+                    {...renderComboboxProps}
+                    options={hospitalOptions}
+                    value={selectedHospital}
+                    onChange={setSelectedHospital}
+                    placeholder="All Hospitals"
+                    searchPlaceholder="Type hospital name..."
+                    emptyText="No hospitals found"
+                    labelFormatter={(option) => (
+                      <span className="flex min-w-0 items-center gap-2">
+                        <Building2
+                          className="size-4 shrink-0 text-[#B18732]"
+                          aria-hidden="true"
+                        />
+                        <span className="truncate">{option.label}</span>
+                      </span>
+                    )}
+                  />
+                </div>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="doctorId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelClassName}>
+                      Doctor <RequiredMark />
+                    </FormLabel>
+                    <FormControl>
+                      <Combobox
+                        {...renderComboboxProps}
+                        options={doctorOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Search doctor..."
+                        searchPlaceholder="Type doctor name or specialty..."
+                        emptyText="No doctors matching search"
+                        startTypingText="Start typing to search doctors..."
+                        labelFormatter={(option) => (
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Stethoscope
+                              className="size-4 shrink-0 text-[#B18732]"
+                              aria-hidden="true"
+                            />
+                            <span className="truncate">{option.label}</span>
+                          </span>
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="products"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelClassName}>
+                      Products / Samples
+                    </FormLabel>
+                    <FormControl>
+                      <Combobox
+                        {...renderComboboxProps}
+                        options={productOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        placeholder="Search product..."
+                        searchPlaceholder="Type product name or category..."
+                        emptyText="No products found"
+                        startTypingText="Start typing to search products..."
+                        labelFormatter={(option) => (
+                          <span className="flex min-w-0 items-center gap-2">
+                            <PackageSearch
+                              className="size-4 shrink-0 text-[#B18732]"
+                              aria-hidden="true"
+                            />
+                            <span className="truncate">{option.label}</span>
+                          </span>
+                        )}
+                      />
+                    </FormControl>
+                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelClassName}>
+                      Visit Date <RequiredMark />
+                    </FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className={fieldButtonClassName}
+                          >
+                            <CalendarIcon
+                              className="mr-2 size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <span className="truncate">
+                              {field.value
+                                ? formatSaudiDateDisplay(field.value)
+                                : "Select date"}
+                            </span>
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="start"
+                        sideOffset={8}
+                        className="visits-add-date-popover w-auto rounded-[16px] border border-[#E5E8EF] bg-white p-3 shadow-[0_18px_46px_rgba(16,27,51,0.14)]"
+                      >
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => {
+                            const todaySaudi = parseDateValue(
+                              formatDateOnly(new Date()),
+                            );
+                            const pickedSaudi = parseDateValue(
+                              formatDateOnly(date),
+                            );
+                            return pickedSaudi < todaySaudi;
+                          }}
+                          className="visits-add-calendar rounded-none bg-transparent p-0"
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                  </FormItem>
+                )}
+              />
+
+              {hasVisitType && (
+                <FormField
+                  control={form.control}
+                  name="visitType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelClassName}>
+                        Visit Type <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className={fieldClassName}>
+                            <UserCheck
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select visit type" />
+                          </SelectTrigger>
+                          <SelectContent className={selectContentClassName}>
+                            <SelectItem
+                              value="CHECK"
+                              className={selectItemClassName}
+                            >
+                              Check visit
+                            </SelectItem>
+                            <SelectItem
+                              value="COACHING"
+                              className={selectItemClassName}
+                            >
+                              Coaching visit
+                            </SelectItem>
+                            {role === "MANAGER" && (
+                              <SelectItem
+                                value="MANAGER"
+                                className={selectItemClassName}
+                              >
+                                Manager visit
+                              </SelectItem>
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="time"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className={labelClassName}>
+                      Visit Time <RequiredMark />
+                    </FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <SelectTrigger className={fieldClassName}>
+                          <Clock3
+                            className="size-4 text-[#8A94A6]"
+                            aria-hidden="true"
+                          />
+                          <SelectValue placeholder="Select time" />
+                        </SelectTrigger>
+                        <SelectContent
+                          className={cn(selectContentClassName, "max-h-72")}
+                        >
+                          {HOURS.map((h) => (
+                            <SelectItem
+                              key={h}
+                              value={h}
+                              className={selectItemClassName}
+                            >
+                              {h}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                  </FormItem>
+                )}
+              />
+
+              {showSupervisorField && (
+                <FormField
+                  control={form.control}
+                  name="supervisorId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelClassName}>
+                        Supervisor <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className={fieldClassName}>
+                            <Users
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select supervisor" />
+                          </SelectTrigger>
+                          <SelectContent
+                            className={cn(selectContentClassName, "max-h-72")}
+                          >
+                            {supervisors.map((s) => (
+                              <SelectItem
+                                key={s.id}
+                                value={s.id}
+                                className={selectItemClassName}
+                              >
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {showMedicalRepField && (
+                <FormField
+                  control={form.control}
+                  name="medicalRepId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className={labelClassName}>
+                        Medical Rep <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className={fieldClassName}>
+                            <Users
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select medical rep" />
+                          </SelectTrigger>
+                          <SelectContent
+                            className={cn(selectContentClassName, "max-h-72")}
+                          >
+                            {medicalReps.map((r) => (
+                              <SelectItem
+                                key={r.id}
+                                value={r.id}
+                                className={selectItemClassName}
+                              >
+                                {r.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              <FormField
+                control={form.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem className={cn(!isModal && "md:col-span-2")}>
+                    <FormLabel className={labelClassName}>
+                      Visit Notes
+                    </FormLabel>
+                    <div className="relative">
+                      <CalendarCheck2
+                        className="pointer-events-none absolute top-3.5 left-3.5 size-4 text-[#8A94A6]"
+                        aria-hidden="true"
+                      />
+                      <FormControl>
+                        <Textarea
+                          placeholder="Enter any additional notes or objectives for this visit..."
+                          {...field}
+                          className="min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10"
+                        />
+                      </FormControl>
+                    </div>
+                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                  </FormItem>
+                )}
               />
             </div>
-          </div>
-
-          <div />
-
-          {/* Doctor Field */}
-          <FormField
-            control={form.control}
-            name="doctorId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Doctor <span className="text-red-500">*</span></FormLabel>
-                <FormControl>
-                  <Combobox
-                    options={doctorOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Search doctor by name, specialty, or area..."
-                    searchPlaceholder="Type doctor name or specialty..."
-                    emptyText="No doctors matching search"
-                    startTypingText="Start typing to search doctors..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Products Field */}
-          <FormField
-            control={form.control}
-            name="products"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Products/Samples</FormLabel>
-                <FormControl>
-                  <Combobox
-                    options={productOptions}
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Search product/sample..."
-                    searchPlaceholder="Type product name or category..."
-                    emptyText="No products found"
-                    startTypingText="Start typing to search products..."
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Visit Date Field */}
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Visit Date *</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className="input w-full justify-start text-left"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {field.value
-                          ? formatSaudiDateDisplay(field.value)
-                          : "Select date"}
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={field.value}
-                      onSelect={field.onChange}
-                      disabled={(date) => {
-                        const todaySaudi = parseDateValue(
-                          formatDateOnly(new Date()),
-                        );
-                        const pickedSaudi = parseDateValue(
-                          formatDateOnly(date),
-                        );
-                        return pickedSaudi < todaySaudi;
-                      }}
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Visit Type Field - Only for MANAGER and SUPERVISOR */}
-          {hasVisitType && (
-            <FormField
-              control={form.control}
-              name="visitType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Visit Type *</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="input w-full">
-                        <SelectValue placeholder="Select visit type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="CHECK">Check visit</SelectItem>
-                        <SelectItem value="COACHING">Coaching visit</SelectItem>
-                        {role === "MANAGER" && (
-                          <SelectItem value="MANAGER">Manager visit</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Visit Time Field */}
-          <FormField
-            control={form.control}
-            name="time"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Visit Time *</FormLabel>
-                <FormControl>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <SelectTrigger className="input w-full">
-                      <SelectValue placeholder="Select hour" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-75">
-                      {HOURS.map((h) => (
-                        <SelectItem key={h} value={h}>
-                          {h}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Supervisor Field - Only for MANAGER when visitType is MANAGER */}
-          {showSupervisorField && (
-            <FormField
-              control={form.control}
-              name="supervisorId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Supervisor *</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="input w-full">
-                        <SelectValue placeholder="Select supervisor" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-75">
-                        {supervisors.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Medical Rep Field - For MANAGER/SUPERVISOR when visitType is COACHING */}
-          {showMedicalRepField && (
-            <FormField
-              control={form.control}
-              name="medicalRepId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Medical Rep *</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className="input w-full">
-                        <SelectValue placeholder="Select medical rep" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-75">
-                        {medicalReps.map((r) => (
-                          <SelectItem key={r.id} value={r.id}>
-                            {r.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Visit Notes Field */}
-          <FormField
-            control={form.control}
-            name="notes"
-            render={({ field }) => (
-              <FormItem className="col-span-1 md:col-span-2">
-                <FormLabel>Visit Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Enter any additional notes or objectives for this visit..."
-                    {...field}
-                    className="input min-h-18"
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          </section>
         </div>
 
-        <div className="mt-5 flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
+        <div
+          className={cn(
+            isModal
+              ? "visits-add-form-footer sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-[#EEF1F6] bg-white/95 px-5 py-4 backdrop-blur sm:flex-row sm:justify-end sm:px-6"
+              : "mt-5 flex items-center justify-end gap-3 border-t border-[#EEF1F6] pt-4",
+          )}
+        >
           {isModal && onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
               disabled={isPending}
-              className="h-9 px-4 text-xs font-medium cursor-pointer"
+              className="h-11 rounded-[10px] border-[#E5E8EF] px-5 text-sm font-semibold text-[#475467] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#D8DEE8] hover:bg-[#F9FAFB] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               Cancel
             </Button>
@@ -519,9 +719,16 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-system-primary hover:bg-blue-700 h-9 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-medium text-white disabled:opacity-50"
+            className="group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_10px_24px_rgba(201,164,76,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
-            <Plus className="h-4 w-4" />
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <CalendarCheck2
+                className="size-4 transition-transform duration-[170ms] group-hover:-translate-y-0.5 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+                aria-hidden="true"
+              />
+            )}
             {isPending ? "Scheduling..." : "Schedule Visit"}
           </Button>
         </div>

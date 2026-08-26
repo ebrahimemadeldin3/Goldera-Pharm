@@ -1,25 +1,50 @@
 "use client";
 
-import { useState } from "react";
-import { CircleCheckBig, Clock3, MapPin, UserRound, ChevronDown, ChevronUp, Tag, User } from "lucide-react";
+import { useState, type CSSProperties } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CircleCheckBig,
+  Clock3,
+  MapPin,
+  Tag,
+  User,
+  UserRound,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Visit } from "@/features/visits/lib/types/ui";
-import { VISIT_STATUS_COLORS } from "@/features/visits/lib/constants";
+import { VISIT_STATUS_LABELS } from "@/features/visits/lib/constants";
+import type { VisitStatus } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
 
 type VisitCardProps = {
   visit: Visit;
   reportBasePath?: string;
+  animationDelay?: string;
 };
 
-export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
-  const [showTechDetails, setShowTechDetails] = useState(false);
+const statusBadgeStyles: Record<VisitStatus, string> = {
+  COMPLETED: "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]",
+  IN_PROGRESS: "border-[#D7E5FF] bg-[#EDF4FF] text-[#3972D5]",
+  SCHEDULED: "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]",
+  CANCELLED: "border-[#FADBD7] bg-[#FEF3F2] text-[#B42318]",
+};
 
-  const s = VISIT_STATUS_COLORS[visit.status] || {
-    badge: "bg-slate-500",
-    bg: "bg-slate-50",
-  };
+const statusDotStyles: Record<VisitStatus, string> = {
+  COMPLETED: "bg-[#20A66A]",
+  IN_PROGRESS: "bg-[#3972D5]",
+  SCHEDULED: "bg-[#C9A44C]",
+  CANCELLED: "bg-[#D92D20]",
+};
+
+export default function VisitCard({
+  visit,
+  reportBasePath,
+  animationDelay = "0ms",
+}: VisitCardProps) {
+  const [showTechDetails, setShowTechDetails] = useState(false);
 
   const createdAtLabel = visit.createdAt
     ? format(new Date(visit.createdAt), "MMM d, yyyy h:mm a")
@@ -30,115 +55,163 @@ export default function VisitCard({ visit, reportBasePath }: VisitCardProps) {
   const visitDateLabel = visit.date ? format(visit.date, "MMM d, yyyy") : "-";
 
   const isCompleted = visit.status === "COMPLETED";
+  const statusLabel =
+    visit.badge || VISIT_STATUS_LABELS[visit.status] || visit.status;
 
   return (
-    <Card className="border-slate-200 flex flex-col gap-3 rounded-xl border bg-white p-4 shadow-none hover:border-slate-300 hover:shadow-xs transition-all duration-150 focus-within:ring-2 focus-within:ring-slate-900 focus-within:outline-none">
-      {/* Top Header Row: Avatar + Doctor Name + Status + Primary Action */}
+    <Card
+      className="visits-record-card visits-row-enter group/visit flex flex-col gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none focus-within:ring-2 focus-within:ring-[#C9A44C]/25 focus-within:outline-none"
+      style={
+        {
+          "--visits-row-delay": animationDelay,
+        } as CSSProperties
+      }
+    >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0 flex-1">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-[#2563EB] to-[#1E3A8A] text-white">
-            <UserRound size={18} />
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]">
+            <UserRound className="size-5" aria-hidden="true" />
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-semibold text-slate-900 leading-snug truncate">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h4 className="truncate text-base leading-snug font-semibold text-[#182033]">
                 {visit.person || "Unnamed Doctor"}
-              </h3>
+              </h4>
 
               <span
-                className={`rounded-md px-2 py-0.5 text-[11px] font-medium text-white ${s.badge}`}
+                className={cn(
+                  "inline-flex h-6 items-center gap-1.5 rounded-full border px-2.5 text-[11px] font-bold",
+                  statusBadgeStyles[visit.status],
+                )}
               >
-                {visit.badge ||
-                  (isCompleted ? "Completed" : visit.status.replace("_", " "))}
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    statusDotStyles[visit.status],
+                  )}
+                  aria-hidden="true"
+                />
+                {statusLabel}
               </span>
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600">
-              <span className="flex items-center gap-1.5 truncate">
-                <MapPin size={13} className="text-slate-400 shrink-0" />
-                <span className="truncate">{visit.place || "Unassigned location"}</span>
+            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-[#667085]">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <MapPin className="size-3.5 shrink-0 text-[#98A2B3]" />
+                <span className="truncate">
+                  {visit.place || "Unassigned location"}
+                </span>
               </span>
 
               {(visit.timeLabel || visit.duration) && (
-                <span className="flex items-center gap-1.5 shrink-0">
-                  <Clock3 size={13} className="text-slate-400 shrink-0" />
+                <span className="flex shrink-0 items-center gap-1.5">
+                  <Clock3 className="size-3.5 shrink-0 text-[#98A2B3]" />
                   <span>{visit.timeLabel || "Scheduled"}</span>
-                  {visit.duration && <span className="text-slate-400">({visit.duration})</span>}
+                  {visit.duration && (
+                    <span className="text-[#98A2B3]">({visit.duration})</span>
+                  )}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Primary Action Button (Complete Visit) */}
         {reportBasePath && !isCompleted && (
           <Link
             href={`${reportBasePath}?visitId=${visit.id}`}
-            className="bg-emerald-600 hover:bg-emerald-700 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md px-3 text-xs font-medium text-white transition-colors duration-150 shadow-2xs focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:outline-none"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[9px] bg-[#168557] px-3 text-xs font-semibold text-white shadow-[0_6px_14px_rgba(22,133,87,0.16)] transition-[background-color,transform,box-shadow] duration-[160ms] hover:-translate-y-px hover:bg-[#107349] focus-visible:ring-2 focus-visible:ring-[#20A66A]/25 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
-            <CircleCheckBig size={14} />
+            <CircleCheckBig className="size-4" aria-hidden="true" />
             <span>Complete Visit</span>
           </Link>
         )}
       </div>
 
-      {/* Metadata Strip */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 bg-slate-50/80 px-3 py-2 rounded-lg border border-slate-100 text-xs text-slate-600">
-        <div className="flex items-center gap-1.5">
-          <Tag size={13} className="text-slate-400" />
-          <span>Type: <strong className="text-slate-800 font-medium">{visit.visitType || "Routine Visit"}</strong></span>
+      <dl className="grid gap-3 rounded-[12px] border border-[#EEF1F6] bg-[#F9FAFB] p-3 text-xs sm:grid-cols-2">
+        <div className="min-w-0">
+          <dt className="flex items-center gap-1.5 font-semibold text-[#8A94A6]">
+            <Tag className="size-3.5 shrink-0" aria-hidden="true" />
+            Type
+          </dt>
+          <dd className="mt-1 truncate font-semibold text-[#182033]">
+            {visit.visitType || "Routine Visit"}
+          </dd>
         </div>
-        <div className="h-3 w-px bg-slate-200 hidden sm:block" />
-        <div className="flex items-center gap-1.5">
-          <User size={13} className="text-slate-400" />
-          <span>Rep: <strong className="text-slate-800 font-medium">{visit.createdBy || "Assigned Rep"}</strong></span>
-        </div>
-        {visit.samples && visit.samples.length > 0 && (
-          <>
-            <div className="h-3 w-px bg-slate-200 hidden sm:block" />
-            <div>
-              <span>Samples: <strong className="text-emerald-700 font-medium">{visit.samples.join(", ")}</strong></span>
-            </div>
-          </>
-        )}
-      </div>
 
-      {/* Visit Notes (if present) */}
+        <div className="min-w-0">
+          <dt className="flex items-center gap-1.5 font-semibold text-[#8A94A6]">
+            <User className="size-3.5 shrink-0" aria-hidden="true" />
+            Rep
+          </dt>
+          <dd className="mt-1 truncate font-semibold text-[#182033]">
+            {visit.createdBy || "Assigned Rep"}
+          </dd>
+        </div>
+
+        {visit.samples && visit.samples.length > 0 && (
+          <div className="min-w-0 sm:col-span-2">
+            <dt className="font-semibold text-[#8A94A6]">Samples</dt>
+            <dd className="mt-1 truncate font-semibold text-[#168557]">
+              {visit.samples.join(", ")}
+            </dd>
+          </div>
+        )}
+      </dl>
+
       {visit.notes && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-2.5 text-xs text-slate-700">
-          <span className="font-semibold text-emerald-900 block mb-0.5">Notes</span>
-          <p className="text-slate-700 whitespace-pre-wrap">{visit.notes}</p>
+        <div className="rounded-[12px] border border-[#CBEFDD] bg-[#F7FCFA] p-3 text-xs text-[#344054]">
+          <span className="block font-semibold text-[#168557]">Notes</span>
+          <p className="mt-1 leading-5 whitespace-pre-wrap">{visit.notes}</p>
         </div>
       )}
 
-      {/* Collapsible Technical Details (Section 2 - Technical noise hidden by default) */}
-      <div className="pt-1">
+      <div className="pt-0.5">
         <button
+          type="button"
+          aria-expanded={showTechDetails}
           onClick={() => setShowTechDetails(!showTechDetails)}
-          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+          className="inline-flex items-center gap-1.5 rounded-full px-1 text-[11px] font-semibold text-[#667085] transition-colors duration-[150ms] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
         >
           {showTechDetails ? (
             <>
               <span>Hide Technical Details</span>
-              <ChevronUp size={13} />
+              <ChevronUp className="size-3.5" aria-hidden="true" />
             </>
           ) : (
             <>
               <span>Show Technical Details</span>
-              <ChevronDown size={13} />
+              <ChevronDown className="size-3.5" aria-hidden="true" />
             </>
           )}
         </button>
 
         {showTechDetails && (
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-md border border-slate-200 bg-slate-100/60 p-2.5 text-[11px] text-slate-600 font-mono">
-            <div><span className="text-slate-400 font-sans">Visit ID:</span> {visit.id}</div>
-            <div><span className="text-slate-400 font-sans">Doctor ID:</span> {visit.doctorId}</div>
-            <div><span className="text-slate-400 font-sans">Creator ID:</span> {visit.createdById}</div>
-            <div><span className="text-slate-400 font-sans">Date:</span> {visitDateLabel}</div>
-            <div><span className="text-slate-400 font-sans">Created At:</span> {createdAtLabel}</div>
-            <div><span className="text-slate-400 font-sans">Updated At:</span> {updatedAtLabel}</div>
+          <div className="visits-tech-details mt-2 grid grid-cols-1 gap-2 rounded-[12px] border border-[#E5E8EF] bg-[#F4F6FA] p-3 font-mono text-[11px] text-[#667085] sm:grid-cols-2">
+            <div>
+              <span className="font-sans text-[#8A94A6]">Visit ID:</span>{" "}
+              {visit.id}
+            </div>
+            <div>
+              <span className="font-sans text-[#8A94A6]">Doctor ID:</span>{" "}
+              {visit.doctorId}
+            </div>
+            <div>
+              <span className="font-sans text-[#8A94A6]">Creator ID:</span>{" "}
+              {visit.createdById}
+            </div>
+            <div>
+              <span className="font-sans text-[#8A94A6]">Date:</span>{" "}
+              {visitDateLabel}
+            </div>
+            <div>
+              <span className="font-sans text-[#8A94A6]">Created At:</span>{" "}
+              {createdAtLabel}
+            </div>
+            <div>
+              <span className="font-sans text-[#8A94A6]">Updated At:</span>{" "}
+              {updatedAtLabel}
+            </div>
           </div>
         )}
       </div>

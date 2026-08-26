@@ -11,7 +11,7 @@ import type { SaleApiResponse, SalesRepOption } from "../lib/types";
 import { useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import { UploadSalesDialog } from "./UploadSalesDialog";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,25 +21,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  formatDateOnly,
-  formatSaudiDateDisplay,
-  getSaudiYearMonthKey,
-  parseDateValue,
-} from "@/lib/utils";
+import { filterSales, isSaleWithinDateFilter } from "../lib/utils";
+import type { DateFilter } from "../lib/types";
+import { SalesDateFilter } from "./SalesDateFilter";
 
 interface SalesHeaderProps {
   sales: SaleApiResponse[];
   repOptions?: SalesRepOption[];
   selectedRepId?: string;
   selectedDate?: string;
+  selectedDateFrom?: string;
+  selectedDateTo?: string;
   selectedSheetName?: string;
+  selectedTimeFilter?: DateFilter;
+  searchQuery?: string;
 }
 
 export default function SalesHeader({
@@ -47,37 +42,49 @@ export default function SalesHeader({
   repOptions = [],
   selectedRepId = "",
   selectedDate = "",
+  selectedDateFrom = "",
+  selectedDateTo = "",
   selectedSheetName = "",
+  selectedTimeFilter = "all",
+  searchQuery = "",
 }: SalesHeaderProps) {
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
   const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [repId, setRepId] = useState(selectedRepId || "all");
   const [sheetName, setSheetName] = useState(selectedSheetName || "");
-  const [selectedDateValue, setSelectedDateValue] = useState<Date | undefined>(
-    selectedDate ? parseDateValue(selectedDate) : undefined,
+
+  const filteredSales = useMemo(
+    () =>
+      filterSales(sales, {
+        dateRange: {
+          from: selectedDateFrom || selectedDate,
+          to: selectedDateTo || selectedDateFrom || selectedDate,
+        },
+        dateFilter: selectedTimeFilter,
+        query: searchQuery,
+      }),
+    [
+      sales,
+      searchQuery,
+      selectedDate,
+      selectedDateFrom,
+      selectedDateTo,
+      selectedTimeFilter,
+    ],
   );
 
   const stats = useMemo(() => {
-    const total = sales.length;
-    const now = new Date();
-    const currentMonthKey = getSaudiYearMonthKey(now);
-    const currentYear = currentMonthKey.slice(0, 4);
-    const thisMonth = sales.filter((s) => {
-      const dateField =
-        s.date || s.createdAt || s.saleDate || s.soldAt || s.updatedAt;
-      if (!dateField) return false;
-      return getSaudiYearMonthKey(new Date(dateField)) === currentMonthKey;
-    }).length;
-
-    const thisYear = sales.filter((s) => {
-      const dateField =
-        s.date || s.createdAt || s.saleDate || s.soldAt || s.updatedAt;
-      if (!dateField) return false;
-      return getSaudiYearMonthKey(new Date(dateField)).startsWith(currentYear);
-    }).length;
+    const total = filteredSales.length;
+    const thisMonth = filteredSales.filter((sale) =>
+      isSaleWithinDateFilter(sale, "month"),
+    ).length;
+    const thisYear = filteredSales.filter((sale) =>
+      isSaleWithinDateFilter(sale, "year"),
+    ).length;
 
     return [
       {
@@ -102,16 +109,19 @@ export default function SalesHeader({
         iconClassName: "bg-[#FFF7E0] text-[#B18732]",
       },
     ];
-  }, [sales]);
+  }, [filteredSales]);
 
   const onApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const date = selectedDateValue ? formatDateOnly(selectedDateValue) : "";
 
-    const query = new URLSearchParams();
+    const query = new URLSearchParams(Array.from(searchParams.entries()));
     if (isManager && repId && repId !== "all") query.set("repId", repId);
-    if (date) query.set("date", date);
+    else query.delete("repId");
+
     if (sheetName.trim()) query.set("sheetName", sheetName.trim());
+    else query.delete("sheetName");
+
+    query.set("page", "1");
 
     const qs = query.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
@@ -179,26 +189,11 @@ export default function SalesHeader({
               <label className="mb-2 block text-xs font-semibold text-[#344054]">
                 Date
               </label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="h-11 w-full justify-start rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-left text-sm font-medium text-[#182033] shadow-none transition-colors hover:bg-[#F9FAFB] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 text-[#667085]" />
-                    {selectedDateValue
-                      ? formatSaudiDateDisplay(selectedDateValue)
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDateValue}
-                    onSelect={setSelectedDateValue}
-                  />
-                </PopoverContent>
-              </Popover>
+              <SalesDateFilter
+                selectedDate={selectedDate}
+                selectedDateFrom={selectedDateFrom}
+                selectedDateTo={selectedDateTo}
+              />
             </div>
 
             <div className="min-w-0">
