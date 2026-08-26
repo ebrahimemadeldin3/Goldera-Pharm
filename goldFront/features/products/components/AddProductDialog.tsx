@@ -310,19 +310,6 @@ export function AddProductDialog({
   }
 
   return (
-<<<<<<< HEAD
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="bg-system-primary hover:text-system-primary hover:border-system-primary ml-auto inline-flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-transparent">
-          <Plus className="h-4 w-4" />
-          Add Product
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-105">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package size={18} />
-=======
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger ? (
         <DialogTrigger asChild>{trigger}</DialogTrigger>
@@ -330,7 +317,6 @@ export function AddProductDialog({
         <DialogTrigger asChild>
           <Button className="group inline-flex h-11 cursor-pointer items-center gap-2 rounded-[10px] border border-transparent bg-[#C9A44C] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-all duration-[180ms] ease-out hover:-translate-y-0.5 hover:bg-[#D2B15E] hover:text-white hover:shadow-[0_10px_25px_rgba(201,164,76,0.20)] focus-visible:ring-4 focus-visible:ring-[#C9A44C]/25 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
             <Plus className="products-add-icon h-4 w-4 transition-transform duration-[180ms] ease-out group-hover:scale-105 group-hover:rotate-90" />
->>>>>>> ebrahim
             Add New Product
           </Button>
         </DialogTrigger>

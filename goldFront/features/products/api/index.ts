@@ -2,10 +2,7 @@
 
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
-<<<<<<< HEAD
-=======
 import { revalidatePath } from "next/cache";
->>>>>>> ebrahim
 import type {
   GetProductsResponse,
   ProductApiResponse,

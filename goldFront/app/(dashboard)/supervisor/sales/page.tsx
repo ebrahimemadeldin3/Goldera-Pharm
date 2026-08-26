@@ -59,11 +59,6 @@ export default async function Page({ searchParams }: PageProps) {
     throw new Error(result.error?.message || "Failed to fetch sales");
   }
 
-<<<<<<< HEAD
-  const sales = extractSales(result.data);
-  const raw = result.data as Record<string, unknown> | unknown[];
-  const totalCount = (raw && typeof raw === "object" && !Array.isArray(raw) && typeof raw.results === "number" ? raw.results : Array.isArray(raw) ? raw.length : undefined) || sales.length;
-=======
   let sales = extractSales(result.data);
   const totalCount = getSalesTotalCount(result.data, sales.length);
 
@@ -90,7 +85,6 @@ export default async function Page({ searchParams }: PageProps) {
 
     sales = extractSales(allSalesResult.data);
   }
->>>>>>> ebrahim
 
   let repOptions: { id: string; name: string }[] = [];
   if (repsRes.success && repsRes.members && repsRes.members.length > 0) {

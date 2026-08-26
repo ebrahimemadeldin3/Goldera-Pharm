@@ -12,7 +12,10 @@ export interface ComboboxOption {
   badge?: string;
 }
 
-interface ComboboxProps {
+interface ComboboxProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "value" | "onChange"
+> {
   options: ComboboxOption[];
   value?: string;
   onChange: (value: string) => void;
@@ -22,6 +25,16 @@ interface ComboboxProps {
   startTypingText?: string;
   disabled?: boolean;
   className?: string;
+  triggerClassName?: string;
+  dropdownClassName?: string;
+  searchShellClassName?: string;
+  searchInputClassName?: string;
+  optionClassName?: string;
+  selectedOptionClassName?: string;
+  badgeClassName?: string;
+  clearButtonClassName?: string;
+  chevronClassName?: string;
+  checkClassName?: string;
   labelFormatter?: (option: ComboboxOption) => ReactNode;
 }
 
@@ -35,7 +48,19 @@ export function Combobox({
   startTypingText,
   disabled = false,
   className,
+  triggerClassName,
+  dropdownClassName,
+  searchShellClassName,
+  searchInputClassName,
+  optionClassName,
+  selectedOptionClassName,
+  badgeClassName,
+  clearButtonClassName,
+  chevronClassName,
+  checkClassName,
   labelFormatter,
+  onClick,
+  ...triggerProps
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -47,7 +72,10 @@ export function Combobox({
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -60,8 +88,12 @@ export function Combobox({
     if (!search.trim()) return true;
     const term = search.toLowerCase().trim();
     const labelMatch = opt.label.toLowerCase().includes(term);
-    const metaMatch = opt.metadata ? opt.metadata.toLowerCase().includes(term) : false;
-    const subMatch = opt.subText ? opt.subText.toLowerCase().includes(term) : false;
+    const metaMatch = opt.metadata
+      ? opt.metadata.toLowerCase().includes(term)
+      : false;
+    const subMatch = opt.subText
+      ? opt.subText.toLowerCase().includes(term)
+      : false;
     return labelMatch || metaMatch || subMatch;
   });
 
@@ -83,27 +115,32 @@ export function Combobox({
       <button
         type="button"
         disabled={disabled}
-        onClick={() => {
+        onClick={(event) => {
+          onClick?.(event);
+          if (event.defaultPrevented) return;
+
           if (!disabled) {
             setOpen(!open);
             setTimeout(() => inputRef.current?.focus(), 50);
           }
         }}
         className={cn(
-          "flex h-9 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-2xs hover:border-slate-300",
-          open && "border-blue-500 ring-2 ring-blue-500/20"
+          "flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900 shadow-2xs transition-all duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+          open && "border-blue-500 ring-2 ring-blue-500/20",
+          triggerClassName,
         )}
         aria-expanded={open}
+        {...triggerProps}
       >
-        <span className="truncate flex items-center gap-1.5 min-w-0">
+        <span className="flex min-w-0 items-center gap-1.5 truncate">
           {selectedOption ? (
             labelFormatter ? (
               labelFormatter(selectedOption)
             ) : (
-              <span className="font-medium text-slate-900 truncate">
+              <span className="truncate font-medium text-slate-900">
                 {selectedOption.label}
                 {selectedOption.subText && (
-                  <span className="ml-1.5 text-slate-500 font-normal">
+                  <span className="ml-1.5 font-normal text-slate-500">
                     ({selectedOption.subText})
                   </span>
                 )}
@@ -114,7 +151,7 @@ export function Combobox({
           )}
         </span>
 
-        <span className="flex items-center gap-1 shrink-0 ml-2">
+        <span className="ml-2 flex shrink-0 items-center gap-1">
           {selectedOption && (
             <span
               role="button"
@@ -126,21 +163,37 @@ export function Combobox({
                   handleClear(e as unknown as React.MouseEvent);
                 }
               }}
-              className="p-0.5 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors"
+              className={cn(
+                "rounded-full p-0.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600",
+                clearButtonClassName,
+              )}
               aria-label="Clear selection"
             >
               <X size={13} />
             </span>
           )}
-          <ChevronsUpDown size={14} className="text-slate-400 opacity-60" />
+          <ChevronsUpDown
+            size={14}
+            className={cn("text-slate-400 opacity-60", chevronClassName)}
+          />
         </span>
       </button>
 
       {/* Dropdown Content */}
       {open && (
-        <div className="absolute z-50 mt-1.5 max-h-72 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg animate-in fade-in-50 zoom-in-95">
+        <div
+          className={cn(
+            "animate-in fade-in-50 zoom-in-95 absolute z-50 mt-1.5 max-h-72 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg",
+            dropdownClassName,
+          )}
+        >
           {/* Search Input Box */}
-          <div className="flex items-center border-b border-slate-100 px-3 py-2 bg-slate-50/50">
+          <div
+            className={cn(
+              "flex items-center border-b border-slate-100 bg-slate-50/50 px-3 py-2",
+              searchShellClassName,
+            )}
+          >
             <Search size={14} className="mr-2 shrink-0 text-slate-400" />
             <input
               ref={inputRef}
@@ -148,13 +201,16 @@ export function Combobox({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none"
+              className={cn(
+                "w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none",
+                searchInputClassName,
+              )}
             />
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                className="text-slate-400 hover:text-slate-600 p-0.5"
+                className="p-0.5 text-slate-400 hover:text-slate-600"
               >
                 <X size={12} />
               </button>
@@ -182,31 +238,44 @@ export function Combobox({
                     className={cn(
                       "flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-2 text-left transition-colors duration-100",
                       isSelected
-                        ? "bg-blue-50 text-blue-900 font-medium"
-                        : "hover:bg-slate-50 text-slate-700"
+                        ? "bg-blue-50 font-medium text-blue-900"
+                        : "text-slate-700 hover:bg-slate-50",
+                      optionClassName,
+                      isSelected && selectedOptionClassName,
                     )}
                   >
                     <div className="min-w-0 flex-1 pr-2">
                       <div className="flex flex-wrap items-center gap-1.5">
-                        <span className="font-semibold text-slate-900 truncate">
+                        <span className="truncate font-semibold text-slate-900">
                           {opt.label}
                         </span>
                         {opt.badge && (
-                          <span className="rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                          <span
+                            className={cn(
+                              "rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700",
+                              badgeClassName,
+                            )}
+                          >
                             {opt.badge}
                           </span>
                         )}
                       </div>
                       {(opt.subText || opt.metadata) && (
-                        <p className="mt-0.5 text-[11px] text-slate-500 truncate">
+                        <p className="mt-0.5 truncate text-[11px] text-slate-500">
                           {opt.subText}
-                          {opt.subText && opt.metadata ? " • " : ""}
+                          {opt.subText && opt.metadata ? " - " : ""}
                           {opt.metadata}
                         </p>
                       )}
                     </div>
                     {isSelected && (
-                      <Check size={14} className="text-blue-600 shrink-0 ml-1" />
+                      <Check
+                        size={14}
+                        className={cn(
+                          "ml-1 shrink-0 text-blue-600",
+                          checkClassName,
+                        )}
+                      />
                     )}
                   </button>
                 );
