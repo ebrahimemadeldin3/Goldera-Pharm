@@ -56,84 +56,82 @@ export default function CoachingReportCard({
     handleSubmitComment("");
   };
 
+  const isCompleted = r.status === "Completed";
+
   return (
-    <Card className="border-secondary-light gap-4 rounded-xl border bg-white p-6 shadow-none">
+    <Card className="rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none transition-all hover:border-[#CBEFDD] space-y-4">
       <CardHeader className="flex flex-wrap items-start justify-between gap-3 p-0">
         <div className="flex items-start gap-3">
-          <div className="gradient-green flex size-14 items-center justify-center rounded-full text-base/6 font-normal text-white">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557] font-bold text-sm">
             {r.rep.initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-base/6 font-normal text-black">
-                {" "}
+              <h3 className="text-base font-bold text-[#182033]">
                 {isRep ? "Coaching Session" : r.rep.name}
-              </p>
-              <span className="bg-dashboard-green rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
+              </h3>
+              <span className="rounded-md border border-[#D7E5FF] bg-[#EDF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#3972D5]">
                 {r.visitType}
               </span>
               <span
-                className={`rounded-full px-2 py-0.5 text-xs/4 font-medium ${
-                  r.status === "Completed"
-                    ? "bg-dashboard-green text-white"
-                    : "bg-dashboard-orange text-white"
+                className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
+                  isCompleted
+                    ? "bg-[#E9F8F1] text-[#168557] border-[#CBEFDD]"
+                    : "bg-[#FFF8E5] text-[#B18732] border-[#E9DDB8]"
                 }`}
               >
                 {r.status}
               </span>
             </div>
-            <div className="text-secondary-dark mt-1 flex w-full flex-wrap items-center gap-x-30 gap-y-1 text-sm/5">
+
+            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#667085]">
               <p className="flex items-center gap-1">
-                <User2 size={12} />
-                <span>Supervisor: {r.supervisor}</span>
+                <User2 size={13} className="text-[#98A2B3]" />
+                <span>Coach: <strong className="text-[#182033] font-medium">{r.supervisor}</strong></span>
               </p>
               <p className="flex items-center gap-1">
-                <Calendar size={12} />
+                <Calendar size={13} className="text-[#98A2B3]" />
                 <span>{r.date}</span>
               </p>
               <p className="flex items-center gap-1">
-                <FileText size={12} />
-                <span>
-                  Dr. {r.doctor} - {r.hospital}{" "}
-                </span>
+                <FileText size={13} className="text-[#98A2B3]" />
+                <span>Dr. {r.doctor} ({r.hospital})</span>
               </p>
             </div>
           </div>
         </div>
+
         <StarRating value={r.rating} />
       </CardHeader>
-      <CardContent className="p-0">
+
+      <CardContent className="p-0 space-y-3">
         {/* Two columns: Strengths / Improvements */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="bg-light-green-gradiant rounded-lg p-4">
-            <div className="text-dashboard-green mb-3 flex items-center gap-2 text-base/6 font-normal">
-              <CircleCheckBig size={20} />
+          <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/40 p-3.5 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#168557]">
+              <CircleCheckBig size={15} />
               Strengths
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {r.strengths.map((s, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="bg-dashboard-green mt-[7px] h-1 w-1 rounded-full" />
-                  <span className="text-secondary-dark text-sm/5 font-normal">
-                    {s}
-                  </span>
+                <li key={i} className="flex items-start gap-2 text-xs text-[#344054]">
+                  <span className="size-1.5 rounded-full bg-[#168557] mt-1.5 shrink-0" />
+                  <span>{s}</span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="bg-light-orange-gradiant rounded-lg p-4">
-            <div className="text-dashboard-orange mb-3 flex items-center gap-2 text-base/6 font-normal">
-              <AlertCircle size={20} />
+          <div className="rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5]/40 p-3.5 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-[#B18732]">
+              <AlertCircle size={15} />
               Areas for Improvement
             </div>
-            <ul className="space-y-2">
+            <ul className="space-y-1.5">
               {r.improvements.map((s, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="bg-dashboard-orange mt-[7px] h-1 w-1 rounded-full" />
-                  <span className="text-secondary-dark text-sm/5 font-normal">
-                    {s}
-                  </span>
+                <li key={i} className="flex items-start gap-2 text-xs text-[#344054]">
+                  <span className="size-1.5 rounded-full bg-[#B18732] mt-1.5 shrink-0" />
+                  <span>{s}</span>
                 </li>
               ))}
             </ul>
@@ -141,48 +139,35 @@ export default function CoachingReportCard({
         </div>
 
         {/* Action Plan */}
-        <div className="bg-light-blue-gradiant mt-3 rounded-lg p-4">
-          <div className="text-dashboard-blue mb-1.5 flex items-center gap-2 text-base/6 font-normal">
-            Action Plan
+        {r.actionPlan && (
+          <div className="rounded-[10px] border border-[#D7E5FF] bg-[#EDF4FF]/40 p-3.5">
+            <p className="text-xs font-bold text-[#3972D5] mb-1">Action Plan</p>
+            <p className="text-xs text-[#344054]">{r.actionPlan}</p>
           </div>
-          <p className="text-secondary-dark text-sm/5 font-normal">
-            {r.actionPlan}
-          </p>
-        </div>
+        )}
 
         {/* Supervisor Comments */}
-        <div className="bg-secondary-very-light mt-3 rounded-lg p-4">
-          <p className="mb-1.5 flex items-center gap-2 text-base/6 font-normal text-black">
-            <MessageSquare className="text-dashboard-blue h-4 w-4" />
-            Supervisor Comments
-          </p>
-          <p className="text-secondary-dark text-sm/5 font-normal">
-            {r.supervisorComments}
-          </p>
-        </div>
-
-        {/* Rep Response */}
-        <div className="border-dashboard-green bg-light-green-gradiant mt-3 rounded-lg border-l-4 p-4">
-          <p className="mb-1.5 flex items-center gap-2 text-base/6 font-normal text-black">
-            <MessageSquare className="text-dashboard-green h-4 w-4" />
-            {isRep ? "Your Response" : `${r.rep.name}'s Response`}
-          </p>
-          {isRep && r.status === "Completed" && (
-            <p className="text-secondary-dark text-sm/5 font-normal">
-              {r.repResponse}
+        {r.supervisorComments && (
+          <div className="rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-3.5">
+            <p className="text-xs font-bold text-[#182033] mb-1 flex items-center gap-1.5">
+              <MessageSquare size={13} className="text-[#168557]" />
+              Supervisor Comments
             </p>
-          )}
-        </div>
+            <p className="text-xs text-[#667085]">{r.supervisorComments}</p>
+          </div>
+        )}
+
+        {/* Rep Response / Actions */}
         {isRep && r.status === "Pending Feedback" && (
-          <div className="mt-4 flex w-full flex-wrap gap-3 *:h-9 *:flex-1">
+          <div className="mt-3 flex items-center justify-end gap-3 pt-2 border-t border-[#EEF1F6]">
             <Button
               onClick={handleAcceptSilently}
               disabled={isPending}
               variant="outline"
-              className="border-dashboard-green text-dashboard-green hover:bg-dashboard-green cursor-pointer transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
               size="sm"
+              className="h-9 rounded-[10px] border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] hover:bg-[#F6F8FB]"
             >
-              <Check className="h-4 w-4" />
+              <Check className="mr-1.5 size-3.5 text-[#168557]" />
               {isPending ? "Processing..." : "Accept Silently"}
             </Button>
 

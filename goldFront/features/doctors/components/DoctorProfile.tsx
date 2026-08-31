@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -19,8 +20,12 @@ import RemoveDoctorDialog from "./dialogs/RemoveDoctorDialog";
 import InactivateDoctorDialog from "./dialogs/InactivateDoctorDialog";
 import { useEditDoctor } from "../hooks/useEditDoctor";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
+import { getDoctorsAction } from "@/features/doctors/api";
+import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { VisitApiResponse } from "@/features/visits/lib/types/api";
-import { formatSaudiDateDisplay, parseDateValue } from "@/lib/utils";
+import { formatSaudiDateDisplay, parseDateValue, cn } from "@/lib/utils";
 import { PageContainer } from "@/components/layout/page-container";
 
 type DoctorProfileProps = {
@@ -29,6 +34,8 @@ type DoctorProfileProps = {
 
 export default function DoctorProfile({ doctor }: DoctorProfileProps) {
   const { features, role } = useRoleUI();
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
   const {
     isEditMode,
     editedData,
@@ -47,8 +54,227 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
   };
 
   const displayName = doctor.nameEN || doctor.nameAR;
-  const hasPlanOrCoachings =
-    !!doctor.plan || (!!doctor.coachings && doctor.coachings.length > 0);
+
+  const handleOpenSchedule = async () => {
+    if (doctorsList.length === 0) {
+      const doctorsRes = await getDoctorsAction(undefined, undefined, undefined, false);
+      if (doctorsRes.success && doctorsRes.data) {
+        setDoctorsList(doctorsRes.data);
+      }
+    }
+    setScheduleDialogOpen(true);
+  };
+
+  if (role === "MEDICAL_REP") {
+    return (
+      <PageContainer className="flex flex-col gap-5 pb-20 lg:pb-6">
+        {/* Rep Doctor Profile Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EEF1F6] pb-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/rep/doctors"
+              className="inline-flex size-10 items-center justify-center rounded-[10px] border border-[#E5E8EF] bg-white text-[#344054] transition-colors hover:bg-[#F9FAFB]"
+              aria-label="Back to doctors directory"
+            >
+              <ArrowLeft size={18} />
+            </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold tracking-tight text-[#182033]">
+                  {displayName}
+                </h1>
+                {doctor.grade && (
+                  <span className="rounded-md border border-[#E5E8EF] bg-[#F9FAFB] px-2 py-0.5 text-xs font-semibold text-[#344054]">
+                    Grade {doctor.grade}
+                  </span>
+                )}
+              </div>
+              <p className="mt-0.5 text-xs font-medium text-[#667085]">
+                {doctor.specialty || "Doctor"} {doctor.subRegion ? `• ${doctor.subRegion}` : ""}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={handleOpenSchedule}
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-gp-rep-primary px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all hover:bg-gp-rep-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+            >
+              <Calendar size={16} />
+              <span>Schedule Visit</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Grid Layout */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {/* Info & Account Sidebar */}
+          <div className="space-y-4 lg:col-span-1">
+            {/* Contact & Location Card */}
+            <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-4.5 space-y-3.5">
+              <h3 className="text-sm font-semibold text-[#182033] border-b border-[#EEF1F6] pb-2">
+                Contact & Location
+              </h3>
+
+              <div className="space-y-2.5 text-xs text-[#344054]">
+                <div className="flex items-center gap-2.5">
+                  <Phone size={15} className="text-[#8A94A6] shrink-0" />
+                  <span className={doctor.phone ? "font-medium text-[#182033]" : "italic text-[#8A94A6]"}>
+                    {doctor.phone || "No phone provided"}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2.5 truncate">
+                  <Mail size={15} className="text-[#8A94A6] shrink-0" />
+                  <span className={doctor.email ? "font-medium text-[#182033] truncate" : "italic text-[#8A94A6]"}>
+                    {doctor.email || "No email provided"}
+                  </span>
+                </div>
+
+                {doctor.subRegion && (
+                  <div className="flex items-center gap-2.5">
+                    <MapPin size={15} className="text-[#8A94A6] shrink-0" />
+                    <span className="font-medium text-[#182033]">
+                      {doctor.subRegion}{doctor.area ? `, ${doctor.area}` : ""}
+                    </span>
+                  </div>
+                )}
+
+                {doctor.avgPatientsPerDay && (
+                  <div className="flex items-center gap-2.5 pt-1">
+                    <Stethoscope size={15} className="text-[#8A94A6] shrink-0" />
+                    <span>
+                      Volume: <strong className="font-semibold text-[#182033]">{doctor.avgPatientsPerDay} patients/day</strong>
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Hospital / Account Card */}
+            <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-4.5 space-y-2">
+              <h3 className="text-sm font-semibold text-[#182033] border-b border-[#EEF1F6] pb-2">
+                Hospital / Account
+              </h3>
+              {doctor.accountName ? (
+                <div className="flex items-start gap-2.5 rounded-[10px] border border-[#E5E8EF] bg-[#FBFCFE] p-3 text-xs">
+                  <Building2 size={16} className="text-gp-rep-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-[#182033]">{doctor.accountName}</p>
+                    <p className="text-[11px] text-[#667085] mt-0.5">
+                      {doctor.subRegion || "Region"}{doctor.area ? `, ${doctor.area}` : ""}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-[#8A94A6] italic">No hospital/account assigned</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recent Visits Main Section */}
+          <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-5 lg:col-span-2 space-y-4">
+            <div className="flex items-center justify-between border-b border-[#EEF1F6] pb-3">
+              <div>
+                <h3 className="text-base font-semibold text-[#182033]">
+                  Recent Visit History
+                </h3>
+                <p className="text-xs text-[#667085]">
+                  Past medical visits and completion status with Dr. {displayName}
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={handleOpenSchedule}
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-[9px] border-[#E5E8EF] text-xs font-semibold text-[#344054] hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary cursor-pointer"
+              >
+                <Calendar size={14} />
+                Schedule Visit
+              </Button>
+            </div>
+
+            {doctor.visits && doctor.visits.length > 0 ? (
+              <div className="space-y-2.5">
+                {doctor.visits.map((visit: VisitApiResponse, idx: number) => {
+                  const statusStyles: Record<string, string> = {
+                    COMPLETED: "bg-[#E9F8F1] text-[#168557] border-[#CBEFDD]",
+                    SCHEDULED: "bg-[#FFF8E5] text-[#B18732] border-[#E9DDB8]",
+                    IN_PROGRESS: "bg-[#EDF4FF] text-[#3972D5] border-[#D7E5FF]",
+                    CANCELLED: "bg-[#FEF3F2] text-[#D92D20] border-[#FECDCA]",
+                  };
+
+                  return (
+                    <div
+                      key={visit.id || idx}
+                      className="flex flex-col gap-2 rounded-[10px] border border-[#EEF1F6] bg-[#FBFCFE] p-3.5 sm:flex-row sm:items-center sm:justify-between text-xs"
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-[#182033]">
+                            {formatSaudiDateDisplay(parseDateValue(visit.date))}
+                          </span>
+                          {visit.visitType && (
+                            <span className="rounded-md border border-[#E5E8EF] bg-white px-2 py-0.5 text-[10px] font-medium text-[#667085]">
+                              {visit.visitType}
+                            </span>
+                          )}
+                        </div>
+                        {visit.notes && (
+                          <p className="text-xs text-[#667085] line-clamp-1">{visit.notes}</p>
+                        )}
+                      </div>
+
+                      <span
+                        className={cn(
+                          "inline-flex items-center self-start sm:self-center rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                          statusStyles[visit.status] || "bg-[#F9FAFB] text-[#344054] border-[#E5E8EF]"
+                        )}
+                      >
+                        {visit.status}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] py-10 text-center">
+                <Calendar className="size-8 text-[#98A2B3]" />
+                <p className="mt-3 text-sm font-semibold text-[#182033]">
+                  No recent visits recorded
+                </p>
+                <p className="mt-1 text-xs text-[#667085]">
+                  You haven&apos;t scheduled or reported any visits with this doctor yet.
+                </p>
+                <Button
+                  type="button"
+                  onClick={handleOpenSchedule}
+                  className="mt-4 h-9 gap-1.5 rounded-[9px] bg-gp-rep-primary text-white hover:bg-gp-rep-primary-hover text-xs font-semibold cursor-pointer"
+                >
+                  <Calendar size={14} />
+                  Schedule First Visit
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Schedule Visit Modal Dialog */}
+        {scheduleDialogOpen && (
+          <AddVisitDialog
+            open={scheduleDialogOpen}
+            onOpenChange={setScheduleDialogOpen}
+            role="MEDICAL_REP"
+            doctors={doctorsList}
+            initialDoctorId={doctor.id}
+          />
+        )}
+      </PageContainer>
+    );
+  }
 
   return (
     <PageContainer className="flex flex-col gap-6">

@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { UserRole } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import AddVisitDialog from "./AddVisitDialog";
 import { getDoctorsAction } from "@/features/doctors/api";
@@ -32,14 +33,10 @@ type VisitSummaryCardProps = {
   value: number;
   helper: string;
   icon: LucideIcon;
-  tone: "navy" | "green" | "gold";
+  iconBg: string;
+  cardBorder: string;
+  isPrimary?: boolean;
   animationDelay: string;
-};
-
-const summaryToneStyles: Record<VisitSummaryCardProps["tone"], string> = {
-  navy: "bg-[#EEF4FF] text-[#3972D5]",
-  green: "bg-[#E9F8F1] text-[#168557]",
-  gold: "bg-[#FFF3D7] text-[#B18732]",
 };
 
 function VisitSummaryCard({
@@ -47,12 +44,18 @@ function VisitSummaryCard({
   value,
   helper,
   icon: Icon,
-  tone,
+  iconBg,
+  cardBorder,
+  isPrimary = false,
   animationDelay,
 }: VisitSummaryCardProps) {
   return (
     <article
-      className="visits-kpi-card visits-page-enter group/kpi flex min-h-[112px] items-start justify-between gap-4 rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none"
+      className={cn(
+        "visits-kpi-card visits-page-enter group/kpi flex min-h-[96px] items-start justify-between gap-4 rounded-[14px] p-4 sm:p-4.5 shadow-none transition-all",
+        cardBorder,
+        isPrimary && "shadow-[0_4px_16px_rgba(22,133,87,0.08)]"
+      )}
       style={
         {
           "--visits-enter-delay": animationDelay,
@@ -60,20 +63,30 @@ function VisitSummaryCard({
       }
     >
       <div className="min-w-0">
-        <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-          {label}
-        </p>
-        <p className="mt-2 text-2xl leading-none font-semibold text-[#182033]">
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+            {label}
+          </p>
+          {isPrimary && (
+            <span className="inline-flex rounded-full bg-[#168557] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+              Primary Focus
+            </span>
+          )}
+        </div>
+        <p className="mt-1.5 text-2xl font-bold tracking-tight text-[#182033]">
           {value.toLocaleString()}
         </p>
-        <p className="mt-2 truncate text-xs font-medium text-[#8A94A6]">
+        <p className="mt-1 truncate text-xs font-medium text-[#667085]">
           {helper}
         </p>
       </div>
       <span
-        className={`visits-kpi-icon-shell visits-kpi-icon-shell-${tone} flex size-10 shrink-0 items-center justify-center rounded-[10px] ${summaryToneStyles[tone]}`}
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover/kpi:scale-105",
+          iconBg
+        )}
       >
-        <Icon className="visits-kpi-icon size-5" aria-hidden="true" />
+        <Icon className="size-5" aria-hidden="true" />
       </span>
     </article>
   );
@@ -117,35 +130,82 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
     }
   }, [dialogOpen, doctors.length, role]);
 
-  const summaryCards = [
-    {
-      id: "total-visits",
-      label: "Total Visits",
-      value: stats.total,
-      helper: "All scheduled records",
-      icon: CalendarDays,
-      tone: "navy" as const,
-      animationDelay: "0ms",
-    },
-    {
-      id: "completed-visits",
-      label: "Completed",
-      value: stats.completed,
-      helper: "Reports submitted",
-      icon: CheckCircle2,
-      tone: "green" as const,
-      animationDelay: "60ms",
-    },
-    {
-      id: "today-visits",
-      label: "Today",
-      value: stats.today,
-      helper: "Scheduled for today",
-      icon: Clock3,
-      tone: "gold" as const,
-      animationDelay: "120ms",
-    },
-  ];
+  const isRep = role === "MEDICAL_REP";
+
+  const completionPercent =
+    stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
+
+  const summaryCards = isRep
+    ? [
+        {
+          id: "today-visits",
+          label: "Today's Visits",
+          value: stats.today,
+          helper: "Scheduled for today",
+          icon: Clock3,
+          isPrimary: true,
+          iconBg: "bg-[#168557] text-white shadow-xs",
+          cardBorder: "border-[#CBEFDD] bg-[#E9F8F1]/30",
+          animationDelay: "0ms",
+        },
+        {
+          id: "completed-visits",
+          label: "Completed",
+          value: stats.completed,
+          helper: stats.total > 0 ? `${completionPercent}% completion rate` : "Reports submitted",
+          icon: CheckCircle2,
+          isPrimary: false,
+          iconBg: "bg-[#E9F8F1] text-[#168557]",
+          cardBorder: "border-[#E5E8EF] bg-white",
+          animationDelay: "60ms",
+        },
+        {
+          id: "total-visits",
+          label: "Total Visits",
+          value: stats.total,
+          helper: "Territory plan total",
+          icon: CalendarDays,
+          isPrimary: false,
+          iconBg: "bg-[#F6F8FB] text-[#344054]",
+          cardBorder: "border-[#E5E8EF] bg-white",
+          animationDelay: "120ms",
+        },
+      ]
+    : [
+        {
+          id: "total-visits",
+          label: "Total Visits",
+          value: stats.total,
+          helper: "All scheduled records",
+          icon: CalendarDays,
+          isPrimary: false,
+          iconBg: "bg-[#EEF4FF] text-[#3972D5]",
+          cardBorder: "border-[#E5E8EF] bg-white",
+          animationDelay: "0ms",
+        },
+        {
+          id: "completed-visits",
+          label: "Completed",
+          value: stats.completed,
+          helper: "Reports submitted",
+          icon: CheckCircle2,
+          isPrimary: false,
+          iconBg: "bg-[#E9F8F1] text-[#168557]",
+          cardBorder: "border-[#E5E8EF] bg-white",
+          animationDelay: "60ms",
+        },
+        {
+          id: "today-visits",
+          label: "Today",
+          value: stats.today,
+          helper: "Scheduled for today",
+          icon: Clock3,
+          isPrimary: false,
+          iconBg: "bg-[#FFF3D7] text-[#B18732]",
+          cardBorder: "border-[#E5E8EF] bg-white",
+          animationDelay: "120ms",
+        },
+      ];
 
   return (
     <>
@@ -165,7 +225,12 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
             <Button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className="visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
+              className={cn(
+                "visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto cursor-pointer",
+                role === "MEDICAL_REP"
+                  ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+                  : "bg-[#C9A44C] hover:bg-[#B18732] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+              )}
             >
               <CalendarPlus
                 className="visits-add-trigger-icon h-4 w-4"
@@ -188,7 +253,9 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
               value={card.value}
               helper={card.helper}
               icon={card.icon}
-              tone={card.tone}
+              iconBg={card.iconBg}
+              cardBorder={card.cardBorder}
+              isPrimary={card.isPrimary}
               animationDelay={card.animationDelay}
             />
           ))}

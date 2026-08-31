@@ -2,19 +2,19 @@ export const getStatusBadge = (status: string) => {
   switch (status) {
     case "APPROVED":
       return (
-        <span className="bg-dashboard-green rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
+        <span className="inline-flex items-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] px-2.5 py-0.5 text-xs font-semibold text-[#168557]">
           Approved
         </span>
       );
     case "PENDING":
       return (
-        <span className="bg-dashboard-orange rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
+        <span className="inline-flex items-center rounded-full bg-[#FFF8E5] border border-[#E9DDB8] px-2.5 py-0.5 text-xs font-semibold text-[#B18732]">
           Pending
         </span>
       );
     case "REJECTED":
       return (
-        <span className="bg-dashboard-red rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
+        <span className="inline-flex items-center rounded-full bg-[#FEF3F2] border border-[#FECDCA] px-2.5 py-0.5 text-xs font-semibold text-[#D92D20]">
           Rejected
         </span>
       );
@@ -25,7 +25,7 @@ export const getStatusBadge = (status: string) => {
 
 export const getPeriodBadge = (periodType: string) => {
   return (
-    <span className="border-dashboard-green text-dashboard-green rounded-full border bg-white px-2 py-0.5 text-xs/4 font-medium">
+    <span className="inline-flex items-center rounded-full bg-[#F6F8FB] border border-[#E5E8EF] px-2.5 py-0.5 text-xs font-semibold text-[#344054]">
       {periodType === "MONTHLY" ? "monthly" : "quarterly"}
     </span>
   );

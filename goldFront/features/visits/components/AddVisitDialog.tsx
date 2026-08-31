@@ -15,6 +15,8 @@ import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
 import { CalendarPlus, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 type AddVisitDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -74,7 +76,14 @@ export default function AddVisitDialog({
         <SheetHeader className="visits-add-drawer-header sticky top-0 z-10 border-b border-[#EEF1F6] bg-white px-5 py-5 text-left sm:px-6">
           <div className="flex items-start justify-between gap-4">
             <div className="flex min-w-0 gap-3">
-              <span className="flex size-11 shrink-0 items-center justify-center rounded-[12px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
+              <span
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-[12px] border",
+                  role === "MEDICAL_REP"
+                    ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                    : "border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]"
+                )}
+              >
                 <CalendarPlus className="size-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">

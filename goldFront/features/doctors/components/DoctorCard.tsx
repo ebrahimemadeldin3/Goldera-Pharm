@@ -7,6 +7,7 @@ import { Stethoscope, Phone, Mail, Building2, Calendar } from "lucide-react";
 import { DoctorCardData } from "../lib/types";
 import Link from "next/link";
 import { useRoleUI } from "@/core/ui/role-ui-context";
+import { cn } from "@/lib/utils";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
@@ -70,13 +71,27 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
     setScheduleDialogOpen(true);
   };
 
+  const isRep = role === "MEDICAL_REP";
+
   return (
     <>
-      <Card className="flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-all duration-170 hover:border-[#E9DDB8] hover:shadow-[0_4px_14px_rgba(16,27,51,0.06)] hover:-translate-y-px">
+      <Card
+        className={cn(
+          "flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-all duration-170 hover:shadow-[0_4px_14px_rgba(16,27,51,0.06)] hover:-translate-y-px",
+          isRep ? "hover:border-gp-rep-primary-border" : "hover:border-[#E9DDB8]"
+        )}
+      >
         <div className="flex flex-col gap-2.5">
           {/* Top Header: Avatar + Doctor Name & Badges */}
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#FFF8E5] border border-[#E9DDB8] text-[#8A6515] shadow-2xs">
+            <div
+              className={cn(
+                "flex size-10 shrink-0 items-center justify-center rounded-[10px] shadow-2xs",
+                isRep
+                  ? "bg-gp-rep-primary-soft border border-gp-rep-primary-border text-gp-rep-primary"
+                  : "bg-[#FFF8E5] border border-[#E9DDB8] text-[#8A6515]"
+              )}
+            >
               <Stethoscope size={18} />
             </div>
 
@@ -98,7 +113,7 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
                 </span>
 
                 {cleanGrade && (
-                  <span className="rounded-md border border-[#F5DFAC] bg-[#FFF8E5] px-2 py-0.5 text-[11px] font-semibold text-[#8A6515]">
+                  <span className="rounded-md border border-[#E5E8EF] bg-[#F9FAFB] px-2 py-0.5 text-[11px] font-semibold text-[#344054]">
                     Grade {cleanGrade}
                   </span>
                 )}
@@ -144,7 +159,10 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
           {/* Hospital / Account Section */}
           {cleanAccount ? (
             <div className="flex items-center gap-2 rounded-[8px] border border-[#E5E8EF] bg-[#FBFCFE] px-3 py-1.5 text-xs">
-              <Building2 size={15} className="text-[#3972D5] shrink-0" />
+              <Building2
+                size={15}
+                className={cn("shrink-0", isRep ? "text-gp-rep-primary" : "text-[#3972D5]")}
+              />
               <div className="min-w-0 flex-1">
                 <span className="font-semibold text-[#182033] truncate block">{cleanAccount}</span>
                 <span className="text-[11px] text-[#667085] block truncate">
@@ -164,7 +182,7 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
           {features.doctors.canView && (
             <Link
               href={profilePath}
-              className="border border-[#E5E8EF] bg-white hover:bg-[#F9FAFB] text-[#182033] inline-flex h-9 items-center justify-center rounded-[10px] px-3.5 text-xs font-semibold transition-colors duration-170 focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:outline-none"
+              className="border border-[#E5E8EF] bg-white hover:bg-[#F9FAFB] text-[#182033] inline-flex h-9 items-center justify-center rounded-[10px] px-3.5 text-xs font-semibold transition-colors duration-170 focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30 focus-visible:outline-none"
             >
               View Profile
             </Link>
@@ -174,7 +192,12 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
               <Button
                 type="button"
                 onClick={handleOpenSchedule}
-                className="bg-[#C9A44C] hover:bg-[#B18732] text-white h-9 cursor-pointer px-3.5 text-xs font-semibold gap-1.5 transition-all duration-170 focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:outline-none shadow-[0_4px_14px_rgba(201,164,76,0.25)] rounded-[10px]"
+                className={cn(
+                  "h-9 cursor-pointer px-3.5 text-xs font-semibold gap-1.5 transition-all duration-170 focus-visible:outline-none rounded-[10px]",
+                  isRep
+                    ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+                    : "bg-[#C9A44C] hover:bg-[#B18732] text-white shadow-[0_4px_14px_rgba(201,164,76,0.25)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                )}
               >
                 <Calendar size={13} className="stroke-[2.2]" />
                 Schedule Visit

@@ -7,6 +7,25 @@ import { AddProductDialog } from "./AddProductDialog";
 export default function ProductsHeader() {
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
+  const isRep = role === "MEDICAL_REP";
+
+  if (isRep) {
+    return (
+      <header className="flex flex-col gap-2 pb-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] px-2.5 py-0.5 text-[11px] font-semibold text-[#168557] uppercase tracking-wider">
+            Field Catalog
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold tracking-tight text-[#182033] sm:text-3xl">
+          Products
+        </h1>
+        <p className="text-sm text-[#667085]">
+          Product catalog and sample availability
+        </p>
+      </header>
+    );
+  }
 
   return (
     <section className="products-hero-shell relative isolate min-h-[304px] overflow-hidden rounded-[16px] border border-[#243A5B] bg-[#101D36] shadow-[0_8px_22px_rgba(16,29,54,0.10)] sm:min-h-[336px] lg:min-h-[352px]">

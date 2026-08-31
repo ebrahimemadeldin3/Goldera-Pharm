@@ -92,24 +92,30 @@ export default function SalesHeader({
         label: "Total Records",
         value: total,
         icon: BarChart3,
-        iconClassName: "bg-[#EEF4FF] text-[#3972D5]",
+        iconClassName: isRep
+          ? "bg-[#F6F8FB] border border-[#E5E8EF] text-[#344054]"
+          : "bg-[#EEF4FF] text-[#3972D5]",
       },
       {
         id: "this-month",
         label: "Sales This Month",
         value: thisMonth,
         icon: CalendarIcon,
-        iconClassName: "bg-[#EAF8F2] text-[#20A66A]",
+        iconClassName: isRep
+          ? "bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557]"
+          : "bg-[#EAF8F2] text-[#20A66A]",
       },
       {
         id: "this-year",
         label: "Sales This Year",
         value: thisYear,
         icon: TrendingUp,
-        iconClassName: "bg-[#FFF7E0] text-[#B18732]",
+        iconClassName: isRep
+          ? "bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557]"
+          : "bg-[#FFF7E0] text-[#B18732]",
       },
     ];
-  }, [filteredSales]);
+  }, [filteredSales, isRep]);
 
   const onApplyFilters = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -131,15 +137,20 @@ export default function SalesHeader({
     <div className="space-y-5">
       <header className="sales-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold tracking-[0.08em] text-[#B18732] uppercase">
-            Commercial
+          <p
+            className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${
+              isRep ? "text-[#168557]" : "text-[#B18732]"
+            }`}
+          >
+            {isRep ? "Personal Territory" : "Commercial"}
           </p>
           <h1 className="mt-1 text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
-            Sales Data
+            {isRep ? "Sales" : "Sales Data"}
           </h1>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
-            Track and analyze sales performance across all regions and
-            representatives.
+            {isRep
+              ? "Track your personal sales activity and product performance"
+              : "Track and analyze sales performance across all regions and representatives."}
           </p>
         </div>
         {isManager && (
@@ -204,14 +215,22 @@ export default function SalesHeader({
                 value={sheetName}
                 onChange={(event) => setSheetName(event.target.value)}
                 placeholder="e.g. first sheet"
-                className="h-11 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-medium text-[#182033] shadow-none transition-colors placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
+                className={`h-11 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-medium text-[#182033] shadow-none transition-colors placeholder:text-[#98A2B3] ${
+                  isRep
+                    ? "focus-visible:border-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                    : "focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
+                }`}
               />
             </div>
 
             <div className="flex items-end">
               <Button
                 type="submit"
-                className="h-11 w-full rounded-[10px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-none transition-all duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0 lg:w-auto"
+                className={`h-11 w-full rounded-[10px] px-5 text-sm font-semibold text-white transition-all duration-[170ms] lg:w-auto ${
+                  isRep
+                    ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover shadow-[0_4px_14px_rgba(22,133,87,0.22)] focus-visible:ring-2 focus-visible:ring-[#168557]/30"
+                    : "bg-[#C9A44C] hover:bg-[#B18732] shadow-none hover:-translate-y-px focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20"
+                }`}
               >
                 <Filter className="h-4 w-4" />
                 Apply Filters

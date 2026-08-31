@@ -15,6 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { useRoleUI } from "@/core/ui/role-ui-context";
+import { cn } from "@/lib/utils";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { SearchInput } from "@/components/ui/SearchInput";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
@@ -35,6 +37,7 @@ export default function DoctorsList({
   totalCount = 0,
   selectedSubRegion = "",
 }: DoctorsListProps) {
+  const { role } = useRoleUI();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -143,7 +146,14 @@ export default function DoctorsList({
               onValueChange={handleSubRegionChange}
               disabled={isPending}
             >
-              <SelectTrigger className="h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033] hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30">
+              <SelectTrigger
+                className={cn(
+                  "h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033]",
+                  role === "MEDICAL_REP"
+                    ? "hover:border-gp-rep-primary-border focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+                    : "hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                )}
+              >
                 <SelectValue placeholder="All Sub-Regions" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -170,7 +180,12 @@ export default function DoctorsList({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033] px-3 rounded-[10px]"
+              className={cn(
+                "h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] px-3 rounded-[10px]",
+                role === "MEDICAL_REP"
+                  ? "hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary"
+                  : "hover:bg-[#F9FAFB] hover:text-[#182033]"
+              )}
             >
               <RotateCcw size={13} />
               Reset Filters

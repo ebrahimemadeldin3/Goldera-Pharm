@@ -18,6 +18,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRoleUI } from "@/core/ui/role-ui-context";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Popover,
@@ -515,6 +516,8 @@ export default function SalesTable({
   searchQuery = "",
   hasAppliedFilters = false,
 }: SalesTableProps) {
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -775,7 +778,12 @@ export default function SalesTable({
                 updateTableQuery({ query: event.target.value })
               }
               placeholder="Search sales..."
-              className="h-10 w-full rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] pr-3 pl-9 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10"
+              className={cn(
+                "h-10 w-full rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] pr-3 pl-9 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3]",
+                isRep
+                  ? "focus:border-[#168557] focus:ring-2 focus:ring-[#168557]/20"
+                  : "focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10"
+              )}
             />
           </div>
 
@@ -795,7 +803,13 @@ export default function SalesTable({
             className="sales-time-filter-tablist relative inline-grid h-11 min-w-[520px] grid-cols-5 items-center overflow-hidden rounded-[13px] border border-[#E7EAF0] bg-[#F5F7FA] p-1 align-top sm:min-w-[540px]"
             style={timeFilterStyle}
           >
-            <span className="sales-time-filter-indicator" aria-hidden="true" />
+            <span
+              className={cn(
+                "sales-time-filter-indicator",
+                isRep && "bg-[#168557]"
+              )}
+              aria-hidden="true"
+            />
 
             {DATE_FILTERS.map((f, index) => {
               const isActive = dateFilter === f.value;
@@ -814,9 +828,19 @@ export default function SalesTable({
                   }}
                   onClick={() => handleTimeFilterChange(f.value)}
                   onKeyDown={(event) => handleTimeFilterKeyDown(event, index)}
-                  className={`sales-time-filter-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
-                    isActive ? "text-white" : "text-[#344054]"
-                  }`}
+                  className={cn(
+                    "sales-time-filter-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-all duration-160 outline-none",
+                    isRep
+                      ? isActive
+                        ? "text-white font-bold"
+                        : "text-[#344054] hover:text-[#182033]"
+                      : isActive
+                      ? "text-white"
+                      : "text-[#344054]",
+                    isRep
+                      ? "focus-visible:ring-2 focus-visible:ring-[#168557]/30"
+                      : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                  )}
                 >
                   <span className="sales-time-filter-label truncate">
                     {f.label}

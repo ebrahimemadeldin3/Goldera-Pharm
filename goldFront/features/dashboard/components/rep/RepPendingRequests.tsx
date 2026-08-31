@@ -27,12 +27,10 @@ const getRequestIcon = (type: string) => {
 
 interface RepPendingRequestsProps {
   requests?: DashboardRequest[];
-  pendingRequestsCount?: number;
 }
 
 export default function RepPendingRequests({
   requests = [],
-  pendingRequestsCount = 0,
 }: RepPendingRequestsProps) {
   // Filter pending requests and take max 4
   const pendingRequests = requests

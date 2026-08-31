@@ -5,7 +5,7 @@ import type { VisitPlan } from "@/features/plan/api/get";
 import RepPlanCard from "./RepPlanCard";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
-import { ResultsFooter } from "@/components/ui/ResultsFooter";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 
 type RepPlansListProps = {
   plans: VisitPlan[];
@@ -57,33 +57,48 @@ export default function RepPlansList({
         </div>
 
         {/* Tabs */}
-        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-xl bg-slate-100 p-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`relative flex cursor-pointer items-center gap-2 rounded-lg border-[0.8px] px-3 py-1.5 text-xs font-medium transition-all ${
-                activeTab === tab.id
-                  ? "border-slate-200 bg-white text-slate-900 shadow-2xs"
-                  : "border-transparent text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              {tab.label}
-              {tab.count !== undefined && tab.count > 0 && (
-                <span
-                  className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[11px] font-medium ${
-                    tab.id === "PENDING"
-                      ? "bg-amber-100 text-amber-800"
-                      : tab.id === "APPROVED"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-slate-200 text-slate-700"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          ))}
+        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-[12px] bg-[#F6F8FB] p-1 border border-[#E5E8EF]">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+
+            const activeClass =
+              tab.id === "PENDING"
+                ? "bg-[#FFF8E5] border-[#E9DDB8] text-[#B18732]"
+                : tab.id === "APPROVED"
+                ? "bg-[#E9F8F1] border-[#CBEFDD] text-[#168557]"
+                : tab.id === "REJECTED"
+                ? "bg-[#FEF3F2] border-[#FECDCA] text-[#D92D20]"
+                : "bg-[#E9F8F1] border-[#CBEFDD] text-[#168557]";
+
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`relative flex cursor-pointer items-center gap-2 rounded-[9px] px-3 py-1.5 text-xs font-semibold transition-all border ${
+                  isActive
+                    ? `${activeClass} shadow-2xs`
+                    : "bg-white border-[#E5E8EF] text-[#667085] hover:text-[#182033] hover:border-[#DDE3EE]"
+                }`}
+              >
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <span
+                    className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                      tab.id === "PENDING"
+                        ? "bg-[#FFF8E5] text-[#B18732] border border-[#E9DDB8]"
+                        : tab.id === "APPROVED"
+                        ? "bg-[#E9F8F1] text-[#168557] border border-[#CBEFDD]"
+                        : tab.id === "REJECTED"
+                        ? "bg-[#FEF3F2] text-[#D92D20] border border-[#FECDCA]"
+                        : "bg-[#F6F8FB] text-[#344054] border border-[#E5E8EF]"
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -95,10 +110,10 @@ export default function RepPlansList({
         </ScopeInfoBanner>
       )}
 
-      {/* Plans List */}
-      <div className="space-y-4">
+      {/* Plans List: 2-Column Responsive Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {filteredPlans.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
+          <div className="col-span-full flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/50 p-10 text-center">
             <p className="text-sm font-medium text-slate-700">
               No plans found matching status &quot;{activeTab}&quot;
             </p>
@@ -114,7 +129,14 @@ export default function RepPlansList({
       </div>
 
       {/* Bottom Pagination Footer */}
-      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        itemLabel="plans"
+        ariaLabel="Plans pagination"
+        pageNavAriaLabel="Plan pages"
+      />
     </SectionContainer>
   );
 }

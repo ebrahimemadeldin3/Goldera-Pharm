@@ -55,12 +55,14 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const stats = calculateRepPlanStats(plans);
 
   return (
-    <PageContainer>
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <PageContainer className="min-h-[calc(100vh-80px)]">
+      <header className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#EEF1F6] pb-4">
         <div>
-          <h1 className="text-2xl/9 font-normal md:text-[34px]/10">My Plans</h1>
-          <p className="text-secondary-dark mt-2 text-base/6 font-normal">
-            Create and manage your weekly and monthly visit plans
+          <h1 className="text-2xl font-bold tracking-tight text-[#182033] md:text-3xl">
+            Plan
+          </h1>
+          <p className="mt-1 text-xs font-medium text-[#667085]">
+            Your visit plan, doctor coverage, and progress
           </p>
         </div>
         <CreatePlanDialogRep

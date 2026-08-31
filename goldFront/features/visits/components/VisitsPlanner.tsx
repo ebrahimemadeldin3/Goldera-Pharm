@@ -25,6 +25,7 @@ import { Calendar as ShadCalendar } from "@/components/ui/calendar";
 import DayVisitsPanel from "@/features/visits/components/panels/DayVisitsPanel";
 import WeekVisitsPanel from "@/features/visits/components/panels/WeekVisitsPanel";
 import { Visit } from "@/features/visits/lib/types/ui";
+import { useRoleUI } from "@/core/ui/role-ui-context";
 import type { VisitStatus } from "@/lib/types";
 import { cn, formatDateOnly } from "@/lib/utils";
 import {
@@ -73,38 +74,73 @@ function VisitCalendarDayButton({
   day,
   modifiers,
   statusDotsByDate,
+  isRep = false,
   children,
   ...props
-}: DayButtonProps & { statusDotsByDate: Map<string, VisitStatus[]> }) {
+}: DayButtonProps & { statusDotsByDate: Map<string, VisitStatus[]>; isRep?: boolean }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dateKey = formatDateOnly(day.date);
-  const statusDots = statusDotsByDate.get(dateKey) ?? [];
+  const rawStatusDots = statusDotsByDate.get(dateKey) ?? [];
+  const statusDots = isRep
+    ? rawStatusDots.filter((s) => s === "CANCELLED")
+    : rawStatusDots;
+
+  const todayStart = useMemo(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }, []);
+
+  const dayStart = useMemo(() => {
+    return new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+  }, [day.date]);
+
+  const isPast = isRep && dayStart < todayStart;
 
   useEffect(() => {
-    if (modifiers.focused) buttonRef.current?.focus();
-  }, [modifiers.focused]);
+    if (modifiers.focused && !isPast) buttonRef.current?.focus();
+  }, [modifiers.focused, isPast]);
+
+  const baseDayClasses =
+    "visit-calendar-day-button relative flex flex-col items-center justify-center gap-0.5 rounded-[10px] border border-transparent bg-transparent text-sm leading-none font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-150 ease-out outline-none";
+
+  const repDayClasses = isPast
+    ? "size-9 sm:size-10 mx-auto opacity-35 cursor-not-allowed pointer-events-none text-[#98A2B3] border-transparent bg-transparent hover:bg-transparent hover:text-[#98A2B3] shadow-none"
+    : cn(
+        "size-9 sm:size-10 mx-auto text-[#182033] hover:bg-gp-rep-primary-soft hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/25",
+        modifiers.outside && "text-[#98A2B3] opacity-40 hover:bg-transparent hover:text-[#98A2B3]",
+        modifiers.today && !modifiers.selected && "border border-gp-rep-primary font-bold text-gp-rep-primary bg-transparent hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary shadow-none",
+        "data-[range-middle=true]:bg-gp-rep-primary-soft data-[range-middle=true]:text-gp-rep-primary data-[range-middle=true]:rounded-none",
+        "data-[range-start=true]:bg-gp-rep-primary data-[range-start=true]:text-white",
+        "data-[range-end=true]:bg-gp-rep-primary data-[range-end=true]:text-white",
+        "data-[selected-single=true]:bg-gp-rep-primary data-[selected-single=true]:text-white data-[selected-single=true]:border-transparent data-[selected-single=true]:shadow-[0_4px_10px_rgba(22,133,87,0.22)]"
+      );
+
+  const managerDayClasses = cn(
+    "text-[#182033] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
+    "data-[range-middle=true]:bg-[#F8F1DC] data-[range-middle=true]:rounded-none",
+    "data-[selected-single=true]:bg-[#101D36] data-[selected-single=true]:text-white data-[selected-single=true]:shadow-[0_6px_14px_rgba(16,29,54,0.22)]"
+  );
 
   return (
     <button
       ref={buttonRef}
+      disabled={modifiers.disabled || isPast}
       data-day={dateKey}
       data-selected-single={
+        !isPast &&
         modifiers.selected &&
         !modifiers.range_start &&
         !modifiers.range_end &&
         !modifiers.range_middle
       }
-      data-range-start={modifiers.range_start}
-      data-range-end={modifiers.range_end}
-      data-range-middle={modifiers.range_middle}
-      className={cn(
-        "visit-calendar-day-button relative flex aspect-square size-auto min-h-[var(--cell-size)] w-full min-w-[var(--cell-size)] flex-col items-center justify-center gap-0.5 rounded-[10px] border border-transparent bg-transparent text-sm leading-none font-semibold text-[#344054] transition-[background-color,border-color,color,box-shadow,transform] duration-[150ms] ease-out outline-none focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 data-[range-end=true]:rounded-[10px] data-[range-middle=true]:rounded-none data-[range-middle=true]:bg-[#F8F1DC] data-[range-start=true]:rounded-[10px] data-[selected-single=true]:border-transparent data-[selected-single=true]:bg-[#101D36] data-[selected-single=true]:text-white data-[selected-single=true]:shadow-[0_6px_14px_rgba(16,29,54,0.22)]",
-        className,
-      )}
+      data-range-start={!isPast && modifiers.range_start}
+      data-range-end={!isPast && modifiers.range_end}
+      data-range-middle={!isPast && modifiers.range_middle}
+      className={cn(baseDayClasses, isRep ? repDayClasses : managerDayClasses, className)}
       {...props}
     >
       <span className="visit-calendar-day-number">{children}</span>
-      {statusDots.length > 0 && (
+      {statusDots.length > 0 && !isPast && (
         <span className="visit-calendar-status-dots" aria-hidden="true">
           {statusDots.map((status) => (
             <span
@@ -132,6 +168,9 @@ export default function VisitsPlanner({
   );
   const [monthMotion, setMonthMotion] = useState<MonthMotion>("next");
   const [searchQuery, setSearchQuery] = useState<string>("");
+
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
 
   const statusDotsByDate = useMemo(() => {
     const statusSetsByDate = new Map<string, Set<VisitStatus>>();
@@ -194,6 +233,15 @@ export default function VisitsPlanner({
   }, [activeVisits, trimmedSearchQuery]);
 
   function selectDate(nextDate: Date) {
+    if (isRep) {
+      const nextStart = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      if (nextStart < todayStart) {
+        return; // Prevent selecting past dates
+      }
+    }
+
     const nextMonth = startOfMonth(nextDate);
 
     if (!isSameMonth(nextDate, calendarMonth)) {
@@ -252,7 +300,12 @@ export default function VisitsPlanner({
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#FBF7EA] text-[#B18732]">
+              <span
+                className={cn(
+                  "flex size-10 shrink-0 items-center justify-center rounded-[10px]",
+                  isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-[#FBF7EA] text-[#B18732]"
+                )}
+              >
                 <CalendarDays className="size-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
@@ -370,7 +423,14 @@ export default function VisitsPlanner({
                   : `${weekRangeLabel} selected`}
               </p>
             </div>
-            <span className="inline-flex rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2.5 py-1 text-[11px] font-bold text-[#8A6515]">
+            <span
+              className={cn(
+                "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                isRep
+                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                  : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
+              )}
+            >
               STATUS
             </span>
           </div>
@@ -385,12 +445,27 @@ export default function VisitsPlanner({
               month={calendarMonth}
               onMonthChange={handleMonthChange}
               onSelect={(d) => d && selectDate(d)}
-              className="visits-calendar rounded-none bg-transparent p-0"
+              disabled={
+                isRep
+                  ? {
+                      before: new Date(
+                        new Date().getFullYear(),
+                        new Date().getMonth(),
+                        new Date().getDate()
+                      ),
+                    }
+                  : undefined
+              }
+              className={cn(
+                "visits-calendar rounded-none bg-transparent p-0",
+                isRep && "visits-calendar-rep"
+              )}
               components={{
                 DayButton: (dayButtonProps) => (
                   <VisitCalendarDayButton
                     {...dayButtonProps}
                     statusDotsByDate={statusDotsByDate}
+                    isRep={isRep}
                   />
                 ),
               }}
@@ -399,25 +474,42 @@ export default function VisitsPlanner({
 
           <div className="mt-4 border-t border-[#E5E8EF] pt-3">
             <p className="mb-2 text-[10px] font-bold tracking-[0.08em] text-[#667085] uppercase">
-              Status
+              {isRep ? "Legend" : "Status"}
             </p>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] font-medium text-[#667085]">
-              {statusLegend.map((item) => (
-                <div
-                  key={item.status}
-                  className="flex min-w-0 items-center gap-2"
-                >
-                  <span
-                    className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      visitStatusDotStyles[item.status],
-                    )}
-                    aria-hidden="true"
-                  />
-                  <span className="truncate">{item.label}</span>
+            {isRep ? (
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-[#667085]">
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-xs bg-[#168557]" aria-hidden="true" />
+                  <span>Selected</span>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full border border-[#168557] bg-transparent" aria-hidden="true" />
+                  <span>Today</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="size-2 shrink-0 rounded-full bg-[#D92D20]" aria-hidden="true" />
+                  <span>Cancelled</span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] font-medium text-[#667085]">
+                {statusLegend.map((item) => (
+                  <div
+                    key={item.status}
+                    className="flex min-w-0 items-center gap-2"
+                  >
+                    <span
+                      className={cn(
+                        "size-2 shrink-0 rounded-full",
+                        visitStatusDotStyles[item.status],
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{item.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </aside>
 
@@ -443,7 +535,12 @@ export default function VisitsPlanner({
                     onClick={handlePrevWeek}
                     aria-label="Previous week"
                     title="Previous week"
-                    className="visits-week-nav-button visits-week-nav-button-prev inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-white hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                    className={cn(
+                      "visits-week-nav-button visits-week-nav-button-prev inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:ring-2 focus-visible:outline-none",
+                      isRep
+                        ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-[#168557]/25"
+                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25"
+                    )}
                   >
                     <ChevronLeft className="size-4" aria-hidden="true" />
                   </button>
@@ -456,7 +553,12 @@ export default function VisitsPlanner({
                     onClick={handleNextWeek}
                     aria-label="Next week"
                     title="Next week"
-                    className="visits-week-nav-button visits-week-nav-button-next inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-white hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                    className={cn(
+                      "visits-week-nav-button visits-week-nav-button-next inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:ring-2 focus-visible:outline-none",
+                      isRep
+                        ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-[#168557]/25"
+                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25"
+                    )}
                   >
                     <ChevronRight className="size-4" aria-hidden="true" />
                   </button>

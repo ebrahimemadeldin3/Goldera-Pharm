@@ -70,6 +70,16 @@
   --color-gp-navy-900: var(--gp-navy-900);
   --color-gp-navy-850: var(--gp-navy-850);
   --color-gp-navy-800: var(--gp-navy-800);
+  --color-gp-rep-green-50: var(--gp-rep-green-50);
+  --color-gp-rep-green-100: var(--gp-rep-green-100);
+  --color-gp-rep-green-200: var(--gp-rep-green-200);
+  --color-gp-rep-green-500: var(--gp-rep-green-500);
+  --color-gp-rep-green-600: var(--gp-rep-green-600);
+  --color-gp-rep-green-700: var(--gp-rep-green-700);
+  --color-gp-rep-primary: var(--gp-rep-primary);
+  --color-gp-rep-primary-hover: var(--gp-rep-primary-hover);
+  --color-gp-rep-primary-soft: var(--gp-rep-primary-soft);
+  --color-gp-rep-primary-border: var(--gp-rep-primary-border);
   --color-gp-surface-page: var(--gp-surface-page);
   --color-gp-surface-card: var(--gp-surface-card);
   --color-gp-surface-subtle: var(--gp-surface-subtle);
@@ -146,6 +156,17 @@
   --gp-navy-900: #101d36;
   --gp-navy-850: #182033;
   --gp-navy-800: #344054;
+  --gp-rep-green-50: #f0fdf4;
+  --gp-rep-green-100: #e9f8f1;
+  --gp-rep-green-200: #cbefdd;
+  --gp-rep-green-500: #168557;
+  --gp-rep-green-600: #107349;
+  --gp-rep-green-700: #0b5635;
+  --gp-rep-primary: #168557;
+  --gp-rep-primary-hover: #107349;
+  --gp-rep-primary-soft: #e9f8f1;
+  --gp-rep-primary-border: #cbefdd;
+  --gp-shadow-rep-action: 0 8px 18px rgba(22, 133, 87, 0.18);
   --gp-surface-page: #f6f8fb;
   --gp-surface-card: #ffffff;
   --gp-surface-subtle: #fbfcfe;
@@ -2683,10 +2704,23 @@ input[type="password"]::-webkit-textfield-decoration-container {
 .visits-calendar
   .rdp-today
   .visit-calendar-day-button:not([data-selected-single="true"]) {
-  color: #8a6515;
-  background: #fffdf7;
-  border-color: rgba(201, 164, 76, 0.62);
-  box-shadow: inset 0 0 0 1px rgba(201, 164, 76, 0.08);
+  color: inherit;
+  background: transparent;
+}
+
+.visits-calendar-rep .rdp-today,
+.visits-calendar-rep td.rdp-today,
+.visits-calendar-rep [data-today="true"] {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+.visits-calendar-rep
+  .rdp-today
+  .visit-calendar-day-button:not([data-selected-single="true"]) {
+  background-color: transparent !important;
+  box-shadow: none !important;
 }
 
 .visit-calendar-day-button[data-selected-single="true"] {
@@ -2981,11 +3015,18 @@ input[type="password"]::-webkit-textfield-decoration-container {
     transform: translateY(-1px);
   }
 
-  .visits-calendar .rdp-button_previous:hover,
-  .visits-calendar .rdp-button_next:hover {
+  .visits-calendar:not(.visits-calendar-rep) .rdp-button_previous:hover,
+  .visits-calendar:not(.visits-calendar-rep) .rdp-button_next:hover {
     color: #8a6515;
     background: #fbf7ea;
     border-color: #e9ddb8;
+  }
+
+  .visits-calendar-rep .rdp-button_previous:hover,
+  .visits-calendar-rep .rdp-button_next:hover {
+    color: #168557;
+    background: #e9f8f1;
+    border-color: #cbefdd;
   }
 
   .visits-calendar .rdp-button_previous:hover svg,
@@ -2999,8 +3040,6 @@ input[type="password"]::-webkit-textfield-decoration-container {
   }
 
   .visit-calendar-day-button:hover:not([data-selected-single="true"]) {
-    color: #8a6515;
-    background: rgba(201, 164, 76, 0.1);
     transform: scale(1.04);
   }
 

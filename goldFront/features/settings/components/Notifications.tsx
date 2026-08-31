@@ -14,39 +14,39 @@ export default function Notifications() {
   const [performance, setPerformance] = useState(false);
 
   return (
-    <Card className="border-secondary-light w-full rounded-2xl border bg-white shadow-none">
-      <CardHeader className="flex flex-row items-start gap-3">
-        <div className="bg-system-primary flex size-12 items-center justify-center rounded-lg text-white">
-          <Bell size={24} />
+    <Card className="w-full rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none space-y-4">
+      <CardHeader className="flex flex-row items-start gap-3 p-0">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557]">
+          <Bell size={20} />
         </div>
         <div>
-          <CardTitle className="text-xl/[30px] font-semibold text-black">
+          <CardTitle className="text-base font-bold text-[#182033]">
             Notifications
           </CardTitle>
-          <p className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-            Manage how you receive notifications
+          <p className="text-xs text-[#667085] mt-0.5">
+            Manage how you receive system alerts and updates
           </p>
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
-        <Separator className="mb-5" />
+      <CardContent className="p-0 space-y-4 pt-2">
+        <Separator className="bg-[#EEF1F6]" />
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Email Notifications */}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm/[14px] font-medium text-black">
+              <div className="text-xs font-bold text-[#182033]">
                 Email Notifications
               </div>
-              <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
+              <div className="text-xs text-[#667085] mt-0.5">
                 Receive notifications via email
               </div>
             </div>
             <Switch
               checked={email}
               onCheckedChange={setEmail}
-              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
+              className="data-[state=checked]:bg-[#168557] cursor-pointer shrink-0"
             />
           </div>
 

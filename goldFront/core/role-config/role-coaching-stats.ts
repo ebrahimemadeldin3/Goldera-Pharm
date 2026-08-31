@@ -73,31 +73,31 @@ export const roleCoachingStatsMap: Record<UserRole, CoachingStatConfig[]> = {
   MEDICAL_REP: [
     {
       id: "total-reports",
-      label: "Total Reports",
+      label: "Total Sessions",
       dataKey: "totalReports",
       icon: FileText,
-      bgColor: "gradient-blue",
+      bgColor: "bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557]",
     },
     {
       id: "pending-comments",
-      label: "Pending Comments",
+      label: "Pending Feedback",
       dataKey: "pendingComments",
       icon: CircleAlert,
-      bgColor: "gradient-orange",
+      bgColor: "bg-[#FFF8E5] border border-[#E9DDB8] text-[#B18732]",
     },
     {
       id: "average-rating",
       label: "Average Rating",
       dataKey: "averageRating",
       icon: Star,
-      bgColor: "gradient-gold",
+      bgColor: "bg-[#F9FAFB] border border-[#E5E8EF] text-[#F59E0B]",
     },
     {
       id: "this-month",
       label: "This Month",
       dataKey: "thisMonth",
       icon: TrendingUp,
-      bgColor: "gradient-green",
+      bgColor: "bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557]",
     },
   ],
 };

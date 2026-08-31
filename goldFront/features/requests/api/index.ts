@@ -204,8 +204,29 @@ export async function createRequestAction(
 ) {
   try {
     const payload = buildCreateRequestPayload(data);
-    const fd = new FormData();
+    const hasFiles = Boolean(
+      files?.invoice ||
+        files?.medicalReport ||
+        (files?.personalExpenseInvoices &&
+          files.personalExpenseInvoices.some((f) => Boolean(f))),
+    );
 
+    // When no file attachment exists, send clean JSON payload to avoid backend Multer file upload errors
+    if (!hasFiles) {
+      try {
+        await createRequestJson(payload);
+        return { success: true };
+      } catch {
+        // Fallback to multipart if backend requires multipart for specific route
+        const fd = new FormData();
+        appendCreateRequestFields(fd, payload);
+        await createRequestMultipart(fd);
+        return { success: true };
+      }
+    }
+
+    // When files exist, send multipart/form-data
+    const fd = new FormData();
     appendCreateRequestFields(fd, payload);
     appendRequestFiles(fd, files);
 
@@ -216,10 +237,6 @@ export async function createRequestAction(
 
       const shouldRetrySampleAsJson =
         payload.type === "SAMPLE" &&
-        !files?.invoice &&
-        !files?.medicalReport &&
-        (!files?.personalExpenseInvoices ||
-          files.personalExpenseInvoices.every((f) => !f)) &&
         (err.message ?? "")
           .toLowerCase()
           .includes("at least one product is required");

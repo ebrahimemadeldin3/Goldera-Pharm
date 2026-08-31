@@ -1055,7 +1055,7 @@ export default function SubmitRequestForm({
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-system-primary border-system-primary hover:text-system-primary flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm/5 font-medium text-white transition-colors hover:bg-white"
+              className="h-10 rounded-[10px] bg-gp-rep-primary px-5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30"
             >
               {isPending ? (
                 <>
@@ -1064,7 +1064,7 @@ export default function SubmitRequestForm({
                 </>
               ) : (
                 <>
-                  <Send size={16} />
+                  <Send size={16} className="mr-1.5" />
                   Submit Request
                 </>
               )}
@@ -1074,9 +1074,9 @@ export default function SubmitRequestForm({
               onClick={onCancel}
               disabled={isPending}
               variant="outline"
-              className="border-secondary-light hover:bg-secondary-very-light flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm/5 font-medium text-black transition-colors"
+              className="h-10 rounded-[10px] border border-[#E5E8EF] px-5 text-sm font-semibold text-[#344054] hover:bg-[#F9FAFB]"
             >
-              <X size={16} />
+              <X size={16} className="mr-1.5" />
               Cancel
             </Button>
             {error && (

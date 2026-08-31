@@ -10,6 +10,7 @@ import {
 } from "react";
 import Image from "next/image";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   ChevronDown,
@@ -396,7 +397,7 @@ const FilterTriggerButton = forwardRef<
         />
         <span className="truncate">Filters</span>
         {activeFilterCount > 0 && (
-          <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-[#182033]">
+          <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#168557] px-1.5 text-[11px] leading-none font-bold text-white">
             {activeFilterCount}
           </span>
         )}
@@ -1267,7 +1268,12 @@ export default function ProductsList({
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
                 placeholder="Search by name or reference..."
-                className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-3 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                className={cn(
+                  "products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-3 pl-10 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3]",
+                  canManageProducts
+                    ? "focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                    : "focus:border-[#168557] focus:bg-[#E9F8F1]/30 focus:ring-0"
+                )}
               />
             </div>
 

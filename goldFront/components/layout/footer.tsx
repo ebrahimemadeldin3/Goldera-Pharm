@@ -8,9 +8,11 @@ const Footer = () => {
   const [lastRefresh, setLastRefresh] = useState<string>("");
   const pathname = usePathname();
 
-  // Hide footer completely on CRM feature pages per user request
+  // Hide footer completely on CRM feature pages & Medical Rep routes per design system
   const hideFooterRoutes = ["/doctors", "/pharmacies", "/plan", "/visits"];
-  const isHidden = hideFooterRoutes.some((route) => pathname?.includes(route));
+  const isHidden =
+    pathname?.startsWith("/rep") ||
+    hideFooterRoutes.some((route) => pathname?.includes(route));
 
   useEffect(() => {
     if (isHidden) return;

@@ -1,25 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { TRequest } from "@/features/requests/lib/types";
-import { toast } from "@/lib/utils/toast";
-import Pagination from "@/components/ui/Pagination";
-import {
-  getStatusBadgeStyle,
-  getResponseBgStyle,
-} from "@/features/requests/lib/utils/submitRequest";
+import { useState, useMemo } from "react";
+import { format } from "date-fns";
 import {
   Calendar,
   Clock,
-  AlertCircle,
   FileText,
-  UserRound,
-  ExternalLink,
-  Copy,
+  Eye,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
-import { format } from "date-fns";
+import { TRequest } from "@/features/requests/lib/types";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface RequestHistoryProps {
   requests: TRequest[];
@@ -28,522 +26,349 @@ interface RequestHistoryProps {
   totalCount?: number;
 }
 
-const formatDate = (dateString: string | null) => {
+type TabType = "all" | "PENDING" | "APPROVED" | "REJECTED";
+
+const formatDate = (dateString: string | null | undefined) => {
   if (!dateString) return "N/A";
   try {
     return format(new Date(dateString), "MMM dd, yyyy");
   } catch {
-    return "Invalid date";
+    return dateString;
   }
 };
 
-const formatDateTime = (dateString: string | null) => {
-  if (!dateString) return "N/A";
-  try {
-    return format(new Date(dateString), "MMM dd, yyyy HH:mm");
-  } catch {
-    return "Invalid date";
-  }
-};
-
-const getUrgencyColor = (urgency: string) => {
-  switch (urgency.toLowerCase()) {
-    case "priority":
-      return "bg-dashboard-red text-white border-dashboard-red";
-    case "high":
-      return "bg-dashboard-orange text-white border-dashboard-orange";
-    case "medium":
-      return "bg-dashboard-blue text-white border-dashboard-blue";
-    case "low":
-      return "bg-gray-400 text-white border-gray-400";
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "APPROVED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-md border border-[#CBEFDD] bg-[#E9F8F1] px-2 py-0.5 text-[10px] font-semibold text-[#168557]">
+          <CheckCircle2 size={12} /> Approved
+        </span>
+      );
+    case "REJECTED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-md border border-[#FECDCA] bg-[#FEF3F2] px-2 py-0.5 text-[10px] font-semibold text-[#D92D20]">
+          <XCircle size={12} /> Rejected
+        </span>
+      );
     default:
-      return "bg-gray-400 text-white border-gray-400";
+      return (
+        <span className="inline-flex items-center gap-1 rounded-md border border-[#E9DDB8] bg-[#FFF8E5] px-2 py-0.5 text-[10px] font-semibold text-[#B18732]">
+          <Clock size={12} /> Pending
+        </span>
+      );
   }
 };
 
-const renderText = (value: string | number | null | undefined) => {
-  if (value === null || value === undefined) return "N/A";
-  if (typeof value === "string" && value.trim() === "") return "N/A";
-  return String(value);
+const getUrgencyBadge = (urgency: string) => {
+  switch (urgency?.toUpperCase()) {
+    case "CRITICAL":
+    case "HIGH":
+      return (
+        <span className="rounded-md border border-[#FECDCA] bg-[#FEF3F2] px-2 py-0.5 text-[10px] font-semibold text-[#D92D20]">
+          {urgency} Priority
+        </span>
+      );
+    case "MEDIUM":
+      return (
+        <span className="rounded-md border border-[#E9DDB8] bg-[#FFF8E5] px-2 py-0.5 text-[10px] font-semibold text-[#B18732]">
+          Medium Priority
+        </span>
+      );
+    default:
+      return (
+        <span className="rounded-md border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[10px] font-semibold text-[#667085]">
+          Low Priority
+        </span>
+      );
+  }
 };
 
-const formatMoney = (value: number | null | undefined) => {
-  if (value === null || value === undefined) return "N/A";
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
+const getTypeLabel = (type: string) => {
+  switch (type) {
+    case "EXPENSE":
+      return "Expense Reimbursement";
+    case "MARKETING":
+      return "Marketing Request";
+    case "LEAVE":
+      return "Leave Request";
+    case "SAMPLE":
+      return "Sample Allocation";
+    case "PERSONAL_EXPENSE":
+      return "Personal Expense";
+    default:
+      return type;
+  }
 };
-
-const getRoleFromPathname = (
-  pathname: string,
-): "manager" | "supervisor" | "rep" => {
-  if (pathname.startsWith("/manager")) return "manager";
-  if (pathname.startsWith("/supervisor")) return "supervisor";
-  return "rep";
-};
-
-const getUserProfileHref = (
-  role: "manager" | "supervisor" | "rep",
-  id: string,
-) => {
-  if (role === "rep") return "/rep/profile";
-  return `/${role}/team/${id}`;
-};
-
-const getDoctorProfileHref = (
-  role: "manager" | "supervisor" | "rep",
-  id: string,
-) => `/${role}/doctors/${id}`;
 
 export default function RequestHistory({
-  requests,
+  requests = [],
   page = 1,
   limit = 10,
   totalCount = 0,
 }: RequestHistoryProps) {
-  const pathname = usePathname();
-  const role = getRoleFromPathname(pathname);
+  const [activeTab, setActiveTab] = useState<TabType>("all");
+  const [selectedRequest, setSelectedRequest] = useState<TRequest | null>(null);
 
-  useEffect(() => {
-    // Keep full request payload visible for debugging without cluttering the UI.
-    console.log("[RequestHistory] full requests payload", requests);
+  const filteredRequests = useMemo(() => {
+    if (activeTab === "all") return requests;
+    return requests.filter((r) => r.status === activeTab);
+  }, [activeTab, requests]);
+
+  const counts = useMemo(() => {
+    return {
+      all: requests.length,
+      pending: requests.filter((r) => r.status === "PENDING").length,
+      approved: requests.filter((r) => r.status === "APPROVED").length,
+      rejected: requests.filter((r) => r.status === "REJECTED").length,
+    };
   }, [requests]);
 
-  const copyLink = async (url: string) => {
-    try {
-      await navigator.clipboard.writeText(url);
-      toast.success({
-        title: "Link copied",
-        description: "File URL copied to clipboard",
-      });
-    } catch {
-      toast.error({
-        title: "Copy failed",
-        description: "Could not copy file URL",
-      });
-    }
-  };
+  const tabs: Array<{ id: TabType; label: string; count: number }> = [
+    { id: "all", label: "All Requests", count: counts.all },
+    { id: "PENDING", label: "Pending", count: counts.pending },
+    { id: "APPROVED", label: "Approved", count: counts.approved },
+    { id: "REJECTED", label: "Rejected", count: counts.rejected },
+  ];
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-[28px]/8 font-normal text-black">Request History</h2>
+    <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-5 space-y-5">
+      {/* Directory Filter Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#EEF1F6] pb-4">
+        <h2 className="text-base font-bold text-[#182033]">My Requests History</h2>
 
-      <div className="space-y-4">
-        {requests.map((request) => (
-          <div
-            key={request.id}
-            className="space-y-4 rounded-md border-[0.8px] bg-white p-8"
-          >
-            {/* Request Header */}
-            <div className="flex flex-wrap items-center gap-3">
-              <h3 className="text-base/6 font-normal text-black">
-                {request.title}
-              </h3>
-              <span className="border-dashboard-blue text-dashboard-blue rounded-md border-[0.8px] px-3 py-1 text-xs/4 font-medium">
-                {request.type}
-              </span>
-              <span
-                className={`rounded-md border-[0.8px] px-2 py-0.5 text-xs/4 font-medium ${getUrgencyColor(request.urgency)}`}
+        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-[12px] bg-[#F6F8FB] p-1 border border-[#E5E8EF]">
+          {tabs.map((tab) => {
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex cursor-pointer items-center gap-2 rounded-[9px] px-3 py-1.5 text-xs font-semibold transition-all border ${
+                  isActive
+                    ? "bg-[#E9F8F1] border-[#CBEFDD] text-[#168557] shadow-2xs"
+                    : "bg-white border-[#E5E8EF] text-[#667085] hover:text-[#182033]"
+                }`}
               >
-                {request.urgency}
-              </span>
-              <span
-                className={`${getStatusBadgeStyle(request.status)} rounded-full px-2 py-1 text-xs/4 font-medium capitalize`}
-              >
-                {request.status}
-              </span>
-            </div>
-
-            {/* Subject */}
-            {request.subject && (
-              <p className="text-sm/5 font-medium text-black">
-                Subject: <span className="font-normal">{request.subject}</span>
-              </p>
-            )}
-
-            {/* Core metadata */}
-            <div className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-4 text-sm/5 text-black sm:grid-cols-2">
-              <p>
-                <span className="font-medium">Request ID:</span> {request.id}
-              </p>
-              <p>
-                <span className="font-medium">User ID:</span>{" "}
-                {request.userId ? (
-                  <Link
-                    href={getUserProfileHref(role, request.userId)}
-                    className="text-dashboard-blue hover:underline"
-                  >
-                    {request.userId}
-                  </Link>
-                ) : (
-                  "N/A"
-                )}
-              </p>
-              <p>
-                <span className="font-medium">Created At:</span>{" "}
-                {formatDateTime(request.submittedDate)}
-              </p>
-              <p>
-                <span className="font-medium">Updated At:</span>{" "}
-                {formatDateTime(request.updatedAt ?? null)}
-              </p>
-              <p>
-                <span className="font-medium">Response Date:</span>{" "}
-                {formatDateTime(request.reviewedDate || null)}
-              </p>
-              <p>
-                <span className="font-medium">Handled At:</span>{" "}
-                {formatDateTime(request.handledAt)}
-              </p>
-            </div>
-
-            {/* Owner/rep details */}
-            <div className="border-secondary-light rounded-md border p-4">
-              <p className="mb-2 flex items-center gap-1 text-sm/5 font-medium text-black">
-                <UserRound size={16} />
-                Request Owner
-              </p>
-              <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
-                <p>
-                  <span className="font-medium">Name:</span>{" "}
-                  {renderText(request.rep.name)}
-                </p>
-                <p>
-                  <span className="font-medium">ID:</span>{" "}
-                  {request.rep.id ? (
-                    <Link
-                      href={getUserProfileHref(role, request.rep.id)}
-                      className="text-dashboard-blue hover:underline"
-                    >
-                      {request.rep.id}
-                    </Link>
-                  ) : (
-                    "N/A"
-                  )}
-                </p>
-              </div>
-            </div>
-
-            {/* Request Description */}
-            <div>
-              <p className="mb-1 text-sm/5 font-medium text-black">
-                Description:
-              </p>
-              <p className="text-secondary-dark bg-secondary-very-light rounded-md p-4 text-sm/5 font-normal">
-                {request.description}
-              </p>
-            </div>
-
-            {/* Dates */}
-            <div className="text-secondary-dark grid grid-cols-1 gap-2 text-sm/5 sm:grid-cols-2">
-              <p className="flex items-center gap-1">
-                <Calendar size={14} />
-                <span className="font-medium">Submitted:</span>
-                {formatDateTime(request.submittedDate)}
-              </p>
-              {request.handledAt && (
-                <p className="flex items-center gap-1">
-                  <Clock size={14} />
-                  <span className="font-medium">Handled:</span>
-                  {formatDateTime(request.handledAt)}
-                </p>
-              )}
-            </div>
-
-            {/* LEAVE-specific information */}
-            {request.type === "LEAVE" && (
-              <div className="bg-light-blue border-blue-stroke rounded-md border p-4">
-                <p className="text-dashboard-blue mb-2 flex items-center gap-1 text-sm/5 font-medium">
-                  <Calendar size={16} />
-                  Leave Details
-                </p>
-                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
-                  {request.leaveType && (
-                    <p>
-                      <span className="font-medium">Type:</span>{" "}
-                      {request.leaveType}
-                    </p>
-                  )}
-                  {request.leaveStartDate && (
-                    <p>
-                      <span className="font-medium">Start Date:</span>{" "}
-                      {formatDate(request.leaveStartDate)}
-                    </p>
-                  )}
-                  {request.leaveEndDate && (
-                    <p>
-                      <span className="font-medium">End Date:</span>{" "}
-                      {formatDate(request.leaveEndDate)}
-                    </p>
-                  )}
-                  {request.leaveDaysCount !== null &&
-                    request.leaveDaysCount !== undefined && (
-                      <p>
-                        <span className="font-medium">Duration:</span>{" "}
-                        {request.leaveDaysCount} days
-                      </p>
-                    )}
-                </div>
-              </div>
-            )}
-
-            {/* EXPENSE / MARKETING information */}
-            {(request.type === "EXPENSE" || request.type === "MARKETING") && (
-              <div className="bg-light-blue border-blue-stroke rounded-md border p-4">
-                <p className="text-dashboard-blue mb-2 flex items-center gap-1 text-sm/5 font-medium">
-                  <AlertCircle size={16} />
-                  {request.type} Details
-                </p>
-                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
-                  <p>
-                    <span className="font-medium">Budget:</span>{" "}
-                    {formatMoney(request.budget)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Doctors Count:</span>{" "}
-                    {request.doctors?.length ?? 0}
-                  </p>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {(request.doctors ?? []).length === 0 ? (
-                    <p className="text-secondary-dark text-sm/5">No doctors</p>
-                  ) : (
-                    (request.doctors ?? []).map((doctor) => (
-                      <div
-                        key={doctor.id}
-                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
-                      >
-                        <p>
-                          <span className="font-medium">Doctor ID:</span>{" "}
-                          <Link
-                            href={getDoctorProfileHref(role, doctor.id)}
-                            className="text-dashboard-blue hover:underline"
-                          >
-                            {doctor.id}
-                          </Link>
-                        </p>
-                        <p>
-                          <span className="font-medium">Name EN:</span>{" "}
-                          {renderText(doctor.nameEN)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Name AR:</span>{" "}
-                          {renderText(doctor.nameAR)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* SAMPLE information */}
-            {request.type === "SAMPLE" && (
-              <div className="bg-light-blue border-blue-stroke rounded-md border p-4">
-                <p className="text-dashboard-blue mb-2 flex items-center gap-1 text-sm/5 font-medium">
-                  <AlertCircle size={16} />
-                  Sample Details
-                </p>
-                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
-                  <p>
-                    <span className="font-medium">Sample Items Count:</span>{" "}
-                    {request.sampleData?.length ?? 0}
-                  </p>
-                  <p>
-                    <span className="font-medium">productsId:</span>{" "}
-                    {(request.productsId ?? []).length > 0
-                      ? (request.productsId ?? []).join(", ")
-                      : "N/A"}
-                  </p>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {(request.sampleData ?? []).length === 0 ? (
-                    <p className="text-secondary-dark text-sm/5">
-                      No sample items
-                    </p>
-                  ) : (
-                    (request.sampleData ?? []).map((item, index) => (
-                      <div
-                        key={`${item.productId}-${index}`}
-                      className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-3"
-                      >
-                        <p>
-                          <span className="font-medium">Product ID:</span>{" "}
-                          {item.productId}
-                        </p>
-                        <p>
-                          <span className="font-medium">Product Name:</span>{" "}
-                          {renderText(item.productName)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Amount:</span>{" "}
-                          {renderText(item.amount)}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* PERSONAL_EXPENSE information */}
-            {request.type === "PERSONAL_EXPENSE" && (
-              <div className="bg-light-blue border-blue-stroke rounded-md border p-4">
-                <p className="text-dashboard-blue mb-2 flex items-center gap-1 text-sm/5 font-medium">
-                  <AlertCircle size={16} />
-                  Personal Expense Details
-                </p>
-                <div className="grid grid-cols-1 gap-2 text-sm/5 text-black sm:grid-cols-2">
-                  <p>
-                    <span className="font-medium">Visited City:</span>{" "}
-                    {renderText(request.visitedCity)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Visit Days:</span>{" "}
-                    {renderText(request.visitDaysCount)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Total Expense Amount:</span>{" "}
-                    {formatMoney(request.totalExpenseAmount)}
-                  </p>
-                  <p>
-                    <span className="font-medium">Items Count:</span>{" "}
-                    {request.totalExpenseData?.length ?? 0}
-                  </p>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {(request.totalExpenseData ?? []).length === 0 ? (
-                    <p className="text-secondary-dark text-sm/5">
-                      No expense items
-                    </p>
-                  ) : (
-                    (request.totalExpenseData ?? []).map((item, index) => (
-                      <div
-                        key={`${item.name}-${index}`}
-                        className="bg-secondary-very-light grid grid-cols-1 gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-2"
-                      >
-                        <p>
-                          <span className="font-medium">Item Name:</span>{" "}
-                          {renderText(item.name)}
-                        </p>
-                        <p>
-                          <span className="font-medium">Amount:</span>{" "}
-                          {formatMoney(Number(item.amount))}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* PDFs/files */}
-            <div className="border-secondary-light rounded-md border p-4">
-              <p className="mb-2 flex items-center gap-1 text-sm/5 font-medium text-black">
-                <FileText size={16} />
-                Files (pdfs)
-              </p>
-              {(request.pdfs ?? []).length === 0 ? (
-                <p className="text-secondary-dark text-sm/5">No files</p>
-              ) : (
-                <div className="space-y-2">
-                  {(request.pdfs ?? []).map((pdf) => (
-                    <div
-                      key={pdf.public_id}
-                      className="bg-secondary-very-light grid grid-cols-1 items-center gap-2 rounded-md p-3 text-sm/5 text-black sm:grid-cols-[1fr,1fr,auto]"
-                    >
-                      <p>
-                        <span className="font-medium">Name:</span> {pdf.name}
-                      </p>
-                      <p>
-                        <span className="font-medium">Public ID:</span>{" "}
-                        {pdf.public_id}
-                      </p>
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={pdf.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="border-secondary-light hover:bg-secondary-light inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1.5 text-xs font-medium"
-                        >
-                          <ExternalLink size={14} />
-                          Open File
-                        </Link>
-                        <button
-                          type="button"
-                          onClick={() => copyLink(pdf.url)}
-                          className="border-secondary-light hover:bg-secondary-light inline-flex items-center gap-1 rounded-md border bg-white px-2.5 py-1.5 text-xs font-medium"
-                        >
-                          <Copy size={14} />
-                          Copy Link
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Response Section - Show response if available */}
-            {request.response && (
-              <div
-                className={`${getResponseBgStyle(request.status)} rounded-md p-4`}
-              >
-                <p
-                  className={`mb-1 flex items-center gap-1 text-sm/5 font-medium ${
-                    request.status === "APPROVED"
-                      ? "text-dashboard-green"
-                      : request.status === "REJECTED"
-                        ? "text-dashboard-red"
-                        : "text-secondary-dark"
+                {tab.label}
+                <span
+                  className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                    isActive
+                      ? "bg-[#168557] text-white"
+                      : "bg-[#F6F8FB] text-[#344054] border border-[#E5E8EF]"
                   }`}
                 >
-                  <AlertCircle size={16} />
-                  Response/Notes:
-                </p>
-                <p
-                  className={`text-secondary-dark text-sm/5 font-normal italic`}
-                >
-                  &quot;{request.response}&quot;
-                </p>
-                {request.reviewedDate && (
-                  <p className="mt-2 text-xs/4 font-normal text-[#999999]">
-                    Reviewed: {formatDateTime(request.reviewedDate)}
-                  </p>
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Requests List Grid */}
+      <div>
+        {filteredRequests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] py-10 px-6 text-center max-h-[220px]">
+            <FileText className="size-8 text-[#98A2B3] mb-2" />
+            <p className="text-sm font-bold text-[#182033]">
+              No requests found
+            </p>
+            <p className="text-xs text-[#667085] mt-1 max-w-sm">
+              There are no requests matching status &quot;{activeTab}&quot;.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            {filteredRequests.map((req) => (
+              <div
+                key={req.id}
+                className="rounded-[14px] border border-[#E5E8EF] bg-white p-4.5 shadow-none transition-all hover:border-[#CBEFDD] flex flex-col justify-between space-y-3.5"
+              >
+                <div className="space-y-3">
+                  {/* Top Header: Title, Type & Status */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                        <span className="rounded-md border border-[#D7E5FF] bg-[#EDF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#3972D5]">
+                          {getTypeLabel(req.type)}
+                        </span>
+                        {getUrgencyBadge(req.urgency)}
+                        {getStatusBadge(req.status)}
+                      </div>
+
+                      <h3 className="text-base font-bold text-[#182033] leading-snug truncate">
+                        {req.title || req.subject}
+                      </h3>
+                      {req.subject && req.title !== req.subject && (
+                        <p className="text-xs text-[#667085] truncate mt-0.5">
+                          {req.subject}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Description snippet */}
+                  {req.description && (
+                    <p className="text-xs text-[#475467] line-clamp-2 bg-[#F9FAFB] p-2.5 rounded-[8px] border border-[#EEF1F6]">
+                      {req.description}
+                    </p>
+                  )}
+
+                  {/* Key metadata highlights (No raw UUIDs!) */}
+                  <div className="flex flex-wrap items-center justify-between text-xs text-[#667085] pt-1">
+                    <div className="flex items-center gap-1">
+                      <Calendar size={13} className="text-[#98A2B3]" />
+                      <span>Submitted: {formatDate(req.submittedDate)}</span>
+                    </div>
+
+                    {(req.amount || req.budget || req.totalExpenseAmount) && (
+                      <span className="font-bold text-[#168557]">
+                        EGP {req.amount || req.budget || req.totalExpenseAmount}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Action */}
+                <div className="pt-2 border-t border-[#EEF1F6] flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedRequest(req)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#168557] hover:underline cursor-pointer"
+                  >
+                    <Eye size={13} /> View Details
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount || requests.length}
+        itemLabel="requests"
+        ariaLabel="Requests pagination"
+        pageNavAriaLabel="Request pages"
+      />
+
+      {/* Detail Dialog (Clean Progressive Disclosure without raw technical UUIDs) */}
+      <Dialog
+        open={Boolean(selectedRequest)}
+        onOpenChange={(open) => !open && setSelectedRequest(null)}
+      >
+        <DialogContent className="max-w-md rounded-[14px] border border-[#E5E8EF] bg-white p-6 space-y-4">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="rounded-md border border-[#D7E5FF] bg-[#EDF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#3972D5]">
+                {getTypeLabel(selectedRequest?.type || "")}
+              </span>
+              {selectedRequest && getStatusBadge(selectedRequest.status)}
+            </div>
+            <DialogTitle className="text-lg font-bold text-[#182033]">
+              {selectedRequest?.title || selectedRequest?.subject}
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedRequest && (
+            <div className="space-y-4 text-xs">
+              {/* Overview Details */}
+              <div className="rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-3.5 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-[#667085]">Subject</span>
+                  <span className="font-bold text-[#182033]">{selectedRequest.subject}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#667085]">Priority</span>
+                  <span>{getUrgencyBadge(selectedRequest.urgency)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[#667085]">Submitted Date</span>
+                  <span className="font-bold text-[#182033]">
+                    {formatDate(selectedRequest.submittedDate)}
+                  </span>
+                </div>
+                {selectedRequest.supervisor?.name && (
+                  <div className="flex justify-between">
+                    <span className="text-[#667085]">Assigned Supervisor</span>
+                    <span className="font-bold text-[#182033]">{selectedRequest.supervisor.name}</span>
+                  </div>
                 )}
               </div>
-            )}
 
-            {/* Supervisor Decision - Show if exists and no direct response */}
-            {!request.response &&
-              request.supervisorDecision &&
-              request.status.toLowerCase() !== "pending" && (
-                <div
-                  className={`${getResponseBgStyle(request.status)} rounded-md p-4`}
-                >
-                  <p className="text-base/6 font-medium text-black">
-                    Supervisor Decision
-                  </p>
-                  <p className={`text-secondary-dark text-sm/5 font-normal`}>
-                    {request.supervisorDecision.comment}
-                  </p>
-                  {request.reviewedDate && (
-                    <p className="mt-2 text-xs/4 font-normal text-[#999999]">
-                      Reviewed: {formatDateTime(request.reviewedDate)}
-                    </p>
+              {/* Description */}
+              <div className="space-y-1">
+                <h4 className="font-bold uppercase tracking-wider text-[#667085] text-[10px]">
+                  Description
+                </h4>
+                <p className="p-3 rounded-[8px] bg-white border border-[#E5E8EF] text-[#344054]">
+                  {selectedRequest.description}
+                </p>
+              </div>
+
+              {/* Type-Specific Breakdown */}
+              {selectedRequest.type === "LEAVE" && (
+                <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/40 p-3 space-y-1.5">
+                  <p className="font-bold text-[#168557]">Leave Details</p>
+                  <div className="flex justify-between">
+                    <span className="text-[#667085]">Leave Type</span>
+                    <span className="font-bold text-[#182033] capitalize">{selectedRequest.leaveType || "Annual"}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-[#667085]">Period</span>
+                    <span className="font-bold text-[#182033]">
+                      {formatDate(selectedRequest.leaveStartDate)} – {formatDate(selectedRequest.leaveEndDate)}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {(selectedRequest.type === "EXPENSE" || selectedRequest.type === "MARKETING") && (
+                <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/40 p-3 space-y-1.5">
+                  <p className="font-bold text-[#168557]">Financial Breakdown</p>
+                  <div className="flex justify-between">
+                    <span className="text-[#667085]">Budget Amount</span>
+                    <span className="font-bold text-[#168557]">
+                      EGP {selectedRequest.budget || selectedRequest.amount}
+                    </span>
+                  </div>
+                  {selectedRequest.doctorName && (
+                    <div className="flex justify-between">
+                      <span className="text-[#667085]">Target Doctor</span>
+                      <span className="font-bold text-[#182033]">{selectedRequest.doctorName}</span>
+                    </div>
                   )}
                 </div>
               )}
-          </div>
-        ))}
-      </div>
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-secondary-dark text-xs">
-          Showing {requests.length} of {totalCount || requests.length} requests
-        </p>
-        <Pagination page={page} limit={limit} totalCount={totalCount || requests.length} />
-      </div>
+
+              {selectedRequest.type === "SAMPLE" && selectedRequest.sampleData && (
+                <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/40 p-3 space-y-2">
+                  <p className="font-bold text-[#168557]">Sample Allocations</p>
+                  <div className="space-y-1">
+                    {selectedRequest.sampleData.map((item, idx) => (
+                      <div key={idx} className="flex justify-between text-xs border-b border-[#CBEFDD] pb-1 last:border-none">
+                        <span className="text-[#182033] font-medium">{item.productName}</span>
+                        <span className="font-bold text-[#168557]">{item.amount} units</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Decision / Supervisor Response */}
+              {selectedRequest.response && (
+                <div className="rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-3 space-y-1">
+                  <p className="font-bold text-[#182033]">Supervisor Feedback</p>
+                  <p className="text-[#667085]">{selectedRequest.response}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

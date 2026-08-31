@@ -19,6 +19,7 @@ export default function DoctorsHeader({
 }) {
   const { features, role } = useRoleUI();
   const [dialogOpen, setDialogOpen] = useState(false);
+  const isRep = role === "MEDICAL_REP";
 
   // Determine add doctor fallback link based on role
   const getAddDoctorLink = () => {
@@ -49,11 +50,23 @@ export default function DoctorsHeader({
   return (
     <>
       <PageHeader
-        title="Doctors Database"
-        subtitle="Manage doctor contacts, locations, and visit history across all regions"
+        title={isRep ? "Doctors" : "Doctors Database"}
+        subtitle={
+          isRep
+            ? "Personal territory doctor directory & contact list"
+            : "Manage doctor contacts, locations, and visit history across all regions"
+        }
         metadata={
           <>
-            <MetadataBadge variant="primary" icon={<Stethoscope size={14} className="text-blue-600" />}>
+            <MetadataBadge
+              variant="primary"
+              icon={
+                <Stethoscope
+                  size={14}
+                  className={isRep ? "text-[#168557]" : "text-blue-600"}
+                />
+              }
+            >
               {totalDoctors} {totalDoctors === 1 ? "Doctor" : "Doctors"}
             </MetadataBadge>
 

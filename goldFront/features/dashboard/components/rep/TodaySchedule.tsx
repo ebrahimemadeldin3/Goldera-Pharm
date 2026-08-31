@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { Visit } from "@/features/visits/lib/types/ui";
 import {
   formatSaudiDateDisplay,
-  getInitials,
   parseDateValue,
 } from "@/lib/utils";
 
@@ -71,7 +70,6 @@ export default function TodaySchedule({ visits }: TodayScheduleProps) {
             const isCompleted = visit?.status === "COMPLETED";
             const displayName =
               visit?.person || visit?.doctor?.nameAR || visit?.doctor?.nameEN || visit?.doctorId || "Visit" + " - " + visit.doctor?.accountName || "";
-            const initials = getInitials(displayName);
             const samples = Array.isArray(visit?.samples) ? visit.samples : [];
             const timeLabel =
               visit?.timeLabel || visit?.time || "Time unavailable";

@@ -17,6 +17,7 @@ export default function PharmaciesHeader({
 }: PharmaciesHeaderProps) {
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
+  const isRep = role === "MEDICAL_REP";
 
   const { totalPharmacies, topRegions } = useMemo(() => {
     const total = pharmacies.length;
@@ -36,11 +37,23 @@ export default function PharmaciesHeader({
 
   return (
     <PageHeader
-      title="Pharmacies Database"
-      subtitle="Manage pharmacy accounts across all regions"
+      title={isRep ? "Pharmacies" : "Pharmacies Database"}
+      subtitle={
+        isRep
+          ? "Territory pharmacy accounts & location directory"
+          : "Manage pharmacy accounts across all regions"
+      }
       metadata={
         <>
-          <MetadataBadge variant="primary" icon={<Store size={14} className="text-blue-600" />}>
+          <MetadataBadge
+            variant="primary"
+            icon={
+              <Store
+                size={14}
+                className={isRep ? "text-[#168557]" : "text-blue-600"}
+              />
+            }
+          >
             {totalPharmacies} {totalPharmacies === 1 ? "Pharmacy" : "Pharmacies"}
           </MetadataBadge>
 

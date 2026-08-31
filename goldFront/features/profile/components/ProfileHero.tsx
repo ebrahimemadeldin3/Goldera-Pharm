@@ -45,7 +45,7 @@ export default function ProfileHero({
                   className="size-full object-cover object-center"
                 />
               ) : (
-                <div className="gradient-gold flex size-full items-center justify-center text-white">
+                <div className="bg-[#168557] flex size-full items-center justify-center text-white">
                   <span className="text-3xl font-semibold">
                     {getInitials(profile.name)}
                   </span>
@@ -56,7 +56,7 @@ export default function ProfileHero({
               type="button"
               onClick={() => setDialogOpen(true)}
               aria-label="Change profile photo"
-              className="profile-camera text-gold-600 ring-gold-300/60 hover:bg-gold-50 focus-visible:ring-gold-300 absolute right-1 bottom-1 flex size-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-[0_8px_18px_rgba(24,32,51,0.14)] ring-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
+              className="profile-camera text-[#168557] ring-[#CBEFDD] hover:bg-[#E9F8F1] focus-visible:ring-[#168557] absolute right-1 bottom-1 flex size-9 cursor-pointer items-center justify-center rounded-full bg-white shadow-[0_8px_18px_rgba(24,32,51,0.14)] ring-1 transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
               <Camera className="size-4" aria-hidden />
             </button>
@@ -64,14 +64,14 @@ export default function ProfileHero({
 
           <div className="min-w-0 flex-1 text-center sm:text-left">
             <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
-              <span className="bg-gold-50 text-gold-700 ring-gold-300/60 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset">
+              <span className="bg-[#E9F8F1] text-[#168557] ring-[#CBEFDD] inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset">
                 <BadgeCheck className="size-3.5" aria-hidden />
                 <span className="capitalize">{formatRole(profile.role)}</span>
               </span>
               <span
                 className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset ${
                   profile.isActive
-                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    ? "bg-[#E9F8F1] text-[#168557] ring-[#CBEFDD]"
                     : "text-dashboard-red bg-red-50 ring-red-200"
                 }`}
               >
@@ -92,7 +92,7 @@ export default function ProfileHero({
                 <Button
                   type="button"
                   variant="outline"
-                  className="hover:border-gold-300 hover:bg-gold-50 h-10 cursor-pointer gap-2 rounded-lg border-[#E5E8EF] bg-white px-4 text-sm font-semibold text-[#182033] shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
+                  className="hover:border-[#CBEFDD] hover:bg-[#E9F8F1] h-10 cursor-pointer gap-2 rounded-lg border-[#E5E8EF] bg-white px-4 text-sm font-semibold text-[#182033] shadow-sm transition-all hover:-translate-y-px active:translate-y-0"
                   onClick={() => onEditingChange(false)}
                 >
                   <X className="size-4" aria-hidden />
@@ -102,7 +102,7 @@ export default function ProfileHero({
                 <Button
                   type="button"
                   onClick={() => onEditingChange(true)}
-                  className="h-10 cursor-pointer gap-2 rounded-lg bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(166,124,31,0.18)] transition-all hover:-translate-y-px hover:bg-[#A67C1F] hover:shadow-[0_12px_24px_rgba(166,124,31,0.22)] active:translate-y-0"
+                  className="h-10 cursor-pointer gap-2 rounded-lg bg-[#168557] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(22,133,87,0.18)] transition-all hover:-translate-y-px hover:bg-[#107349] hover:shadow-[0_12px_24px_rgba(22,133,87,0.22)] active:translate-y-0"
                 >
                   <Pencil className="size-4" aria-hidden />
                   Edit Profile

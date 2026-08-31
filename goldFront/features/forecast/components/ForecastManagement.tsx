@@ -76,9 +76,9 @@ export default function ForecastManagement({
               </p>
               <Button
                 onClick={handleCreateForecast}
-                className="button-system-gradient-primary"
+                className="h-10 rounded-[10px] bg-gp-rep-primary px-5 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30"
               >
-                <span className="text-lg">+</span>
+                <span className="mr-1 text-lg">+</span>
                 Create New Forecast
               </Button>
             </div>

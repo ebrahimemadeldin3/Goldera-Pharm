@@ -88,59 +88,59 @@ export default function VisitReportForm({
   return (
     <div className="flex flex-col gap-6">
       {/* Info Cards */}
-      <div className="border-secondary-light flex flex-wrap items-center gap-x-6 gap-y-4 rounded-lg border-[0.8px] bg-white p-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 rounded-[16px] border border-[#E5E8EF] bg-white p-5">
         <div className="flex items-center gap-3">
-          <div className="gradient-blue flex h-12 w-12 items-center justify-center rounded-[10px]">
-            <Stethoscope className="h-6 w-6 text-white" />
+          <div className="flex size-11 items-center justify-center rounded-[10px] bg-[#EDF4FF] text-[#3972D5]">
+            <Stethoscope className="size-5" />
           </div>
-          <p>
-            <span className="text-secondary-dark block text-xs/4">Doctor</span>
-            <span className="text-sm/6 font-normal text-black">
+          <div>
+            <span className="block text-xs font-medium text-[#667085]">Doctor</span>
+            <span className="text-sm font-semibold text-[#182033]">
               {visitData.doctor.name}
             </span>
-          </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="gradient-green flex h-12 w-12 items-center justify-center rounded-[10px]">
-            <Clock className="h-6 w-6 text-white" />
+          <div className="flex size-11 items-center justify-center rounded-[10px] bg-[#E9F8F1] text-[#168557]">
+            <Clock className="size-5" />
           </div>
-          <p>
-            <span className="text-secondary-dark block text-xs/4">
+          <div>
+            <span className="block text-xs font-medium text-[#667085]">
               Visit Time
             </span>
-            <span className="text-sm/6 font-normal text-black">
-              {format(new Date(visitData.visitTime), "M/d/yyyy, h:mm:ss a")}
+            <span className="text-sm font-semibold text-[#182033]">
+              {format(new Date(visitData.visitTime), "MMM d, yyyy h:mm a")}
             </span>
-          </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="gradient-brown flex h-12 w-12 items-center justify-center rounded-[10px]">
-            <MapPin className="h-6 w-6 text-white" />
+          <div className="flex size-11 items-center justify-center rounded-[10px] bg-[#F6F8FB] text-[#344054]">
+            <MapPin className="size-5" />
           </div>
-          <p>
-            <span className="text-secondary-dark block text-xs/4">
+          <div>
+            <span className="block text-xs font-medium text-[#667085]">
               Location
             </span>
-            <span className="text-sm/6 font-normal text-black">
+            <span className="text-sm font-semibold text-[#182033]">
               {visitData.location}
             </span>
-          </p>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="gradient-orange flex h-12 w-12 items-center justify-center rounded-[10px]">
-            <Save className="h-6 w-6 text-white" />
+          <div className="flex size-11 items-center justify-center rounded-[10px] bg-[#FFF8E5] text-[#8A6515]">
+            <Save className="size-5" />
           </div>
-          <p>
-            <span className="text-secondary-dark block text-xs/4">
+          <div>
+            <span className="block text-xs font-medium text-[#667085]">
               Visit Status
             </span>
-            <span className="text-sm/6 font-normal text-black">
+            <span className="text-sm font-semibold text-[#182033]">
               {visitData.status || "-"}
             </span>
-          </p>
+          </div>
         </div>
       </div>
 
@@ -368,9 +368,9 @@ export default function VisitReportForm({
             <Button
               type="submit"
               disabled={isPending}
-              className="bg-system-primary border-system-primary hover:text-system-primary cursor-pointer border text-sm/5 font-medium text-white select-none hover:bg-white"
+              className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white h-11 px-5 rounded-[10px] shadow-[0_4px_14px_rgba(22,133,87,0.22)] text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-2"
             >
-              <Save size={4} />
+              <Save size={16} />
               {isPending ? "Submitting..." : "Submit Report"}
             </Button>
           </div>

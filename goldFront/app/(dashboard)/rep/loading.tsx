@@ -1,5 +1,5 @@
-import { DashboardSkeleton } from "@/components/ui/skeletons/DashboardSkeleton";
+import { RepDashboardSkeleton } from "@/features/dashboard/components/rep/RepDashboardSkeleton";
 
-export default function RepDashboardLoading() {
-  return <DashboardSkeleton />;
+export default function RepLoading() {
+  return <RepDashboardSkeleton />;
 }

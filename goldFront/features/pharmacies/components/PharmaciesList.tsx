@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Filter, RotateCcw } from "lucide-react";
+import { Filter, RotateCcw, Store } from "lucide-react";
 import { PharmacyApiResponse } from "../lib/types";
 import { format } from "date-fns";
+import { useRoleUI } from "@/core/ui/role-ui-context";
+import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -30,6 +32,8 @@ export default function PharmaciesList({
   limit = 10,
   totalCount = 0,
 }: PharmaciesListProps) {
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const [q, setQ] = useState("");
   const [regionFilter, setRegionFilter] = useState("All Regions");
 
@@ -81,7 +85,14 @@ export default function PharmaciesList({
           <div className="flex items-center gap-2">
             <Filter size={15} className="text-[#8A94A6] shrink-0" />
             <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033] hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30">
+              <SelectTrigger
+                className={cn(
+                  "h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033]",
+                  isRep
+                    ? "hover:border-gp-rep-primary-border focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+                    : "hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                )}
+              >
                 <SelectValue placeholder="All Regions" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -107,7 +118,12 @@ export default function PharmaciesList({
               variant="ghost"
               size="sm"
               onClick={handleResetFilters}
-              className="h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033] px-3 rounded-[10px]"
+              className={cn(
+                "h-10 cursor-pointer gap-1.5 text-xs font-semibold px-3 rounded-[10px]",
+                isRep
+                  ? "text-gp-rep-primary hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary"
+                  : "text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033]"
+              )}
             >
               <RotateCcw size={14} />
               Reset Filters
@@ -131,8 +147,8 @@ export default function PharmaciesList({
         </div>
       )}
 
-      {/* Enterprise Table Section */}
-      <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+      {/* Desktop Enterprise Table (md:block) */}
+      <div className="hidden md:block overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
         <table className="w-full min-w-160 text-xs text-[#182033]">
           <thead className="sticky top-0 z-10 bg-[#F9FAFB] border-b border-[#E5E8EF] text-[11px] font-semibold uppercase tracking-[0.04em] text-[#667085]">
             <tr className="text-left">
@@ -149,7 +165,10 @@ export default function PharmaciesList({
             {filtered.map((pharmacy, index) => (
               <tr
                 key={pharmacy.id}
-                className="transition-colors duration-150 hover:bg-[#FFFDF7]"
+                className={cn(
+                  "transition-colors duration-150",
+                  isRep ? "hover:bg-gp-rep-primary-soft/40" : "hover:bg-[#FFFDF7]"
+                )}
               >
                 <td className="py-3.5 px-4 text-xs text-[#8A94A6] font-medium">
                   {(page - 1) * limit + index + 1}
@@ -192,36 +211,83 @@ export default function PharmaciesList({
             ))}
           </tbody>
         </table>
-
-        {/* Distinct Empty States */}
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] m-5 p-10 text-center">
-            <p className="text-sm font-semibold text-[#182033]">
-              {q.trim()
-                ? `No pharmacies matching "${q}" found on page ${page}.`
-                : regionFilter !== "All Regions"
-                ? `No pharmacies found in region "${regionFilter}".`
-                : "No pharmacies found in the database."}
-            </p>
-            {q.trim() && (
-              <p className="text-xs text-[#667085]">
-                Matching pharmacies may exist on another server page or region.
-              </p>
-            )}
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetFilters}
-                className="mt-2 gap-1.5 text-xs font-semibold rounded-[10px]"
-              >
-                <RotateCcw size={14} />
-                Reset Active Filters
-              </Button>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Mobile Compact Cards View (< 768px) */}
+      <div className="block md:hidden p-4 space-y-3">
+        {filtered.map((pharmacy) => (
+          <div
+            key={pharmacy.id}
+            className="rounded-[14px] border border-[#E5E8EF] bg-white p-4 space-y-2.5 shadow-none"
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={cn(
+                  "flex size-9 shrink-0 items-center justify-center rounded-[9px]",
+                  isRep
+                    ? "bg-gp-rep-primary-soft border border-gp-rep-primary-border text-gp-rep-primary"
+                    : "bg-[#FFF8E5] border border-[#E9DDB8] text-[#8A6515]"
+                )}
+              >
+                <Store size={16} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-semibold text-[#182033] truncate">
+                  {pharmacy.name || "Unnamed Pharmacy"}
+                </h4>
+                <p className="text-xs text-[#667085] truncate mt-0.5">
+                  {pharmacy.city || "No city"} • {pharmacy.country || "Saudi Arabia"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+              {pharmacy.subRegion && (
+                <span className="rounded-md border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 font-medium text-[#344054]">
+                  {pharmacy.subRegion}
+                </span>
+              )}
+              {pharmacy.region && (
+                <span className="rounded-md border border-[#E5E8EF] bg-[#FBFCFE] px-2 py-0.5 font-medium text-[#667085]">
+                  {pharmacy.region}
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Distinct Empty States */}
+      {filtered.length === 0 && (
+        <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] m-5 p-10 text-center">
+          <p className="text-sm font-semibold text-[#182033]">
+            {q.trim()
+              ? `No pharmacies matching "${q}" found on page ${page}.`
+              : regionFilter !== "All Regions"
+              ? `No pharmacies found in region "${regionFilter}".`
+              : "No pharmacies found in the territory."}
+          </p>
+          {q.trim() && (
+            <p className="text-xs text-[#667085]">
+              Matching pharmacies may exist on another server page or region.
+            </p>
+          )}
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              className={cn(
+                "mt-2 gap-1.5 text-xs font-semibold rounded-[10px]",
+                isRep && "hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary"
+              )}
+            >
+              <RotateCcw size={14} />
+              Reset Active Filters
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Bottom Footer Pagination */}
       <TablePaginationFooter

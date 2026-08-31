@@ -346,22 +346,36 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
               )}
             >
               <div className={cn(!isModal && "md:col-span-2")}>
-                <label className={cn("block", labelClassName)}>
-                  Hospital Filter
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className={cn("block", labelClassName)}>
+                    Filter doctors by hospital <span className="text-xs font-normal text-[#667085]">(optional helper filter)</span>
+                  </label>
+                  {selectedHospital && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedHospital("")}
+                      className="text-xs font-semibold text-[#168557] hover:underline"
+                    >
+                      Show All Hospitals
+                    </button>
+                  )}
+                </div>
+                <p className="mt-1 text-xs font-normal text-[#667085]">
+                  Selecting a hospital narrows down the doctor list below.
+                </p>
                 <div className="mt-2">
                   <Combobox
                     {...renderComboboxProps}
                     options={hospitalOptions}
                     value={selectedHospital}
                     onChange={setSelectedHospital}
-                    placeholder="All Hospitals"
+                    placeholder="All Hospitals / Accounts"
                     searchPlaceholder="Type hospital name..."
                     emptyText="No hospitals found"
                     labelFormatter={(option) => (
                       <span className="flex min-w-0 items-center gap-2">
                         <Building2
-                          className="size-4 shrink-0 text-[#B18732]"
+                          className="size-4 shrink-0 text-[#168557]"
                           aria-hidden="true"
                         />
                         <span className="truncate">{option.label}</span>
@@ -719,7 +733,12 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           <Button
             type="submit"
             disabled={isPending}
-            className="group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_10px_24px_rgba(201,164,76,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            className={cn(
+              "group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60",
+              role === "MEDICAL_REP"
+                ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
+                : "bg-[#C9A44C] hover:bg-[#B18732] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+            )}
           >
             {isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
