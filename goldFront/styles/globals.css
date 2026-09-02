@@ -2084,6 +2084,55 @@ input[type="password"]::-webkit-textfield-decoration-container {
   border-radius: 0;
 }
 
+/* Medical Rep Sales Calendar Overrides */
+.sales-date-calendar-rep button[data-day]:hover {
+  color: #168557 !important;
+  background: #E9F8F1 !important;
+}
+
+.sales-date-calendar-rep
+  .rdp-today
+  button[data-day]:not([data-selected-single="true"]):not(
+    [data-range-start="true"]
+  ):not([data-range-end="true"]) {
+  color: #168557 !important;
+  background: #F0FDF4 !important;
+  border-color: #CBEFDD !important;
+}
+
+.sales-date-calendar-rep button[data-selected-single="true"],
+.sales-date-calendar-rep button[data-range-start="true"],
+.sales-date-calendar-rep button[data-range-end="true"] {
+  color: #ffffff !important;
+  background: #168557 !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(22, 133, 87, 0.22) !important;
+}
+
+.sales-date-calendar-rep button[data-range-middle="true"] {
+  color: #168557 !important;
+  background: #E9F8F1 !important;
+  border-color: transparent !important;
+  border-radius: 0 !important;
+}
+
+.sales-date-calendar-rep.sales-date-preview-middle
+  button[data-day]:not([data-range-middle="true"]):not(
+    [data-range-start="true"]
+  ):not([data-range-end="true"]):not([data-selected-single="true"]),
+.sales-date-calendar-rep.sales-date-preview-start
+  button[data-day]:not([data-range-start="true"]):not(
+    [data-selected-single="true"]
+  ),
+.sales-date-calendar-rep.sales-date-preview-end
+  button[data-day]:not([data-range-end="true"]):not(
+    [data-selected-single="true"]
+  ) {
+  color: #168557 !important;
+  background: #E9F8F1 !important;
+  border-color: transparent !important;
+}
+
 .sales-date-calendar-grid-next {
   animation: sales-date-month-next 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -2325,6 +2374,11 @@ input[type="password"]::-webkit-textfield-decoration-container {
   transform: translateX(calc(var(--sales-time-filter-index) * 100%));
   transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+}
+
+.sales-time-filter-indicator-rep {
+  background: #168557 !important;
+  box-shadow: 0 4px 12px rgba(22, 133, 87, 0.22) !important;
 }
 
 .sales-time-filter-tab {
@@ -2616,6 +2670,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
   transform: translateX(calc(var(--visits-mode-index) * 100%));
   transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
+}
+
+.visits-mode-switch-indicator-rep {
+  border: 1px solid #CBEFDD !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 8px rgba(22, 133, 87, 0.12) !important;
 }
 
 .visits-mode-tab[aria-selected="true"] span {
@@ -3632,6 +3692,36 @@ input[type="password"]::-webkit-textfield-decoration-container {
   transform: scale(1.1);
   box-shadow:
     0 0 0 5px rgba(201, 164, 76, 0.15),
+    0 10px 22px rgba(24, 32, 51, 0.16);
+}
+
+.products-catalog-price-slider-rep [data-slot="slider-range"] {
+  background: #168557;
+  transition: width 120ms ease;
+}
+
+.products-catalog-price-slider-rep [data-slot="slider-thumb"] {
+  width: 18px;
+  height: 18px;
+  border-color: #168557;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(22, 133, 87, 0.12),
+    0 6px 14px rgba(24, 32, 51, 0.12);
+}
+
+.products-catalog-price-slider-rep [data-slot="slider-thumb"]:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 5px rgba(22, 133, 87, 0.16),
+    0 8px 18px rgba(24, 32, 51, 0.14);
+}
+
+.products-catalog-price-slider-rep [data-slot="slider-thumb"]:focus-visible,
+.products-catalog-price-slider-rep [data-slot="slider-thumb"][data-state="active"] {
+  transform: scale(1.1);
+  box-shadow:
+    0 0 0 5px rgba(22, 133, 87, 0.2),
     0 10px 22px rgba(24, 32, 51, 0.16);
 }
 

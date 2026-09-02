@@ -4,24 +4,25 @@ import {
   FileCheck,
   Calendar,
   ChevronRight,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { DashboardRequest } from "@/features/dashboard/lib/types";
 import { format } from "date-fns";
 
-// Map request type to icon
 const getRequestIcon = (type: string) => {
   switch (type) {
     case "EXPENSE":
-      return <DollarSign size={16} />;
+      return <DollarSign size={14} className="text-[#168557]" />;
     case "SAMPLE":
-      return <PackageSearch size={16} />;
+      return <PackageSearch size={14} className="text-[#168557]" />;
     case "MARKETING":
-      return <FileCheck size={16} />;
+      return <FileCheck size={14} className="text-[#168557]" />;
     case "LEAVE":
-      return <Calendar size={16} />;
+      return <Calendar size={14} className="text-[#168557]" />;
     default:
-      return <FileCheck size={16} />;
+      return <FileCheck size={14} className="text-[#168557]" />;
   }
 };
 
@@ -32,64 +33,88 @@ interface RepPendingRequestsProps {
 export default function RepPendingRequests({
   requests = [],
 }: RepPendingRequestsProps) {
-  // Filter pending requests and take max 4
   const pendingRequests = requests
     .filter((req) => req.status === "PENDING")
-    .slice(0, 4);
+    .slice(0, 3);
+
+  const pendingCount = pendingRequests.length;
+
   return (
-    <div className="border-secondary-light relative flex flex-col rounded-[25px] border-[0.8px] bg-white p-6">
-      <h2 className="text-lg/[28px] font-normal text-black">
-        Pending Requests
-      </h2>
-      <p className="absolute right-5 flex size-5.5 items-center justify-center rounded-lg bg-red-500 text-xs/4 font-normal text-white">
-        {pendingRequests.length}
-      </p>
-      {pendingRequests.length === 0 ? (
-        <div className="mt-2 py-8 text-center text-sm text-gray-500">
-          No pending requests
+    <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none transition-all">
+      <div>
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-[#EEF1F6] pb-3.5">
+          <h3 className="text-sm font-bold text-[#182033]">
+            Pending Requests
+          </h3>
+          {pendingCount > 0 ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2.5 py-0.5 text-xs font-bold text-[#8A6515]">
+              <Clock size={12} />
+              {pendingCount} Pending
+            </span>
+          ) : (
+            <span className="inline-flex items-center rounded-full border border-[#E5E8EF] bg-[#F4F6FA] px-2.5 py-0.5 text-xs font-semibold text-[#667085]">
+              0 Pending
+            </span>
+          )}
         </div>
-      ) : (
-        <div className="divide-secondary-dark mt-2 space-y-0 divide-y">
-          {pendingRequests.map((req) => (
-            <div key={req.id} className="flex items-start justify-between py-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-teal-500 bg-white">
-                  <span className="text-teal-500">
+
+        {/* Content Body */}
+        {pendingCount === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center">
+            <div className="flex size-9 items-center justify-center rounded-full bg-[#E9F8F1] text-[#168557]">
+              <CheckCircle2 size={18} />
+            </div>
+            <p className="mt-2 text-xs font-bold text-[#182033]">
+              No pending requests
+            </p>
+            <p className="mt-0.5 text-xs text-[#667085]">
+              You&apos;re all caught up.
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#EEF1F6] py-1">
+            {pendingRequests.map((req) => (
+              <div
+                key={req.id}
+                className="flex items-center justify-between py-3 text-xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-[8px] border border-[#CBEFDD] bg-[#E9F8F1]">
                     {getRequestIcon(req.type)}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-[#182033]">
+                      {req.title}
+                    </p>
+                    <p className="truncate text-[11px] text-[#667085]">
+                      {req.subject}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <span className="inline-flex items-center rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2 py-0.5 text-[10px] font-bold text-[#8A6515]">
+                    Pending
+                  </span>
+                  <span className="text-[11px] text-[#98A2B3]">
+                    {format(new Date(req.createdAt), "MMM d, yyyy")}
                   </span>
                 </div>
-                <div>
-                  <div className="text-sm font-medium text-black">
-                    {req.title}
-                  </div>
-                  <div className="mt-0.5 text-xs text-gray-500">
-                    {req.subject}
-                  </div>
-                </div>
               </div>
-              <div className="ml-4 flex flex-col items-end">
-                <div
-                  className={`text-xs font-semibold ${
-                    req.urgency === "Priority" ? "text-red-500" : "text-black"
-                  }`}
-                >
-                  {req.urgency}
-                </div>
-                <div className="mt-0.5 text-xs text-gray-400">
-                  {format(new Date(req.createdAt), "MMM d, yyyy")}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="flex justify-end">
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Footer Action */}
+      <div className="mt-4 flex items-center justify-end border-t border-[#EEF1F6] pt-3">
         <Link
           href="/rep/requests"
-          className="text-dashboard-green inline-flex items-center gap-1 text-sm/[21px] font-medium hover:underline"
+          className="inline-flex items-center gap-1 text-xs font-bold text-[#168557] transition-colors hover:text-[#107349]"
         >
           View All Requests
-          <ChevronRight size={16} />
+          <ChevronRight size={14} />
         </Link>
       </div>
     </div>

@@ -198,7 +198,7 @@ function formatDateCell(value: unknown): string {
 
 function formatAmount(value: number | null): string {
   if (value === null) return "-";
-  return `${value.toLocaleString()} SAR`;
+  return `SAR ${value.toLocaleString("en-US")}`;
 }
 
 function createRowSummary(
@@ -315,10 +315,12 @@ function ColumnSelector({
   visibleOptionalColumnIds,
   onToggleColumn,
   onResetColumns,
+  isRep = false,
 }: {
   visibleOptionalColumnIds: OptionalColumnId[];
   onToggleColumn: (columnId: OptionalColumnId, checked: boolean) => void;
   onResetColumns: () => void;
+  isRep?: boolean;
 }) {
   const visibleCount = visibleOptionalColumnIds.length;
 
@@ -327,13 +329,23 @@ function ColumnSelector({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="sales-column-trigger inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
+          className={cn(
+            "sales-column-trigger inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto",
+            isRep
+              ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+              : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+          )}
           aria-label="Customize sales table columns"
         >
           <Settings2 className="size-4" aria-hidden="true" />
           <span>Columns</span>
           {visibleCount > 0 && (
-            <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-white">
+            <span
+              className={cn(
+                "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-none font-bold text-white",
+                isRep ? "bg-[#168557]" : "bg-[#C9A44C]"
+              )}
+            >
               {visibleCount}
             </span>
           )}
@@ -358,7 +370,12 @@ function ColumnSelector({
               type="button"
               onClick={onResetColumns}
               disabled={visibleCount === 0}
-              className="rounded-full px-2 py-1 text-xs font-bold text-[#8A6515] transition-colors hover:bg-[#FFF8E5] disabled:cursor-not-allowed disabled:text-[#B7BFCC] disabled:hover:bg-transparent"
+              className={cn(
+                "rounded-full px-2 py-1 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:text-[#B7BFCC] disabled:hover:bg-transparent",
+                isRep
+                  ? "text-[#168557] hover:bg-[#E9F8F1]"
+                  : "text-[#8A6515] hover:bg-[#FFF8E5]"
+              )}
             >
               Reset
             </button>
@@ -374,7 +391,10 @@ function ColumnSelector({
               <Checkbox
                 checked
                 disabled
-                className="border-[#C9A44C] bg-[#C9A44C] text-white"
+                className={cn(
+                  "text-white",
+                  isRep ? "border-[#168557] bg-[#168557]" : "border-[#C9A44C] bg-[#C9A44C]"
+                )}
                 aria-label={`${label} column is always visible`}
               />
               <span>{label}</span>
@@ -392,14 +412,24 @@ function ColumnSelector({
                 return (
                   <label
                     key={column.id}
-                    className="sales-column-option flex h-9 cursor-pointer items-center gap-2 rounded-[9px] px-2 text-sm font-medium text-[#344054] transition-[background-color,color] duration-[150ms] hover:bg-[#FBF7EA] hover:text-[#8A6515]"
+                    className={cn(
+                      "sales-column-option flex h-9 cursor-pointer items-center gap-2 rounded-[9px] px-2 text-sm font-medium text-[#344054] transition-[background-color,color] duration-[150ms]",
+                      isRep
+                        ? "hover:bg-[#E9F8F1]/60 hover:text-[#168557]"
+                        : "hover:bg-[#FBF7EA] hover:text-[#8A6515]"
+                    )}
                   >
                     <Checkbox
                       checked={checked}
                       onCheckedChange={(nextChecked) =>
                         onToggleColumn(column.id, nextChecked === true)
                       }
-                      className="data-[state=checked]:border-[#C9A44C] data-[state=checked]:bg-[#C9A44C] data-[state=checked]:text-white"
+                      className={cn(
+                        "data-[state=checked]:text-white",
+                        isRep
+                          ? "data-[state=checked]:border-[#168557] data-[state=checked]:bg-[#168557]"
+                          : "data-[state=checked]:border-[#C9A44C] data-[state=checked]:bg-[#C9A44C]"
+                      )}
                       aria-label={`Toggle ${column.label} column`}
                     />
                     <span>{column.label}</span>
@@ -442,24 +472,32 @@ function SalesRowDetails({
   isCollapsing,
   copiedRowId,
   onCopyId,
+  isRep = false,
 }: {
   summary: RowSummary;
   isCollapsing: boolean;
   copiedRowId: string | null;
   onCopyId: (summary: RowSummary, event: MouseEvent<HTMLButtonElement>) => void;
+  isRep?: boolean;
 }) {
   const copied = copiedRowId === summary.rowId;
 
   return (
     <div
       className={cn(
-        "sales-row-details-panel rounded-[14px] border border-[#E9DDB8] bg-[#FFFDF7] p-4",
+        "sales-row-details-panel rounded-[14px] border p-4",
+        isRep ? "border-[#CBEFDD] bg-[#E9F8F1]/40" : "border-[#E9DDB8] bg-[#FFFDF7]",
         isCollapsing && "sales-row-details-panel-exit",
       )}
     >
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 flex-1">
-          <p className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[#8A6515] uppercase">
+          <p
+            className={cn(
+              "mb-3 text-[11px] font-bold tracking-[0.08em] uppercase",
+              isRep ? "text-[#168557]" : "text-[#8A6515]"
+            )}
+          >
             Sale details
           </p>
           <MetadataGrid summary={summary} />
@@ -469,7 +507,12 @@ function SalesRowDetails({
           type="button"
           onClick={(event) => onCopyId(summary, event)}
           disabled={!summary.copyId || summary.copyId === "-"}
-          className="sales-row-copy-button inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#E5E8EF] bg-white px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+          className={cn(
+            "sales-row-copy-button inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#E5E8EF] bg-white px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+            isRep
+              ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+              : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+          )}
         >
           {copied ? (
             <Check className="size-4" aria-hidden="true" />
@@ -791,6 +834,7 @@ export default function SalesTable({
             visibleOptionalColumnIds={visibleOptionalColumnIds}
             onToggleColumn={handleOptionalColumnToggle}
             onResetColumns={handleResetColumns}
+            isRep={isRep}
           />
         </div>
       </div>
@@ -806,7 +850,7 @@ export default function SalesTable({
             <span
               className={cn(
                 "sales-time-filter-indicator",
-                isRep && "bg-[#168557]"
+                isRep && "sales-time-filter-indicator-rep"
               )}
               aria-hidden="true"
             />
@@ -904,12 +948,12 @@ export default function SalesTable({
                       {column.heading}
                     </th>
                   ))}
-                  <th className="w-[74px] border-b border-[#EEF1F6] px-4 py-3 text-right text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
-                    Details
+                  <th className="w-[56px] border-b border-[#EEF1F6] px-4 py-3 text-right text-[11px] font-semibold tracking-[0.04em] whitespace-nowrap text-[#667085] uppercase">
+                    <span className="sr-only">Actions</span>
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-[#EEF1F6]">
                 {rowSummaries.map((summary, idx) => {
                   const rowNumber = startIndex + idx + 1;
                   const isExpanded = expandedRowId === summary.rowId;
@@ -922,17 +966,14 @@ export default function SalesTable({
                         tabIndex={0}
                         aria-expanded={isExpanded}
                         aria-controls={`sales-row-details-${summary.rowId}`}
-                        data-expanded={isExpanded}
-                        className="sales-record-row sales-table-row-enter border-b border-[#EEF1F6] outline-none last:border-0"
-                        style={
-                          {
-                            "--sales-row-delay": `${Math.min(idx * 20, 140)}ms`,
-                          } as CSSProperties
-                        }
                         onClick={() => toggleRow(summary.rowId)}
                         onKeyDown={(event) =>
                           handleRowKeyDown(event, summary.rowId)
                         }
+                        className={cn(
+                          "sales-table-row cursor-pointer transition-colors duration-[150ms] outline-none",
+                          isExpanded ? "bg-[#FBFCFE]" : "hover:bg-[#F9FAFB]",
+                        )}
                       >
                         <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap text-[#667085]">
                           {rowNumber}
@@ -1006,7 +1047,12 @@ export default function SalesTable({
                               event.stopPropagation();
                               toggleRow(summary.rowId);
                             }}
-                            className="sales-row-chevron-button inline-flex size-8 items-center justify-center rounded-[9px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+                            className={cn(
+                              "sales-row-chevron-button inline-flex size-8 items-center justify-center rounded-[9px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:outline-none",
+                              isRep
+                                ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                                : "hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                            )}
                           >
                             <ChevronRight
                               className="sales-row-chevron size-4"
@@ -1027,6 +1073,7 @@ export default function SalesTable({
                                 isCollapsing={isCollapsing}
                                 copiedRowId={copiedRowId}
                                 onCopyId={handleCopyId}
+                                isRep={isRep}
                               />
                             </div>
                           </td>
@@ -1059,7 +1106,10 @@ export default function SalesTable({
                     aria-expanded={isExpanded}
                     aria-controls={`sales-mobile-row-details-${summary.rowId}`}
                     onClick={() => toggleRow(summary.rowId)}
-                    className="w-full p-4 text-left focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+                    className={cn(
+                      "w-full p-4 text-left focus-visible:outline-none",
+                      isRep ? "focus-visible:ring-2 focus-visible:ring-[#168557]/20" : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                    )}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -1116,6 +1166,7 @@ export default function SalesTable({
                         isCollapsing={isCollapsing}
                         copiedRowId={copiedRowId}
                         onCopyId={handleCopyId}
+                        isRep={isRep}
                       />
                     </div>
                   )}

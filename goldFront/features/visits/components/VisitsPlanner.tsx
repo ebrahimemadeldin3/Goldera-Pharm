@@ -334,7 +334,10 @@ export default function VisitsPlanner({
               }
             >
               <span
-                className="visits-mode-switch-indicator"
+                className={cn(
+                  "visits-mode-switch-indicator",
+                  isRep && "visits-mode-switch-indicator-rep"
+                )}
                 aria-hidden="true"
               />
               {(["day", "week"] as VisitMode[]).map((viewMode) => {
@@ -351,9 +354,19 @@ export default function VisitsPlanner({
                     tabIndex={isActive ? 0 : -1}
                     onClick={() => setMode(viewMode)}
                     onKeyDown={handleModeKeyDown}
-                    className={`visits-mode-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA] motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
-                      isActive ? "text-[#182033]" : "text-[#667085]"
-                    }`}
+                    className={cn(
+                      "visits-mode-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                      isActive
+                        ? isRep
+                          ? "text-[#168557] font-bold"
+                          : "text-[#182033]"
+                        : isRep
+                        ? "text-[#667085] hover:text-[#168557]"
+                        : "text-[#667085]",
+                      isRep
+                        ? "focus-visible:ring-2 focus-visible:ring-[#168557]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA]"
+                        : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA]"
+                    )}
                   >
                     <span className="truncate">{label}</span>
                   </button>
@@ -363,7 +376,10 @@ export default function VisitsPlanner({
 
             <div className="visits-search-field relative min-w-0">
               <Search
-                className="visits-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]"
+                className={cn(
+                  "visits-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]",
+                  isRep && "group-focus-within:text-[#168557]"
+                )}
                 aria-hidden="true"
               />
               <input
@@ -371,14 +387,24 @@ export default function VisitsPlanner({
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search visits..."
                 aria-label="Search visits"
-                className="visits-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                className={cn(
+                  "visits-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3]",
+                  isRep
+                    ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30 focus:ring-2 focus:ring-[#168557]/20"
+                    : "focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                )}
               />
               {searchQuery && (
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
                   aria-label="Clear visit search"
-                  className="visits-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#98A2B3] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                  className={cn(
+                    "visits-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#98A2B3] transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
+                    isRep
+                      ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+                      : "hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+                  )}
                 >
                   <X className="size-3.5" aria-hidden="true" />
                 </button>
@@ -401,7 +427,12 @@ export default function VisitsPlanner({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
-              className="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] duration-[150ms] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+              className={cn(
+                "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
+                isRep
+                  ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+                  : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+              )}
             >
               <RotateCcw className="size-3.5" aria-hidden="true" />
               Clear search

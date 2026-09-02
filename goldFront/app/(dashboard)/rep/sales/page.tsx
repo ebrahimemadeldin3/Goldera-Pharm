@@ -73,7 +73,7 @@ export default async function Page({ searchParams }: PageProps) {
   );
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
+    <PageContainer className="min-h-[calc(100vh-80px)] flex flex-col gap-6 overflow-x-hidden">
       <SalesHeader
         sales={sales}
         selectedDate={date}

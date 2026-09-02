@@ -74,10 +74,12 @@ const renderText = (value: string | number | null | undefined) => {
 
 const formatMoney = (value: number | null | undefined) => {
   if (value === null || value === undefined) return "N/A";
-  return new Intl.NumberFormat("en-US", {
+  const num = Number(value);
+  const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(Number(value));
+  }).format(num);
+  return `SAR ${formatted}`;
 };
 
 const getRolePrefix = (role: UserRole): "manager" | "supervisor" | "rep" => {

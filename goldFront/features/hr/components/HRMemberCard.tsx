@@ -23,13 +23,6 @@ import {
 import { format } from "date-fns";
 import { getInitials } from "@/lib/utils";
 import { useState } from "react";
-import { VisitsDialog } from "./dialogs/VisitsDialog";
-import { RequestsDialog } from "./dialogs/RequestsDialog";
-import { VisitReportsDialog } from "./dialogs/VisitReportsDialog";
-import { PlansDialog } from "./dialogs/PlansDialog";
-import { ForecastsDialog } from "./dialogs/ForecastsDialog";
-import { AppraisalsDialog } from "./dialogs/AppraisalsDialog";
-import { CoachingDialog } from "./dialogs/CoachingDialog";
 import { SafeCldImage } from "@/components/ui/safe-cld-image";
 
 type HRMemberCardProps = {
@@ -37,13 +30,13 @@ type HRMemberCardProps = {
 };
 
 export function HRMemberCard({ member }: HRMemberCardProps) {
-  const [visitsOpen, setVisitsOpen] = useState(false);
-  const [requestsOpen, setRequestsOpen] = useState(false);
-  const [reportsOpen, setReportsOpen] = useState(false);
-  const [plansOpen, setPlansOpen] = useState(false);
-  const [forecastsOpen, setForecastsOpen] = useState(false);
-  const [appraisalsOpen, setAppraisalsOpen] = useState(false);
-  const [coachingOpen, setCoachingOpen] = useState(false);
+  const [, setVisitsOpen] = useState(false);
+  const [, setRequestsOpen] = useState(false);
+  const [, setReportsOpen] = useState(false);
+  const [, setPlansOpen] = useState(false);
+  const [, setForecastsOpen] = useState(false);
+  const [, setAppraisalsOpen] = useState(false);
+  const [, setCoachingOpen] = useState(false);
   const [showMoreInfo, setShowMoreInfo] = useState(false);
 
   const isSupervisor = member.role === "SUPERVISOR";

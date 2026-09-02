@@ -164,7 +164,7 @@ function formatProductPrice(price: number | null | undefined) {
     return "N/A";
   }
 
-  return `${priceFormatter.format(price)} SAR`;
+  return `SAR ${priceFormatter.format(price)}`;
 }
 
 function formatProductDate(value: string | null | undefined) {
@@ -181,7 +181,7 @@ function formatFilterPrice(value: number) {
 }
 
 function formatFilterPriceRange(range: PriceRange) {
-  return `${formatFilterPrice(range[0])}-${formatFilterPrice(range[1])} SAR`;
+  return `SAR ${formatFilterPrice(range[0])} – SAR ${formatFilterPrice(range[1])}`;
 }
 
 function getPriceLimits(products: ProductApiResponse[]): PriceLimits {
@@ -416,10 +416,12 @@ function FilterCategoryButton({
   category,
   isActive,
   onSelect,
+  isRep = false,
 }: {
   category: string;
   isActive: boolean;
   onSelect: () => void;
+  isRep?: boolean;
 }) {
   const presentation =
     categoryBadgeStyles[category] || categoryBadgeStyles.General;
@@ -430,22 +432,38 @@ function FilterCategoryButton({
       type="button"
       onClick={onSelect}
       aria-pressed={isActive}
-      className={`products-catalog-filter-option products-catalog-filter-category-option inline-flex min-h-10 items-center gap-2 rounded-[12px] border px-3.5 py-2 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
+      className={cn(
+        "products-catalog-filter-option products-catalog-filter-category-option inline-flex min-h-10 items-center gap-2 rounded-[12px] border px-3.5 py-2 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:outline-none",
+        isRep
+          ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+          : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
         isActive
-          ? "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.1)]"
-          : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
-      }`}
+          ? isRep
+            ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] shadow-[0_4px_12px_rgba(22,133,87,0.12)]"
+            : "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.1)]"
+          : isRep
+            ? "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#CBEFDD] hover:bg-[#F0FDF4] hover:text-[#168557]"
+            : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
+      )}
     >
       <Icon
-        className={`size-3.5 shrink-0 ${
-          isActive ? "text-[#B18732]" : "text-[#8A94A6]"
-        }`}
+        className={cn(
+          "size-3.5 shrink-0",
+          isActive
+            ? isRep
+              ? "text-[#168557]"
+              : "text-[#B18732]"
+            : "text-[#8A94A6]"
+        )}
         aria-hidden="true"
       />
       <span className="truncate">{category}</span>
       {isActive && (
         <Check
-          className="products-filter-option-check size-3.5 shrink-0 text-[#B18732]"
+          className={cn(
+            "products-filter-option-check size-3.5 shrink-0",
+            isRep ? "text-[#168557]" : "text-[#B18732]"
+          )}
           aria-hidden="true"
         />
       )}
@@ -457,26 +475,39 @@ function FilterDateButton({
   option,
   isActive,
   onSelect,
+  isRep = false,
 }: {
   option: { value: DateFilterValue; label: string };
   isActive: boolean;
   onSelect: () => void;
+  isRep?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onSelect}
       aria-pressed={isActive}
-      className={`products-catalog-filter-option products-catalog-filter-date-option inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border px-3 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
+      className={cn(
+        "products-catalog-filter-option products-catalog-filter-date-option inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border px-3 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:outline-none",
+        isRep
+          ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+          : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
         isActive
-          ? "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.08)]"
-          : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
-      }`}
+          ? isRep
+            ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] shadow-[0_4px_12px_rgba(22,133,87,0.12)]"
+            : "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.08)]"
+          : isRep
+            ? "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#CBEFDD] hover:bg-[#F0FDF4] hover:text-[#168557]"
+            : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
+      )}
     >
       {option.label}
       {isActive && (
         <Check
-          className="products-filter-option-check size-3.5 shrink-0 text-[#B18732]"
+          className={cn(
+            "products-filter-option-check size-3.5 shrink-0",
+            isRep ? "text-[#168557]" : "text-[#B18732]"
+          )}
           aria-hidden="true"
         />
       )}
@@ -487,18 +518,32 @@ function FilterDateButton({
 function ActiveFilterChip({
   label,
   onRemove,
+  isRep = false,
 }: {
   label: string;
   onRemove: () => void;
+  isRep?: boolean;
 }) {
   return (
-    <span className="products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-3 text-xs font-semibold text-[#5C4918]">
+    <span
+      className={cn(
+        "products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border px-3 text-xs font-semibold",
+        isRep
+          ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+          : "border-[#E9DDB8] bg-[#FFF8E5] text-[#5C4918]"
+      )}
+    >
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
-        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[#8A6515] transition-[background-color,color] duration-[150ms] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+        className={cn(
+          "inline-flex size-4 shrink-0 items-center justify-center rounded-full transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
+          isRep
+            ? "text-[#168557] hover:bg-[#CBEFDD] hover:text-[#0B5635] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+            : "text-[#8A6515] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+        )}
       >
         <X className="size-3" aria-hidden="true" />
       </button>
@@ -522,6 +567,7 @@ function ProductFilterPanel({
   onReset,
   onApply,
   onClose,
+  isRep = false,
 }: {
   mode: FilterPanelMode;
   categoryOptions: string[];
@@ -538,6 +584,7 @@ function ProductFilterPanel({
   onReset: () => void;
   onApply: () => void;
   onClose: () => void;
+  isRep?: boolean;
 }) {
   const hasPriceChoices =
     priceLimits.hasPrices && priceLimits.min < priceLimits.max;
@@ -574,7 +621,12 @@ function ProductFilterPanel({
       <div className="products-filter-panel-header products-filter-panel-stagger flex items-start justify-between gap-4 border-b border-[#EEF1F5] px-6 pt-5 pb-5">
         <div className="min-w-0">
           <p className="inline-flex items-center gap-2 text-[20px] leading-tight font-semibold text-[#182033]">
-            <span className="products-filter-title-icon inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-[#FBF7EA] text-[#B18732]">
+            <span
+              className={cn(
+                "products-filter-title-icon inline-flex size-8 shrink-0 items-center justify-center rounded-[10px]",
+                isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-[#FBF7EA] text-[#B18732]"
+              )}
+            >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
             </span>
             <span>Filter Products</span>
@@ -588,11 +640,17 @@ function ProductFilterPanel({
             type="button"
             onClick={onReset}
             disabled={!hasDraftFilters}
-            className={`products-filter-reset-action rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color,opacity] duration-[150ms] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
+            className={cn(
+              "products-filter-reset-action rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color,opacity] duration-[150ms] focus-visible:outline-none",
+              isRep
+                ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+                : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
               hasDraftFilters
-                ? "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033]"
+                ? isRep
+                  ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349]"
+                  : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033]"
                 : "cursor-not-allowed text-[#B7BFCC] opacity-70"
-            }`}
+            )}
           >
             Reset
           </button>
@@ -601,7 +659,10 @@ function ProductFilterPanel({
               type="button"
               onClick={onClose}
               aria-label="Close product filters"
-              className="inline-flex size-8 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none"
+              className={cn(
+                "inline-flex size-8 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:outline-none",
+                isRep ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15" : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+              )}
             >
               <X className="size-4" aria-hidden="true" />
             </button>
@@ -622,6 +683,7 @@ function ProductFilterPanel({
                   category={category}
                   isActive={selectedCategories.includes(category)}
                   onSelect={() => onCategoryToggle(category)}
+                  isRep={isRep}
                 />
               ))
             ) : (
@@ -651,7 +713,12 @@ function ProductFilterPanel({
                     onChange={(event) =>
                       updatePriceInput(0, event.target.value)
                     }
-                    className="products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                    className={cn(
+                      "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
+                      isRep
+                        ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                    )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
                     SAR
@@ -671,7 +738,12 @@ function ProductFilterPanel({
                     onChange={(event) =>
                       updatePriceInput(1, event.target.value)
                     }
-                    className="products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                    className={cn(
+                      "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
+                      isRep
+                        ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                    )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
                     SAR
@@ -693,7 +765,10 @@ function ProductFilterPanel({
                   ),
                 )
               }
-              className="products-catalog-price-slider mt-1 py-3"
+              className={cn(
+                "products-catalog-price-slider mt-1 py-3",
+                isRep && "products-catalog-price-slider-rep"
+              )}
             />
             <div className="flex items-center justify-between text-[11px] font-semibold text-[#98A2B3]">
               <span>SAR {formatFilterPrice(priceLimits.min)}</span>
@@ -705,7 +780,7 @@ function ProductFilterPanel({
         <section className="products-filter-panel-section products-filter-panel-stagger products-filter-panel-stagger-date grid gap-3">
           <div className="flex items-center gap-2">
             <CalendarDays
-              className="size-4 text-[#B18732]"
+              className={cn("size-4", isRep ? "text-[#168557]" : "text-[#B18732]")}
               aria-hidden="true"
             />
             <h3 className="text-[11px] font-bold tracking-[0.1em] text-[#344054] uppercase">
@@ -719,6 +794,7 @@ function ProductFilterPanel({
                 option={option}
                 isActive={dateFilter === option.value}
                 onSelect={() => onDateFilterChange(option.value)}
+                isRep={isRep}
               />
             ))}
           </div>
@@ -730,7 +806,7 @@ function ProductFilterPanel({
           key={resultCount}
           className="products-filter-result-count products-filter-panel-stagger products-filter-panel-stagger-results text-sm font-bold text-[#182033]"
         >
-          <span className="text-[#B18732]">{resultCount}</span>{" "}
+          <span className={cn(isRep ? "text-[#168557]" : "text-[#B18732]")}>{resultCount}</span>{" "}
           {resultCount === 1 ? "product" : "products"} found
         </p>
         <div className="products-filter-panel-stagger products-filter-panel-stagger-actions grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2.5">
@@ -738,18 +814,29 @@ function ProductFilterPanel({
             type="button"
             onClick={onReset}
             disabled={!hasDraftFilters}
-            className={`products-filter-clear-button h-12 rounded-[12px] border px-4 text-sm font-bold transition-[background-color,border-color,color,opacity,transform] duration-[160ms] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
+            className={cn(
+              "products-filter-clear-button h-12 rounded-[12px] border px-4 text-sm font-bold transition-[background-color,border-color,color,opacity,transform] duration-[160ms] focus-visible:outline-none",
+              isRep
+                ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+                : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
               hasDraftFilters
-                ? "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#182033]"
+                ? isRep
+                  ? "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#168557] hover:bg-[#F0FDF4] hover:text-[#182033]"
+                  : "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#182033]"
                 : "cursor-not-allowed border-[#E5E8EF] bg-white text-[#B7BFCC] opacity-70"
-            }`}
+            )}
           >
             Clear
           </button>
           <button
             type="button"
             onClick={onApply}
-            className="products-filter-show-button h-12 rounded-[12px] border border-[#C9A44C] bg-[#C9A44C] px-4 text-sm font-bold text-[#182033] shadow-[0_10px_22px_rgba(201,164,76,0.2)] transition-[box-shadow,filter,transform] duration-[160ms] hover:-translate-y-px focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:translate-y-0"
+            className={cn(
+              "products-filter-show-button h-12 rounded-[12px] border px-4 text-sm font-bold transition-[box-shadow,filter,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none active:translate-y-0",
+              isRep
+                ? "border-[#168557] bg-[#168557] hover:bg-[#107349] text-white shadow-[0_6px_18px_rgba(22,133,87,0.22)] focus-visible:ring-3 focus-visible:ring-[#168557]/25"
+                : "border-[#C9A44C] bg-[#C9A44C] text-[#182033] shadow-[0_10px_22px_rgba(201,164,76,0.2)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25"
+            )}
           >
             Show {resultCount} Products
           </button>
@@ -887,6 +974,7 @@ export default function ProductsList({
   totalCount = 0,
 }: ProductsListProps) {
   const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const canManageProducts = role === "MANAGER";
   const [q, setQ] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -1315,6 +1403,7 @@ export default function ProductsList({
                     onReset={resetDraftFilters}
                     onApply={applyDraftFilters}
                     onClose={() => setIsFilterOpen(false)}
+                    isRep={isRep}
                   />
                 </SheetContent>
               </Sheet>
@@ -1352,6 +1441,7 @@ export default function ProductsList({
                     onReset={resetDraftFilters}
                     onApply={applyDraftFilters}
                     onClose={() => setIsFilterOpen(false)}
+                    isRep={isRep}
                   />
                 </PopoverContent>
               </Popover>
@@ -1371,25 +1461,33 @@ export default function ProductsList({
                     key={category}
                     label={category}
                     onRemove={() => removeCategoryFilter(category)}
+                    isRep={isRep}
                   />
                 ))}
                 {hasPriceFilter && (
                   <ActiveFilterChip
                     label={formatFilterPriceRange(activePriceRange)}
                     onRemove={() => setPriceRange(null)}
+                    isRep={isRep}
                   />
                 )}
                 {hasDateFilter && (
                   <ActiveFilterChip
                     label={dateFilterLabels[dateFilter]}
                     onRemove={() => setDateFilter("any")}
+                    isRep={isRep}
                   />
                 )}
               </div>
               <button
                 type="button"
                 onClick={resetFilters}
-                className="w-fit rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] duration-[150ms] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none"
+                className={cn(
+                  "w-fit rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
+                  isRep
+                    ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349] focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+                    : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+                )}
               >
                 Clear all
               </button>

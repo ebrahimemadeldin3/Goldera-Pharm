@@ -56,6 +56,7 @@ export default function RequestStats({
         approved,
         rejected,
       }}
+      cardClassName="rounded-[14px]"
     />
   );
 }

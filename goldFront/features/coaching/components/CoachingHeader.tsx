@@ -16,7 +16,7 @@ type CoachingHeaderProps = {
 };
 
 const CoachingHeader = ({ data }: CoachingHeaderProps) => {
-  const { coachingStats } = useRoleUI();
+  const { coachingStats, role } = useRoleUI();
 
   return (
     <div className="space-y-6">
@@ -34,7 +34,11 @@ const CoachingHeader = ({ data }: CoachingHeaderProps) => {
         </p>
       </header>
 
-      <StatCards stats={coachingStats} data={data} />
+      <StatCards
+        stats={coachingStats}
+        data={data}
+        cardClassName={role === "MEDICAL_REP" ? "rounded-[14px]" : undefined}
+      />
     </div>
   );
 };

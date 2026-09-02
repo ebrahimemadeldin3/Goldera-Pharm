@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatCurrency(amount: number | null | undefined): string {
+  if (amount == null || Number.isNaN(Number(amount))) return "SAR 0";
+  const num = Number(amount);
+  const formatted = new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(num);
+  return `SAR ${formatted}`;
+}
+
 export function buildPaginationQuery(params?: {
   page?: number;
   limit?: number;

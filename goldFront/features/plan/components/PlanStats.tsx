@@ -12,13 +12,19 @@ type PlanStatsProps = {
 };
 
 const PlanStats = ({ data }: PlanStatsProps) => {
-  const { planStats } = useRoleUI();
+  const { planStats, role } = useRoleUI();
 
   if (!planStats) {
     return null;
   }
 
-  return <StatCards stats={planStats} data={data} />;
+  return (
+    <StatCards
+      stats={planStats}
+      data={data}
+      cardClassName={role === "MEDICAL_REP" ? "rounded-[14px]" : undefined}
+    />
+  );
 };
 
 export default PlanStats;

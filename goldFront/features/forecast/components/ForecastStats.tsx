@@ -23,5 +23,5 @@ export default function ForecastStats({
     pendingApproval,
   };
 
-  return <StatCards stats={forecastStatsConfig} data={data} />;
+  return <StatCards stats={forecastStatsConfig} data={data} cardClassName="rounded-[14px]" />;
 }

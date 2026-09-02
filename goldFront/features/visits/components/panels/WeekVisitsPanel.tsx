@@ -13,6 +13,8 @@ import {
 } from "@/lib/utils";
 import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 
+import { useRoleUI } from "@/core/ui/role-ui-context";
+
 const VISIT_STATUS_ORDER: VisitStatus[] = [
   "COMPLETED",
   "IN_PROGRESS",
@@ -40,6 +42,8 @@ export default function WeekVisitsPanel({
   selectedDate?: Date;
   isSearching?: boolean;
 }) {
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const days = eachDayOfInterval(range);
 
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
@@ -102,7 +106,7 @@ export default function WeekVisitsPanel({
             className={cn(
               "visits-week-day overflow-hidden rounded-[14px] border bg-white shadow-none transition-[background-color,border-color,box-shadow,transform] duration-[170ms]",
               hasVisits ? "border-[#E5E8EF]" : "border-[#E7EAF0] bg-[#FBFCFE]",
-              isSelectedDay && "border-[#E9DDB8] bg-[#FFFDF7]",
+              isSelectedDay && (isRep ? "border-[#CBEFDD] bg-[#E9F8F1]/40" : "border-[#E9DDB8] bg-[#FFFDF7]"),
             )}
           >
             <button
@@ -117,9 +121,14 @@ export default function WeekVisitsPanel({
                 }
               }}
               className={cn(
-                "visits-week-day-header flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,color] duration-[150ms] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none",
+                "visits-week-day-header flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
+                isRep
+                  ? "focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+                  : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
                 hasVisits
-                  ? "text-[#182033] hover:bg-[#FFFDF7]"
+                  ? isRep
+                    ? "text-[#182033] hover:bg-[#E9F8F1]/30"
+                    : "text-[#182033] hover:bg-[#FFFDF7]"
                   : "text-[#667085] hover:bg-[#F4F6FA]",
               )}
             >
@@ -128,7 +137,9 @@ export default function WeekVisitsPanel({
                   className={cn(
                     "flex size-9 shrink-0 items-center justify-center rounded-[10px]",
                     isSelectedDay
-                      ? "bg-[#101D36] text-white"
+                      ? isRep
+                        ? "bg-[#168557] text-white shadow-[0_4px_10px_rgba(22,133,87,0.22)]"
+                        : "bg-[#101D36] text-white"
                       : hasVisits
                         ? "bg-[#EEF4FF] text-[#3972D5]"
                         : "bg-[#F4F6FA] text-[#98A2B3]",
@@ -213,7 +224,12 @@ export default function WeekVisitsPanel({
                             e.stopPropagation();
                             toggleDayVisitsLimit(dateKey);
                           }}
-                          className="inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-3.5 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                          className={cn(
+                            "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-3.5 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                            isRep
+                              ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                              : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                          )}
                         >
                           {isVisitsExpanded ? (
                             <>

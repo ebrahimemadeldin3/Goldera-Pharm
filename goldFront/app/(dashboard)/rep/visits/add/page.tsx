@@ -55,10 +55,10 @@ export default async function Page() {
           <ArrowLeft size={16} />
         </Link>
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight text-[#182033] md:text-3xl">
+          <h1 className="text-2xl font-bold tracking-tight text-[#182033] sm:text-3xl">
             Schedule New Visit
           </h1>
-          <p className="text-sm font-medium text-[#667085]">
+          <p className="mt-0.5 text-sm font-medium text-[#667085]">
             Schedule a new doctor visit for your field territory
           </p>
         </div>

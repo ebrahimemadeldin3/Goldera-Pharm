@@ -19,6 +19,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
 
+import { useRoleUI } from "@/core/ui/role-ui-context";
+
 type VisitCardProps = {
   visit: Visit;
   reportBasePath?: string;
@@ -44,6 +46,8 @@ export default function VisitCard({
   reportBasePath,
   animationDelay = "0ms",
 }: VisitCardProps) {
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   const createdAtLabel = visit.createdAt
@@ -60,7 +64,12 @@ export default function VisitCard({
 
   return (
     <Card
-      className="visits-record-card visits-row-enter group/visit flex flex-col gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none focus-within:ring-2 focus-within:ring-[#C9A44C]/25 focus-within:outline-none"
+      className={cn(
+        "visits-record-card visits-row-enter group/visit flex flex-col gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none focus-within:outline-none",
+        isRep
+          ? "focus-within:ring-2 focus-within:ring-[#168557]/25"
+          : "focus-within:ring-2 focus-within:ring-[#C9A44C]/25"
+      )}
       style={
         {
           "--visits-row-delay": animationDelay,
@@ -69,7 +78,14 @@ export default function VisitCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]">
+          <div
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-[10px] border",
+              isRep
+                ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
+            )}
+          >
             <UserRound className="size-5" aria-hidden="true" />
           </div>
 
@@ -171,7 +187,12 @@ export default function VisitCard({
           type="button"
           aria-expanded={showTechDetails}
           onClick={() => setShowTechDetails(!showTechDetails)}
-          className="inline-flex items-center gap-1.5 rounded-full px-1 text-[11px] font-semibold text-[#667085] transition-colors duration-[150ms] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+          className={cn(
+            "inline-flex items-center gap-1.5 rounded-full px-1 text-[11px] font-semibold text-[#667085] transition-colors duration-[150ms] focus-visible:outline-none",
+            isRep
+              ? "hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+              : "hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+          )}
         >
           {showTechDetails ? (
             <>

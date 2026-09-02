@@ -224,7 +224,7 @@ export default function RequestHistory({
 
                     {(req.amount || req.budget || req.totalExpenseAmount) && (
                       <span className="font-bold text-[#168557]">
-                        EGP {req.amount || req.budget || req.totalExpenseAmount}
+                        SAR {req.amount || req.budget || req.totalExpenseAmount}
                       </span>
                     )}
                   </div>
@@ -332,7 +332,7 @@ export default function RequestHistory({
                   <div className="flex justify-between">
                     <span className="text-[#667085]">Budget Amount</span>
                     <span className="font-bold text-[#168557]">
-                      EGP {selectedRequest.budget || selectedRequest.amount}
+                      SAR {selectedRequest.budget || selectedRequest.amount}
                     </span>
                   </div>
                   {selectedRequest.doctorName && (

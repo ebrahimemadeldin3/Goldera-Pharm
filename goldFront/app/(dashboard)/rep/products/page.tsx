@@ -36,7 +36,7 @@ export default async function Page({
   totalCount = (result.results as number) ?? products.length;
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+    <PageContainer className="min-h-[calc(100vh-80px)] flex flex-col gap-6">
       <ProductsHeader />
       <ProductsList
         products={products}

@@ -131,6 +131,7 @@ export default function CreateRequestWizard({
   const [doctorError, setDoctorError] = useState<string>("");
   const [sampleError, setSampleError] = useState<string>("");
   const [expenseItemError, setExpenseItemError] = useState<string>("");
+  const [attachmentError, setAttachmentError] = useState<string>("");
 
   const form = useForm<SubmitRequestFormValues>({
     resolver: (zodResolver(submitRequestSchema) as unknown) as Resolver<SubmitRequestFormValues>,
@@ -165,6 +166,7 @@ export default function CreateRequestWizard({
     setDoctorError("");
     setSampleError("");
     setExpenseItemError("");
+    setAttachmentError("");
 
     // Common validations
     const validTitle = await form.trigger("title");
@@ -172,6 +174,14 @@ export default function CreateRequestWizard({
     const validDescription = await form.trigger("description");
 
     let isTypeValid = true;
+
+    // File attachment is required for all request types EXCEPT SAMPLE
+    if (selectedType !== "SAMPLE" && !attachedFile) {
+      setAttachmentError(
+        "File attachment (invoice or supporting document) is required for this request type.",
+      );
+      isTypeValid = false;
+    }
 
     // Type specific validations
     if (selectedType === "EXPENSE" || selectedType === "MARKETING") {
@@ -494,7 +504,7 @@ export default function CreateRequestWizard({
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold text-[#182033]">
-                          Budget Amount (EGP) *
+                          Budget Amount (SAR) *
                         </FormLabel>
                         <FormControl>
                           <Input
@@ -761,11 +771,19 @@ export default function CreateRequestWizard({
                 )}
               />
 
-              {/* Optional Attachment Control */}
+              {/* Attachment Control */}
               <div className="rounded-[10px] border border-[#E5E8EF] bg-white p-3.5 space-y-2">
                 <FormLabel className="text-xs font-bold text-[#182033] flex items-center justify-between">
-                  <span>Attachment (Optional Invoice / PDF)</span>
-                  <span className="text-[11px] font-normal text-[#667085]">Optional</span>
+                  <span>
+                    {selectedType !== "SAMPLE"
+                      ? "Attachment (Invoice / PDF Document Required) *"
+                      : "Attachment (Optional Invoice / PDF)"}
+                  </span>
+                  {selectedType !== "SAMPLE" ? (
+                    <span className="text-[11px] font-bold text-[#D92D20]">Required</span>
+                  ) : (
+                    <span className="text-[11px] font-normal text-[#667085]">Optional</span>
+                  )}
                 </FormLabel>
 
                 {attachedFile ? (
@@ -792,11 +810,16 @@ export default function CreateRequestWizard({
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
                           setAttachedFile(e.target.files[0]);
+                          setAttachmentError("");
                         }
                       }}
                       className="hidden"
                     />
                   </label>
+                )}
+
+                {attachmentError && (
+                  <p className="text-[11px] font-medium text-[#D92D20] pt-1">{attachmentError}</p>
                 )}
               </div>
             </div>
@@ -861,7 +884,7 @@ export default function CreateRequestWizard({
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Budget Amount:</span>
                       <span className="font-bold text-[#168557]">
-                        EGP {form.watch("budget")}
+                        SAR {form.watch("budget")}
                       </span>
                     </div>
                     {selectedDoctorNames.length > 0 && (

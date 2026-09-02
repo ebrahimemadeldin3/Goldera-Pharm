@@ -49,9 +49,8 @@ export function RepMonthlySummary({
           </span>
           <div className="flex items-baseline gap-1.5">
             <span className="text-xl font-bold tracking-tight text-[#182033]">
-              {formattedSales}
+              SAR {formattedSales}
             </span>
-            <span className="text-xs font-semibold text-[#8A6515]">SAR</span>
           </div>
         </div>
 

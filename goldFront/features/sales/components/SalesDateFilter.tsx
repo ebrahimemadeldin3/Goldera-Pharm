@@ -10,6 +10,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useRoleUI } from "@/core/ui/role-ui-context";
 import {
   cn,
   formatDateOnly,
@@ -205,6 +206,8 @@ export function SalesDateFilter({
   selectedDateFrom = "",
   selectedDateTo = "",
 }: SalesDateFilterProps) {
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -342,8 +345,11 @@ export function SalesDateFilter({
             type="button"
             aria-label="Open sales date filter"
             className={cn(
-              "sales-date-filter-trigger flex h-11 w-full items-center rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-left text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow,color] duration-[170ms] outline-none hover:border-[#E9DDB8] hover:bg-[#FFFDF7] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10",
-              open && "border-[#C9A44C] ring-[3px] ring-[#C9A44C]/10",
+              "sales-date-filter-trigger flex h-11 w-full items-center rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-left text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow,color] duration-[170ms] outline-none",
+              isRep
+                ? "hover:border-[#CBEFDD] hover:bg-[#F0FDF4]/50 focus-visible:border-[#168557] focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
+                : "hover:border-[#E9DDB8] hover:bg-[#FFFDF7] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10",
+              open && (isRep ? "border-[#168557] ring-[3px] ring-[#168557]/10" : "border-[#C9A44C] ring-[3px] ring-[#C9A44C]/10"),
               hasAppliedDate ? "pr-10" : "text-[#667085]",
             )}
           >
@@ -367,7 +373,12 @@ export function SalesDateFilter({
             type="button"
             aria-label="Clear sales date filter"
             onClick={handleClearDate}
-            className="sales-date-filter-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#667085] transition-[background-color,color,transform] duration-[150ms] hover:bg-[#F8F1DC] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+            className={cn(
+              "sales-date-filter-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#667085] transition-[background-color,color,transform] duration-[150ms] focus-visible:outline-none",
+              isRep
+                ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+                : "hover:bg-[#F8F1DC] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+            )}
           >
             <X className="size-3.5" aria-hidden="true" />
           </button>
@@ -411,7 +422,10 @@ export function SalesDateFilter({
               sales_range_preview_middle: "sales-date-preview-middle",
               sales_range_preview_end: "sales-date-preview-end",
             }}
-            className="sales-date-calendar w-full p-0"
+            className={cn(
+              "sales-date-calendar w-full p-0",
+              isRep && "sales-date-calendar-rep"
+            )}
             classNames={{
               table: cn(
                 "sales-date-calendar-grid w-full border-collapse",
@@ -433,7 +447,12 @@ export function SalesDateFilter({
                   type="button"
                   key={option.id}
                   onClick={() => handleQuickSelect(option.id)}
-                  className="sales-date-quick-button h-8 rounded-[9px] border border-[#E7EAF0] bg-[#FBFCFE] px-2 text-xs font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[150ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+                  className={cn(
+                    "sales-date-quick-button h-8 rounded-[9px] border border-[#E7EAF0] bg-[#FBFCFE] px-2 text-xs font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[150ms] hover:-translate-y-px focus-visible:outline-none",
+                    isRep
+                      ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                      : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                  )}
                 >
                   {option.label}
                 </button>
@@ -456,7 +475,10 @@ export function SalesDateFilter({
             type="button"
             onClick={handleClearDate}
             disabled={!hasAppliedDate && !draftSelection.from}
-            className="sales-date-action-clear h-9 rounded-[9px] px-3 text-sm font-semibold text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F2F4F7] hover:text-[#344054] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#667085]"
+            className={cn(
+              "sales-date-action-clear h-9 rounded-[9px] px-3 text-sm font-semibold text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F2F4F7] hover:text-[#344054] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#667085]",
+              isRep ? "focus-visible:ring-2 focus-visible:ring-[#168557]/20" : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+            )}
           >
             Clear
           </button>
@@ -465,7 +487,10 @@ export function SalesDateFilter({
             <button
               type="button"
               onClick={handleCancelDate}
-              className="sales-date-action-cancel h-9 rounded-[9px] border border-[#E5E8EF] bg-white px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color] duration-[150ms] hover:border-[#D8DEE8] hover:bg-[#F9FAFB] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+              className={cn(
+                "sales-date-action-cancel h-9 rounded-[9px] border border-[#E5E8EF] bg-white px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color] duration-[150ms] hover:border-[#D8DEE8] hover:bg-[#F9FAFB] focus-visible:outline-none",
+                isRep ? "focus-visible:ring-2 focus-visible:ring-[#168557]/20" : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+              )}
             >
               Cancel
             </button>
@@ -473,7 +498,12 @@ export function SalesDateFilter({
               type="button"
               onClick={handleApplyDate}
               disabled={!draftSelection.from}
-              className="sales-date-action-apply h-9 rounded-[9px] bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(185,139,50,0.18)] transition-[filter,transform,opacity] duration-[150ms] hover:-translate-y-px hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+              className={cn(
+                "sales-date-action-apply h-9 rounded-[9px] px-4 text-sm font-semibold text-white transition-[filter,transform,opacity] duration-[150ms] hover:-translate-y-px hover:brightness-[1.02] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0",
+                isRep
+                  ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_12px_rgba(22,133,87,0.22)] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+                  : "bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] shadow-[0_4px_12px_rgba(185,139,50,0.18)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+              )}
             >
               Apply
             </button>
