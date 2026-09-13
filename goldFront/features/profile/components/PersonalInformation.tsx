@@ -39,7 +39,7 @@ type ProfileFormState = {
 };
 
 const inputClass =
-  "mt-1.5 h-9 w-full rounded-lg border-[#E5E8EF] bg-[#F6F8FB] text-sm text-[#182033] shadow-none transition-[border-color,box-shadow] placeholder:text-[#667085] focus-visible:border-gold-300 focus-visible:ring-gold-300/30";
+  "mt-1.5 h-9 w-full rounded-lg border-[#E5E8EF] bg-[#F6F8FB] text-sm text-[#182033] shadow-none transition-[border-color,box-shadow] placeholder:text-[#667085] focus-visible:outline-none";
 
 export default function PersonalInformation({
   profile,
@@ -47,6 +47,13 @@ export default function PersonalInformation({
   onEditingChange,
 }: PersonalInformationProps) {
   const router = useRouter();
+  const isRep = profile.role === "MEDICAL_REP";
+  const fieldInputClass = cn(
+    inputClass,
+    isRep
+      ? "focus-visible:border-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
+      : "focus-visible:border-gold-300 focus-visible:ring-gold-300/30",
+  );
 
   const initial = useMemo(
     (): ProfileFormState => ({
@@ -107,7 +114,14 @@ export default function PersonalInformation({
     >
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-start gap-3">
-          <span className="profile-section-icon bg-gold-50 text-gold-600 ring-gold-300/50 flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset">
+          <span
+            className={cn(
+              "profile-section-icon flex size-10 shrink-0 items-center justify-center rounded-xl ring-1 ring-inset",
+              isRep
+                ? "bg-[#E9F8F1] text-[#168557] ring-[#CBEFDD]"
+                : "bg-gold-50 text-gold-600 ring-gold-300/50",
+            )}
+          >
             <UserRound className="size-5" aria-hidden />
           </span>
           <div>
@@ -116,7 +130,14 @@ export default function PersonalInformation({
                 Personal Information
               </h3>
               {editing && (
-                <span className="profile-edit-badge bg-gold-50 text-gold-700 ring-gold-300/50 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset">
+                <span
+                  className={cn(
+                    "profile-edit-badge rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset",
+                    isRep
+                      ? "bg-[#E9F8F1] text-[#168557] ring-[#CBEFDD]"
+                      : "bg-gold-50 text-gold-700 ring-gold-300/50",
+                  )}
+                >
                   Editing
                 </span>
               )}
@@ -134,7 +155,12 @@ export default function PersonalInformation({
             type="button"
             onClick={handleSave}
             disabled={isPending}
-            className="h-9 cursor-pointer gap-2 rounded-lg bg-[#C9A44C] px-4 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:bg-[#A67C1F] hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(
+              "h-9 cursor-pointer gap-2 rounded-lg px-4 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-px hover:shadow-md active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50",
+              isRep
+                ? "bg-[#168557] hover:bg-[#107349]"
+                : "bg-[#C9A44C] hover:bg-[#A67C1F]",
+            )}
           >
             {isPending ? (
               <>
@@ -166,12 +192,12 @@ export default function PersonalInformation({
           <InfoField
             label="Full Name"
             icon={UserRound}
-            accent="gold"
+            accent={isRep ? "green" : "gold"}
             delay={40}
             span
           >
             <Input
-              className={inputClass}
+              className={fieldInputClass}
               value={form.name}
               onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
               placeholder="Enter full name"
@@ -182,7 +208,7 @@ export default function PersonalInformation({
           <InfoField label="Email Address" icon={Mail} accent="blue" delay={80}>
             <Input
               type="email"
-              className={inputClass}
+              className={fieldInputClass}
               value={form.email}
               onChange={(e) =>
                 setForm((s) => ({ ...s, email: e.target.value }))
@@ -199,7 +225,7 @@ export default function PersonalInformation({
             delay={120}
           >
             <Input
-              className={inputClass}
+              className={fieldInputClass}
               value={form.phone}
               onChange={(e) =>
                 setForm((s) => ({ ...s, phone: e.target.value }))
@@ -211,7 +237,7 @@ export default function PersonalInformation({
 
           <InfoField label="Location" icon={MapPin} accent="purple" delay={160}>
             <Input
-              className={inputClass}
+              className={fieldInputClass}
               value={form.location}
               onChange={(e) =>
                 setForm((s) => ({ ...s, location: e.target.value }))
@@ -229,7 +255,7 @@ export default function PersonalInformation({
             span
           >
             <Textarea
-              className={`${inputClass} min-h-20`}
+              className={`${fieldInputClass} min-h-20`}
               value={form.bio}
               onChange={(e) => setForm((s) => ({ ...s, bio: e.target.value }))}
               placeholder="Write a short bio..."
@@ -275,7 +301,7 @@ export default function PersonalInformation({
           <InfoField
             label="Position"
             icon={BriefcaseBusiness}
-            accent="gold"
+            accent={isRep ? "green" : "gold"}
             delay={200}
           >
             <span className="capitalize">{formatRole(profile.role)}</span>

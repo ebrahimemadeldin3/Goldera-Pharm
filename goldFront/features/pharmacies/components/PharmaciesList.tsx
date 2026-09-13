@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Filter, RotateCcw, Store } from "lucide-react";
 import { PharmacyApiResponse } from "../lib/types";
 import { format } from "date-fns";
@@ -32,8 +33,9 @@ export default function PharmaciesList({
   limit = 10,
   totalCount = 0,
 }: PharmaciesListProps) {
+  const pathname = usePathname();
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [q, setQ] = useState("");
   const [regionFilter, setRegionFilter] = useState("All Regions");
 

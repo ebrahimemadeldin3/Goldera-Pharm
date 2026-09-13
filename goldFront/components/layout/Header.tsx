@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LogoutDialog } from "./logout-dialog";
 import { useLogout } from "@/features/auth/hooks/useLogout";
-import { getInitials } from "@/lib/utils";
+import { getInitials, cn } from "@/lib/utils";
 import {
   getPageContext,
   getRoleLabel,
@@ -33,13 +33,21 @@ function UserAvatar({
   size?: "sm" | "md";
   className?: string;
 }) {
-  const { user } = useRoleUI();
+  const pathname = usePathname() ?? "/";
+  const { user, role } = useRoleUI();
   const sizeClass = size === "sm" ? "size-9" : "size-10";
   const imageSize = size === "sm" ? 36 : 40;
+  const isRep = role === "MEDICAL_REP" || pathname.startsWith("/rep");
 
   return (
     <span
-      className={`bg-brand-gold-soft text-brand-gold-dark border-brand-gold/25 flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full border text-sm font-semibold ${className}`}
+      className={cn(
+        `flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full border text-sm font-semibold`,
+        isRep
+          ? "bg-[#E9F8F1] text-[#168557] border-[#CBEFDD]"
+          : "bg-brand-gold-soft text-brand-gold-dark border-brand-gold/25",
+        className
+      )}
     >
       {user.profileImage?.public_id ? (
         <SafeCldImage
@@ -60,6 +68,7 @@ function UserAvatar({
 const Header = () => {
   const pathname = usePathname() ?? "/";
   const { user, role, sidebar } = useRoleUI();
+  const isRep = role === "MEDICAL_REP" || pathname.startsWith("/rep");
   const { logout, isPending } = useLogout();
   const [profileOpen, setProfileOpen] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -101,7 +110,12 @@ const Header = () => {
                 type="button"
                 aria-label="Open user menu"
                 aria-expanded={profileOpen}
-                className="border-nav-border hover:bg-nav-hover focus-visible:ring-brand-gold/35 flex h-11 max-w-[230px] cursor-pointer items-center gap-2 rounded-2xl border bg-white px-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className={cn(
+                  "border-nav-border hover:bg-nav-hover flex h-11 max-w-[230px] cursor-pointer items-center gap-2 rounded-2xl border bg-white px-2 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none",
+                  isRep
+                    ? "focus-visible:ring-[#168557]/35"
+                    : "focus-visible:ring-brand-gold/35"
+                )}
               >
                 <UserAvatar size="sm" />
                 <span className="hidden min-w-0 flex-col sm:flex">
@@ -130,7 +144,7 @@ const Header = () => {
                     <p className="text-nav-text truncate text-sm font-semibold">
                       {shortName}
                     </p>
-                    <p className="text-brand-gold-dark mt-0.5 truncate text-xs font-medium">
+                    <p className={cn("mt-0.5 truncate text-xs font-medium", isRep ? "text-[#168557]" : "text-brand-gold-dark")}>
                       {getRoleLabel(role)}
                     </p>
                     <p className="text-nav-muted mt-0.5 truncate text-xs font-normal">

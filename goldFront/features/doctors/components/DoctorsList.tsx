@@ -42,6 +42,7 @@ export default function DoctorsList({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
 
   const [q, setQ] = useState("");
 
@@ -149,7 +150,7 @@ export default function DoctorsList({
               <SelectTrigger
                 className={cn(
                   "h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033]",
-                  role === "MEDICAL_REP"
+                  isRep
                     ? "hover:border-gp-rep-primary-border focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
                     : "hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
                 )}

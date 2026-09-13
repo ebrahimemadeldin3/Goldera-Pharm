@@ -245,6 +245,68 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+[data-role="MEDICAL_REP"] {
+  --nav-border: #E5E8EF;
+  --nav-hover: rgba(22, 133, 87, 0.08);
+  --nav-active: #E9F8F1;
+  --nav-active-gradient: linear-gradient(
+    90deg,
+    rgba(22, 133, 87, 0.14) 0%,
+    rgba(22, 133, 87, 0.05) 55%,
+    rgba(22, 133, 87, 0) 100%
+  );
+  --nav-active-text: #168557;
+  --nav-active-icon: #168557;
+  --brand-gold: #168557;
+  --brand-gold-dark: #107349;
+  --brand-gold-soft: #E9F8F1;
+  --auth-gold: #168557;
+  --auth-gold-dark: #107349;
+  --auth-gold-soft: #E9F8F1;
+  --system-primary: #168557;
+  --system-gradient-from: #168557;
+  --system-gradient-to: #107349;
+  --system-primary-stroke: #CBEFDD;
+  --system-primary-light: #E9F8F1;
+  --gp-gold-50: #E9F8F1;
+  --gp-gold-100: #E9F8F1;
+  --gp-gold-300: #CBEFDD;
+  --gp-gold-500: #168557;
+  --gp-gold-600: #107349;
+  --gp-gold-700: #0a5233;
+  --color-gold-50: #E9F8F1;
+  --color-gold-100: #d4f3e4;
+  --color-gold-200: #b8ebd0;
+  --color-gold-300: #CBEFDD;
+  --color-gold-400: #48b884;
+  --color-gold-500: #168557;
+  --color-gold-600: #107349;
+  --color-gold-700: #0a5233;
+  --gp-surface-hover: #E9F8F1;
+  --gp-shadow-gold-action: 0 10px 24px rgba(22, 133, 87, 0.28);
+}
+
+[data-role="MEDICAL_REP"] input:focus-visible,
+[data-role="MEDICAL_REP"] input:focus {
+  border-color: #168557 !important;
+  --tw-ring-color: rgba(22, 133, 87, 0.25) !important;
+}
+
+[data-role="MEDICAL_REP"] .profile-action:hover {
+  border-color: #CBEFDD !important;
+  background-color: #E9F8F1 !important;
+}
+
+[data-role="MEDICAL_REP"] .profile-action:hover .profile-action-symbol {
+  color: #168557 !important;
+  background: #CBEFDD !important;
+  border-color: #168557 !important;
+}
+
+[data-role="MEDICAL_REP"] .profile-camera:hover {
+  box-shadow: 0 10px 20px rgba(22, 133, 87, 0.22) !important;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -790,7 +852,7 @@
 }
 
 .premium-nav-item[data-nav-active="true"]:hover {
-  background: rgba(201, 164, 76, 0.05);
+  background: var(--nav-hover);
 }
 
 .premium-nav-icon {
@@ -2672,6 +2734,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
   will-change: transform;
 }
 
+[data-role="MEDICAL_REP"] .visits-mode-switch-indicator,
 .visits-mode-switch-indicator-rep {
   border: 1px solid #CBEFDD !important;
   background: #ffffff !important;
@@ -3546,6 +3609,21 @@ input[type="password"]::-webkit-textfield-decoration-container {
   color: #b18732;
 }
 
+[data-role="MEDICAL_REP"] .products-catalog-filter-button:focus-visible,
+[data-role="MEDICAL_REP"] .products-catalog-filter-open,
+.products-catalog-filter-open-rep {
+  background: #E9F8F1 !important;
+  border-color: #CBEFDD !important;
+  box-shadow: 0 0 0 2px rgba(22, 133, 87, 0.1) !important;
+}
+
+[data-role="MEDICAL_REP"] .products-catalog-filter-open .products-catalog-filter-icon,
+[data-role="MEDICAL_REP"] .products-catalog-filter-open .products-catalog-filter-chevron,
+.products-catalog-filter-open-rep .products-catalog-filter-icon,
+.products-catalog-filter-open-rep .products-catalog-filter-chevron {
+  color: #168557 !important;
+}
+
 .products-catalog-filter-count-badge {
   box-shadow:
     inset 0 0 0 1px rgba(24, 32, 51, 0.12),
@@ -3738,6 +3816,20 @@ input[type="password"]::-webkit-textfield-decoration-container {
   filter: saturate(1.03);
 }
 
+[data-role="MEDICAL_REP"] .products-filter-show-button,
+.products-filter-show-button-rep {
+  background: #168557 !important;
+  border-color: #168557 !important;
+  color: #ffffff !important;
+}
+
+[data-role="MEDICAL_REP"] .products-filter-show-button:hover,
+.products-filter-show-button-rep:hover {
+  background: #107349 !important;
+  border-color: #107349 !important;
+  box-shadow: 0 8px 20px rgba(22, 133, 87, 0.28) !important;
+}
+
 .products-filter-clear-button:not(:disabled):hover {
   transform: translateY(-1px);
 }
@@ -3795,6 +3887,15 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
   .products-catalog-filter-field:hover .products-catalog-filter-icon {
     color: #b18732;
+  }
+
+  [data-role="MEDICAL_REP"] .products-catalog-filter-field:hover {
+    background: #E9F8F1 !important;
+    border-color: #CBEFDD !important;
+  }
+
+  [data-role="MEDICAL_REP"] .products-catalog-filter-field:hover .products-catalog-filter-icon {
+    color: #168557 !important;
   }
 
   .products-catalog-filter-option:hover {

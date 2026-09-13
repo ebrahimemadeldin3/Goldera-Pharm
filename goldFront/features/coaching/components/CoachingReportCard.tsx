@@ -101,7 +101,7 @@ export default function CoachingReportCard({
           </div>
         </div>
 
-        <StarRating value={r.rating} />
+        <StarRating value={r.rating} isRep={isRep} />
       </CardHeader>
 
       <CardContent className="p-0 space-y-3">

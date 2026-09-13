@@ -2,6 +2,7 @@
 
 import { Bell, X } from "lucide-react";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -12,10 +13,15 @@ import {
 
 import { NotificationItem } from "@/features/auth/lib/types";
 import IconByType from "@/features/auth/lib/utils/IconByType";
+import { useRoleUI } from "@/core/ui/role-ui-context";
+import { cn } from "@/lib/utils";
 
 const NOTIFICATIONS: NotificationItem[] = [];
 
 const Notifications = () => {
+  const pathname = usePathname();
+  const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [open, setOpen] = useState(false);
   const unreadCount = NOTIFICATIONS.filter((n) => n.unread).length;
   const isEmpty = NOTIFICATIONS.length === 0;
@@ -27,7 +33,12 @@ const Notifications = () => {
           type="button"
           aria-label="Notifications"
           title="Notifications"
-          className="border-nav-border text-nav-muted hover:bg-nav-hover hover:text-brand-gold-dark focus-visible:ring-brand-gold/35 relative flex size-10 cursor-pointer items-center justify-center rounded-xl border bg-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+          className={cn(
+            "border-nav-border text-nav-muted hover:bg-nav-hover relative flex size-10 cursor-pointer items-center justify-center rounded-xl border bg-white transition-colors focus-visible:ring-2 focus-visible:outline-none",
+            isRep
+              ? "hover:text-[#168557] focus-visible:ring-[#168557]/35"
+              : "hover:text-brand-gold-dark focus-visible:ring-brand-gold/35"
+          )}
         >
           <Bell size={18} aria-hidden="true" />
           {unreadCount > 0 && (
@@ -45,7 +56,10 @@ const Notifications = () => {
       >
         <div className="flex items-center justify-between px-4 py-3.5">
           <div className="flex items-center gap-3">
-            <span className="bg-brand-gold-soft text-brand-gold-dark flex size-9 items-center justify-center rounded-xl">
+            <span className={cn(
+              "flex size-9 items-center justify-center rounded-xl",
+              isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-brand-gold-soft text-brand-gold-dark"
+            )}>
               <Bell size={18} aria-hidden="true" />
             </span>
             <div>
@@ -63,7 +77,10 @@ const Notifications = () => {
             type="button"
             aria-label="Close notifications"
             onClick={() => setOpen(false)}
-            className="text-nav-muted hover:bg-nav-hover hover:text-brand-gold-dark focus-visible:ring-brand-gold/35 flex size-8 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            className={cn(
+              "text-nav-muted hover:bg-nav-hover flex size-8 cursor-pointer items-center justify-center rounded-lg transition-colors focus-visible:ring-2 focus-visible:outline-none",
+              isRep ? "hover:text-[#168557] focus-visible:ring-[#168557]/35" : "hover:text-brand-gold-dark focus-visible:ring-brand-gold/35"
+            )}
           >
             <X size={16} aria-hidden="true" />
           </button>
@@ -74,7 +91,10 @@ const Notifications = () => {
         <div className="max-h-80 overflow-x-hidden overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center">
-              <span className="bg-secondary-very-light text-nav-muted flex size-12 items-center justify-center rounded-2xl">
+              <span className={cn(
+                "flex size-12 items-center justify-center rounded-2xl",
+                isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-secondary-very-light text-nav-muted"
+              )}>
                 <Bell size={22} aria-hidden="true" />
               </span>
               <div>
@@ -92,13 +112,13 @@ const Notifications = () => {
                 <div key={n.id}>
                   <div
                     className={`relative flex gap-3 px-4 py-4 ${
-                      n.unread ? "bg-nav-active" : ""
+                      n.unread ? (isRep ? "bg-[#E9F8F1]/50" : "bg-nav-active") : ""
                     }`}
                   >
                     <div
                       className={`flex size-10 items-center justify-center rounded-xl ${
                         n.unread
-                          ? "bg-brand-gold-soft text-brand-gold-dark"
+                          ? isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-brand-gold-soft text-brand-gold-dark"
                           : "text-nav-muted bg-slate-100"
                       }`}
                     >
@@ -121,7 +141,7 @@ const Notifications = () => {
                     </div>
 
                     {n.unread && (
-                      <span className="bg-brand-gold mt-1.5 size-2 shrink-0 rounded-full" />
+                      <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", isRep ? "bg-[#168557]" : "bg-brand-gold")} />
                     )}
                   </div>
 

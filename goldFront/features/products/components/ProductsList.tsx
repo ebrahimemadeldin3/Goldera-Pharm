@@ -9,6 +9,7 @@ import {
   type CSSProperties,
 } from "react";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -371,41 +372,60 @@ function CategoryBadge({ category }: { category: string }) {
 type FilterTriggerButtonProps = {
   activeFilterCount: number;
   isOpen: boolean;
+  isRep?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 const FilterTriggerButton = forwardRef<
   HTMLButtonElement,
   FilterTriggerButtonProps
 >(function FilterTriggerButton(
-  { activeFilterCount, isOpen, className = "", ...props },
+  { activeFilterCount, isOpen, isRep = false, className = "", ...props },
   ref,
 ) {
   return (
     <button
       ref={ref}
       type="button"
-      className={`products-catalog-filter-field products-catalog-filter-button group/filter inline-flex h-11 w-full items-center justify-between gap-2 rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-semibold text-[#4B5568] outline-none ${className} ${
-        isOpen ? "products-catalog-filter-open" : ""
-      }`}
+      className={cn(
+        "products-catalog-filter-field products-catalog-filter-button group/filter inline-flex h-11 w-full items-center justify-between gap-2 rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-semibold text-[#4B5568] transition-[background-color,border-color,color,box-shadow] duration-[160ms] outline-none",
+        isRep
+          ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+          : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
+        isOpen && (isRep ? "products-catalog-filter-open-rep border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]" : "products-catalog-filter-open border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"),
+        className
+      )}
       aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
       {...props}
     >
       <span className="flex min-w-0 items-center gap-2">
         <SlidersHorizontal
-          className="products-catalog-filter-icon size-4 shrink-0 text-[#667085]"
+          className={cn(
+            "products-catalog-filter-icon size-4 shrink-0 transition-colors",
+            isOpen || activeFilterCount > 0
+              ? isRep
+                ? "text-[#168557]"
+                : "text-[#8A6515]"
+              : "text-[#667085] group-hover:text-[#168557]"
+          )}
           aria-hidden="true"
         />
         <span className="truncate">Filters</span>
         {activeFilterCount > 0 && (
-          <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#168557] px-1.5 text-[11px] leading-none font-bold text-white">
+          <span
+            className={cn(
+              "products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[11px] leading-none font-bold text-white",
+              isRep ? "bg-[#168557]" : "bg-[#C9A44C]"
+            )}
+          >
             {activeFilterCount}
           </span>
         )}
       </span>
       <ChevronDown
-        className={`products-catalog-filter-chevron size-4 shrink-0 text-[#98A2B3] ${
-          isOpen ? "rotate-180" : ""
-        }`}
+        className={cn(
+          "products-catalog-filter-chevron size-4 shrink-0 text-[#98A2B3] transition-transform duration-200",
+          isOpen && "rotate-180"
+        )}
         aria-hidden="true"
       />
     </button>
@@ -973,8 +993,9 @@ export default function ProductsList({
   limit = 10,
   totalCount = 0,
 }: ProductsListProps) {
+  const pathname = usePathname();
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const canManageProducts = role === "MANAGER";
   const [q, setQ] = useState("");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -1301,7 +1322,7 @@ export default function ProductsList({
           value={numberFormatter.format(summary.categories)}
           helper="Product categories"
           icon={Tag}
-          tone="gold"
+          tone={isRep ? "green" : "gold"}
           animationDelay="230ms"
         />
       </section>
@@ -1320,7 +1341,12 @@ export default function ProductsList({
               className="products-catalog-count-chip-enter mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-medium text-[#667085]"
             >
               <span
-                className="size-1.5 rounded-full bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
+                className={cn(
+                  "size-1.5 rounded-full",
+                  isRep
+                    ? "bg-[#168557] shadow-[0_0_0_3px_rgba(22,133,87,0.15)]"
+                    : "bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
+                )}
                 aria-hidden="true"
               />
               <span>
@@ -1371,6 +1397,7 @@ export default function ProductsList({
                   <FilterTriggerButton
                     activeFilterCount={activeFilterCount}
                     isOpen={isFilterOpen}
+                    isRep={isRep}
                     className="products-catalog-filter-field products-catalog-filter-button"
                     aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
                   />
@@ -1416,6 +1443,7 @@ export default function ProductsList({
                   <FilterTriggerButton
                     activeFilterCount={activeFilterCount}
                     isOpen={isFilterOpen}
+                    isRep={isRep}
                     className="products-catalog-filter-field products-catalog-filter-button"
                     aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
                   />

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   CalendarPlus,
@@ -130,7 +131,8 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
     }
   }, [dialogOpen, doctors.length, role]);
 
-  const isRep = role === "MEDICAL_REP";
+  const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
 
   const completionPercent =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
@@ -210,27 +212,12 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
   return (
     <>
       <div className="space-y-5">
-        <header className="visits-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="min-w-0">
-            <h1 className="text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
-              Visit Calendar
-            </h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
-              Track and manage medical rep visits, schedules, and completion
-              reports.
-            </p>
-          </div>
-
-          <div className="w-full shrink-0 sm:w-auto">
+        {isRep ? (
+          <div className="flex items-center justify-end pb-1">
             <Button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className={cn(
-                "visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto cursor-pointer",
-                role === "MEDICAL_REP"
-                  ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
-                  : "bg-[#C9A44C] hover:bg-[#B18732] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
-              )}
+              className="visits-add-trigger group inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-gp-rep-primary px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:-translate-y-px hover:bg-gp-rep-primary-hover hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30 cursor-pointer"
             >
               <CalendarPlus
                 className="visits-add-trigger-icon h-4 w-4"
@@ -243,7 +230,40 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
               Add Visit Page
             </Link>
           </div>
-        </header>
+        ) : (
+          <header className="visits-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <h1 className="text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
+                Visit Calendar
+              </h1>
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
+                Track and manage medical rep visits, schedules, and completion
+                reports.
+              </p>
+            </div>
+
+            <div className="w-full shrink-0 sm:w-auto">
+              <Button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className={cn(
+                  "visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto cursor-pointer",
+                  "bg-[#C9A44C] hover:bg-[#B18732] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                )}
+              >
+                <CalendarPlus
+                  className="visits-add-trigger-icon h-4 w-4"
+                  aria-hidden="true"
+                />
+                Add Visit
+              </Button>
+
+              <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
+                Add Visit Page
+              </Link>
+            </div>
+          </header>
+        )}
 
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {summaryCards.map((card) => (

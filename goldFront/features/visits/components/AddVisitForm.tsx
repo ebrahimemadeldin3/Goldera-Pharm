@@ -14,7 +14,7 @@ import {
   UserCheck,
   Users,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "@/lib/utils/toast";
 import { getProductsAction } from "@/features/forecast/api";
 import type { Product } from "@/features/forecast/lib/types";
@@ -86,17 +86,15 @@ type RoleBasedAddVisitFormProps = (
 
 const labelClassName = "text-xs font-semibold text-[#344054]";
 const fieldClassName =
-  "h-11 w-full rounded-[11px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
+  "h-11 w-full rounded-[11px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[3px] focus-visible:ring-[#168557]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
 const fieldButtonClassName = cn(
   fieldClassName,
-  "w-full justify-start text-left hover:bg-[#FFFDF7] hover:text-[#182033]",
+  "w-full justify-start text-left hover:bg-[#F0FDF4]/30 hover:text-[#182033]",
 );
 const selectContentClassName =
   "visits-add-select-content rounded-[12px] border border-[#E5E8EF] bg-white text-[#182033] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
 const selectItemClassName =
   "rounded-[9px] text-sm font-medium text-[#344054] focus:bg-[#FFF8E5] focus:text-[#8A6515] data-[state=checked]:text-[#182033] [&_svg]:text-[#B18732]";
-const comboboxTriggerClassName =
-  "visits-add-combobox-trigger h-11 rounded-[11px] border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none hover:border-[#D8DEE8] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
 const comboboxDropdownClassName =
   "visits-add-combobox-dropdown rounded-[12px] border-[#E5E8EF] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
 const comboboxSelectedClassName = "bg-[#FFF8E5] text-[#182033]";
@@ -298,18 +296,36 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   const showMedicalRepField =
     (role === "MANAGER" || role === "SUPERVISOR") && visitType === "COACHING";
 
+  const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+
   const renderComboboxProps = {
-    triggerClassName: comboboxTriggerClassName,
+    triggerClassName: cn(
+      "visits-add-combobox-trigger h-11 rounded-[11px] border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none hover:border-[#D8DEE8] aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10",
+      isRep
+        ? "focus-visible:border-[#168557] focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
+        : "focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
+    ),
     dropdownClassName: comboboxDropdownClassName,
     searchShellClassName: "bg-[#FBFCFE] border-[#EEF1F6]",
     searchInputClassName: "text-sm placeholder:text-[#98A2B3]",
-    optionClassName:
-      "rounded-[9px] px-3 py-2.5 text-sm hover:bg-[#FFFDF7] hover:text-[#8A6515]",
-    selectedOptionClassName: comboboxSelectedClassName,
-    badgeClassName: comboboxBadgeClassName,
-    clearButtonClassName: "hover:bg-[#FFF8E5] hover:text-[#8A6515]",
+    optionClassName: cn(
+      "rounded-[9px] px-3 py-2.5 text-sm",
+      isRep
+        ? "hover:bg-[#E9F8F1] hover:text-[#168557]"
+        : "hover:bg-[#FFFDF7] hover:text-[#8A6515]"
+    ),
+    selectedOptionClassName: isRep
+      ? "bg-[#E9F8F1] text-[#168557] font-semibold"
+      : comboboxSelectedClassName,
+    badgeClassName: isRep
+      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+      : comboboxBadgeClassName,
+    clearButtonClassName: isRep
+      ? "hover:bg-[#E9F8F1] hover:text-[#168557]"
+      : "hover:bg-[#FFF8E5] hover:text-[#8A6515]",
     chevronClassName: "text-[#8A94A6]",
-    checkClassName: "text-[#B18732]",
+    checkClassName: isRep ? "text-[#168557]" : "text-[#B18732]",
   };
 
   return (
@@ -406,7 +422,10 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                         labelFormatter={(option) => (
                           <span className="flex min-w-0 items-center gap-2">
                             <Stethoscope
-                              className="size-4 shrink-0 text-[#B18732]"
+                              className={cn(
+                                "size-4 shrink-0",
+                                isRep ? "text-[#168557]" : "text-gold-600"
+                              )}
                               aria-hidden="true"
                             />
                             <span className="truncate">{option.label}</span>
@@ -440,7 +459,10 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                         labelFormatter={(option) => (
                           <span className="flex min-w-0 items-center gap-2">
                             <PackageSearch
-                              className="size-4 shrink-0 text-[#B18732]"
+                              className={cn(
+                                "size-4 shrink-0",
+                                isRep ? "text-[#168557]" : "text-[#B18732]"
+                              )}
                               aria-hidden="true"
                             />
                             <span className="truncate">{option.label}</span>
@@ -700,7 +722,12 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                         <Textarea
                           placeholder="Enter any additional notes or objectives for this visit..."
                           {...field}
-                          className="min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10"
+                          className={cn(
+                            "min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10",
+                            isRep
+                              ? "focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
+                              : "focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
+                          )}
                         />
                       </FormControl>
                     </div>

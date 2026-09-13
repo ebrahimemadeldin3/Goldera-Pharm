@@ -131,9 +131,12 @@ export async function createVisitReportAction(data: VisitReportFormValues) {
 export async function getVisitReportData(
   visitId: string,
 ): Promise<VisitReportData> {
-  const visitsResponse = await apiFetch<FetchVisitsResponse>("/api/visits", {
-    method: "GET",
-  });
+  const visitsResponse = await apiFetch<FetchVisitsResponse>(
+    "/api/visits?paginate=false",
+    {
+      method: "GET",
+    },
+  );
 
   const visit = visitsResponse.data.find((item) => item.id === visitId);
 

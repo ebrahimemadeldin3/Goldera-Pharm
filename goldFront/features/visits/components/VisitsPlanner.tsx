@@ -28,6 +28,7 @@ import { Visit } from "@/features/visits/lib/types/ui";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import type { VisitStatus } from "@/lib/types";
 import { cn, formatDateOnly } from "@/lib/utils";
+import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ChevronLeft,
@@ -161,6 +162,7 @@ export default function VisitsPlanner({
   visits = [],
   reportBasePath,
 }: VisitsPlannerProps) {
+  const pathname = usePathname();
   const [mode, setMode] = useState<VisitMode>("day");
   const [selected, setSelected] = useState<Date>(new Date());
   const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
@@ -170,7 +172,7 @@ export default function VisitsPlanner({
   const [searchQuery, setSearchQuery] = useState<string>("");
 
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
 
   const statusDotsByDate = useMemo(() => {
     const statusSetsByDate = new Map<string, Set<VisitStatus>>();

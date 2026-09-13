@@ -35,6 +35,10 @@ export default function PharmaciesHeader({
     return { totalPharmacies: total, topRegions: top };
   }, [pharmacies]);
 
+  if (isRep) {
+    return null;
+  }
+
   return (
     <PageHeader
       title={isRep ? "Pharmacies" : "Pharmacies Database"}

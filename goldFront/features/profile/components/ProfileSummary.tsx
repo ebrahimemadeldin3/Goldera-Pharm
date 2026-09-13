@@ -40,13 +40,16 @@ function formatTime(value?: string | null): string {
 }
 
 export default function ProfileSummary({ profile }: { profile: UserProfile }) {
+  const isRep = profile.role === "MEDICAL_REP";
   const cards = [
     {
       label: "TENURE",
       value: getTenureSummary(profile.dateOfRecruitment),
       detail: `Joined ${formatDate(profile.dateOfRecruitment)}`,
       icon: CalendarClock,
-      iconClass: "bg-gold-50 text-gold-600 ring-gold-300/50",
+      iconClass: isRep
+        ? "bg-[#E9F8F1] text-[#168557] ring-[#CBEFDD]"
+        : "bg-gold-50 text-gold-600 ring-gold-300/50",
     },
     {
       label: "LEAVE",

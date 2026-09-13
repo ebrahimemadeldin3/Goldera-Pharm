@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { eachDayOfInterval, isSameDay, format } from "date-fns";
 import VisitCard from "@/features/visits/components/shared/VisitCard";
@@ -42,8 +43,9 @@ export default function WeekVisitsPanel({
   selectedDate?: Date;
   isSearching?: boolean;
 }) {
+  const pathname = usePathname();
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const days = eachDayOfInterval(range);
 
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(

@@ -207,9 +207,9 @@ export function SalesDateFilter({
   selectedDateTo = "",
 }: SalesDateFilterProps) {
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const searchParams = useSearchParams();
   const appliedSelection = useMemo(
     () =>

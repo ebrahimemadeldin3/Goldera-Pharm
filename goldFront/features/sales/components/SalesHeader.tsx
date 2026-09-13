@@ -49,11 +49,11 @@ export default function SalesHeader({
   searchQuery = "",
 }: SalesHeaderProps) {
   const { role } = useRoleUI();
-  const isManager = role === "MANAGER";
-  const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isManager = role === "MANAGER";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [repId, setRepId] = useState(selectedRepId || "all");
   const [sheetName, setSheetName] = useState(selectedSheetName || "");
 
@@ -135,30 +135,32 @@ export default function SalesHeader({
 
   return (
     <div className="space-y-5">
-      <header className="sales-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <p
-            className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${
-              isRep ? "text-[#168557]" : "text-[#B18732]"
-            }`}
-          >
-            {isRep ? "Personal Territory" : "Commercial"}
-          </p>
-          <h1 className="mt-1 text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
-            {isRep ? "Sales" : "Sales Data"}
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
-            {isRep
-              ? "Track your personal sales activity and product performance"
-              : "Track and analyze sales performance across all regions and representatives."}
-          </p>
-        </div>
-        {isManager && (
-          <div className="w-full sm:w-auto">
-            <UploadSalesDialog />
+      {!isRep && (
+        <header className="sales-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p
+              className={`text-[11px] font-semibold tracking-[0.08em] uppercase ${
+                isRep ? "text-[#168557]" : "text-[#B18732]"
+              }`}
+            >
+              {isRep ? "Personal Territory" : "Commercial"}
+            </p>
+            <h1 className="mt-1 text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
+              {isRep ? "Sales" : "Sales Data"}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
+              {isRep
+                ? "Track your personal sales activity and product performance"
+                : "Track and analyze sales performance across all regions and representatives."}
+            </p>
           </div>
-        )}
-      </header>
+          {isManager && (
+            <div className="w-full sm:w-auto">
+              <UploadSalesDialog />
+            </div>
+          )}
+        </header>
+      )}
 
       {(isManager || isRep) && (
         <form

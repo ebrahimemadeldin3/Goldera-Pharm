@@ -560,9 +560,9 @@ export default function SalesTable({
   hasAppliedFilters = false,
 }: SalesTableProps) {
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
   const router = useRouter();
   const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const searchParams = useSearchParams();
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);

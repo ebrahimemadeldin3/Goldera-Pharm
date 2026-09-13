@@ -6,7 +6,6 @@ import {
   CalendarDays,
   CalendarRange,
   Clock,
-  Fingerprint,
   IdCard,
   RefreshCw,
   ShieldCheck,
@@ -38,6 +37,7 @@ function StatusValue({ active }: { active: boolean }) {
 
 export default function AccountDetails({ profile }: { profile: UserProfile }) {
   const { ref, visible } = useInView<HTMLElement>(0.2);
+  const isRep = profile.role === "MEDICAL_REP";
 
   return (
     <section
@@ -48,33 +48,26 @@ export default function AccountDetails({ profile }: { profile: UserProfile }) {
         "profile-inview",
         visible && "profile-inview-visible",
       )}
-      style={{ transitionDelay: "150ms" } as CSSProperties}
+      style={{ "--profile-delay": "240ms" } as CSSProperties}
     >
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
-          <span className="profile-section-icon flex size-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-[#3972D5] ring-1 ring-blue-200 ring-inset">
-            <Fingerprint className="size-5" aria-hidden />
+      <div className="flex items-start justify-between gap-4 border-b border-[#EEF1F6] pb-4">
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-slate-200 ring-inset">
+            <ShieldCheck className="size-5" aria-hidden />
           </span>
           <div>
             <h3 className="text-base font-semibold text-[#182033]">
               Account Details
             </h3>
-            <p className="mt-1 text-xs text-[#667085]">
-              Account status, identification and lifecycle metadata.
-            </p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F6F8FB] px-3 py-1 text-xs font-semibold text-[#667085] ring-1 ring-[#E5E8EF] ring-inset">
-          <Fingerprint className="size-3.5" aria-hidden />
-          {profile.id.slice(-8).toUpperCase()}
-        </span>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
         <InfoField
           label="Date of Birth"
           icon={CalendarDays}
-          accent="gold"
+          accent={isRep ? "green" : "gold"}
           delay={40}
         >
           {profile.dateOfBirth ? (
@@ -134,7 +127,7 @@ export default function AccountDetails({ profile }: { profile: UserProfile }) {
         <InfoField
           label="Profile Created"
           icon={UserPlus}
-          accent="gold"
+          accent={isRep ? "green" : "gold"}
           delay={280}
         >
           {formatSaudiDateTimeDisplay(new Date(profile.createdAt))}

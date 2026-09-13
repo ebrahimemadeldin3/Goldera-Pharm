@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Stethoscope, Phone, Mail, Building2, Calendar } from "lucide-react";
 import { DoctorCardData } from "../lib/types";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import { cn } from "@/lib/utils";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
@@ -71,7 +72,8 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
     setScheduleDialogOpen(true);
   };
 
-  const isRep = role === "MEDICAL_REP";
+  const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
 
   return (
     <>

@@ -18,6 +18,7 @@ import type { VisitStatus } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { useRoleUI } from "@/core/ui/role-ui-context";
 
@@ -46,8 +47,9 @@ export default function VisitCard({
   reportBasePath,
   animationDelay = "0ms",
 }: VisitCardProps) {
+  const pathname = usePathname();
   const { role } = useRoleUI();
-  const isRep = role === "MEDICAL_REP";
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   const createdAtLabel = visit.createdAt

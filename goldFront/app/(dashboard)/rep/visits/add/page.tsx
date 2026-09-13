@@ -47,22 +47,15 @@ export default async function Page() {
   
   return (
     <PageContainer className="flex min-h-[calc(100vh-195px)] flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-start gap-3">
+      <div className="flex items-center gap-2">
         <Link
           href="/rep/visits"
-          className="border-[#E5E8EF] text-[#182033] hover:bg-[#F9FAFB] inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border bg-white transition-colors"
+          className="border-[#E5E8EF] text-[#344054] hover:bg-[#F9FAFB] inline-flex h-9 items-center gap-2 rounded-[10px] border bg-white px-3 text-xs font-semibold transition-colors"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft size={15} />
+          <span>Back to Visits</span>
         </Link>
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight text-[#182033] sm:text-3xl">
-            Schedule New Visit
-          </h1>
-          <p className="mt-0.5 text-sm font-medium text-[#667085]">
-            Schedule a new doctor visit for your field territory
-          </p>
-        </div>
-      </header>
+      </div>
       <AddVisitForm role="MEDICAL_REP" doctors={doctors ?? []} />
     </PageContainer>
   );

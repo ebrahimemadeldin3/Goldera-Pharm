@@ -24,7 +24,10 @@ export default async function DashboardLayout({
         profileImage: user.data.profileImage,
       }}
     >
-      <main className="bg-secondary-very-light flex h-dvh min-h-dvh w-full items-stretch overflow-hidden">
+      <main
+        data-role={user.data.role}
+        className="bg-secondary-very-light flex h-dvh min-h-dvh w-full items-stretch overflow-hidden"
+      >
         <AppSidebar />
         <section className="flex h-dvh min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <Header />

@@ -309,7 +309,7 @@ export default function VisitReportForm({
               <h2 className="text-xl/6 font-normal text-black">
                 Samples Provided
               </h2>
-              <span className="bg-system-primary rounded-md px-2 py-0.5 text-xs font-medium text-white">
+              <span className="rounded-md border border-[#CBEFDD] bg-[#E9F8F1] px-2.5 py-0.5 text-xs font-semibold text-[#168557]">
                 {selectedSamples.length} Selected
               </span>
             </div>

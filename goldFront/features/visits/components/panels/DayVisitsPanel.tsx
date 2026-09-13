@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { format } from "date-fns";
 import VisitCard from "../shared/VisitCard";
 import { Calendar, Plus, ChevronDown, ChevronUp } from "lucide-react";
@@ -25,7 +26,9 @@ export default function DayVisitsPanel({
   reportBasePath,
   isSearching = false,
 }: DayVisitsPanelProps) {
+  const pathname = usePathname();
   const { role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -117,7 +120,7 @@ export default function DayVisitsPanel({
                 onClick={() => setExpanded(!expanded)}
                 className={cn(
                   "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-                  role === "MEDICAL_REP"
+                  isRep
                     ? "hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary focus-visible:ring-2 focus-visible:ring-gp-rep-primary/20"
                     : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
                 )}

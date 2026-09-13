@@ -175,11 +175,13 @@ export default function CreateRequestWizard({
 
     let isTypeValid = true;
 
-    // File attachment is required for all request types EXCEPT SAMPLE
+    // File attachment is required for all request types EXCEPT SAMPLE (backend contract requirement)
     if (selectedType !== "SAMPLE" && !attachedFile) {
-      setAttachmentError(
-        "File attachment (invoice or supporting document) is required for this request type.",
-      );
+      const errorMsg =
+        selectedType === "LEAVE"
+          ? "Supporting document (medical note or leave form) is required."
+          : "File attachment (invoice or supporting document) is required for this request type.";
+      setAttachmentError(errorMsg);
       isTypeValid = false;
     }
 
@@ -775,7 +777,9 @@ export default function CreateRequestWizard({
               <div className="rounded-[10px] border border-[#E5E8EF] bg-white p-3.5 space-y-2">
                 <FormLabel className="text-xs font-bold text-[#182033] flex items-center justify-between">
                   <span>
-                    {selectedType !== "SAMPLE"
+                    {selectedType === "LEAVE"
+                      ? "Supporting Document (PDF / Image) *"
+                      : selectedType !== "SAMPLE"
                       ? "Attachment (Invoice / PDF Document Required) *"
                       : "Attachment (Optional Invoice / PDF)"}
                   </span>

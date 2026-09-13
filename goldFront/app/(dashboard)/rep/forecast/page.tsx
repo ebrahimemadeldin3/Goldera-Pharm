@@ -21,27 +21,14 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   return (
     <PageContainer className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex flex-col items-start justify-center">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] px-2.5 py-0.5 text-[11px] font-semibold text-[#168557] uppercase tracking-wider">
-              Planning
-            </span>
-          </div>
-          <h1 className="mt-1 text-2xl font-bold tracking-tight text-[#182033] sm:text-3xl">
-            Forecast
-          </h1>
-          <p className="mt-0.5 text-sm text-[#667085]">
-            Plan and track your product distribution forecasts
-          </p>
-        </div>
+      <div className="flex items-center justify-end pb-1">
         <Link href="/rep/forecast/new">
-          <Button className="h-10 rounded-[10px] bg-gp-rep-primary px-4 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30">
+          <Button className="h-10 rounded-[10px] bg-gp-rep-primary px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30 cursor-pointer">
             <Plus className="mr-1.5 h-4 w-4" />
             New Forecast
           </Button>
         </Link>
-      </header>
+      </div>
       <ForecastStats
         totalProducts={stats.totalProducts}
         totalAllocation={stats.totalAllocation}

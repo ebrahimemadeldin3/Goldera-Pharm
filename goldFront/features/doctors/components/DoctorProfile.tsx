@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ArrowLeft,
   SquarePen,
@@ -33,7 +34,9 @@ type DoctorProfileProps = {
 };
 
 export default function DoctorProfile({ doctor }: DoctorProfileProps) {
+  const pathname = usePathname();
   const { features, role } = useRoleUI();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
   const {
@@ -48,6 +51,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
 
   // Determine back link based on role
   const getBackLink = () => {
+    if (isRep) return "/rep/doctors";
     if (role === "MANAGER") return "/manager/doctors";
     if (role === "SUPERVISOR") return "/supervisor/doctors";
     return "/rep/doctors";
@@ -65,7 +69,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
     setScheduleDialogOpen(true);
   };
 
-  if (role === "MEDICAL_REP") {
+  if (isRep) {
     return (
       <PageContainer className="flex flex-col gap-5 pb-20 lg:pb-6">
         {/* Rep Doctor Profile Header */}

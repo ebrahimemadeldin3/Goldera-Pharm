@@ -21,13 +21,6 @@ export default function DoctorsHeader({
   const [dialogOpen, setDialogOpen] = useState(false);
   const isRep = role === "MEDICAL_REP";
 
-  // Determine add doctor fallback link based on role
-  const getAddDoctorLink = () => {
-    if (role === "MANAGER") return "/manager/doctors/add";
-    if (role === "SUPERVISOR") return "/supervisor/doctors/add";
-    return "/rep/doctors/add";
-  };
-
   // Calculate dynamic stats for inline summary
   const { totalDoctors, topRegions } = useMemo(() => {
     const total = totalCount ?? doctors.length;
@@ -46,6 +39,17 @@ export default function DoctorsHeader({
 
     return { totalDoctors: total, topRegions: top };
   }, [doctors, totalCount]);
+
+  if (isRep) {
+    return null;
+  }
+
+  // Determine add doctor fallback link based on role
+  const getAddDoctorLink = () => {
+    if (role === "MANAGER") return "/manager/doctors/add";
+    if (role === "SUPERVISOR") return "/supervisor/doctors/add";
+    return "/rep/doctors/add";
+  };
 
   return (
     <>
