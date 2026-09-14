@@ -12,7 +12,10 @@ import {
 } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar-content";
 
+import { useRoleUI } from "@/core/ui/role-ui-context";
+
 export function SidebarMenu() {
+  const { role } = useRoleUI();
   const [open, setOpen] = useState(false);
   const drawerId = "mobile-sidebar-navigation";
 
@@ -34,6 +37,7 @@ export function SidebarMenu() {
         id={drawerId}
         side="left"
         hideCloseButton
+        data-role={role}
         className="premium-sidebar premium-sidebar-drawer border-nav-border bg-nav-surface w-[min(320px,calc(100vw-24px))] gap-0 p-0"
       >
         <SheetHeader className="sr-only">

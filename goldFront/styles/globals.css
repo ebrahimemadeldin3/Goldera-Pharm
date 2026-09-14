@@ -789,6 +789,32 @@
     8px 0 24px rgba(6, 13, 28, 0.14);
 }
 
+.premium-sidebar[data-role="MEDICAL_REP"],
+[data-role="MEDICAL_REP"] .premium-sidebar {
+  --nav-active-gradient: linear-gradient(
+    90deg,
+    rgba(22, 133, 87, 0.45) 0%,
+    rgba(22, 133, 87, 0.28) 58%,
+    rgba(22, 133, 87, 0.14) 100%
+  );
+  --nav-active-text: #ffffff;
+  --nav-active-icon: #34d399;
+  --nav-hover: rgba(22, 133, 87, 0.12);
+}
+
+.premium-sidebar[data-role="SUPERVISOR"],
+[data-role="SUPERVISOR"] .premium-sidebar {
+  --nav-active-gradient: linear-gradient(
+    90deg,
+    rgba(37, 99, 235, 0.45) 0%,
+    rgba(37, 99, 235, 0.28) 58%,
+    rgba(37, 99, 235, 0.14) 100%
+  );
+  --nav-active-text: #ffffff;
+  --nav-active-icon: #60a5fa;
+  --nav-hover: rgba(37, 99, 235, 0.12);
+}
+
 .premium-sidebar-drawer {
   box-shadow: 18px 0 48px rgba(3, 8, 18, 0.38);
 }
@@ -8895,6 +8921,15 @@ input[type="password"]::-webkit-textfield-decoration-container {
   animation: gp-overlay-out 150ms var(--ease-exit) both;
 }
 
+.gp-dialog-content,
+.gp-alert-dialog-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  transform-origin: center;
+}
+
 .gp-dialog-content[data-state="open"],
 .gp-alert-dialog-content[data-state="open"] {
   animation: gp-dialog-in var(--motion-normal) var(--ease-premium) both;
@@ -9078,12 +9113,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 @keyframes gp-dialog-in {
   from {
     opacity: 0;
-    transform: translate(-50%, calc(-50% + var(--dialog-enter-y))) scale(0.985);
+    transform: translateY(var(--dialog-enter-y, -18px)) scale(0.985);
   }
 
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -9114,12 +9149,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 @keyframes gp-dialog-out {
   from {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0) scale(1);
   }
 
   to {
     opacity: 0;
-    transform: translate(-50%, calc(-50% + var(--dialog-exit-y))) scale(0.99);
+    transform: translateY(var(--dialog-exit-y, -10px)) scale(0.99);
   }
 }
 

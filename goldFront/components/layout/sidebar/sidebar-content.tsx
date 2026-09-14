@@ -67,7 +67,16 @@ export function SidebarContent({
             isCollapsed ? "justify-center" : "min-w-0 flex-1",
           )}
         >
-          <span className="sidebar-logo-shell ring-brand-gold/30 flex size-11 shrink-0 items-center justify-center rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.18)] ring-1">
+          <span
+            className={cn(
+              "sidebar-logo-shell flex size-11 shrink-0 items-center justify-center rounded-xl shadow-[0_12px_24px_rgba(0,0,0,0.18)] ring-1",
+              role === "MEDICAL_REP"
+                ? "ring-emerald-500/30"
+                : role === "SUPERVISOR"
+                  ? "ring-blue-500/30"
+                  : "ring-brand-gold/30",
+            )}
+          >
             <Image
               src="/logos/logo.webp"
               alt="GolderaPharm"
@@ -196,7 +205,11 @@ export function SidebarContent({
                       : "text-nav-normal hover:text-nav-text",
                     isDisabled &&
                       "cursor-not-allowed opacity-40 hover:bg-transparent hover:text-nav-normal",
-                    "focus-visible:ring-brand-gold/35 focus-visible:ring-2",
+                    role === "MEDICAL_REP"
+                      ? "focus-visible:ring-emerald-500/35 focus-visible:ring-2"
+                      : role === "SUPERVISOR"
+                        ? "focus-visible:ring-blue-500/35 focus-visible:ring-2"
+                        : "focus-visible:ring-brand-gold/35 focus-visible:ring-2",
                   );
 
                   const navItemContent = (

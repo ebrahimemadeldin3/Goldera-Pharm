@@ -402,10 +402,23 @@ function DetailTile({
   );
 }
 
-function PharmacyNameCell({ row }: { row: PharmacyDirectoryRow }) {
+function PharmacyNameCell({
+  row,
+  isRep = false,
+}: {
+  row: PharmacyDirectoryRow;
+  isRep?: boolean;
+}) {
   return (
     <div className="flex min-w-0 items-center gap-3">
-      <span className="border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 flex size-10 shrink-0 items-center justify-center rounded-[10px] border shadow-[0_6px_14px_rgba(16,29,54,0.13)]">
+      <span
+        className={cn(
+          "flex size-10 shrink-0 items-center justify-center rounded-[10px] border",
+          isRep
+            ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] shadow-[0_4px_12px_rgba(22,133,87,0.12)]"
+            : "border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 shadow-[0_6px_14px_rgba(16,29,54,0.13)]",
+        )}
+      >
         <Store className="size-4.5" aria-hidden="true" />
       </span>
       <div className="min-w-0">
@@ -428,19 +441,29 @@ function PharmacyMobileCard({
   row,
   index,
   onViewDetails,
+  isRep = false,
 }: {
   row: PharmacyDirectoryRow;
   index: number;
   onViewDetails: (row: PharmacyDirectoryRow) => void;
+  isRep?: boolean;
 }) {
   return (
     <article
-      className="group/pharmacy border-gp-border-default bg-gp-surface-card shadow-gp-card hover:border-gp-gold-300 relative [animation:plans-card-in_350ms_ease-out_forwards] overflow-hidden rounded-[14px] border opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,27,51,0.09)] motion-reduce:transform-none motion-reduce:[animation:none] motion-reduce:opacity-100"
+      className={cn(
+        "group/pharmacy border-gp-border-default bg-gp-surface-card shadow-gp-card relative [animation:plans-card-in_350ms_ease-out_forwards] overflow-hidden rounded-[14px] border opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,27,51,0.09)] motion-reduce:transform-none motion-reduce:[animation:none] motion-reduce:opacity-100",
+        isRep ? "hover:border-[#CBEFDD]" : "hover:border-gp-gold-300",
+      )}
       style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
     >
-      <span className="bg-gp-gold-500 absolute top-4 bottom-4 left-0 w-[3px] rounded-r-full" />
+      <span
+        className={cn(
+          "absolute top-4 bottom-4 left-0 w-[3px] rounded-r-full",
+          isRep ? "bg-[#168557]" : "bg-gp-gold-500",
+        )}
+      />
       <div className="p-4">
-        <PharmacyNameCell row={row} />
+        <PharmacyNameCell row={row} isRep={isRep} />
         <div className="mt-4 grid grid-cols-2 gap-2">
           <DetailTile
             label="City"
@@ -471,10 +494,20 @@ function PharmacyMobileCard({
           <Button
             type="button"
             onClick={() => onViewDetails(row)}
-            className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white shadow-[0_6px_14px_rgba(16,29,54,0.16)]"
+            className={cn(
+              "group h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white",
+              isRep
+                ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_14px_rgba(16,29,54,0.16)]",
+            )}
           >
             View Details
-            <ArrowRight className="text-gp-gold-500 size-3.5 transition-transform duration-[170ms] group-hover:translate-x-0.5" />
+            <ArrowRight
+              className={cn(
+                "size-3.5 transition-transform duration-[170ms] group-hover:translate-x-0.5",
+                isRep ? "text-white" : "text-gp-gold-500",
+              )}
+            />
           </Button>
         </div>
       </div>
@@ -486,10 +519,12 @@ function PharmacyDetailsSheet({
   pharmacy,
   open,
   onOpenChange,
+  isRep = false,
 }: {
   pharmacy: PharmacyDirectoryRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  isRep?: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -502,7 +537,14 @@ function PharmacyDetailsSheet({
           <>
             <SheetHeader className="border-gp-border-subtle border-b bg-white px-5 py-5">
               <div className="flex min-w-0 items-start gap-3 pr-8">
-                <span className="border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 flex size-12 shrink-0 items-center justify-center rounded-[12px] border shadow-[0_8px_18px_rgba(16,29,54,0.16)]">
+                <span
+                  className={cn(
+                    "flex size-12 shrink-0 items-center justify-center rounded-[12px] border",
+                    isRep
+                      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] shadow-[0_8px_18px_rgba(22,133,87,0.16)]"
+                      : "border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 shadow-[0_8px_18px_rgba(16,29,54,0.16)]",
+                  )}
+                >
                   <Store className="size-5" aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
@@ -523,8 +565,20 @@ function PharmacyDetailsSheet({
             </SheetHeader>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-              <div className="border-gp-gold-300 bg-gp-gold-50 rounded-[14px] border p-4">
-                <p className="text-gp-gold-700 text-[11px] font-semibold tracking-[0.08em] uppercase">
+              <div
+                className={cn(
+                  "rounded-[14px] border p-4",
+                  isRep
+                    ? "border-[#CBEFDD] bg-[#E9F8F1]"
+                    : "border-gp-gold-300 bg-gp-gold-50",
+                )}
+              >
+                <p
+                  className={cn(
+                    "text-[11px] font-semibold tracking-[0.08em] uppercase",
+                    isRep ? "text-[#168557]" : "text-gp-gold-700",
+                  )}
+                >
                   Territory
                 </p>
                 <p className="text-gp-navy-900 mt-2 text-sm font-semibold">
@@ -607,10 +661,18 @@ function PharmacyDetailsSheet({
               <Button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white"
+                className={cn(
+                  "h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white",
+                  isRep
+                    ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                    : "bg-gp-navy-900 hover:bg-gp-navy-900/95",
+                )}
               >
                 <CheckCircle2
-                  className="text-gp-gold-500 size-4"
+                  className={cn(
+                    "size-4",
+                    isRep ? "text-white" : "text-gp-gold-500",
+                  )}
                   aria-hidden="true"
                 />
                 Done
@@ -1225,13 +1287,18 @@ export default function PharmaciesList({
                       {sortedRows.map((row, index) => (
                         <tr
                           key={row.id}
-                          className="group/row relative transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:bg-[#FFFDF7] hover:shadow-[inset_3px_0_0_#C9A44C] motion-reduce:hover:translate-y-0"
+                          className={cn(
+                            "group/row relative transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px motion-reduce:hover:translate-y-0",
+                            isRep
+                              ? "hover:bg-[#F0FDF4] hover:shadow-[inset_3px_0_0_#168557]"
+                              : "hover:bg-[#FFFDF7] hover:shadow-[inset_3px_0_0_#C9A44C]",
+                          )}
                         >
                           <td className="text-gp-text-placeholder px-4 py-3.5 text-xs font-semibold">
                             {(page - 1) * limit + index + 1}
                           </td>
                           <td className="px-4 py-3.5">
-                            <PharmacyNameCell row={row} />
+                            <PharmacyNameCell row={row} isRep={isRep} />
                           </td>
                           <td className="text-gp-navy-900 px-4 py-3.5">
                             <DataQualityText
@@ -1251,7 +1318,14 @@ export default function PharmaciesList({
                             </p>
                           </td>
                           <td className="px-4 py-3.5">
-                            <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex max-w-[180px] rounded-full border px-2.5 py-1 text-xs font-semibold">
+                            <span
+                              className={cn(
+                                "inline-flex max-w-[180px] rounded-full border px-2.5 py-1 text-xs font-semibold",
+                                isRep
+                                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                                  : "border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700",
+                              )}
+                            >
                               <span className="truncate">
                                 {cleanText(
                                   row.displayTerritory,
@@ -1274,17 +1348,32 @@ export default function PharmaciesList({
                               <Button
                                 type="button"
                                 onClick={() => openDetails(row)}
-                                className="group/details bg-gp-navy-900 hover:bg-gp-navy-900/95 h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white shadow-[0_6px_14px_rgba(16,29,54,0.13)] transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px"
+                                className={cn(
+                                  "group/details h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px",
+                                  isRep
+                                    ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                                    : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_14px_rgba(16,29,54,0.13)]",
+                                )}
                               >
                                 View Details
-                                <ArrowRight className="text-gp-gold-500 size-3.5 transition-transform duration-[170ms] group-hover/details:translate-x-0.5" />
+                                <ArrowRight
+                                  className={cn(
+                                    "size-3.5 transition-transform duration-[170ms] group-hover/details:translate-x-0.5",
+                                    isRep ? "text-white" : "text-gp-gold-500",
+                                  )}
+                                />
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <button
                                     type="button"
                                     aria-label={`More actions for ${row.displayName}`}
-                                    className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/25 inline-flex size-9 cursor-pointer items-center justify-center rounded-[10px] border bg-white transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] hover:-translate-y-px focus-visible:ring-3 focus-visible:outline-none"
+                                    className={cn(
+                                      "inline-flex size-9 cursor-pointer items-center justify-center rounded-[10px] border bg-white transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] hover:-translate-y-px focus-visible:ring-3 focus-visible:outline-none",
+                                      isRep
+                                        ? "border-gp-border-control text-gp-navy-900 hover:border-[#CBEFDD] hover:bg-[#E9F8F1] focus-visible:ring-[#168557]/25"
+                                        : "border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/25",
+                                    )}
                                   >
                                     <MoreHorizontal
                                       className="size-4"
@@ -1301,16 +1390,40 @@ export default function PharmaciesList({
                                   </DropdownMenuLabel>
                                   <DropdownMenuItem
                                     onSelect={() => openDetails(row)}
-                                    className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 cursor-pointer rounded-[8px] text-sm font-medium"
+                                    className={cn(
+                                      "cursor-pointer rounded-[8px] text-sm font-medium",
+                                      isRep
+                                        ? "text-gp-navy-900 focus:bg-[#E9F8F1] focus:text-[#168557]"
+                                        : "text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900",
+                                    )}
                                   >
-                                    <Eye className="text-gp-gold-600 size-4" />
+                                    <Eye
+                                      className={cn(
+                                        "size-4",
+                                        isRep
+                                          ? "text-[#168557]"
+                                          : "text-gp-gold-600",
+                                      )}
+                                    />
                                     View details
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onSelect={() => void copyPharmacyId(row)}
-                                    className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 cursor-pointer rounded-[8px] text-sm font-medium"
+                                    className={cn(
+                                      "cursor-pointer rounded-[8px] text-sm font-medium",
+                                      isRep
+                                        ? "text-gp-navy-900 focus:bg-[#E9F8F1] focus:text-[#168557]"
+                                        : "text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900",
+                                    )}
                                   >
-                                    <Copy className="text-gp-gold-600 size-4" />
+                                    <Copy
+                                      className={cn(
+                                        "size-4",
+                                        isRep
+                                          ? "text-[#168557]"
+                                          : "text-gp-gold-600",
+                                      )}
+                                    />
                                     Copy record ID
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -1331,13 +1444,21 @@ export default function PharmaciesList({
                     row={row}
                     index={index}
                     onViewDetails={openDetails}
+                    isRep={isRep}
                   />
                 ))}
               </div>
             </>
           ) : (
             <div className="border-gp-border-control bg-gp-surface-card rounded-[14px] border border-dashed px-5 py-10 text-center">
-              <span className="bg-gp-gold-50 text-gp-gold-700 mx-auto flex size-12 items-center justify-center rounded-full">
+              <span
+                className={cn(
+                  "mx-auto flex size-12 items-center justify-center rounded-full",
+                  isRep
+                    ? "bg-[#E9F8F1] text-[#168557]"
+                    : "bg-gp-gold-50 text-gp-gold-700",
+                )}
+              >
                 <CircleSlash className="size-5" aria-hidden="true" />
               </span>
               <h3 className="text-gp-navy-900 mt-4 text-base font-semibold">
@@ -1351,7 +1472,12 @@ export default function PharmaciesList({
                   type="button"
                   variant="outline"
                   onClick={resetFilters}
-                  className="border-gp-gold-300 text-gp-gold-700 hover:bg-gp-gold-50 mt-4 h-9 cursor-pointer rounded-[10px] text-xs font-semibold"
+                  className={cn(
+                    "mt-4 h-9 cursor-pointer rounded-[10px] text-xs font-semibold",
+                    isRep
+                      ? "border-[#CBEFDD] text-[#168557] hover:bg-[#E9F8F1]"
+                      : "border-gp-gold-300 text-gp-gold-700 hover:bg-gp-gold-50",
+                  )}
                 >
                   Clear filters
                 </Button>
@@ -1377,6 +1503,7 @@ export default function PharmaciesList({
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setSelectedPharmacy(null);
         }}
+        isRep={isRep}
       />
     </>
   );

@@ -32,7 +32,10 @@ function writeStoredCollapsed(value: boolean) {
   collapseListeners.forEach((listener) => listener());
 }
 
+import { useRoleUI } from "@/core/ui/role-ui-context";
+
 export function AppSidebar() {
+  const { role } = useRoleUI();
   const collapsed = useSyncExternalStore(
     subscribeCollapsed,
     readStoredCollapsed,
@@ -45,6 +48,7 @@ export function AppSidebar() {
 
   return (
     <aside
+      data-role={role}
       className={cn(
         "premium-sidebar border-nav-border bg-nav-surface sticky top-0 z-30 hidden h-dvh max-h-dvh shrink-0 overflow-hidden border-r transition-[width] duration-[var(--motion-slow)] ease-[var(--ease-premium)] xl:block",
         collapsed ? "w-[76px]" : "w-[252px]",

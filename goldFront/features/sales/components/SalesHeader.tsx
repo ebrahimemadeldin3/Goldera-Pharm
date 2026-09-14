@@ -360,7 +360,7 @@ export default function SalesHeader({
                     : "gp-primary-action h-11 rounded-[10px] bg-[#101D36] px-5 shadow-[0_8px_18px_rgba(16,29,54,0.16)] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/20 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                 }`}
               >
-                <Filter className="h-4 w-4 text-[#C9A44C]" />
+                <Filter className={`h-4 w-4 ${isRep ? "text-white" : "text-[#C9A44C]"}`} />
                 Apply Filters
               </Button>
             </div>
@@ -373,7 +373,11 @@ export default function SalesHeader({
                   key={chip.key}
                   type="button"
                   onClick={() => clearParams(chip.params)}
-                  className="inline-flex h-8 max-w-full items-center gap-2 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-3 text-xs font-semibold text-[#8A6515] transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#C9A44C] hover:bg-[#FFF3D1] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                  className={`inline-flex h-8 max-w-full items-center gap-2 rounded-full border px-3 text-xs font-semibold transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px focus-visible:ring-2 focus-visible:outline-none ${
+                    isRep
+                      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] hover:border-[#168557] hover:bg-[#DDF5E9] focus-visible:ring-[#168557]/25"
+                      : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515] hover:border-[#C9A44C] hover:bg-[#FFF3D1] focus-visible:ring-[#C9A44C]/25"
+                  }`}
                 >
                   <span className="truncate">{chip.label}</span>
                   <X className="size-3.5 shrink-0" aria-hidden="true" />
@@ -382,7 +386,11 @@ export default function SalesHeader({
               <button
                 type="button"
                 onClick={clearAllFilters}
-                className="h-8 rounded-full px-3 text-xs font-semibold text-[#667085] transition-[background-color,color] duration-[160ms] hover:bg-[#F4F6FA] hover:text-[#101D36] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+                className={`h-8 rounded-full px-3 text-xs font-semibold text-[#667085] transition-[background-color,color] duration-[160ms] hover:bg-[#F4F6FA] hover:text-[#101D36] focus-visible:ring-2 focus-visible:outline-none ${
+                  isRep
+                    ? "focus-visible:ring-[#168557]/20"
+                    : "focus-visible:ring-[#C9A44C]/20"
+                }`}
               >
                 Clear all
               </button>
@@ -417,7 +425,13 @@ export default function SalesHeader({
                     {stat.helper}
                   </p>
                 </div>
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
+                <div
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border ${
+                    isRep
+                      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                      : "border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]"
+                  }`}
+                >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </div>
               </div>
