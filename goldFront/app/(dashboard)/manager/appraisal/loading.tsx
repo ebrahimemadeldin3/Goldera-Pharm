@@ -1,5 +1,5 @@
-import { GenericPageSkeleton } from "@/components/ui/skeletons/GenericPageSkeleton";
+import { AppraisalPageSkeleton } from "@/features/appraisal/components/AppraisalPageSkeleton";
 
 export default function ManagerAppraisalLoading() {
-  return <GenericPageSkeleton />;
+  return <AppraisalPageSkeleton />;
 }

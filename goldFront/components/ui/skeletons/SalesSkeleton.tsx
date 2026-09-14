@@ -8,8 +8,8 @@ export function SalesSkeleton() {
   return (
     <PageContainer className="min-h-[calc(100vh-80px)] space-y-6">
       <PageHeaderSkeleton hasAction />
-      <StatCardSkeleton count={3} />
-      <div className="rounded-[16px] border border-[#E5E8EF] bg-white overflow-hidden">
+      <StatCardSkeleton count={4} />
+      <div className="overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white">
         <FilterBarSkeleton />
         <TableSkeleton columns={7} rows={8} />
       </div>

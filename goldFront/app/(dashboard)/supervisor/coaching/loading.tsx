@@ -1,5 +1,5 @@
-import { GenericPageSkeleton } from "@/components/ui/skeletons/GenericPageSkeleton";
+import { CoachingPageSkeleton } from "@/features/coaching/components/CoachingPageSkeleton";
 
 export default function SupervisorCoachingLoading() {
-  return <GenericPageSkeleton />;
+  return <CoachingPageSkeleton />;
 }

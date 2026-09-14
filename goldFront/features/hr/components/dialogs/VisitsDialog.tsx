@@ -29,7 +29,7 @@ export function VisitsDialog({
       case "COMPLETED":
         return "bg-dashboard-green text-white";
       case "SCHEDULED":
-        return "bg-dashboard-blue text-white";
+        return "bg-gp-navy-900 text-white";
       case "CANCELLED":
         return "bg-dashboard-red text-white";
       default:

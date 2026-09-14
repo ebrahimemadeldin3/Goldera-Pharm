@@ -22,6 +22,11 @@ type EditableFields = {
   longitude: number | null;
 };
 
+function optionalText(value: string | null) {
+  const trimmed = String(value ?? "").trim();
+  return trimmed ? trimmed : undefined;
+}
+
 export function useEditDoctor(initialData: DoctorProfileData) {
   const router = useRouter();
   const [isEditMode, setIsEditMode] = useState(false);
@@ -76,19 +81,19 @@ export function useEditDoctor(initialData: DoctorProfileData) {
     startTransition(async () => {
       try {
         const dataToUpdate = {
-          nameEN: editedData.nameEN,
-          nameAR: editedData.nameAR,
-          email: editedData.email || undefined,
-          phone: editedData.phone,
-          specialty: editedData.specialty,
-          grade: editedData.grade,
-          LicenseNumber: editedData.LicenseNumber || undefined,
-          avgPatientsPerDay: editedData.avgPatientsPerDay || undefined,
-          accountName: editedData.accountName,
-          subRegion: editedData.subRegion,
-          area: editedData.area || undefined,
-          latitude: editedData.latitude || undefined,
-          longitude: editedData.longitude || undefined,
+          nameEN: editedData.nameEN.trim(),
+          nameAR: editedData.nameAR.trim(),
+          email: optionalText(editedData.email),
+          phone: editedData.phone.trim(),
+          specialty: editedData.specialty.trim(),
+          grade: editedData.grade.trim(),
+          LicenseNumber: optionalText(editedData.LicenseNumber),
+          avgPatientsPerDay: editedData.avgPatientsPerDay ?? undefined,
+          accountName: editedData.accountName.trim(),
+          subRegion: editedData.subRegion.trim(),
+          area: optionalText(editedData.area),
+          latitude: editedData.latitude ?? undefined,
+          longitude: editedData.longitude ?? undefined,
         };
 
         const result = await updateDoctorAction(initialData.id, dataToUpdate);

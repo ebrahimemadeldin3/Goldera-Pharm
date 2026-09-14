@@ -1,14 +1,9 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import AddDoctorForm from "./AddDoctorForm";
 import { useRouter } from "next/navigation";
+import { Stethoscope } from "lucide-react";
+import { FormDrawer } from "@/components/shared/FormDrawer";
+import AddDoctorForm from "./AddDoctorForm";
 import { toast } from "@/lib/utils/toast";
 
 type AddDoctorDialogProps = {
@@ -29,25 +24,22 @@ export default function AddDoctorDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-slate-900">
-            Add New Doctor
-          </DialogTitle>
-          <DialogDescription className="text-xs text-slate-500">
-            Add a new doctor contact to your CRM database. Fill in required details below.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="mt-2">
-          <AddDoctorForm
-            isModal
-            onSuccess={handleSuccess}
-            onCancel={() => onOpenChange(false)}
-          />
-        </div>
-      </DialogContent>
-    </Dialog>
+    <FormDrawer
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add New Doctor"
+      eyebrow="New Doctor"
+      description="Create a doctor profile and assign the doctor to the correct territory and account."
+      icon={<Stethoscope className="size-5" aria-hidden="true" />}
+      width="xl"
+      bodyClassName="flex overflow-hidden p-0"
+      closeLabel="Close Add Doctor drawer"
+    >
+      <AddDoctorForm
+        isModal
+        onSuccess={handleSuccess}
+        onCancel={() => onOpenChange(false)}
+      />
+    </FormDrawer>
   );
 }

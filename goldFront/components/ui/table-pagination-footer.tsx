@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -21,6 +21,9 @@ interface TablePaginationFooterProps {
   pageNavAriaLabel?: string;
   pageSizeOptions?: number[];
   onPageChangeStart?: () => void;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  tone?: "gold" | "navy";
 }
 
 const defaultPageSizeOptions = [10, 20, 50];
@@ -54,8 +57,12 @@ export function TablePaginationFooter({
   pageNavAriaLabel = "Sales records pages",
   pageSizeOptions = defaultPageSizeOptions,
   onPageChangeStart,
+  onPageChange,
+  onPageSizeChange,
+  tone = "navy",
 }: TablePaginationFooterProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startPageTransition] = useTransition();
   const totalPages = Math.max(1, Math.ceil(totalCount / limit));
@@ -81,8 +88,20 @@ export function TablePaginationFooter({
     params.set("page", String(clampedPage));
     params.set("limit", String(nextLimit));
     onPageChangeStart?.();
+
+    if (onPageChange || onPageSizeChange) {
+      startPageTransition(() => {
+        if (nextLimit !== limit) {
+          onPageSizeChange?.(nextLimit);
+        }
+
+        onPageChange?.(clampedPage);
+      });
+      return;
+    }
+
     startPageTransition(() => {
-      router.push(`${window.location.pathname}?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`);
     });
   }
 
@@ -90,8 +109,13 @@ export function TablePaginationFooter({
   const endItem = Math.min(totalCount, currentPage * limit);
   const isFirstPage = currentPage <= 1;
   const isLastPage = currentPage >= totalPages;
+  const usesNavyTone = tone === "navy";
   const arrowButtonClassName =
-    "sales-pagination-button group inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border border-[#E5E8EF] bg-white text-[#667085] transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[170ms] ease-out hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 disabled:hover:border-[#E5E8EF] disabled:hover:bg-white disabled:hover:text-[#667085] disabled:hover:shadow-none motion-reduce:transition-none motion-reduce:hover:translate-y-0";
+    `sales-pagination-button group inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border border-[#E5E8EF] bg-white transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[170ms] ease-out hover:-translate-y-px hover:shadow-[0_6px_14px_rgba(16,29,54,0.07)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 disabled:hover:border-[#E5E8EF] disabled:hover:bg-white disabled:hover:shadow-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 ${
+      usesNavyTone
+        ? "text-gp-navy-900 hover:border-gp-navy-900/20 hover:bg-gp-navy-900/5 hover:text-gp-navy-900 disabled:hover:text-gp-navy-900"
+        : "text-[#667085] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] disabled:hover:text-[#667085]"
+    }`;
   const pageButtonClassName =
     "sales-pagination-button relative inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-wait motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 
@@ -109,14 +133,18 @@ export function TablePaginationFooter({
             isMobile ? "size-9 rounded-[10px] text-xs" : ""
           } ${
             item === currentPage
-              ? "sales-pagination-active-page border-transparent bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] text-white shadow-[0_6px_16px_rgba(185,139,50,0.24)]"
-              : "border-[#E5E8EF] bg-white text-[#182033] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)]"
+              ? usesNavyTone
+                ? "sales-pagination-active-page bg-gp-navy-900 border-transparent text-white shadow-[0_6px_16px_rgba(16,29,54,0.24)]"
+                : "sales-pagination-active-page border-transparent bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] text-white shadow-[0_6px_16px_rgba(185,139,50,0.24)]"
+              : usesNavyTone
+                ? "text-gp-navy-900 border-[#E5E8EF] bg-white hover:-translate-y-px hover:border-gp-navy-900/20 hover:bg-gp-navy-900/5 hover:text-gp-navy-900 hover:shadow-[0_6px_14px_rgba(16,29,54,0.07)]"
+                : "border-[#E5E8EF] bg-white text-[#182033] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)]"
           }`}
         >
           {item}
           {item === currentPage && (
             <span
-              className="sales-pagination-active-dot absolute -bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-[#D8B85A]"
+              className="sales-pagination-active-dot bg-gp-gold-500 absolute -bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full"
               aria-hidden="true"
             />
           )}
@@ -147,10 +175,17 @@ export function TablePaginationFooter({
       >
         <p className="text-sm font-medium text-[#667085]">
           Showing{" "}
-          <span className="font-semibold text-[#182033]">
+          <span
+            className={`font-semibold ${usesNavyTone ? "text-gp-navy-900" : "text-[#182033]"}`}
+          >
             {startItem}-{endItem}
           </span>{" "}
-          of <span className="font-semibold text-[#182033]">{totalCount}</span>{" "}
+          of{" "}
+          <span
+            className={`font-semibold ${usesNavyTone ? "text-gp-navy-900" : "text-[#182033]"}`}
+          >
+            {totalCount}
+          </span>{" "}
           {itemLabel}
         </p>
         <p className="mt-1 text-xs font-medium text-[#8A94A6]">
@@ -231,7 +266,14 @@ export function TablePaginationFooter({
           value={String(limit)}
           onValueChange={(value) => pushPagination(1, Number(value))}
         >
-          <SelectTrigger className="sales-page-size-trigger h-10 w-[74px] cursor-pointer rounded-[10px] border-[#E5E8EF] bg-white px-2.5 text-sm font-semibold text-[#182033] shadow-none transition-[border-color,background-color,color,box-shadow] duration-[170ms] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] focus-visible:border-[#C9A44C] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 data-[state=open]:border-[#C9A44C] [&_svg]:size-3.5 [&_svg]:text-[#667085]">
+          <SelectTrigger
+            aria-label="Rows per page"
+            className={`sales-page-size-trigger h-10 w-[74px] cursor-pointer rounded-[10px] border-[#E5E8EF] bg-white px-2.5 text-sm font-semibold shadow-none transition-[border-color,background-color,color,box-shadow] duration-[170ms] focus-visible:border-[#C9A44C] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 data-[state=open]:border-[#C9A44C] [&_svg]:size-3.5 ${
+              usesNavyTone
+                ? "text-gp-navy-900 hover:border-gp-navy-900/20 hover:bg-gp-navy-900/5 [&_svg]:text-gp-navy-900"
+                : "text-[#182033] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] [&_svg]:text-[#667085]"
+            }`}
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="sales-page-size-content w-[76px] min-w-[76px] max-h-[116px] overflow-y-auto rounded-lg border-[#E5E8EF] bg-white p-0 shadow-[0_10px_24px_rgba(15,23,42,0.12)] [&>div:not([data-slot])]:h-auto [&>div:not([data-slot])]:min-w-0 [&>div:not([data-slot])]:p-1 [&_[data-slot=select-scroll-down-button]]:hidden [&_[data-slot=select-scroll-up-button]]:hidden">
@@ -239,7 +281,11 @@ export function TablePaginationFooter({
               <SelectItem
                 key={option}
                 value={String(option)}
-                className="h-8 cursor-pointer rounded-md py-0 pr-2 pl-7 text-sm font-semibold text-[#182033] transition-[background-color,color] duration-[140ms] focus:bg-[#FBF7EA] focus:text-[#8A6515] data-[state=checked]:text-[#8A6515]"
+                className={`h-8 cursor-pointer rounded-md py-0 pr-2 pl-7 text-sm font-semibold transition-[background-color,color] duration-[140ms] ${
+                  usesNavyTone
+                    ? "text-gp-navy-900 focus:bg-gp-navy-900/5 focus:text-gp-navy-900 data-[state=checked]:text-gp-navy-900"
+                    : "text-[#182033] focus:bg-[#FBF7EA] focus:text-[#8A6515] data-[state=checked]:text-[#8A6515]"
+                }`}
               >
                 {option}
               </SelectItem>

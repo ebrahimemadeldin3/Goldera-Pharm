@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import {
   ChevronRight,
@@ -19,12 +20,14 @@ type QuickActionsProps = {
   profile: UserProfile;
   editing: boolean;
   onEdit: (editing: boolean) => void;
+  variant?: "standard" | "manager";
 };
 
 type QuickAction = {
   label: string;
   description: string;
   icon: LucideIcon;
+  iconTone?: "gold" | "navy" | "neutral";
   href?: string;
   external?: boolean;
   onClick?: () => void;
@@ -37,6 +40,7 @@ export default function QuickActions({
   profile,
   editing,
   onEdit,
+  variant = "standard",
 }: QuickActionsProps) {
   const { ref, visible } = useInView<HTMLDivElement>(0.3);
   const roleHomePath = getRoleHomePath(profile.role);
@@ -48,18 +52,21 @@ export default function QuickActions({
         ? "Discard unsaved changes"
         : "Update personal details",
       icon: editing ? X : Pencil,
+      iconTone: editing ? "neutral" : "navy",
       onClick: () => onEdit(!editing),
     },
     {
-      label: "Settings",
+      label: variant === "manager" ? "Account Settings" : "Settings",
       description: "Privacy settings",
       icon: Settings,
+      iconTone: "navy",
       href: `${roleHomePath}/settings`,
     },
     {
-      label: "Email",
+      label: variant === "manager" ? "Send Email" : "Email",
       description: profile.email,
       icon: Mail,
+      iconTone: "navy",
       href: `mailto:${profile.email}`,
     },
     ...(profile.resume?.trim()
@@ -68,6 +75,7 @@ export default function QuickActions({
             label: "Resume",
             description: "Open uploaded file",
             icon: FileText,
+            iconTone: "navy" as const,
             href: profile.resume.trim(),
             external: true,
           },
@@ -77,21 +85,32 @@ export default function QuickActions({
 
   function renderAction(action: QuickAction) {
     const Icon = action.icon;
+    const rowClassName =
+      variant === "manager"
+        ? "profile-action manager-profile-action flex w-full items-center gap-3 rounded-[12px] border border-transparent bg-white px-3 py-3 text-left transition-all duration-[190ms] ease-out"
+        : actionClass;
     const content = (
       <>
-        <span className="profile-action-symbol flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#F6F8FB] text-[#667085] ring-1 ring-[#E5E8EF] transition-colors duration-200 ring-inset">
+        <span
+          className={cn(
+            "profile-action-symbol flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 transition-colors duration-200 ring-inset",
+            variant === "manager"
+              ? `manager-profile-action-symbol-${action.iconTone ?? "navy"}`
+              : "bg-gp-surface-subtle text-gp-navy-900 ring-gp-border-control",
+          )}
+        >
           <Icon className="size-4" aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold text-[#182033]">
+          <span className="text-gp-navy-900 block text-sm font-semibold">
             {action.label}
           </span>
-          <span className="block truncate text-xs text-[#667085]">
+          <span className="text-gp-text-muted block truncate text-xs">
             {action.description}
           </span>
         </span>
         <ChevronRight
-          className="profile-action-icon size-4 shrink-0 text-[#98A2B3]"
+          className="profile-action-icon text-gp-navy-900 size-4 shrink-0"
           aria-hidden
         />
       </>
@@ -105,7 +124,7 @@ export default function QuickActions({
             href={action.href}
             target="_blank"
             rel="noreferrer"
-            className={actionClass}
+            className={rowClassName}
           >
             {content}
           </a>
@@ -113,7 +132,7 @@ export default function QuickActions({
       }
 
       return (
-        <Link key={action.label} href={action.href} className={actionClass}>
+        <Link key={action.label} href={action.href} className={rowClassName}>
           {content}
         </Link>
       );
@@ -125,7 +144,7 @@ export default function QuickActions({
         type="button"
         onClick={action.onClick}
         aria-pressed={action.label.includes("Cancel") ? editing : undefined}
-        className={cn(actionClass, "cursor-pointer")}
+        className={cn(rowClassName, "cursor-pointer")}
       >
         {content}
       </button>
@@ -138,14 +157,50 @@ export default function QuickActions({
       aria-label="Quick actions"
       className={cn(
         `${profileCardClass} p-5`,
+        variant === "manager" && "overflow-hidden",
         "profile-inview",
         visible && "profile-inview-visible",
       )}
+      style={
+        variant === "manager"
+          ? ({ transitionDelay: "230ms" } as CSSProperties)
+          : undefined
+      }
     >
-      <h3 className="text-base font-semibold text-[#182033]">Quick Actions</h3>
-      <p className="mt-1 text-xs text-[#667085]">Common account shortcuts.</p>
+      {variant === "manager" ? (
+        <div className="flex items-start gap-3">
+          <span className="profile-section-icon bg-gp-gold-50 text-gp-gold-700 ring-gp-gold-300 flex size-10 shrink-0 items-center justify-center rounded-[12px] ring-1 ring-inset">
+            <Pencil className="size-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-gp-navy-900 text-lg font-semibold">
+              Quick Actions
+            </h2>
+            <p className="text-gp-text-muted mt-1 text-sm leading-5 font-medium">
+              Common account shortcuts.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <>
+          <h3 className="text-base font-semibold text-[#182033]">
+            Quick Actions
+          </h3>
+          <p className="mt-1 text-xs text-[#667085]">
+            Common account shortcuts.
+          </p>
+        </>
+      )}
 
-      <div className="mt-4 space-y-3">{actions.map(renderAction)}</div>
+      <div
+        className={cn(
+          "mt-4 space-y-3",
+          variant === "manager" &&
+            "border-gp-border-subtle bg-gp-surface-subtle rounded-[14px] border p-2",
+        )}
+      >
+        {actions.map(renderAction)}
+      </div>
     </section>
   );
 }

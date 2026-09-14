@@ -87,7 +87,7 @@ type SummaryCardProps = {
   value: string;
   helper: string;
   icon: LucideIcon;
-  tone: "blue" | "green" | "gold";
+  tone: "navy" | "gold";
   animationDelay?: string;
 };
 type PriceRange = [number, number];
@@ -127,9 +127,8 @@ const dateFilterLabels: Record<DateFilterValue, string> = {
 };
 
 const summaryToneStyles: Record<SummaryCardProps["tone"], string> = {
-  blue: "bg-[#EDF4FF] text-[#3972D5]",
-  green: "bg-[#E9F8F1] text-[#168557]",
-  gold: "bg-[#FFF3D7] text-[#B18732]",
+  navy: "border border-[#E9DDB8] bg-[#FFF8E5] text-[#101D36]",
+  gold: "border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]",
 };
 
 const categoryBadgeStyles: Record<
@@ -138,23 +137,23 @@ const categoryBadgeStyles: Record<
 > = {
   "Topical Care": {
     icon: Tag,
-    className: "border-[#D7E5FF] bg-[#EDF4FF] text-[#2F63C4]",
-    iconClassName: "text-[#3972D5]",
+    className: "border-[#E9DDB8] bg-[#FFF8E5] text-[#182033]",
+    iconClassName: "text-[#B18732]",
   },
   "Nutritional Supplements": {
     icon: Leaf,
-    className: "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]",
-    iconClassName: "text-[#20A66A]",
+    className: "border-[#E9DDB8] bg-[#FFF8E5] text-[#182033]",
+    iconClassName: "text-[#B18732]",
   },
   Healthcare: {
     icon: Package,
-    className: "border-[#C9F1F4] bg-[#EAF9FA] text-[#197983]",
-    iconClassName: "text-[#1B9AAA]",
+    className: "border-[#E9DDB8] bg-[#FFF8E5] text-[#182033]",
+    iconClassName: "text-[#B18732]",
   },
   General: {
     icon: PackageOpen,
-    className: "border-[#E5E8EF] bg-[#F4F6FA] text-[#667085]",
-    iconClassName: "text-[#8A94A6]",
+    className: "border-[#E5E8EF] bg-[#F8FAFC] text-[#344054]",
+    iconClassName: "text-[#667085]",
   },
 };
 
@@ -383,28 +382,34 @@ const FilterTriggerButton = forwardRef<
     <button
       ref={ref}
       type="button"
-      className={`products-catalog-filter-field products-catalog-filter-button group/filter inline-flex h-11 w-full items-center justify-between gap-2 rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-semibold text-[#4B5568] outline-none ${className} ${
-        isOpen ? "products-catalog-filter-open" : ""
-      }`}
+      className={`products-catalog-filter-field products-catalog-filter-button group/filter inline-flex h-11 w-full items-center justify-between gap-2 rounded-[12px] border px-3.5 text-sm font-semibold outline-none ${className} ${
+        activeFilterCount > 0 ? "products-catalog-filter-active" : ""
+      } ${
+        activeFilterCount > 0
+          ? "border-[#101D36] bg-[#101D36] text-white shadow-[0_6px_14px_rgba(16,29,54,0.14)]"
+          : "border-[#E5E8EF] bg-white text-[#182033]"
+      } ${isOpen ? "products-catalog-filter-open" : ""}`}
       aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
       {...props}
     >
       <span className="flex min-w-0 items-center gap-2">
         <SlidersHorizontal
-          className="products-catalog-filter-icon size-4 shrink-0 text-[#667085]"
+          className={`products-catalog-filter-icon size-4 shrink-0 ${
+            activeFilterCount > 0 ? "text-[#C9A44C]" : "text-[#344054]"
+          }`}
           aria-hidden="true"
         />
         <span className="truncate">Filters</span>
         {activeFilterCount > 0 && (
-          <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-[#182033]">
+          <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-[#C9A44C]/50 bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-[#101D36]">
             {activeFilterCount}
           </span>
         )}
       </span>
       <ChevronDown
-        className={`products-catalog-filter-chevron size-4 shrink-0 text-[#98A2B3] ${
-          isOpen ? "rotate-180" : ""
-        }`}
+        className={`products-catalog-filter-chevron size-4 shrink-0 ${
+          activeFilterCount > 0 ? "text-[#C9A44C]" : ""
+        } ${isOpen ? "rotate-180" : ""}`}
         aria-hidden="true"
       />
     </button>
@@ -431,20 +436,20 @@ function FilterCategoryButton({
       aria-pressed={isActive}
       className={`products-catalog-filter-option products-catalog-filter-category-option inline-flex min-h-10 items-center gap-2 rounded-[12px] border px-3.5 py-2 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
         isActive
-          ? "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.1)]"
+          ? "border-[#101D36] bg-[#101D36] text-white shadow-[0_7px_16px_rgba(16,29,54,0.14)]"
           : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
       }`}
     >
       <Icon
         className={`size-3.5 shrink-0 ${
-          isActive ? "text-[#B18732]" : "text-[#8A94A6]"
+          isActive ? "text-[#C9A44C]" : "text-[#344054]"
         }`}
         aria-hidden="true"
       />
       <span className="truncate">{category}</span>
       {isActive && (
         <Check
-          className="products-filter-option-check size-3.5 shrink-0 text-[#B18732]"
+          className="products-filter-option-check size-3.5 shrink-0 text-[#C9A44C]"
           aria-hidden="true"
         />
       )}
@@ -468,14 +473,14 @@ function FilterDateButton({
       aria-pressed={isActive}
       className={`products-catalog-filter-option products-catalog-filter-date-option inline-flex h-11 items-center justify-center gap-2 rounded-[12px] border px-3 text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none ${
         isActive
-          ? "border-[#D4AF4F] bg-[#FBF7EA] text-[#182033] shadow-[0_7px_16px_rgba(201,164,76,0.08)]"
+          ? "border-[#101D36] bg-[#101D36] text-white shadow-[0_7px_16px_rgba(16,29,54,0.14)]"
           : "border-[#E5E8EF] bg-white text-[#5F6B7C] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#182033]"
       }`}
     >
       {option.label}
       {isActive && (
         <Check
-          className="products-filter-option-check size-3.5 shrink-0 text-[#B18732]"
+          className="products-filter-option-check size-3.5 shrink-0 text-[#C9A44C]"
           aria-hidden="true"
         />
       )}
@@ -491,13 +496,13 @@ function ActiveFilterChip({
   onRemove: () => void;
 }) {
   return (
-    <span className="products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-3 text-xs font-semibold text-[#5C4918]">
+    <span className="products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFFDF7] px-3 text-xs font-semibold text-[#182033]">
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
-        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[#8A6515] transition-[background-color,color] duration-[150ms] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[#344054] transition-[background-color,color] duration-[150ms] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
       >
         <X className="size-3" aria-hidden="true" />
       </button>
@@ -748,7 +753,7 @@ function ProductFilterPanel({
           <button
             type="button"
             onClick={onApply}
-            className="products-filter-show-button h-12 rounded-[12px] border border-[#C9A44C] bg-[#C9A44C] px-4 text-sm font-bold text-[#182033] shadow-[0_10px_22px_rgba(201,164,76,0.2)] transition-[box-shadow,filter,transform] duration-[160ms] hover:-translate-y-px focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:translate-y-0"
+            className="products-filter-show-button h-12 rounded-[12px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,29,54,0.18)] transition-[box-shadow,background-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:translate-y-0"
           >
             Show {resultCount} Products
           </button>
@@ -772,7 +777,7 @@ function ProductThumbnail({
   const shouldShowImage = Boolean(imageInfo && !imageFailed);
 
   return (
-    <span className="flex size-12 shrink-0 items-center justify-center rounded-[10px] bg-[#F4F6FA] p-1.5 text-[#3972D5]">
+    <span className="flex size-12 shrink-0 items-center justify-center rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] p-1.5 text-[#B18732]">
       {shouldShowImage && imageInfo ? (
         <Image
           src={imageInfo.src}
@@ -1196,7 +1201,7 @@ export default function ProductsList({
           value={numberFormatter.format(summary.totalProducts)}
           helper="Active pharmaceutical items"
           icon={Package}
-          tone="blue"
+          tone="navy"
           animationDelay="120ms"
         />
         <SummaryCard
@@ -1204,7 +1209,7 @@ export default function ProductsList({
           value={formatProductPrice(summary.averageSalesPrice)}
           helper="Across all products"
           icon={TrendingUp}
-          tone="green"
+          tone="gold"
           animationDelay="175ms"
         />
         <SummaryCard
@@ -1260,15 +1265,25 @@ export default function ProductsList({
           <div className="products-catalog-controls-enter grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_136px] lg:max-w-[520px]">
             <div className="products-catalog-search-field relative min-w-0">
               <Search
-                className="products-catalog-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]"
+                className="products-catalog-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#344054]"
                 aria-hidden="true"
               />
               <input
                 value={q}
                 onChange={(event) => setQ(event.target.value)}
                 placeholder="Search by name or reference..."
-                className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-3 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-white focus:ring-0"
               />
+              {hasSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setQ("")}
+                  aria-label="Clear product search"
+                  className="products-catalog-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F8F1DC] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                >
+                  <X className="size-3.5" aria-hidden="true" />
+                </button>
+              )}
             </div>
 
             {isMobileFilterPanel ? (
@@ -1353,13 +1368,19 @@ export default function ProductsList({
           </div>
         </header>
 
-        {hasActiveFilters && (
+        {hasActiveCriteria && (
           <div className="products-catalog-active-filters border-t border-[#EEF1F5] bg-[#FBFCFE] px-4 py-3 sm:px-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <span className="mr-1 text-xs font-bold tracking-[0.04em] text-[#667085] uppercase">
                   Active filters
                 </span>
+                {hasSearchQuery && (
+                  <ActiveFilterChip
+                    label={`Search: ${trimmedQuery}`}
+                    onRemove={() => setQ("")}
+                  />
+                )}
                 {effectiveSelectedCategories.map((category) => (
                   <ActiveFilterChip
                     key={category}
@@ -1430,7 +1451,7 @@ export default function ProductsList({
                     return (
                       <tr
                         key={product.id}
-                        className="products-catalog-row-enter group border-b border-[#EDF0F5] transition-colors duration-[180ms] last:border-0 hover:bg-[#F8FAFC]"
+                        className="products-catalog-row-enter group border-b border-[#EDF0F5] transition-colors duration-[180ms] last:border-0 hover:bg-[#FFFDF7]"
                         style={
                           {
                             "--products-row-delay": `${index * 22}ms`,
@@ -1451,7 +1472,7 @@ export default function ProductsList({
                         </td>
                         <td className="px-5 py-4">
                           <span
-                            className="inline-flex max-w-[116px] items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
+                            className="inline-flex max-w-[116px] items-center rounded-[7px] border border-[#E5E8EF] bg-[#F8FAFC] px-2.5 py-1 text-xs font-semibold text-[#344054]"
                             dir="ltr"
                             title={product.internalRef || undefined}
                           >
@@ -1491,7 +1512,7 @@ export default function ProductsList({
                 return (
                   <article
                     key={product.id}
-                    className="products-catalog-row-enter group rounded-[12px] border border-[#E5E8EF] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-colors duration-[180ms] hover:bg-[#F8FAFC]"
+                    className="products-catalog-row-enter group rounded-[12px] border border-[#E5E8EF] bg-white p-4 shadow-[0_1px_2px_rgba(16,24,40,0.03)] transition-[background-color,border-color,transform,box-shadow] duration-[180ms] hover:border-[#E9DDB8] hover:bg-[#FFFDF7]"
                     style={
                       {
                         "--products-row-delay": `${index * 22}ms`,
@@ -1524,7 +1545,7 @@ export default function ProductsList({
                         </dt>
                         <dd>
                           <span
-                            className="inline-flex max-w-full items-center rounded-[7px] bg-[#EEF3FF] px-2.5 py-1 text-xs font-semibold text-[#3972D5]"
+                            className="inline-flex max-w-full items-center rounded-[7px] border border-[#E5E8EF] bg-[#F8FAFC] px-2.5 py-1 text-xs font-semibold text-[#344054]"
                             dir="ltr"
                             title={product.internalRef || undefined}
                           >
@@ -1584,7 +1605,7 @@ export default function ProductsList({
                 <button
                   type="button"
                   onClick={clearAllCriteria}
-                  className="h-10 rounded-[10px] border border-[#C9A44C] bg-[#C9A44C] px-4 text-sm font-bold text-[#182033] shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#D7B861] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+                  className="h-10 rounded-[10px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,border-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
                 >
                   Clear Filters
                 </button>

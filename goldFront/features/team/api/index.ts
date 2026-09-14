@@ -400,7 +400,9 @@ export async function addTeamMemberAction(
       certificates: certificatesData || undefined,
       // supervisorId is required for MEDICAL_REP, send actual value or undefined
       supervisorId:
-        data.supervisorId && data.supervisorId.length > 0
+        data.role === "MEDICAL_REP" &&
+        data.supervisorId &&
+        data.supervisorId.length > 0
           ? data.supervisorId
           : undefined,
     };

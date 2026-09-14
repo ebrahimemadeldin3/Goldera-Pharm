@@ -1,3 +1,4 @@
+import { formatDateOnly, getSaudiCalendarDate } from "@/lib/utils";
 import { UserProfile } from "../types";
 
 export type ProfileCompletionItem = {
@@ -26,7 +27,7 @@ export function getProfileCompletionItems(
     },
     {
       id: "professional",
-      label: "Professional info",
+      label: "Professional information",
       done: Boolean(profile.department?.trim()),
     },
     {
@@ -70,6 +71,15 @@ export function getRoleHomePath(role: UserProfile["role"]): string {
   return rolePathMap[role] ?? "/rep";
 }
 
+export function getDisplayEmployeeId(id?: string | null): string {
+  if (!id) return "Not available";
+
+  const trimmed = String(id).trim();
+  if (!trimmed) return "Not available";
+
+  return trimmed.length > 8 ? trimmed.slice(-8).toUpperCase() : trimmed;
+}
+
 function parseProfileDate(value?: string | null): Date | null {
   if (!value) return null;
 
@@ -103,10 +113,12 @@ export function getFreshnessLabel(value?: string | null): string {
   const date = parseProfileDate(value);
   if (!date) return "Never";
 
-  const elapsedMs = Math.max(0, Date.now() - date.getTime());
+  const today = getSaudiCalendarDate(new Date());
+  const loginDay = getSaudiCalendarDate(date);
+  const elapsedMs = Math.max(0, today.getTime() - loginDay.getTime());
   const elapsedDays = Math.floor(elapsedMs / 86_400_000);
 
-  if (elapsedDays === 0) return "Today";
+  if (formatDateOnly(loginDay) === formatDateOnly(today)) return "Today";
   if (elapsedDays === 1) return "Yesterday";
   if (elapsedDays < 30) return `${elapsedDays} days ago`;
   if (elapsedDays < 365) return `${Math.floor(elapsedDays / 30)} mo ago`;
@@ -115,4 +127,4 @@ export function getFreshnessLabel(value?: string | null): string {
 }
 
 export const profileCardClass =
-  "rounded-[16px] border border-[#E5E8EF] bg-white shadow-[0_8px_22px_rgba(24,32,51,0.05)]";
+  "rounded-[16px] border border-gp-border-default bg-gp-surface-card shadow-gp-card";

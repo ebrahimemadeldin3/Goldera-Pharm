@@ -117,7 +117,7 @@ export default function ProfessionalSnapshot({
       )}
       style={{ transitionDelay: "70ms" } as React.CSSProperties}
     >
-      <div className="border-secondary-light via-gold-50/60 to-light-blue/60 border-b bg-linear-to-r from-white px-6 py-5">
+      <div className="border-secondary-light via-gold-50/60 to-gp-surface-subtle border-b bg-linear-to-r from-white px-6 py-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-brand-navy text-sm font-semibold">

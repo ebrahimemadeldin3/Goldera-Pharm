@@ -1,9 +1,7 @@
 import { getUserByIdAction, getManagerTeamAction } from "@/features/team/api";
 import { User } from "@/features/team/lib/types";
 import ProfileClient from "@/features/team/components/profile/ProfileClient";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { PageContainer } from "@/components/layout/page-container";
+import { MemberProfileError } from "@/features/team/components/profile/MemberProfileStates";
 
 type PageProps = {
   params: {
@@ -19,25 +17,7 @@ export default async function Page({ params }: PageProps) {
 
   // If API fails, show error state
   if (!res.success || !res.user) {
-    return (
-      <PageContainer className="flex h-full flex-col items-center justify-center gap-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-semibold text-black">
-            Team Member Not Found
-          </h1>
-          <p className="text-secondary-dark mt-2">
-            The requested team member could not be loaded.
-          </p>
-          <Link
-            href="/manager/team"
-            className="bg-gold hover:text-gold border-gold mt-4 inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-white hover:bg-white"
-          >
-            <ArrowLeft size={16} />
-            Back to Team
-          </Link>
-        </div>
-      </PageContainer>
-    );
+    return <MemberProfileError backUrl="/manager/team" />;
   }
 
   const memberDetails = res.user;
@@ -46,9 +26,11 @@ export default async function Page({ params }: PageProps) {
   // Fetch supervisor's team members if supervisor
   let supervisorTeamMembers: User[] = [];
   if (isSupervisor) {
-    const teamRes = await getManagerTeamAction(); // change to fetching one supervisor's team
+    const teamRes = await getManagerTeamAction();
     if (teamRes.success && teamRes.medicalReps) {
-      supervisorTeamMembers = teamRes.medicalReps;
+      supervisorTeamMembers = teamRes.medicalReps.filter(
+        (member) => member.supervisorId === memberDetails.id,
+      );
     }
   }
 

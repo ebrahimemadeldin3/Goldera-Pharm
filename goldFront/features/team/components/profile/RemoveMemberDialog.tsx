@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -11,10 +11,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { UserPlus } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { toast } from "@/lib/utils/toast";
 import { deleteTeamMemberAction } from "@/features/team/api";
 
@@ -22,14 +20,17 @@ type RemoveMemberDialogProps = {
   memberId: string;
   memberName: string;
   isSupervisor?: boolean;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 };
 
 export default function RemoveMemberDialog({
   memberId,
   memberName,
   isSupervisor = false,
+  open,
+  onOpenChange,
 }: RemoveMemberDialogProps) {
-  const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
@@ -51,51 +52,47 @@ export default function RemoveMemberDialog({
             title: "Failed to remove team member",
             description: result.error?.message || "Please try again",
           });
-          setOpen(false);
+          onOpenChange(false);
         }
       } catch {
         toast.error({
           title: "An unexpected error occurred",
           description: "Please try again later",
         });
-        setOpen(false);
+        onOpenChange(false);
       }
     });
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <Button
-          type="button"
-          className="border-gold-stroke bg-light-warning text-dashboard-red inline-flex cursor-pointer items-center gap-2 rounded-md border px-4 py-2 text-sm font-medium hover:bg-yellow-50"
-        >
-          <UserPlus size={16} />
-          Remove {isSupervisor ? "Supervisor" : "Member"}
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent className="w-full sm:max-w-125">
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="border-gp-border-default shadow-gp-dialog w-full rounded-[16px] bg-white sm:max-w-125">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-dashboard-red text-lg/7 font-semibold">
-            Remove Team Member
+          <div className="bg-gp-danger-soft text-gp-danger mb-2 flex size-10 items-center justify-center rounded-[10px]">
+            <TriangleAlert className="size-5" aria-hidden="true" />
+          </div>
+          <AlertDialogTitle className="text-gp-navy-900 text-lg/7 font-semibold">
+            Remove {isSupervisor ? "Supervisor" : "Team Member"}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-secondary-dark text-sm/5">
+          <AlertDialogDescription className="text-gp-text-muted text-sm/5">
             Are you sure you want to remove{" "}
-            <span className="font-medium text-black">{memberName}</span> from
-            the team?
-            <span className="mt-1 block font-medium text-red-800">
+            <span className="text-gp-text-primary font-semibold">
+              {memberName}
+            </span>{" "}
+            from the team?
+            <span className="text-gp-danger mt-1 block font-medium">
               This action cannot be undone.
             </span>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel className="cursor-pointer">
+          <AlertDialogCancel className="border-gp-border-control text-gp-navy-850 h-10 cursor-pointer rounded-[10px] px-4 font-semibold">
             Cancel
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleRemove}
             disabled={isPending}
-            className="bg-dashboard-red hover:text-dashboard-red border-dashboard-red cursor-pointer border text-white hover:bg-white"
+            className="bg-gp-danger border-gp-danger hover:text-gp-danger h-10 cursor-pointer rounded-[10px] border px-4 font-semibold text-white hover:bg-white"
           >
             {isPending ? "Removing..." : "Remove Member"}
           </AlertDialogAction>

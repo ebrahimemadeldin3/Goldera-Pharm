@@ -1,21 +1,68 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Filter, RotateCcw } from "lucide-react";
-import { PharmacyApiResponse } from "../lib/types";
+import {
+  type KeyboardEvent as ReactKeyboardEvent,
+  useMemo,
+  useState,
+} from "react";
 import { format } from "date-fns";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  ArrowRight,
+  ArrowUpDown,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  ChevronRight,
+  CircleSlash,
+  Copy,
+  Eye,
+  Globe2,
+  Layers3,
+  MapPin,
+  MapPinned,
+  MoreHorizontal,
+  Search,
+  SlidersHorizontal,
+  Store,
+  X,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { SectionContainer } from "@/components/ui/SectionContainer";
-import { SearchInput } from "@/components/ui/SearchInput";
-import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import { cn } from "@/lib/utils";
+import { toast } from "@/lib/utils/toast";
+import {
+  KSA_TERRITORY_STRUCTURE,
+  UNASSIGNED_DISTRICT,
+  UNASSIGNED_REGION,
+  getTerritoryLookup,
+  type TerritoryLookup,
+} from "@/features/plan/lib/territory";
+import type { PharmacyApiResponse } from "../lib/types";
 
 interface PharmaciesListProps {
   pharmacies?: PharmacyApiResponse[];
@@ -24,213 +71,1307 @@ interface PharmaciesListProps {
   totalCount?: number;
 }
 
+type SortKey = "newest" | "nameAsc" | "nameDesc" | "cityAsc";
+type ControlOption = {
+  value: string;
+  label: string;
+  helper?: string;
+};
+type PharmacyDirectoryRow = PharmacyApiResponse & {
+  code: string;
+  displayName: string;
+  territory: TerritoryLookup;
+  displayRegion: string;
+  displayDistrict: string;
+  displayTerritory: string;
+};
+
+const ALL = "all";
+const sortOptions: Array<{ value: SortKey; label: string }> = [
+  { value: "newest", label: "Recently Added" },
+  { value: "nameAsc", label: "Name A-Z" },
+  { value: "nameDesc", label: "Name Z-A" },
+  { value: "cityAsc", label: "City A-Z" },
+];
+
+function isClean(value?: string | null): value is string {
+  return Boolean(
+    value &&
+    typeof value === "string" &&
+    value.trim() !== "" &&
+    !value.toLowerCase().includes("undefined") &&
+    !value.toLowerCase().includes("null"),
+  );
+}
+
+function cleanText(value?: string | null, fallback = "Not provided") {
+  return isClean(value) ? value.trim() : fallback;
+}
+
+function includesNormalized(value: string | null | undefined, query: string) {
+  return String(value ?? "")
+    .toLowerCase()
+    .includes(query);
+}
+
+function uniqueSorted(values: Array<string | null | undefined>) {
+  return Array.from(
+    new Set(values.filter(isClean).map((value) => value.trim())),
+  ).sort((a, b) => a.localeCompare(b));
+}
+
+function dateValue(value?: string) {
+  const parsed = Date.parse(value ?? "");
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatDate(value?: string) {
+  if (!value) return "Not recorded";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? "Not recorded"
+    : format(parsed, "MMM d, yyyy");
+}
+
+function parsePharmacyName(value?: string | null) {
+  const raw = cleanText(value, "Unnamed Pharmacy");
+  const match = raw.match(/^([A-Za-z]\d{3,}|[A-Za-z0-9]{4,})\s*[-:]\s*(.+)$/);
+
+  if (!match) {
+    return {
+      code: "No code",
+      displayName: raw,
+    };
+  }
+
+  return {
+    code: match[1],
+    displayName: cleanText(match[2], raw),
+  };
+}
+
+function getCompactDistrictLabel(value: string) {
+  if (value === ALL) return "All Districts";
+  return value.replace(" District", "");
+}
+
+function getCompactRegionLabel(value: string) {
+  if (value === ALL) return "All Regions";
+  return value.replace(" Region", "");
+}
+
+function getCompactTerritoryLabel(value: string) {
+  if (value === ALL) return "All Territories";
+  return value;
+}
+
+function getActiveFilterCount({
+  query,
+  districtFilter,
+  regionFilter,
+  territoryFilter,
+  cityFilter,
+  sortKey,
+}: {
+  query: string;
+  districtFilter: string;
+  regionFilter: string;
+  territoryFilter: string;
+  cityFilter: string;
+  sortKey: SortKey;
+}) {
+  return [
+    query.trim().length > 0,
+    districtFilter !== ALL,
+    regionFilter !== ALL,
+    territoryFilter !== ALL,
+    cityFilter !== ALL,
+    sortKey !== "newest",
+  ].filter(Boolean).length;
+}
+
+function getRow(pharmacy: PharmacyApiResponse): PharmacyDirectoryRow {
+  const territory = getTerritoryLookup(pharmacy.subRegion);
+  const parsedName = parsePharmacyName(pharmacy.name);
+  const apiRegion = cleanText(pharmacy.region, "");
+
+  return {
+    ...pharmacy,
+    code: parsedName.code,
+    displayName: parsedName.displayName,
+    territory,
+    displayDistrict: territory.isKnown
+      ? territory.district
+      : UNASSIGNED_DISTRICT,
+    displayRegion: territory.isKnown
+      ? territory.region
+      : apiRegion || territory.region || UNASSIGNED_REGION,
+    displayTerritory: territory.territory,
+  };
+}
+
+function FilterChip({
+  prefix,
+  label,
+  onClear,
+}: {
+  prefix: string;
+  label: string;
+  onClear: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClear}
+      className="plans-filter-chip hover:border-gp-gold-500 hover:bg-gp-gold-50 inline-flex h-8 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-3 text-xs font-semibold text-[#7D5A12] transition-[background-color,border-color,color,transform] duration-[160ms]"
+    >
+      <span className="truncate">
+        <span className="text-gp-navy-900">{prefix}: </span>
+        {label}
+      </span>
+      <X className="text-gp-gold-700 size-3 shrink-0" aria-hidden="true" />
+    </button>
+  );
+}
+
+function FilterSelect({
+  value,
+  onValueChange,
+  icon: Icon,
+  label,
+  options,
+  allLabel,
+  displayValue,
+  className,
+  secondary = false,
+  searchable = false,
+  searchValue = "",
+  onSearchChange,
+  searchPlaceholder = "Search...",
+}: {
+  value: string;
+  onValueChange: (value: string) => void;
+  icon: LucideIcon;
+  label: string;
+  options: ControlOption[];
+  allLabel: string;
+  displayValue?: string;
+  className?: string;
+  secondary?: boolean;
+  searchable?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  searchPlaceholder?: string;
+}) {
+  const isSelected = value !== ALL;
+  const searchTerm = searchValue.trim().toLowerCase();
+  const visibleOptions =
+    searchable && searchTerm
+      ? options.filter(
+          (option) =>
+            option.label.toLowerCase().includes(searchTerm) ||
+            option.helper?.toLowerCase().includes(searchTerm),
+        )
+      : options;
+
+  return (
+    <Select value={value} onValueChange={onValueChange}>
+      <SelectTrigger
+        aria-label={label}
+        title={isSelected ? `${label}: ${displayValue ?? value}` : allLabel}
+        className={cn(
+          "plans-filter-control focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 [&>svg:last-child]:text-gp-text-placeholder h-11 w-full cursor-pointer rounded-[12px] border bg-white px-3 text-sm font-semibold shadow-none transition-[border-color,background-color,box-shadow,color] duration-[150ms] focus-visible:ring-3",
+          isSelected
+            ? "border-gp-gold-500 bg-gp-surface-hover text-gp-navy-900"
+            : "border-gp-border-default text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover",
+          secondary && !isSelected && "text-gp-text-secondary",
+          className,
+        )}
+      >
+        <Icon className="text-gp-gold-600 size-4 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 flex-1 truncate text-left">
+          {displayValue ?? allLabel}
+        </span>
+      </SelectTrigger>
+      <SelectContent className="plans-select-content border-gp-border-control shadow-gp-popover max-h-[300px] bg-white p-0 [&>div:not([data-slot])]:p-1">
+        {searchable && options.length > 8 && (
+          <div
+            className="border-gp-border-subtle sticky top-0 z-10 border-b bg-white p-2"
+            onKeyDown={(event: ReactKeyboardEvent<HTMLDivElement>) =>
+              event.stopPropagation()
+            }
+          >
+            <div className="relative">
+              <Search
+                className="text-gp-text-placeholder pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2"
+                aria-hidden="true"
+              />
+              <input
+                value={searchValue}
+                onChange={(event) => onSearchChange?.(event.target.value)}
+                placeholder={searchPlaceholder}
+                className="border-gp-border-control focus:border-gp-gold-500 focus:ring-gp-gold-500/10 text-gp-navy-900 h-9 w-full rounded-[9px] border bg-white pr-2 pl-8 text-xs font-medium transition-[border-color,box-shadow] duration-[150ms] outline-none focus:ring-3"
+              />
+            </div>
+          </div>
+        )}
+        <SelectItem
+          value={ALL}
+          className="text-gp-text-secondary focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900 h-10 cursor-pointer rounded-[8px] py-0 pr-8 pl-2 text-sm font-semibold"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <Icon
+              className="text-gp-gold-600 size-4 shrink-0"
+              aria-hidden="true"
+            />
+            <span className="truncate">{allLabel}</span>
+          </span>
+        </SelectItem>
+        {visibleOptions.map((option) => (
+          <SelectItem
+            key={option.value}
+            value={option.value}
+            className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900 min-h-10 cursor-pointer rounded-[8px] py-1.5 pr-8 pl-2 text-sm font-semibold"
+          >
+            <span className="flex min-w-0 items-start gap-2">
+              <Icon
+                className="text-gp-gold-600 mt-0.5 size-4 shrink-0"
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className="block truncate">{option.label}</span>
+                {option.helper && (
+                  <span className="text-gp-text-muted mt-0.5 block truncate text-[11px] font-medium">
+                    {option.helper}
+                  </span>
+                )}
+              </span>
+            </span>
+          </SelectItem>
+        ))}
+        {visibleOptions.length === 0 && (
+          <div className="text-gp-text-muted px-3 py-3 text-xs font-medium">
+            No matching options
+          </div>
+        )}
+      </SelectContent>
+    </Select>
+  );
+}
+
+function DataQualityText({
+  value,
+  fallback,
+}: {
+  value?: string | null;
+  fallback: string;
+}) {
+  if (isClean(value)) return <>{value.trim()}</>;
+
+  return (
+    <span className="text-gp-text-placeholder text-xs font-medium italic">
+      {fallback}
+    </span>
+  );
+}
+
+function DetailTile({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: string;
+  icon: LucideIcon;
+}) {
+  return (
+    <div className="border-gp-border-subtle bg-gp-surface-subtle flex min-w-0 items-center gap-2 rounded-[10px] border px-3 py-2">
+      <span className="bg-gp-gold-50 text-gp-gold-700 flex size-8 shrink-0 items-center justify-center rounded-[8px]">
+        <Icon className="size-4" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-gp-text-muted truncate text-[11px] font-semibold tracking-[0.04em] uppercase">
+          {label}
+        </p>
+        <p className="text-gp-navy-900 truncate text-sm leading-5 font-semibold">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PharmacyNameCell({ row }: { row: PharmacyDirectoryRow }) {
+  return (
+    <div className="flex min-w-0 items-center gap-3">
+      <span className="border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 flex size-10 shrink-0 items-center justify-center rounded-[10px] border shadow-[0_6px_14px_rgba(16,29,54,0.13)]">
+        <Store className="size-4.5" aria-hidden="true" />
+      </span>
+      <div className="min-w-0">
+        <p
+          className="text-gp-navy-900 truncate text-sm font-semibold"
+          dir="auto"
+          title={row.displayName}
+        >
+          {row.displayName}
+        </p>
+        <p className="text-gp-text-muted mt-0.5 truncate text-xs font-medium">
+          {row.code}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function PharmacyMobileCard({
+  row,
+  index,
+  onViewDetails,
+}: {
+  row: PharmacyDirectoryRow;
+  index: number;
+  onViewDetails: (row: PharmacyDirectoryRow) => void;
+}) {
+  return (
+    <article
+      className="group/pharmacy border-gp-border-default bg-gp-surface-card shadow-gp-card hover:border-gp-gold-300 relative [animation:plans-card-in_350ms_ease-out_forwards] overflow-hidden rounded-[14px] border opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,27,51,0.09)] motion-reduce:transform-none motion-reduce:[animation:none] motion-reduce:opacity-100"
+      style={{ animationDelay: `${Math.min(index, 9) * 40}ms` }}
+    >
+      <span className="bg-gp-gold-500 absolute top-4 bottom-4 left-0 w-[3px] rounded-r-full" />
+      <div className="p-4">
+        <PharmacyNameCell row={row} />
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <DetailTile
+            label="City"
+            value={cleanText(row.city, "Not provided")}
+            icon={Building2}
+          />
+          <DetailTile
+            label="Country"
+            value={cleanText(row.country, "Saudi Arabia")}
+            icon={Globe2}
+          />
+          <DetailTile
+            label="Region"
+            value={cleanText(row.displayRegion, "Not assigned")}
+            icon={MapPinned}
+          />
+          <DetailTile
+            label="Territory"
+            value={cleanText(row.displayTerritory, "Not assigned")}
+            icon={MapPin}
+          />
+        </div>
+        <div className="border-gp-border-subtle mt-4 flex items-center justify-between gap-3 border-t pt-3">
+          <span className="text-gp-text-muted inline-flex items-center gap-1.5 text-xs font-medium">
+            <CalendarDays className="size-3.5" aria-hidden="true" />
+            Added {formatDate(row.createdAt)}
+          </span>
+          <Button
+            type="button"
+            onClick={() => onViewDetails(row)}
+            className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white shadow-[0_6px_14px_rgba(16,29,54,0.16)]"
+          >
+            View Details
+            <ArrowRight className="text-gp-gold-500 size-3.5 transition-transform duration-[170ms] group-hover:translate-x-0.5" />
+          </Button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function PharmacyDetailsSheet({
+  pharmacy,
+  open,
+  onOpenChange,
+}: {
+  pharmacy: PharmacyDirectoryRow | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="bg-gp-surface-page border-gp-border-default shadow-gp-dialog w-full gap-0 p-0 sm:max-w-[520px]"
+        overlayClassName="bg-gp-navy-900/35"
+      >
+        {pharmacy && (
+          <>
+            <SheetHeader className="border-gp-border-subtle border-b bg-white px-5 py-5">
+              <div className="flex min-w-0 items-start gap-3 pr-8">
+                <span className="border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 flex size-12 shrink-0 items-center justify-center rounded-[12px] border shadow-[0_8px_18px_rgba(16,29,54,0.16)]">
+                  <Store className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <SheetTitle
+                    className="text-gp-navy-900 text-xl leading-7 font-semibold"
+                    dir="auto"
+                  >
+                    {pharmacy.displayName}
+                  </SheetTitle>
+                  <SheetDescription className="text-gp-text-muted mt-1 flex flex-wrap items-center gap-2 text-sm font-medium">
+                    <span>{pharmacy.code}</span>
+                    <span className="bg-gp-success-soft text-gp-success border-gp-success-border inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase">
+                      Registered
+                    </span>
+                  </SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
+
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+              <div className="border-gp-gold-300 bg-gp-gold-50 rounded-[14px] border p-4">
+                <p className="text-gp-gold-700 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                  Territory
+                </p>
+                <p className="text-gp-navy-900 mt-2 text-sm font-semibold">
+                  {cleanText(pharmacy.displayDistrict, "Not assigned")}
+                </p>
+                <p className="text-gp-text-muted mt-1 text-sm font-medium">
+                  {cleanText(pharmacy.displayRegion, "Not assigned")} /{" "}
+                  {cleanText(pharmacy.displayTerritory, "Not assigned")}
+                </p>
+              </div>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 text-sm font-semibold">
+                  Overview
+                </h3>
+                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <DetailTile
+                    label="City"
+                    value={cleanText(pharmacy.city, "Not provided")}
+                    icon={Building2}
+                  />
+                  <DetailTile
+                    label="Country"
+                    value={cleanText(pharmacy.country, "Saudi Arabia")}
+                    icon={Globe2}
+                  />
+                  <DetailTile
+                    label="Added"
+                    value={formatDate(pharmacy.createdAt)}
+                    icon={CalendarDays}
+                  />
+                  <DetailTile
+                    label="Updated"
+                    value={formatDate(pharmacy.updatedAt)}
+                    icon={CalendarDays}
+                  />
+                </div>
+              </section>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 text-sm font-semibold">
+                  Data Fields
+                </h3>
+                <div className="border-gp-border-subtle mt-3 overflow-hidden rounded-[12px] border bg-white">
+                  {[
+                    [
+                      "Stored pharmacy name",
+                      cleanText(pharmacy.name, "Not provided"),
+                    ],
+                    [
+                      "Stored region",
+                      cleanText(pharmacy.region, "Not assigned"),
+                    ],
+                    [
+                      "Stored sub-region",
+                      cleanText(pharmacy.subRegion, "Not assigned"),
+                    ],
+                    ["Record ID", pharmacy.id],
+                  ].map(([label, value]) => (
+                    <div
+                      key={label}
+                      className="border-gp-border-subtle grid gap-1 border-b px-4 py-3 last:border-b-0 sm:grid-cols-[150px_minmax(0,1fr)]"
+                    >
+                      <p className="text-gp-text-muted text-xs font-semibold">
+                        {label}
+                      </p>
+                      <p
+                        className="text-gp-navy-900 min-w-0 text-sm font-medium break-words"
+                        dir="auto"
+                      >
+                        {value}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <SheetFooter className="border-gp-border-subtle border-t bg-white p-4">
+              <Button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white"
+              >
+                <CheckCircle2
+                  className="text-gp-gold-500 size-4"
+                  aria-hidden="true"
+                />
+                Done
+              </Button>
+            </SheetFooter>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
 export default function PharmaciesList({
   pharmacies = [],
   page = 1,
   limit = 10,
   totalCount = 0,
 }: PharmaciesListProps) {
-  const [q, setQ] = useState("");
-  const [regionFilter, setRegionFilter] = useState("All Regions");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState("");
+  const [districtFilter, setDistrictFilter] = useState(ALL);
+  const [regionFilter, setRegionFilter] = useState(ALL);
+  const [territoryFilter, setTerritoryFilter] = useState(ALL);
+  const [cityFilter, setCityFilter] = useState(ALL);
+  const [sortKey, setSortKey] = useState<SortKey>("newest");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
+  const [selectedPharmacy, setSelectedPharmacy] =
+    useState<PharmacyDirectoryRow | null>(null);
 
-  // Derive unique regions for filter dropdown
-  const regions = useMemo(() => {
-    const set = new Set<string>();
-    pharmacies.forEach((p) => {
-      if (p.region) set.add(p.region);
+  const rows = useMemo(() => pharmacies.map(getRow), [pharmacies]);
+
+  const districtOptions = useMemo<ControlOption[]>(() => {
+    const available = new Set(rows.map((row) => row.displayDistrict));
+
+    return [
+      ...KSA_TERRITORY_STRUCTURE.filter((district) =>
+        available.has(district.name),
+      ).map((district) => ({
+        value: district.name,
+        label: district.name,
+      })),
+      ...Array.from(available)
+        .filter(
+          (district) =>
+            district === UNASSIGNED_DISTRICT ||
+            !KSA_TERRITORY_STRUCTURE.some((item) => item.name === district),
+        )
+        .sort((a, b) => a.localeCompare(b))
+        .map((district) => ({
+          value: district,
+          label: district,
+        })),
+    ];
+  }, [rows]);
+
+  const regionOptions = useMemo<ControlOption[]>(() => {
+    return uniqueSorted(
+      rows
+        .filter(
+          (row) =>
+            districtFilter === ALL || row.displayDistrict === districtFilter,
+        )
+        .map((row) => row.displayRegion),
+    ).map((region) => {
+      const district = rows.find(
+        (row) => row.displayRegion === region,
+      )?.displayDistrict;
+
+      return {
+        value: region,
+        label: region,
+        helper: district,
+      };
     });
-    return ["All Regions", ...Array.from(set)];
-  }, [pharmacies]);
+  }, [districtFilter, rows]);
 
-  // Client-side filtering over currently loaded page records
-  const filtered = useMemo(() => {
-    return pharmacies.filter((p) => {
-      // Region filter
-      if (regionFilter !== "All Regions" && p.region !== regionFilter) {
+  const territoryOptions = useMemo<ControlOption[]>(() => {
+    return uniqueSorted(
+      rows
+        .filter((row) => {
+          if (
+            districtFilter !== ALL &&
+            row.displayDistrict !== districtFilter
+          ) {
+            return false;
+          }
+          if (regionFilter !== ALL && row.displayRegion !== regionFilter) {
+            return false;
+          }
+          return true;
+        })
+        .map((row) => row.displayTerritory),
+    ).map((territory) => {
+      const match = rows.find((row) => row.displayTerritory === territory);
+
+      return {
+        value: territory,
+        label: territory,
+        helper: match?.displayRegion,
+      };
+    });
+  }, [districtFilter, regionFilter, rows]);
+
+  const cityOptions = useMemo<ControlOption[]>(
+    () =>
+      uniqueSorted(rows.map((row) => row.city)).map((city) => ({
+        value: city,
+        label: city,
+      })),
+    [rows],
+  );
+
+  const sortControlOptions: ControlOption[] = sortOptions.map((option) => ({
+    value: option.value,
+    label: option.label,
+  }));
+
+  const filteredRows = useMemo(() => {
+    const term = query.trim().toLowerCase();
+
+    return rows.filter((row) => {
+      if (districtFilter !== ALL && row.displayDistrict !== districtFilter) {
         return false;
       }
-      // Text search (name, city, subRegion)
-      if (q.trim()) {
-        const query = q.toLowerCase();
-        const nameMatch = p.name?.toLowerCase().includes(query);
-        const cityMatch = p.city?.toLowerCase().includes(query);
-        const subRegionMatch = p.subRegion?.toLowerCase().includes(query);
-        return Boolean(nameMatch || cityMatch || subRegionMatch);
+      if (regionFilter !== ALL && row.displayRegion !== regionFilter) {
+        return false;
       }
-      return true;
+      if (territoryFilter !== ALL && row.displayTerritory !== territoryFilter) {
+        return false;
+      }
+      if (cityFilter !== ALL && cleanText(row.city, "") !== cityFilter) {
+        return false;
+      }
+      if (!term) return true;
+
+      return [
+        row.name,
+        row.displayName,
+        row.code,
+        row.city,
+        row.country,
+        row.region,
+        row.subRegion,
+        row.displayDistrict,
+        row.displayRegion,
+        row.displayTerritory,
+      ].some((value) => includesNormalized(value, term));
     });
-  }, [pharmacies, regionFilter, q]);
+  }, [cityFilter, districtFilter, query, regionFilter, rows, territoryFilter]);
 
-  const handleResetFilters = () => {
-    setQ("");
-    setRegionFilter("All Regions");
-  };
+  const sortedRows = useMemo(() => {
+    return [...filteredRows].sort((left, right) => {
+      if (sortKey === "nameAsc") {
+        return left.displayName.localeCompare(right.displayName);
+      }
+      if (sortKey === "nameDesc") {
+        return right.displayName.localeCompare(left.displayName);
+      }
+      if (sortKey === "cityAsc") {
+        return cleanText(left.city, "").localeCompare(
+          cleanText(right.city, ""),
+        );
+      }
+      return dateValue(right.createdAt) - dateValue(left.createdAt);
+    });
+  }, [filteredRows, sortKey]);
 
-  const hasActiveFilters = Boolean(q.trim() || regionFilter !== "All Regions");
+  const activeFilterCount = getActiveFilterCount({
+    query,
+    districtFilter,
+    regionFilter,
+    territoryFilter,
+    cityFilter,
+    sortKey,
+  });
+  const hasActiveFilters = activeFilterCount > 0;
+  const isPageSlice = totalCount !== pharmacies.length;
+  const emptyTitle = hasActiveFilters
+    ? "No pharmacies match these filters"
+    : "No pharmacies found";
+  const emptyCopy = hasActiveFilters
+    ? "Try adjusting your territory filters or search."
+    : "Newly registered pharmacy accounts will appear here.";
+
+  function resetPageToFirst() {
+    if (page <= 1) return;
+
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    resetPageToFirst();
+  }
+
+  function updateDistrict(value: string) {
+    setDistrictFilter(value);
+    setRegionFilter(ALL);
+    setTerritoryFilter(ALL);
+    resetPageToFirst();
+  }
+
+  function updateRegion(value: string) {
+    setRegionFilter(value);
+    setTerritoryFilter(ALL);
+    resetPageToFirst();
+  }
+
+  function updateTerritory(value: string) {
+    setTerritoryFilter(value);
+    resetPageToFirst();
+  }
+
+  function updateCity(value: string) {
+    setCityFilter(value);
+    resetPageToFirst();
+  }
+
+  function updateSort(value: string) {
+    setSortKey(value as SortKey);
+    resetPageToFirst();
+  }
+
+  function resetFilters() {
+    setQuery("");
+    setDistrictFilter(ALL);
+    setRegionFilter(ALL);
+    setTerritoryFilter(ALL);
+    setCityFilter(ALL);
+    setSortKey("newest");
+    setCitySearch("");
+    resetPageToFirst();
+  }
+
+  async function copyPharmacyId(row: PharmacyDirectoryRow) {
+    try {
+      await navigator.clipboard.writeText(row.id);
+      toast.success({ title: "Pharmacy ID copied" });
+    } catch {
+      toast.error({ title: "Could not copy pharmacy ID" });
+    }
+  }
+
+  function openDetails(row: PharmacyDirectoryRow) {
+    setSelectedPharmacy(row);
+  }
 
   return (
-    <SectionContainer className="mt-6 p-0 overflow-hidden border border-[#E5E8EF] rounded-[16px] bg-white shadow-none">
-      {/* Directory Toolbar Header */}
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-[#EEF1F6] bg-[#FBFCFE]/60 px-5 py-4">
-        <div className="flex items-center gap-3 shrink-0">
-          <h2 className="text-base font-semibold text-[#182033]">Pharmacy Directory</h2>
-        </div>
+    <>
+      <section className="border-gp-border-default bg-gp-surface-card shadow-gp-card mt-5 overflow-hidden rounded-[16px] border">
+        <header className="border-gp-border-subtle border-b px-4 py-4 sm:px-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="min-w-0">
+              <h2 className="text-gp-navy-900 text-lg font-semibold">
+                Pharmacy Directory
+              </h2>
+              <p
+                key={`${sortedRows.length}-${query}`}
+                className="text-gp-text-muted mt-0.5 text-sm font-medium"
+                aria-live="polite"
+              >
+                {sortedRows.length}{" "}
+                {sortedRows.length === 1 ? "pharmacy" : "pharmacies"} shown
+                {isPageSlice ? " on this page" : ""}
+              </p>
+            </div>
 
-        <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-          {/* Region Filter */}
-          <div className="flex items-center gap-2">
-            <Filter size={15} className="text-[#8A94A6] shrink-0" />
-            <Select value={regionFilter} onValueChange={setRegionFilter}>
-              <SelectTrigger className="h-10 w-44 cursor-pointer rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-xs font-semibold text-[#182033] hover:border-[#E9DDB8] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30">
-                <SelectValue placeholder="All Regions" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {regions.map((r) => (
-                  <SelectItem key={r} value={r} className="text-xs font-medium cursor-pointer">
-                    {r}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative w-full lg:w-[380px]">
+              <Search
+                className="text-gp-text-placeholder pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={query}
+                onChange={(event) => updateQuery(event.target.value)}
+                className="border-gp-border-default text-gp-navy-900 placeholder:text-gp-text-placeholder focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 h-11 w-full rounded-[12px] bg-white pr-10 pl-10 text-sm font-medium shadow-none transition-[border-color,box-shadow] duration-[150ms]"
+                placeholder="Search loaded pharmacies..."
+                aria-label="Search loaded pharmacies by name, city, code or territory"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => updateQuery("")}
+                  aria-label="Clear pharmacy search"
+                  className="text-gp-text-muted hover:bg-gp-gold-50 hover:text-gp-gold-700 focus-visible:ring-gp-gold-500/25 absolute top-1/2 right-2.5 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[8px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                >
+                  <X className="size-4" aria-hidden="true" />
+                </button>
+              )}
+            </div>
           </div>
 
-          {/* Text Search Input */}
-          <SearchInput
-            value={q}
-            onChange={setQ}
-            placeholder="Filter page by name, city..."
-          />
-
-          {/* Reset Filters Button */}
-          {hasActiveFilters && (
+          <div className="mt-4 flex justify-end md:hidden">
             <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleResetFilters}
-              className="h-10 cursor-pointer gap-1.5 text-xs font-semibold text-[#667085] hover:bg-[#F9FAFB] hover:text-[#182033] px-3 rounded-[10px]"
+              type="button"
+              variant="outline"
+              onClick={() => setFilterSheetOpen(true)}
+              className="border-gp-border-default text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover h-11 cursor-pointer rounded-[12px] bg-white px-3 text-sm font-semibold shadow-none"
             >
-              <RotateCcw size={14} />
-              Reset Filters
+              <SlidersHorizontal
+                className="text-gp-gold-600 size-4"
+                aria-hidden="true"
+              />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="bg-gp-navy-900 text-gp-gold-500 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px]">
+                  {activeFilterCount}
+                </span>
+              )}
             </Button>
+          </div>
+
+          <div className="mt-4 hidden md:block">
+            <div className="text-gp-navy-900 mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+              <SlidersHorizontal
+                className="text-gp-gold-600 size-3.5"
+                aria-hidden="true"
+              />
+              Filters
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="border-gp-border-subtle bg-gp-surface-subtle flex max-w-full flex-wrap items-center gap-2 rounded-[14px] border p-2">
+                <FilterSelect
+                  value={districtFilter}
+                  onValueChange={updateDistrict}
+                  icon={Layers3}
+                  label="District"
+                  allLabel="All Districts"
+                  displayValue={getCompactDistrictLabel(districtFilter)}
+                  options={districtOptions}
+                  className="md:w-[230px]"
+                />
+                <ChevronRight
+                  className="text-gp-gold-500/75 size-4"
+                  aria-hidden="true"
+                />
+                <FilterSelect
+                  value={regionFilter}
+                  onValueChange={updateRegion}
+                  icon={MapPinned}
+                  label="Region"
+                  allLabel="All Regions"
+                  displayValue={getCompactRegionLabel(regionFilter)}
+                  options={regionOptions}
+                  className="md:w-[205px]"
+                />
+                <ChevronRight
+                  className="text-gp-gold-500/75 size-4"
+                  aria-hidden="true"
+                />
+                <FilterSelect
+                  value={territoryFilter}
+                  onValueChange={updateTerritory}
+                  icon={MapPin}
+                  label="Territory"
+                  allLabel="All Territories"
+                  displayValue={getCompactTerritoryLabel(territoryFilter)}
+                  options={territoryOptions}
+                  className="md:w-[170px]"
+                />
+              </div>
+
+              <FilterSelect
+                value={cityFilter}
+                onValueChange={updateCity}
+                icon={Building2}
+                label="City"
+                allLabel="All Cities"
+                displayValue={cityFilter === ALL ? "City" : cityFilter}
+                options={cityOptions}
+                className="md:w-[170px]"
+                secondary
+                searchable
+                searchValue={citySearch}
+                onSearchChange={setCitySearch}
+                searchPlaceholder="Search cities..."
+              />
+              <FilterSelect
+                value={sortKey}
+                onValueChange={updateSort}
+                icon={ArrowUpDown}
+                label="Sort"
+                allLabel="Recently Added"
+                displayValue={
+                  sortOptions.find((option) => option.value === sortKey)
+                    ?.label ?? "Recently Added"
+                }
+                options={sortControlOptions}
+                className="md:w-[175px]"
+                secondary
+              />
+            </div>
+          </div>
+
+          {hasActiveFilters && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-gp-text-muted mr-1 text-xs font-semibold">
+                {activeFilterCount}{" "}
+                {activeFilterCount === 1 ? "filter" : "filters"} active
+              </span>
+              {districtFilter !== ALL && (
+                <FilterChip
+                  prefix="District"
+                  label={getCompactDistrictLabel(districtFilter)}
+                  onClear={() => updateDistrict(ALL)}
+                />
+              )}
+              {regionFilter !== ALL && (
+                <FilterChip
+                  prefix="Region"
+                  label={getCompactRegionLabel(regionFilter)}
+                  onClear={() => updateRegion(ALL)}
+                />
+              )}
+              {territoryFilter !== ALL && (
+                <FilterChip
+                  prefix="Territory"
+                  label={territoryFilter}
+                  onClear={() => updateTerritory(ALL)}
+                />
+              )}
+              {cityFilter !== ALL && (
+                <FilterChip
+                  prefix="City"
+                  label={cityFilter}
+                  onClear={() => updateCity(ALL)}
+                />
+              )}
+              {sortKey !== "newest" && (
+                <FilterChip
+                  prefix="Sort"
+                  label={
+                    sortOptions.find((option) => option.value === sortKey)
+                      ?.label ?? "Recently Added"
+                  }
+                  onClear={() => updateSort("newest")}
+                />
+              )}
+              {query.trim() && (
+                <FilterChip
+                  prefix="Search"
+                  label={query.trim()}
+                  onClear={() => updateQuery("")}
+                />
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                onClick={resetFilters}
+                className="border-gp-border-control text-gp-navy-900 hover:border-gp-danger-border hover:bg-gp-danger-soft hover:text-gp-danger h-8 cursor-pointer rounded-full bg-white px-3 text-xs font-semibold shadow-none"
+              >
+                <XCircle className="size-3.5" aria-hidden="true" />
+                Clear all
+              </Button>
+            </div>
+          )}
+
+          <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+            <SheetContent
+              side="right"
+              className="bg-gp-surface-page border-gp-border-default shadow-gp-dialog w-full gap-0 p-0 sm:max-w-[420px]"
+              overlayClassName="bg-gp-navy-900/35"
+            >
+              <SheetHeader className="border-gp-border-subtle border-b bg-white px-5 py-5">
+                <SheetTitle className="text-gp-navy-900 text-lg font-semibold">
+                  Filters
+                </SheetTitle>
+                <SheetDescription className="text-gp-text-muted text-sm font-medium">
+                  Narrow pharmacies by territory, city, and sort.
+                </SheetDescription>
+              </SheetHeader>
+
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+                <div className="space-y-5">
+                  <section>
+                    <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                      Location
+                    </p>
+                    <div className="space-y-2">
+                      <FilterSelect
+                        value={districtFilter}
+                        onValueChange={updateDistrict}
+                        icon={Layers3}
+                        label="District"
+                        allLabel="All Districts"
+                        displayValue={getCompactDistrictLabel(districtFilter)}
+                        options={districtOptions}
+                      />
+                      <FilterSelect
+                        value={regionFilter}
+                        onValueChange={updateRegion}
+                        icon={MapPinned}
+                        label="Region"
+                        allLabel="All Regions"
+                        displayValue={getCompactRegionLabel(regionFilter)}
+                        options={regionOptions}
+                      />
+                      <FilterSelect
+                        value={territoryFilter}
+                        onValueChange={updateTerritory}
+                        icon={MapPin}
+                        label="Territory"
+                        allLabel="All Territories"
+                        displayValue={getCompactTerritoryLabel(territoryFilter)}
+                        options={territoryOptions}
+                      />
+                    </div>
+                  </section>
+
+                  <section>
+                    <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                      Pharmacy
+                    </p>
+                    <FilterSelect
+                      value={cityFilter}
+                      onValueChange={updateCity}
+                      icon={Building2}
+                      label="City"
+                      allLabel="All Cities"
+                      displayValue={
+                        cityFilter === ALL ? "All Cities" : cityFilter
+                      }
+                      options={cityOptions}
+                      secondary
+                      searchable
+                      searchValue={citySearch}
+                      onSearchChange={setCitySearch}
+                      searchPlaceholder="Search cities..."
+                    />
+                  </section>
+
+                  <section>
+                    <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                      Sort
+                    </p>
+                    <FilterSelect
+                      value={sortKey}
+                      onValueChange={updateSort}
+                      icon={ArrowUpDown}
+                      label="Sort"
+                      allLabel="Recently Added"
+                      displayValue={
+                        sortOptions.find((option) => option.value === sortKey)
+                          ?.label ?? "Recently Added"
+                      }
+                      options={sortControlOptions}
+                      secondary
+                    />
+                  </section>
+                </div>
+              </div>
+
+              <SheetFooter className="border-gp-border-subtle grid grid-cols-2 gap-2 border-t bg-white p-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetFilters}
+                  className="border-gp-border-control text-gp-navy-900 hover:border-gp-danger-border hover:bg-gp-danger-soft hover:text-gp-danger h-10 cursor-pointer rounded-[10px] text-sm font-semibold"
+                >
+                  Clear
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setFilterSheetOpen(false)}
+                  className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white"
+                >
+                  <CheckCircle2
+                    className="text-gp-gold-500 size-4"
+                    aria-hidden="true"
+                  />
+                  Apply Filters
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </header>
+
+        <div className="bg-gp-surface-subtle/40 p-4 sm:p-5">
+          {sortedRows.length > 0 ? (
+            <>
+              <div className="border-gp-border-subtle hidden overflow-hidden rounded-[14px] border bg-white lg:block">
+                <div className="max-h-[calc(100vh-360px)] overflow-y-auto">
+                  <table className="w-full min-w-[980px] text-left text-sm">
+                    <thead className="border-gp-border-subtle text-gp-text-muted sticky top-0 z-10 border-b bg-[#F9FAFB] text-[11px] font-semibold tracking-[0.06em] uppercase">
+                      <tr>
+                        <th className="w-16 px-4 py-3 font-semibold">#</th>
+                        <th className="px-4 py-3 font-semibold">Pharmacy</th>
+                        <th className="px-4 py-3 font-semibold">City</th>
+                        <th className="px-4 py-3 font-semibold">District</th>
+                        <th className="px-4 py-3 font-semibold">Region</th>
+                        <th className="px-4 py-3 font-semibold">Territory</th>
+                        <th className="px-4 py-3 font-semibold">Country</th>
+                        <th className="px-4 py-3 font-semibold">Added</th>
+                        <th className="w-44 px-4 py-3 text-right font-semibold">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-gp-border-subtle divide-y bg-white">
+                      {sortedRows.map((row, index) => (
+                        <tr
+                          key={row.id}
+                          className="group/row relative transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:bg-[#FFFDF7] hover:shadow-[inset_3px_0_0_#C9A44C] motion-reduce:hover:translate-y-0"
+                        >
+                          <td className="text-gp-text-placeholder px-4 py-3.5 text-xs font-semibold">
+                            {(page - 1) * limit + index + 1}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <PharmacyNameCell row={row} />
+                          </td>
+                          <td className="text-gp-navy-900 px-4 py-3.5">
+                            <DataQualityText
+                              value={row.city}
+                              fallback="Not provided"
+                            />
+                          </td>
+                          <td className="text-gp-text-muted px-4 py-3.5">
+                            <DataQualityText
+                              value={row.displayDistrict}
+                              fallback="Not assigned"
+                            />
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <p className="text-gp-navy-900 text-sm font-semibold">
+                              {cleanText(row.displayRegion, "Not assigned")}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex max-w-[180px] rounded-full border px-2.5 py-1 text-xs font-semibold">
+                              <span className="truncate">
+                                {cleanText(
+                                  row.displayTerritory,
+                                  "Not assigned",
+                                )}
+                              </span>
+                            </span>
+                          </td>
+                          <td className="text-gp-text-muted px-4 py-3.5">
+                            <DataQualityText
+                              value={row.country}
+                              fallback="Saudi Arabia"
+                            />
+                          </td>
+                          <td className="text-gp-text-muted px-4 py-3.5 text-xs font-medium">
+                            {formatDate(row.createdAt)}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                type="button"
+                                onClick={() => openDetails(row)}
+                                className="group/details bg-gp-navy-900 hover:bg-gp-navy-900/95 h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white shadow-[0_6px_14px_rgba(16,29,54,0.13)] transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px"
+                              >
+                                View Details
+                                <ArrowRight className="text-gp-gold-500 size-3.5 transition-transform duration-[170ms] group-hover/details:translate-x-0.5" />
+                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    type="button"
+                                    aria-label={`More actions for ${row.displayName}`}
+                                    className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/25 inline-flex size-9 cursor-pointer items-center justify-center rounded-[10px] border bg-white transition-[background-color,border-color,color,box-shadow,transform] duration-[170ms] hover:-translate-y-px focus-visible:ring-3 focus-visible:outline-none"
+                                  >
+                                    <MoreHorizontal
+                                      className="size-4"
+                                      aria-hidden="true"
+                                    />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  align="end"
+                                  className="border-gp-border-control shadow-gp-popover min-w-52 rounded-[12px] bg-white p-1"
+                                >
+                                  <DropdownMenuLabel className="text-gp-text-muted px-2 py-1.5 text-xs font-semibold">
+                                    Pharmacy Actions
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuItem
+                                    onSelect={() => openDetails(row)}
+                                    className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 cursor-pointer rounded-[8px] text-sm font-medium"
+                                  >
+                                    <Eye className="text-gp-gold-600 size-4" />
+                                    View details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={() => void copyPharmacyId(row)}
+                                    className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 cursor-pointer rounded-[8px] text-sm font-medium"
+                                  >
+                                    <Copy className="text-gp-gold-600 size-4" />
+                                    Copy record ID
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 lg:hidden">
+                {sortedRows.map((row, index) => (
+                  <PharmacyMobileCard
+                    key={row.id}
+                    row={row}
+                    index={index}
+                    onViewDetails={openDetails}
+                  />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div className="border-gp-border-control bg-gp-surface-card rounded-[14px] border border-dashed px-5 py-10 text-center">
+              <span className="bg-gp-gold-50 text-gp-gold-700 mx-auto flex size-12 items-center justify-center rounded-full">
+                <CircleSlash className="size-5" aria-hidden="true" />
+              </span>
+              <h3 className="text-gp-navy-900 mt-4 text-base font-semibold">
+                {emptyTitle}
+              </h3>
+              <p className="text-gp-text-muted mx-auto mt-2 max-w-md text-sm leading-6 font-medium">
+                {emptyCopy}
+              </p>
+              {hasActiveFilters && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetFilters}
+                  className="border-gp-gold-300 text-gp-gold-700 hover:bg-gp-gold-50 mt-4 h-9 cursor-pointer rounded-[10px] text-xs font-semibold"
+                >
+                  Clear filters
+                </Button>
+              )}
+            </div>
           )}
         </div>
-      </header>
 
-      {/* Scope-Honest Filter Info Banner */}
-      {hasActiveFilters && (
-        <div className="px-5 pt-4">
-          <ScopeInfoBanner onReset={handleResetFilters}>
-            Filtering currently loaded page slice
-            {regionFilter !== "All Regions" && (
-              <> (Region: <strong className="text-[#182033] font-semibold">&quot;{regionFilter}&quot;</strong>)</>
-            )}
-            {q.trim() !== "" && (
-              <> for <strong className="text-[#182033] font-semibold">&quot;{q}&quot;</strong></>
-            )}. Showing {filtered.length} of {pharmacies.length} loaded records.
-          </ScopeInfoBanner>
-        </div>
-      )}
+        <TablePaginationFooter
+          page={page}
+          limit={limit}
+          totalCount={totalCount}
+          itemLabel="pharmacies"
+          ariaLabel="Pharmacies directory pagination"
+          pageNavAriaLabel="Pharmacies pages"
+          tone="navy"
+        />
+      </section>
 
-      {/* Enterprise Table Section */}
-      <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
-        <table className="w-full min-w-160 text-xs text-[#182033]">
-          <thead className="sticky top-0 z-10 bg-[#F9FAFB] border-b border-[#E5E8EF] text-[11px] font-semibold uppercase tracking-[0.04em] text-[#667085]">
-            <tr className="text-left">
-              <th className="py-3 px-4 font-semibold text-[#667085]">#</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">Pharmacy Name</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">City</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">Sub-Region</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">Region</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">Country</th>
-              <th className="py-3 px-4 font-semibold text-[#667085]">Added Date</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#EEF1F6] bg-white">
-            {filtered.map((pharmacy, index) => (
-              <tr
-                key={pharmacy.id}
-                className="transition-colors duration-150 hover:bg-[#FFFDF7]"
-              >
-                <td className="py-3.5 px-4 text-xs text-[#8A94A6] font-medium">
-                  {(page - 1) * limit + index + 1}
-                </td>
-                <td className="py-3.5 px-4 font-semibold text-[#182033]">
-                  {pharmacy.name || "Unnamed Pharmacy"}
-                </td>
-                <td className="py-3.5 px-4 text-[#344054]">
-                  {pharmacy.city ? (
-                    pharmacy.city
-                  ) : (
-                    <span className="italic text-[#8A94A6] text-xs">No city specified</span>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-[#344054]">
-                  {pharmacy.subRegion ? (
-                    pharmacy.subRegion
-                  ) : (
-                    <span className="italic text-[#8A94A6] text-xs">No sub-region specified</span>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-[#344054]">
-                  {pharmacy.region ? (
-                    pharmacy.region
-                  ) : (
-                    <span className="italic text-[#8A94A6] text-xs">No region specified</span>
-                  )}
-                </td>
-                <td className="py-3.5 px-4 text-[#344054]">
-                  {pharmacy.country || "Saudi Arabia"}
-                </td>
-                <td className="py-3.5 px-4 text-[#667085] font-medium">
-                  {pharmacy.createdAt ? (
-                    format(new Date(pharmacy.createdAt), "MMM d, yyyy")
-                  ) : (
-                    <span className="italic text-[#8A94A6] text-xs">No date recorded</span>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {/* Distinct Empty States */}
-        {filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-[14px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] m-5 p-10 text-center">
-            <p className="text-sm font-semibold text-[#182033]">
-              {q.trim()
-                ? `No pharmacies matching "${q}" found on page ${page}.`
-                : regionFilter !== "All Regions"
-                ? `No pharmacies found in region "${regionFilter}".`
-                : "No pharmacies found in the database."}
-            </p>
-            {q.trim() && (
-              <p className="text-xs text-[#667085]">
-                Matching pharmacies may exist on another server page or region.
-              </p>
-            )}
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetFilters}
-                className="mt-2 gap-1.5 text-xs font-semibold rounded-[10px]"
-              >
-                <RotateCcw size={14} />
-                Reset Active Filters
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Bottom Footer Pagination */}
-      <TablePaginationFooter
-        page={page}
-        limit={limit}
-        totalCount={totalCount}
-        itemLabel="pharmacies"
-        ariaLabel="Pharmacies directory pagination"
+      <PharmacyDetailsSheet
+        pharmacy={selectedPharmacy}
+        open={Boolean(selectedPharmacy)}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setSelectedPharmacy(null);
+        }}
       />
-    </SectionContainer>
+    </>
   );
 }

@@ -53,6 +53,7 @@ import { HOURS } from "@/features/visits/lib/constants";
 import { useCreateVisit } from "@/features/visits/hooks/useCreateVisit";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
+import { getTerritoryLookup } from "@/features/plan/lib/territory";
 import {
   cn,
   formatDateOnly,
@@ -101,6 +102,24 @@ const comboboxDropdownClassName =
   "visits-add-combobox-dropdown rounded-[12px] border-[#E5E8EF] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
 const comboboxSelectedClassName = "bg-[#FFF8E5] text-[#182033]";
 const comboboxBadgeClassName = "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]";
+
+function formatTimeDisplay(value?: string) {
+  if (!value) return "Not selected";
+  const [hourText, minuteText = "00"] = value.split(":");
+  const hour = Number(hourText);
+  if (!Number.isFinite(hour)) return value;
+  const period = hour >= 12 ? "PM" : "AM";
+  const displayHour = hour % 12 || 12;
+  return `${displayHour}:${minuteText.padStart(2, "0")} ${period}`;
+}
+
+function formatVisitType(value?: string) {
+  if (!value) return "Not selected";
+  if (value === "CHECK") return "Check Visit";
+  if (value === "COACHING") return "Coaching Visit";
+  if (value === "MANAGER") return "Manager Visit";
+  return value;
+}
 
 function RequiredMark() {
   return <span className="text-[#D92D20]">*</span>;
@@ -274,6 +293,19 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   }, [filteredDoctors, form]);
 
   const visitType = hasVisitType ? form.watch("visitType") : undefined;
+  const selectedDoctorId = form.watch("doctorId");
+  const selectedDate = form.watch("date");
+  const selectedTime = form.watch("time");
+  const selectedProducts = form.watch("products");
+  const selectedNotes = form.watch("notes");
+  const selectedDoctor = doctors.find((doctor) => doctor.id === selectedDoctorId);
+  const selectedTerritory = selectedDoctor
+    ? getTerritoryLookup(selectedDoctor.subRegion || selectedDoctor.area)
+    : null;
+  const preselectedDoctor = preselectedDoctorId
+    ? doctors.find((doctor) => doctor.id === preselectedDoctorId)
+    : undefined;
+  const selectedProductCount = selectedProducts ? 1 : 0;
 
   async function onSubmit(values: VisitFormValues) {
     const result = await createVisit(values);
@@ -347,7 +379,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
             >
               <div className={cn(!isModal && "md:col-span-2")}>
                 <label className={cn("block", labelClassName)}>
-                  Hospital Filter
+                  Facility / Hospital
                 </label>
                 <div className="mt-2">
                   <Combobox
@@ -355,9 +387,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                     options={hospitalOptions}
                     value={selectedHospital}
                     onChange={setSelectedHospital}
-                    placeholder="All Hospitals"
-                    searchPlaceholder="Type hospital name..."
-                    emptyText="No hospitals found"
+                    placeholder="All facilities"
+                    searchPlaceholder="Type facility or hospital name..."
+                    emptyText="No facilities found"
                     labelFormatter={(option) => (
                       <span className="flex min-w-0 items-center gap-2">
                         <Building2
@@ -380,25 +412,60 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                       Doctor <RequiredMark />
                     </FormLabel>
                     <FormControl>
-                      <Combobox
-                        {...renderComboboxProps}
-                        options={doctorOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Search doctor..."
-                        searchPlaceholder="Type doctor name or specialty..."
-                        emptyText="No doctors matching search"
-                        startTypingText="Start typing to search doctors..."
-                        labelFormatter={(option) => (
-                          <span className="flex min-w-0 items-center gap-2">
-                            <Stethoscope
-                              className="size-4 shrink-0 text-[#B18732]"
-                              aria-hidden="true"
-                            />
-                            <span className="truncate">{option.label}</span>
-                          </span>
-                        )}
-                      />
+                      {preselectedDoctor ? (
+                        <div className="rounded-[12px] border border-[#E5E8EF] bg-white p-3">
+                          <div className="flex min-w-0 items-start gap-3">
+                            <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
+                              <Stethoscope className="size-4" aria-hidden="true" />
+                            </span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-[#101D36]" dir="auto">
+                                {preselectedDoctor.nameAR ||
+                                  preselectedDoctor.nameEN ||
+                                  "Selected doctor"}
+                              </p>
+                              {preselectedDoctor.nameAR &&
+                                preselectedDoctor.nameEN && (
+                                  <p className="mt-0.5 truncate text-xs font-medium text-[#667085]">
+                                    {preselectedDoctor.nameEN}
+                                  </p>
+                                )}
+                              <div className="mt-2 flex flex-wrap gap-1.5">
+                                {preselectedDoctor.specialty && (
+                                  <span className="rounded-full border border-[#E8D7A8] bg-[#F8F4E9] px-2 py-0.5 text-[11px] font-semibold text-[#8A681F]">
+                                    {preselectedDoctor.specialty}
+                                  </span>
+                                )}
+                                {preselectedDoctor.subRegion && (
+                                  <span className="rounded-full border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[11px] font-semibold text-[#101D36]">
+                                    {preselectedDoctor.subRegion}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <Combobox
+                          {...renderComboboxProps}
+                          options={doctorOptions}
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="Search doctor..."
+                          searchPlaceholder="Type doctor name or specialty..."
+                          emptyText="No doctors matching search"
+                          startTypingText="Start typing to search doctors..."
+                          labelFormatter={(option) => (
+                            <span className="flex min-w-0 items-center gap-2">
+                              <Stethoscope
+                                className="size-4 shrink-0 text-[#B18732]"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate">{option.label}</span>
+                            </span>
+                          )}
+                        />
+                      )}
                     </FormControl>
                     <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
                   </FormItem>
@@ -434,6 +501,16 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                         )}
                       />
                     </FormControl>
+                    {field.value && (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span className="rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-2.5 py-1 text-[11px] font-semibold text-[#7D5A12]">
+                          {field.value}
+                        </span>
+                        <span className="text-xs font-medium text-[#667085]">
+                          Selected samples: 1
+                        </span>
+                      </div>
+                    )}
                     <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
                   </FormItem>
                 )}
@@ -675,7 +752,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                 render={({ field }) => (
                   <FormItem className={cn(!isModal && "md:col-span-2")}>
                     <FormLabel className={labelClassName}>
-                      Visit Notes
+                      Visit Notes / Objectives
                     </FormLabel>
                     <div className="relative">
                       <CalendarCheck2
@@ -685,16 +762,103 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                       <FormControl>
                         <Textarea
                           placeholder="Enter any additional notes or objectives for this visit..."
+                          maxLength={500}
                           {...field}
                           className="min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10"
                         />
                       </FormControl>
+                    </div>
+                    <div className="text-right text-[11px] font-medium text-[#8A94A6]">
+                      {(field.value ?? "").length}/500
                     </div>
                     <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
                   </FormItem>
                 )}
               />
             </div>
+          </section>
+
+          <section className="mt-5 rounded-[14px] border border-[#E5E8EF] bg-white p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <span className="flex size-8 items-center justify-center rounded-[9px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
+                <CalendarCheck2 className="size-4" aria-hidden="true" />
+              </span>
+              <div>
+                <h3 className="text-sm font-semibold tracking-[0.06em] text-[#101D36] uppercase">
+                  Visit Summary
+                </h3>
+                <p className="text-xs font-medium text-[#667085]">
+                  Updates as appointment details change.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Doctor
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]" dir="auto">
+                  {selectedDoctor?.nameAR ||
+                    selectedDoctor?.nameEN ||
+                    "Not selected"}
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Facility
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]" dir="auto">
+                  {selectedDoctor?.accountName || "Not selected"}
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Territory
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]">
+                  {selectedTerritory
+                    ? `${selectedTerritory.region} · ${selectedTerritory.territory}`
+                    : "Not selected"}
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Date & Time
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]">
+                  {selectedDate
+                    ? `${formatSaudiDateDisplay(selectedDate)} · ${formatTimeDisplay(
+                        selectedTime,
+                      )}`
+                    : `Not selected · ${formatTimeDisplay(selectedTime)}`}
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Visit Type
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]">
+                  {formatVisitType(visitType)}
+                </p>
+              </div>
+              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                  Samples
+                </p>
+                <p className="mt-1 truncate font-semibold text-[#101D36]">
+                  {selectedProductCount} selected
+                </p>
+              </div>
+            </div>
+
+            {selectedNotes && (
+              <div className="mt-2 rounded-[10px] border border-[#E5E8EF] bg-[#FFFDF7] px-3 py-2">
+                <p className="line-clamp-2 text-xs font-medium text-[#667085]">
+                  {selectedNotes}
+                </p>
+              </div>
+            )}
           </section>
         </div>
 
@@ -719,13 +883,13 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           <Button
             type="submit"
             disabled={isPending}
-            className="group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#C9A44C] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#B18732] hover:text-white hover:shadow-[0_10px_24px_rgba(201,164,76,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            className="group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-[#101D36] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:scale-[0.98] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             {isPending ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
               <CalendarCheck2
-                className="size-4 transition-transform duration-[170ms] group-hover:-translate-y-0.5 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
+                className="size-4 text-[#C9A44C] transition-transform duration-[170ms] group-hover:-translate-y-0.5 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
                 aria-hidden="true"
               />
             )}

@@ -26,14 +26,14 @@ export function AppraisalsDialog({
 }: AppraisalsDialogProps) {
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-dashboard-green";
-    if (score >= 60) return "text-dashboard-blue";
+    if (score >= 60) return "text-gp-navy-900";
     if (score >= 40) return "text-dashboard-orange";
     return "text-dashboard-red";
   };
 
   const getScoreBgColor = (score: number) => {
     if (score >= 80) return "bg-dashboard-green";
-    if (score >= 60) return "bg-dashboard-blue";
+    if (score >= 60) return "bg-gp-navy-900";
     if (score >= 40) return "bg-dashboard-orange";
     return "bg-dashboard-red";
   };
@@ -184,7 +184,7 @@ export function AppraisalsDialog({
                     </div>
 
                     {appraisal.feedbackComments && (
-                      <div className="mt-2 rounded-md bg-blue-50 p-3">
+                      <div className="bg-gp-navy-900/5 mt-2 rounded-md p-3">
                         <p className="font-medium text-black">Feedback:</p>
                         <p className="text-sm">{appraisal.feedbackComments}</p>
                       </div>

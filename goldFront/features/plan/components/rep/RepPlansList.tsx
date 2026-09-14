@@ -5,7 +5,7 @@ import type { VisitPlan } from "@/features/plan/api/get";
 import RepPlanCard from "./RepPlanCard";
 import { SectionContainer } from "@/components/ui/SectionContainer";
 import { ScopeInfoBanner } from "@/components/ui/ScopeInfoBanner";
-import { ResultsFooter } from "@/components/ui/ResultsFooter";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 
 type RepPlansListProps = {
   plans: VisitPlan[];
@@ -114,7 +114,15 @@ export default function RepPlansList({
       </div>
 
       {/* Bottom Pagination Footer */}
-      <ResultsFooter page={page} limit={limit} totalCount={totalCount} />
+      <TablePaginationFooter
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        itemLabel="plans"
+        ariaLabel="Plans pagination"
+        pageNavAriaLabel="Plan pages"
+        tone="navy"
+      />
     </SectionContainer>
   );
 }

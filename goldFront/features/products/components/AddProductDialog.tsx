@@ -12,14 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { FormDrawer } from "@/components/shared/FormDrawer";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -310,43 +303,40 @@ export function AddProductDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      {trigger ? (
-        <DialogTrigger asChild>{trigger}</DialogTrigger>
-      ) : !isEditMode ? (
-        <DialogTrigger asChild>
-          <Button className="group inline-flex h-11 cursor-pointer items-center gap-2 rounded-[10px] border border-transparent bg-[#C9A44C] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-all duration-[180ms] ease-out hover:-translate-y-0.5 hover:bg-[#D2B15E] hover:text-white hover:shadow-[0_10px_25px_rgba(201,164,76,0.20)] focus-visible:ring-4 focus-visible:ring-[#C9A44C]/25 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
-            <Plus className="products-add-icon h-4 w-4 transition-transform duration-[180ms] ease-out group-hover:scale-105 group-hover:rotate-90" />
-            Add New Product
-          </Button>
-        </DialogTrigger>
-      ) : null}
-      <DialogContent className="max-h-[92vh] overflow-hidden rounded-[18px] border-0 bg-white p-0 shadow-[0_24px_70px_rgba(12,22,42,0.22)] sm:max-w-[590px]">
-        <div className="relative overflow-hidden bg-[#101D36] px-5 py-5 text-white sm:px-6">
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.08)_0_1px,transparent_1px_24px)] opacity-35" />
-          <DialogHeader className="relative z-10 gap-3 text-left">
-            <span className="flex size-11 items-center justify-center rounded-[12px] border border-[#D4AF4F]/35 bg-[#D4AF4F]/15 text-[#F4D37D]">
-              <Package className="size-5" aria-hidden="true" />
-            </span>
-            <div>
-              <DialogTitle className="text-[22px] leading-tight font-semibold">
-                {isEditMode ? "Edit Product" : "Add New Product"}
-              </DialogTitle>
-              <DialogDescription className="mt-2 max-w-[440px] text-sm leading-6 text-[#C8D2E1]">
-                {isEditMode
-                  ? "Update catalog details and the product image used in the table."
-                  : "Add catalog details and the product image used in the table."}
-              </DialogDescription>
-            </div>
-          </DialogHeader>
-        </div>
-
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="max-h-[calc(92vh-132px)] space-y-5 overflow-y-auto px-5 py-5 sm:px-6"
-          >
-            <div>
+    <FormDrawer
+      open={open}
+      onOpenChange={handleOpenChange}
+      trigger={
+        trigger
+          ? trigger
+          : !isEditMode && (
+              <Button className="group inline-flex h-11 cursor-pointer items-center gap-2 rounded-[10px] border border-transparent bg-[#101D36] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-all duration-[180ms] ease-out hover:-translate-y-0.5 hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_25px_rgba(16,29,54,0.22)] focus-visible:ring-4 focus-visible:ring-[#C9A44C]/25 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60">
+                <Plus className="products-add-icon h-4 w-4 text-[#C9A44C] transition-transform duration-[180ms] ease-out group-hover:scale-105 group-hover:rotate-90" />
+                Add Product
+              </Button>
+            )
+      }
+      title={isEditMode ? "Edit Product" : "Add Product"}
+      eyebrow={isEditMode ? "Catalog Update" : "New Product"}
+      description={
+        isEditMode
+          ? "Update catalog details and the product image used in the table."
+          : "Add catalog details and the product image used in the table."
+      }
+      icon={<Package className="size-5" aria-hidden="true" />}
+      width="md"
+      bodyClassName="flex overflow-hidden p-0"
+      closeLabel={
+        isEditMode ? "Close Edit Product drawer" : "Close Add Product drawer"
+      }
+    >
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="bg-gp-surface-page min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
+            <section className="gp-form-section border-gp-border-subtle rounded-[14px] border bg-white p-4">
               <div className="mb-2 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold text-[#182033]">
                   Product Image
@@ -411,7 +401,7 @@ export function AddProductDialog({
                   </div>
                 ) : (
                   <div className="flex min-h-[116px] flex-col items-center justify-center text-center">
-                    <span className="flex size-12 items-center justify-center rounded-full bg-[#EDF4FF] text-[#3972D5]">
+                    <span className="flex size-12 items-center justify-center rounded-full border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
                       <ImagePlus className="size-5" aria-hidden="true" />
                     </span>
                     <p className="mt-3 text-sm font-semibold text-[#182033]">
@@ -435,7 +425,7 @@ export function AddProductDialog({
                   onChange={handleFileChange}
                 />
               </div>
-            </div>
+            </section>
 
             <FormField
               control={form.control}
@@ -447,7 +437,7 @@ export function AddProductDialog({
                   </FormLabel>
                   <div className="relative">
                     <Package
-                      className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A94A6]"
+                      className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#344054]"
                       aria-hidden="true"
                     />
                     <FormControl>
@@ -474,7 +464,7 @@ export function AddProductDialog({
                     </FormLabel>
                     <div className="relative">
                       <ScanLine
-                        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A94A6]"
+                        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#344054]"
                         aria-hidden="true"
                       />
                       <FormControl>
@@ -500,7 +490,7 @@ export function AddProductDialog({
                     </FormLabel>
                     <div className="relative">
                       <BadgeDollarSign
-                        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A94A6]"
+                        className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#344054]"
                         aria-hidden="true"
                       />
                       <FormControl>
@@ -522,8 +512,13 @@ export function AddProductDialog({
                 )}
               />
             </div>
+          </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-[#EEF1F5] pt-5 sm:flex-row sm:justify-end">
+          <div className="gp-form-section sticky bottom-0 z-10 flex flex-col-reverse gap-3 border-t border-[#EEF1F5] bg-white px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <p className="text-gp-text-muted hidden text-xs font-medium sm:block">
+              Complete required fields before submitting
+            </p>
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
@@ -536,15 +531,21 @@ export function AddProductDialog({
               <Button
                 type="submit"
                 disabled={isPending}
-                className="h-11 rounded-[10px] bg-[#C9A44C] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(201,164,76,0.18)] transition-all duration-[180ms] hover:bg-[#D2B15E] hover:text-white"
+                className="gp-primary-action h-11 rounded-[10px] bg-[#101D36] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-all duration-[180ms] hover:-translate-y-px hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] disabled:translate-y-0"
               >
-                {isPending && <Loader2 className="size-4 animate-spin" />}
+                {isPending ? (
+                  <Loader2 className="size-4 animate-spin text-[#C9A44C]" />
+                ) : isEditMode ? (
+                  <Package className="size-4 text-[#C9A44C]" />
+                ) : (
+                  <Plus className="size-4 text-[#C9A44C]" />
+                )}
                 {isEditMode ? "Save Changes" : "Add Product"}
               </Button>
             </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </form>
+      </Form>
+    </FormDrawer>
   );
 }

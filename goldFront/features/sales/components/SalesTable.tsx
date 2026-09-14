@@ -1,21 +1,27 @@
 "use client";
 
 import {
-  Fragment,
+  useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
   type KeyboardEvent,
-  type MouseEvent,
 } from "react";
 import {
   Calendar,
-  Check,
+  CheckCircle2,
   ChevronRight,
   ClipboardCopy,
+  FileText,
+  Info,
+  Package,
   Search,
   Settings2,
+  ShoppingCart,
+  UserRound,
+  X,
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,6 +30,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { cn, formatSaudiDateDisplay, parseDateValue } from "@/lib/utils";
 import type { DateFilter, SaleApiResponse } from "../lib/types";
@@ -44,12 +58,6 @@ interface SalesTableProps {
 type OptionalColumnId =
   "sheet" | "externalId" | "productId" | "createdAt" | "updatedAt";
 
-type DetailItem = {
-  label: string;
-  value: string;
-  mono?: boolean;
-};
-
 type RowSummary = {
   rowId: string;
   customerName: string;
@@ -61,6 +69,7 @@ type RowSummary = {
   productId: string;
   quantity: string;
   amount: string;
+  amountValue: number | null;
   sheetName: string;
   externalId: string;
   createdAt: string;
@@ -197,7 +206,10 @@ function formatDateCell(value: unknown): string {
 
 function formatAmount(value: number | null): string {
   if (value === null) return "-";
-  return `${value.toLocaleString()} SAR`;
+  return `${value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} SAR`;
 }
 
 function createRowSummary(
@@ -250,24 +262,13 @@ function createRowSummary(
     productId,
     quantity: quantity === null ? "-" : quantity.toLocaleString(),
     amount: formatAmount(amount),
+    amountValue: amount,
     sheetName: getFirstValue(sale, ["sheetName"]) || "-",
     externalId: externalId || "-",
     createdAt: formatDateCell(sale.createdAt) || "-",
     updatedAt: formatDateCell(sale.updatedAt) || "-",
     copyId: recordId,
   };
-}
-
-function getDetailItems(summary: RowSummary): DetailItem[] {
-  return [
-    { label: "Sheet", value: summary.sheetName },
-    { label: "External ID", value: summary.externalId, mono: true },
-    { label: "Product ID", value: summary.productId || "-", mono: true },
-    { label: "Order Date", value: summary.orderDate },
-    { label: "Created At", value: summary.createdAt },
-    { label: "Updated At", value: summary.updatedAt },
-    { label: "Record ID", value: summary.copyId, mono: true },
-  ];
 }
 
 function getStoredOptionalColumns(): OptionalColumnId[] {
@@ -326,10 +327,13 @@ function ColumnSelector({
       <PopoverTrigger asChild>
         <button
           type="button"
-          className="sales-column-trigger inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
+          className="sales-column-trigger group inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] border border-[#DDE3EE] bg-white px-3 text-sm font-semibold text-[#182033] transition-[background-color,border-color,color,transform] duration-[180ms] ease-out hover:-translate-y-px hover:border-[#101D36]/20 hover:bg-[#101D36]/5 hover:text-[#101D36] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto"
           aria-label="Customize sales table columns"
         >
-          <Settings2 className="size-4" aria-hidden="true" />
+          <Settings2
+            className="size-4 text-[#344054] transition-colors duration-[180ms] group-hover:text-[#C9A44C]"
+            aria-hidden="true"
+          />
           <span>Columns</span>
           {visibleCount > 0 && (
             <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-white">
@@ -413,72 +417,253 @@ function ColumnSelector({
   );
 }
 
-function MetadataGrid({ summary }: { summary: RowSummary }) {
+function DetailLine({
+  label,
+  value,
+  mono = false,
+  dir,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+  dir?: "auto";
+}) {
   return (
-    <dl className="sales-row-details-grid grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {getDetailItems(summary).map((item) => (
-        <div key={item.label} className="min-w-0">
-          <dt className="text-[10px] font-bold tracking-[0.08em] text-[#8A94A6] uppercase">
-            {item.label}
-          </dt>
-          <dd
-            title={item.value}
-            className={cn(
-              "mt-1 truncate text-sm font-semibold text-[#182033]",
-              item.mono && "font-mono text-[12px] text-[#344054]",
-            )}
-          >
-            {item.value}
-          </dd>
-        </div>
-      ))}
-    </dl>
+    <div className="border-gp-border-subtle grid gap-1 border-b px-4 py-3 last:border-b-0 sm:grid-cols-[140px_minmax(0,1fr)]">
+      <dt className="text-gp-text-muted text-xs font-semibold">{label}</dt>
+      <dd
+        className={cn(
+          "text-gp-navy-900 min-w-0 text-sm font-medium break-words",
+          mono && "font-mono text-xs",
+        )}
+        dir={dir}
+      >
+        {value || "-"}
+      </dd>
+    </div>
   );
 }
 
-function SalesRowDetails({
+function SalesRecordDetailsDrawer({
   summary,
-  isCollapsing,
+  open,
+  onOpenChange,
   copiedRowId,
-  onCopyId,
+  onCopyValue,
 }: {
-  summary: RowSummary;
-  isCollapsing: boolean;
+  summary: RowSummary | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   copiedRowId: string | null;
-  onCopyId: (summary: RowSummary, event: MouseEvent<HTMLButtonElement>) => void;
+  onCopyValue: (value: string, copyKey: string) => void;
 }) {
-  const copied = copiedRowId === summary.rowId;
+  const isZeroAmount = summary?.amountValue === 0;
 
   return (
-    <div
-      className={cn(
-        "sales-row-details-panel rounded-[14px] border border-[#E9DDB8] bg-[#FFFDF7] p-4",
-        isCollapsing && "sales-row-details-panel-exit",
-      )}
-    >
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 flex-1">
-          <p className="mb-3 text-[11px] font-bold tracking-[0.08em] text-[#8A6515] uppercase">
-            Sale details
-          </p>
-          <MetadataGrid summary={summary} />
-        </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="right"
+        className="bg-gp-surface-page border-gp-border-default shadow-gp-dialog w-full gap-0 p-0 sm:max-w-[560px]"
+        overlayClassName="bg-gp-navy-900/35"
+      >
+        {summary && (
+          <>
+            <SheetHeader className="border-gp-border-subtle border-b bg-white px-5 py-5">
+              <div className="flex min-w-0 items-start gap-3 pr-8">
+                <span className="bg-gp-navy-900 text-gp-gold-500 border-gp-gold-300 flex size-12 shrink-0 items-center justify-center rounded-[12px] border shadow-[0_8px_18px_rgba(16,29,54,0.16)]">
+                  <ShoppingCart className="size-5" aria-hidden="true" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-gp-gold-700 mb-1 text-[11px] font-semibold tracking-[0.12em] uppercase">
+                    Sales Record
+                  </p>
+                  <SheetTitle
+                    className="text-gp-navy-900 text-xl leading-7 font-semibold"
+                    dir="auto"
+                  >
+                    {summary.orderNumber}
+                  </SheetTitle>
+                  <SheetDescription className="text-gp-text-muted mt-1 text-sm font-medium">
+                    <span className="block truncate" dir="auto">
+                      {summary.customerName}
+                    </span>
+                    <span
+                      className={cn(
+                        "mt-1 block font-semibold",
+                        isZeroAmount
+                          ? "text-gp-text-muted"
+                          : "text-gp-navy-900",
+                      )}
+                    >
+                      {summary.amount}
+                    </span>
+                  </SheetDescription>
+                </div>
+              </div>
+            </SheetHeader>
 
-        <button
-          type="button"
-          onClick={(event) => onCopyId(summary, event)}
-          disabled={!summary.copyId || summary.copyId === "-"}
-          className="sales-row-copy-button inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-[9px] border border-[#E5E8EF] bg-white px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-        >
-          {copied ? (
-            <Check className="size-4" aria-hidden="true" />
-          ) : (
-            <ClipboardCopy className="size-4" aria-hidden="true" />
-          )}
-          {copied ? "Copied" : "Copy ID"}
-        </button>
-      </div>
-    </div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
+              <div className="border-gp-gold-300 bg-gp-gold-50 rounded-[14px] border p-4">
+                <p className="text-gp-gold-700 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                  Commercial Summary
+                </p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-gp-text-muted text-xs font-semibold">
+                      Quantity
+                    </p>
+                    <p className="text-gp-navy-900 mt-1 font-mono text-lg font-semibold">
+                      {summary.quantity}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-gp-text-muted text-xs font-semibold">
+                      Amount
+                    </p>
+                    <p
+                      className={cn(
+                        "mt-1 text-lg font-semibold tabular-nums",
+                        isZeroAmount
+                          ? "text-gp-text-muted"
+                          : "text-gp-navy-900",
+                      )}
+                    >
+                      {summary.amount}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                  <FileText className="text-gp-gold-700 size-4" />
+                  Order
+                </h3>
+                <dl className="border-gp-border-subtle mt-3 overflow-hidden rounded-[12px] border bg-white">
+                  <DetailLine
+                    label="Order ID"
+                    value={summary.orderNumber}
+                    mono
+                  />
+                  <DetailLine label="Order date" value={summary.orderDate} />
+                  <DetailLine label="Sheet" value={summary.sheetName} />
+                </dl>
+              </section>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                  <UserRound className="text-gp-gold-700 size-4" />
+                  Customer
+                </h3>
+                <dl className="border-gp-border-subtle mt-3 overflow-hidden rounded-[12px] border bg-white">
+                  <DetailLine
+                    label="Customer"
+                    value={summary.customerName}
+                    dir="auto"
+                  />
+                  <DetailLine
+                    label="Identifier"
+                    value={summary.customerCode || "-"}
+                    mono
+                  />
+                </dl>
+              </section>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                  <Package className="text-gp-gold-700 size-4" />
+                  Product
+                </h3>
+                <dl className="border-gp-border-subtle mt-3 overflow-hidden rounded-[12px] border bg-white">
+                  <DetailLine
+                    label="Product"
+                    value={summary.productName}
+                    dir="auto"
+                  />
+                  <DetailLine
+                    label="Product ID"
+                    value={summary.productId}
+                    mono
+                  />
+                  <DetailLine
+                    label="Reference"
+                    value={summary.productReference}
+                    mono
+                  />
+                  <DetailLine label="Quantity" value={summary.quantity} mono />
+                </dl>
+              </section>
+
+              <section className="mt-5">
+                <h3 className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                  <Info className="text-gp-gold-700 size-4" />
+                  System Information
+                </h3>
+                <dl className="border-gp-border-subtle mt-3 overflow-hidden rounded-[12px] border bg-white">
+                  <DetailLine
+                    label="External ID"
+                    value={summary.externalId}
+                    mono
+                  />
+                  <DetailLine label="Record ID" value={summary.copyId} mono />
+                  <DetailLine label="Created at" value={summary.createdAt} />
+                  <DetailLine label="Updated at" value={summary.updatedAt} />
+                </dl>
+              </section>
+            </div>
+
+            <SheetFooter className="border-gp-border-subtle grid gap-2 border-t bg-white p-4 sm:grid-cols-2">
+              <ButtonLikeCopy
+                copied={copiedRowId === `${summary.rowId}:order`}
+                disabled={!summary.orderNumber || summary.orderNumber === "-"}
+                onClick={() =>
+                  onCopyValue(summary.orderNumber, `${summary.rowId}:order`)
+                }
+              >
+                Copy Order
+              </ButtonLikeCopy>
+              <ButtonLikeCopy
+                copied={copiedRowId === `${summary.rowId}:record`}
+                disabled={!summary.copyId || summary.copyId === "-"}
+                onClick={() =>
+                  onCopyValue(summary.copyId, `${summary.rowId}:record`)
+                }
+              >
+                Copy ID
+              </ButtonLikeCopy>
+            </SheetFooter>
+          </>
+        )}
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function ButtonLikeCopy({
+  children,
+  copied,
+  disabled,
+  onClick,
+}: {
+  children: string;
+  copied: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border bg-white px-3 text-sm font-semibold transition-[background-color,border-color,color,transform] duration-[170ms] hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+    >
+      {copied ? (
+        <CheckCircle2 className="text-gp-gold-700 size-4" aria-hidden="true" />
+      ) : (
+        <ClipboardCopy className="text-gp-gold-700 size-4" aria-hidden="true" />
+      )}
+      {copied ? "Copied" : children}
+    </button>
   );
 }
 
@@ -519,18 +704,91 @@ export default function SalesTable({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPageTransitioning, setIsPageTransitioning] = useState(false);
-  const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
-  const [collapsingRowId, setCollapsingRowId] = useState<string | null>(null);
+  const [selectedSummary, setSelectedSummary] = useState<RowSummary | null>(
+    null,
+  );
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [copiedRowId, setCopiedRowId] = useState<string | null>(null);
+  const [searchDraft, setSearchDraft] = useState(searchQuery);
   const [visibleOptionalColumnIds, setVisibleOptionalColumnIds] = useState<
     OptionalColumnId[]
   >(getStoredOptionalColumns);
   const tableTransitionTimerRef = useRef<number | null>(null);
-  const rowCollapseTimerRef = useRef<number | null>(null);
   const copiedTimerRef = useRef<number | null>(null);
   const timeFilterButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const dateFilter = normalizeSalesDateFilter(selectedTimeFilter);
   const trimmedSearchQuery = searchQuery.trim();
+
+  const startTablePresentationTransition = useCallback((duration: number) => {
+    setIsPageTransitioning(true);
+
+    if (tableTransitionTimerRef.current !== null) {
+      window.clearTimeout(tableTransitionTimerRef.current);
+    }
+
+    tableTransitionTimerRef.current = window.setTimeout(() => {
+      setIsPageTransitioning(false);
+      tableTransitionTimerRef.current = null;
+    }, duration);
+  }, []);
+
+  const updateTableQuery = useCallback(
+    (next: { dateFilter?: DateFilter; query?: string }) => {
+      const params = new URLSearchParams(Array.from(searchParams.entries()));
+
+      if (typeof next.dateFilter !== "undefined") {
+        params.delete("date");
+        params.delete("dateFrom");
+        params.delete("dateTo");
+
+        if (next.dateFilter === "all") {
+          params.delete("timeFilter");
+        } else {
+          params.set("timeFilter", next.dateFilter);
+        }
+      }
+
+      if (typeof next.query !== "undefined") {
+        const nextQuery = next.query.trim();
+        if (nextQuery) {
+          params.set("q", nextQuery);
+        } else {
+          params.delete("q");
+        }
+      }
+
+      params.set("page", "1");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearchDraft(searchQuery);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (searchDraft.trim() === trimmedSearchQuery) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      startTablePresentationTransition(180);
+      updateTableQuery({ query: searchDraft });
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    searchDraft,
+    startTablePresentationTransition,
+    trimmedSearchQuery,
+    updateTableQuery,
+  ]);
 
   const filtered = useMemo(() => {
     return filterSales(sales, {
@@ -576,12 +834,18 @@ export default function SalesTable({
     Boolean(selectedDate || selectedDateFrom || selectedDateTo) ||
     dateFilter !== "all" ||
     trimmedSearchQuery.length > 0;
-  const emptyTitle = hasActiveFilters
-    ? "No records match the selected filter"
-    : "No sales data yet";
-  const emptyDescription = hasActiveFilters
-    ? "Adjust the active filters or search query to see matching records."
-    : "Upload an Excel file to import sales records";
+  const hasSearch = trimmedSearchQuery.length > 0;
+  const noDataAtAll = sales.length === 0 && !hasActiveFilters;
+  const emptyTitle = noDataAtAll
+    ? "No sales records available."
+    : hasSearch
+      ? `No sales found for "${trimmedSearchQuery}".`
+      : "No sales records match these filters.";
+  const emptyDescription = noDataAtAll
+    ? "Upload an Excel file to import sales records."
+    : hasSearch
+      ? "Clear the search or adjust filters to see matching records."
+      : "Clear filters or adjust the selected criteria.";
   const tableMotionKey = `${currentPage}-${limit}-${selectedDate}-${selectedDateFrom}-${selectedDateTo}-${dateFilter}-${trimmedSearchQuery}-${filtered.length}`;
   const tableMotionClass = isPageTransitioning
     ? "sales-table-page-exit"
@@ -599,46 +863,6 @@ export default function SalesTable({
     "--sales-time-filter-count": DATE_FILTERS.length,
     "--sales-time-filter-index": activeFilterIndex,
   } as CSSProperties;
-  const detailColumnSpan = 7 + visibleOptionalColumns.length;
-
-  function startTablePresentationTransition(duration: number) {
-    setIsPageTransitioning(true);
-
-    if (tableTransitionTimerRef.current !== null) {
-      window.clearTimeout(tableTransitionTimerRef.current);
-    }
-
-    tableTransitionTimerRef.current = window.setTimeout(() => {
-      setIsPageTransitioning(false);
-      tableTransitionTimerRef.current = null;
-    }, duration);
-  }
-
-  function updateTableQuery(next: { dateFilter?: DateFilter; query?: string }) {
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
-
-    if (typeof next.dateFilter !== "undefined") {
-      if (next.dateFilter === "all") {
-        params.delete("timeFilter");
-      } else {
-        params.set("timeFilter", next.dateFilter);
-      }
-    }
-
-    if (typeof next.query !== "undefined") {
-      const nextQuery = next.query.trim();
-      if (nextQuery) {
-        params.set("q", nextQuery);
-      } else {
-        params.delete("q");
-      }
-    }
-
-    params.set("page", "1");
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }
-
   function handleTimeFilterChange(nextDateFilter: DateFilter) {
     if (nextDateFilter === dateFilter) {
       return;
@@ -678,34 +902,42 @@ export default function SalesTable({
     startTablePresentationTransition(240);
   }
 
-  function toggleRow(rowId: string) {
-    if (rowCollapseTimerRef.current !== null) {
-      window.clearTimeout(rowCollapseTimerRef.current);
-      rowCollapseTimerRef.current = null;
-    }
+  function clearSearch() {
+    setSearchDraft("");
+    startTablePresentationTransition(180);
+    updateTableQuery({ query: "" });
+  }
 
-    if (expandedRowId === rowId) {
-      setExpandedRowId(null);
-      setCollapsingRowId(rowId);
-      rowCollapseTimerRef.current = window.setTimeout(() => {
-        setCollapsingRowId(null);
-        rowCollapseTimerRef.current = null;
-      }, 220);
-      return;
-    }
+  function clearAllFilters() {
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    [
+      "repId",
+      "date",
+      "dateFrom",
+      "dateTo",
+      "sheetName",
+      "timeFilter",
+      "q",
+    ].forEach((paramName) => params.delete(paramName));
+    params.set("page", "1");
+    startTablePresentationTransition(180);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }
 
-    setCollapsingRowId(null);
-    setExpandedRowId(rowId);
+  function openDetails(summary: RowSummary) {
+    setSelectedSummary(summary);
+    setDetailsOpen(true);
   }
 
   function handleRowKeyDown(
     event: KeyboardEvent<HTMLTableRowElement>,
-    rowId: string,
+    summary: RowSummary,
   ) {
     if (event.key !== "Enter" && event.key !== " ") return;
 
     event.preventDefault();
-    toggleRow(rowId);
+    openDetails(summary);
   }
 
   function handleOptionalColumnToggle(
@@ -727,16 +959,12 @@ export default function SalesTable({
     persistOptionalColumns([]);
   }
 
-  async function handleCopyId(
-    summary: RowSummary,
-    event: MouseEvent<HTMLButtonElement>,
-  ) {
-    event.stopPropagation();
-    if (!summary.copyId || summary.copyId === "-") return;
+  async function handleCopyValue(value: string, copyKey: string) {
+    if (!value || value === "-") return;
 
     try {
-      await navigator.clipboard.writeText(summary.copyId);
-      setCopiedRowId(summary.rowId);
+      await navigator.clipboard.writeText(value);
+      setCopiedRowId(copyKey);
 
       if (copiedTimerRef.current !== null) {
         window.clearTimeout(copiedTimerRef.current);
@@ -768,15 +996,27 @@ export default function SalesTable({
 
         <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
           <div className="relative min-w-0 sm:w-[280px]">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#98A2B3]" />
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-[#344054]" />
             <input
-              value={searchQuery}
-              onChange={(event) =>
-                updateTableQuery({ query: event.target.value })
-              }
+              value={searchDraft}
+              onChange={(event) => setSearchDraft(event.target.value)}
               placeholder="Search sales..."
-              className="h-10 w-full rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] pr-3 pl-9 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10"
+              className="h-10 w-full rounded-[10px] border border-[#DDE3EE] bg-white pr-9 pl-9 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10"
             />
+            {searchDraft && (
+              <button
+                type="button"
+                aria-label="Clear sales search"
+                onClick={() => {
+                  setSearchDraft("");
+                  startTablePresentationTransition(180);
+                  updateTableQuery({ query: "" });
+                }}
+                className="absolute top-1/2 right-2 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F8F1DC] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
+              >
+                <X className="size-3.5" aria-hidden="true" />
+              </button>
+            )}
           </div>
 
           <ColumnSelector
@@ -840,6 +1080,26 @@ export default function SalesTable({
           <Calendar size={36} className="mb-3 text-[#667085]" />
           <p className="text-sm font-semibold text-[#344054]">{emptyTitle}</p>
           <p className="mt-1 text-xs text-[#667085]">{emptyDescription}</p>
+          {!noDataAtAll && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              {hasSearch && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-9 rounded-[10px] border bg-white px-3 text-xs font-semibold"
+                >
+                  Clear search
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={clearAllFilters}
+                className="bg-gp-navy-900 h-9 rounded-[10px] px-3 text-xs font-semibold text-white"
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
         </div>
       ) : rowSummaries.length > 0 ? (
         <div
@@ -888,127 +1148,111 @@ export default function SalesTable({
               <tbody>
                 {rowSummaries.map((summary, idx) => {
                   const rowNumber = startIndex + idx + 1;
-                  const isExpanded = expandedRowId === summary.rowId;
-                  const isCollapsing = collapsingRowId === summary.rowId;
-                  const showDetails = isExpanded || isCollapsing;
+                  const isSelected =
+                    detailsOpen && selectedSummary?.rowId === summary.rowId;
 
                   return (
-                    <Fragment key={summary.rowId}>
-                      <tr
-                        tabIndex={0}
-                        aria-expanded={isExpanded}
-                        aria-controls={`sales-row-details-${summary.rowId}`}
-                        data-expanded={isExpanded}
-                        className="sales-record-row sales-table-row-enter border-b border-[#EEF1F6] outline-none last:border-0"
-                        style={
-                          {
-                            "--sales-row-delay": `${Math.min(idx * 20, 140)}ms`,
-                          } as CSSProperties
-                        }
-                        onClick={() => toggleRow(summary.rowId)}
-                        onKeyDown={(event) =>
-                          handleRowKeyDown(event, summary.rowId)
-                        }
-                      >
-                        <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap text-[#667085]">
-                          {rowNumber}
-                        </td>
-                        <td className="px-4 py-3 align-middle">
-                          <span
-                            dir="auto"
-                            title={summary.customerName}
-                            className="block truncate font-semibold text-[#182033]"
-                          >
-                            {summary.customerName}
-                          </span>
-                          <SecondaryText mono>
-                            {summary.customerCode}
-                          </SecondaryText>
-                        </td>
-                        <td className="px-4 py-3 align-middle">
-                          <span
-                            title={summary.orderNumber}
-                            className="block truncate font-semibold text-[#182033]"
-                          >
-                            {summary.orderNumber}
-                          </span>
-                          <SecondaryText>{summary.orderDate}</SecondaryText>
-                        </td>
-                        <td className="px-4 py-3 align-middle">
-                          <span
-                            dir="auto"
-                            title={summary.productName}
-                            className="block truncate font-semibold text-[#182033]"
-                          >
-                            {summary.productName}
-                          </span>
-                          <SecondaryText mono>
-                            {summary.productReference}
-                          </SecondaryText>
-                        </td>
-                        <td className="px-4 py-3 text-right align-middle font-mono text-sm font-semibold text-[#182033] tabular-nums">
-                          {summary.quantity}
-                        </td>
-                        <td className="px-4 py-3 text-right align-middle text-sm font-bold whitespace-nowrap text-[#182033] tabular-nums">
-                          {summary.amount}
-                        </td>
-                        {visibleOptionalColumns.map((column) => {
-                          const value = column.getValue(summary);
-
-                          return (
-                            <td
-                              key={column.id}
-                              className="px-4 py-3 align-middle"
-                            >
-                              <span
-                                title={value}
-                                className={cn(
-                                  "block truncate text-xs font-semibold text-[#344054]",
-                                  column.mono && "font-mono text-[11px]",
-                                )}
-                              >
-                                {value || "-"}
-                              </span>
-                            </td>
-                          );
-                        })}
-                        <td className="px-4 py-3 text-right align-middle">
-                          <button
-                            type="button"
-                            aria-expanded={isExpanded}
-                            aria-controls={`sales-row-details-${summary.rowId}`}
-                            aria-label={`${isExpanded ? "Collapse" : "Expand"} sales row ${rowNumber}`}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              toggleRow(summary.rowId);
-                            }}
-                            className="sales-row-chevron-button inline-flex size-8 items-center justify-center rounded-[9px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
-                          >
-                            <ChevronRight
-                              className="sales-row-chevron size-4"
-                              aria-hidden="true"
-                            />
-                          </button>
-                        </td>
-                      </tr>
-                      {showDetails && (
-                        <tr
-                          id={`sales-row-details-${summary.rowId}`}
-                          className="sales-row-details-row"
+                    <tr
+                      key={summary.rowId}
+                      tabIndex={0}
+                      aria-controls="sales-record-details-drawer"
+                      data-expanded={isSelected}
+                      className="sales-record-row sales-table-row-enter border-b border-[#EEF1F6] outline-none last:border-0"
+                      style={
+                        {
+                          "--sales-row-delay": `${Math.min(idx * 20, 140)}ms`,
+                        } as CSSProperties
+                      }
+                      onClick={() => openDetails(summary)}
+                      onKeyDown={(event) => handleRowKeyDown(event, summary)}
+                    >
+                      <td className="px-4 py-3 text-xs font-semibold whitespace-nowrap text-[#667085]">
+                        {rowNumber}
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          dir="auto"
+                          title={summary.customerName}
+                          className="block truncate font-semibold text-[#182033]"
                         >
-                          <td colSpan={detailColumnSpan} className="px-4 py-0">
-                            <div className="sales-row-details-shell py-3">
-                              <SalesRowDetails
-                                summary={summary}
-                                isCollapsing={isCollapsing}
-                                copiedRowId={copiedRowId}
-                                onCopyId={handleCopyId}
-                              />
-                            </div>
+                          {summary.customerName}
+                        </span>
+                        <SecondaryText mono>
+                          {summary.customerCode}
+                        </SecondaryText>
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          title={summary.orderNumber}
+                          className="block truncate font-semibold text-[#182033]"
+                        >
+                          {summary.orderNumber}
+                        </span>
+                        <SecondaryText>{summary.orderDate}</SecondaryText>
+                      </td>
+                      <td className="px-4 py-3 align-middle">
+                        <span
+                          dir="auto"
+                          title={summary.productName}
+                          className="block truncate font-semibold text-[#182033]"
+                        >
+                          {summary.productName}
+                        </span>
+                        <SecondaryText mono>
+                          {summary.productReference}
+                        </SecondaryText>
+                      </td>
+                      <td className="px-4 py-3 text-center align-middle font-mono text-sm font-semibold text-[#182033] tabular-nums">
+                        {summary.quantity}
+                      </td>
+                      <td
+                        className={cn(
+                          "px-4 py-3 text-right align-middle text-sm font-bold whitespace-nowrap tabular-nums",
+                          summary.amountValue === 0
+                            ? "text-[#667085]"
+                            : "text-[#182033]",
+                        )}
+                      >
+                        {summary.amount}
+                      </td>
+                      {visibleOptionalColumns.map((column) => {
+                        const value = column.getValue(summary);
+
+                        return (
+                          <td
+                            key={column.id}
+                            className="px-4 py-3 align-middle"
+                          >
+                            <span
+                              title={value}
+                              className={cn(
+                                "block truncate text-xs font-semibold text-[#344054]",
+                                column.mono && "font-mono text-[11px]",
+                              )}
+                            >
+                              {value || "-"}
+                            </span>
                           </td>
-                        </tr>
-                      )}
-                    </Fragment>
+                        );
+                      })}
+                      <td className="px-4 py-3 text-right align-middle">
+                        <button
+                          type="button"
+                          aria-controls="sales-record-details-drawer"
+                          aria-label={`View details for sales row ${rowNumber}`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openDetails(summary);
+                          }}
+                          className="sales-row-chevron-button inline-flex size-8 items-center justify-center rounded-[9px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
+                        >
+                          <ChevronRight
+                            className="sales-row-chevron size-4"
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </td>
+                    </tr>
                   );
                 })}
               </tbody>
@@ -1018,23 +1262,21 @@ export default function SalesTable({
           <div className="space-y-3 border-t border-[#EEF1F6] p-4 md:hidden">
             {rowSummaries.map((summary, idx) => {
               const rowNumber = startIndex + idx + 1;
-              const isExpanded = expandedRowId === summary.rowId;
-              const isCollapsing = collapsingRowId === summary.rowId;
-              const showDetails = isExpanded || isCollapsing;
+              const isSelected =
+                detailsOpen && selectedSummary?.rowId === summary.rowId;
 
               return (
                 <article
                   key={summary.rowId}
                   className={cn(
                     "sales-mobile-record rounded-[14px] border border-[#E5E8EF] bg-white",
-                    isExpanded && "sales-mobile-record-expanded",
+                    isSelected && "sales-mobile-record-expanded",
                   )}
                 >
                   <button
                     type="button"
-                    aria-expanded={isExpanded}
-                    aria-controls={`sales-mobile-row-details-${summary.rowId}`}
-                    onClick={() => toggleRow(summary.rowId)}
+                    aria-controls="sales-record-details-drawer"
+                    onClick={() => openDetails(summary)}
                     className="w-full p-4 text-left focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -1076,25 +1318,27 @@ export default function SalesTable({
                           {summary.quantity}
                         </span>
                       </p>
-                      <p className="text-sm font-bold text-[#182033]">
+                      <p
+                        className={cn(
+                          "text-sm font-bold",
+                          summary.amountValue === 0
+                            ? "text-[#667085]"
+                            : "text-[#182033]",
+                        )}
+                      >
                         {summary.amount}
                       </p>
                     </div>
-                  </button>
-
-                  {showDetails && (
-                    <div
-                      id={`sales-mobile-row-details-${summary.rowId}`}
-                      className="px-3 pb-3"
-                    >
-                      <SalesRowDetails
-                        summary={summary}
-                        isCollapsing={isCollapsing}
-                        copiedRowId={copiedRowId}
-                        onCopyId={handleCopyId}
-                      />
+                    <div className="mt-4">
+                      <span className="bg-gp-navy-900 inline-flex h-9 items-center justify-center gap-2 rounded-[10px] px-3 text-xs font-semibold text-white">
+                        View Details
+                        <ChevronRight
+                          className="text-gp-gold-500 size-3.5"
+                          aria-hidden="true"
+                        />
+                      </span>
                     </div>
-                  )}
+                  </button>
                 </article>
               );
             })}
@@ -1109,7 +1353,27 @@ export default function SalesTable({
           key={`filtered-empty-${tableMotionKey}`}
           className={`sales-table-content ${tableMotionClass} border-t border-[#EEF1F6] bg-white p-8 text-center text-sm text-[#667085]`}
         >
-          No records match the selected filter.
+          <Calendar size={32} className="mx-auto mb-3 text-[#667085]" />
+          <p className="text-sm font-semibold text-[#344054]">{emptyTitle}</p>
+          <p className="mt-1 text-xs text-[#667085]">{emptyDescription}</p>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {hasSearch && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-9 rounded-[10px] border bg-white px-3 text-xs font-semibold"
+              >
+                Clear search
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="bg-gp-navy-900 h-9 rounded-[10px] px-3 text-xs font-semibold text-white"
+            >
+              Clear filters
+            </button>
+          </div>
         </div>
       )}
 
@@ -1120,6 +1384,13 @@ export default function SalesTable({
         itemLabel="sales records"
         ariaLabel="Sales pagination"
         onPageChangeStart={handlePageChangeStart}
+      />
+      <SalesRecordDetailsDrawer
+        summary={selectedSummary}
+        open={detailsOpen}
+        onOpenChange={setDetailsOpen}
+        copiedRowId={copiedRowId}
+        onCopyValue={handleCopyValue}
       />
     </section>
   );

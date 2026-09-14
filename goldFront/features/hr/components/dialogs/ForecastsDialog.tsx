@@ -104,7 +104,7 @@ export function ForecastsDialog({
                     )}
 
                     {forecast.supervisorFeedback && (
-                      <div className="mt-2 rounded-md bg-blue-50 p-3">
+                      <div className="bg-gp-navy-900/5 mt-2 rounded-md p-3">
                         <p className="font-medium text-black">
                           Supervisor Feedback:
                         </p>

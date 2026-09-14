@@ -19,6 +19,7 @@ export default async function DashboardLayout({
     <RoleUIProvider
       role={user.data.role}
       user={{
+        id: user.data.id,
         name: user.data.name,
         email: user.data.email,
         profileImage: user.data.profileImage,

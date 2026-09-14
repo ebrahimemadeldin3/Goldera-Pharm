@@ -6,8 +6,8 @@ export default async function Page() {
   const profile = await fetchProfile();
 
   return (
-    <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col">
-      <ProfileClient profile={profile} />
+    <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col overflow-x-hidden">
+      <ProfileClient profile={profile} variant="manager" />
     </PageContainer>
   );
 }

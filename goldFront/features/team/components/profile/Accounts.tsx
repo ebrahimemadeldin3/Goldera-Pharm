@@ -1,16 +1,15 @@
 "use client";
 
 import {
+  Building2,
+  CalendarDays,
+  Clock3,
+  Fingerprint,
+  IdCard,
   Mail,
-  Shield,
-  Lock,
-  Clock4,
-  Calendar,
-  Eye,
-  EyeOff,
+  ShieldCheck,
+  UsersRound,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,22 +20,27 @@ import {
 } from "@/components/ui/select";
 import { User } from "@/features/team/lib/types";
 import { useRoleUI } from "@/core/ui/role-ui-context";
-import { useState } from "react";
+import {
+  CopyableValue,
+  formatMaybeDate,
+  InformationRow,
+  MissingValue,
+  ProfilePanelHeader,
+  RolePill,
+} from "./ProfileInfoCards";
 
 type AccountsProps = {
   data: User;
   isEditMode?: boolean;
   editedData?: {
     email: string;
-    employeeId?: string;
-    password?: string;
     role: "SUPERVISOR" | "MEDICAL_REP";
   };
-  onFieldChange?: <K extends "email" | "employeeId" | "password" | "role">(
-    field: K,
-    value: string | undefined,
-  ) => void;
+  onFieldChange?: <K extends "email" | "role">(field: K, value: string) => void;
 };
+
+const inputClassName =
+  "h-10 rounded-[10px] border-gp-border-control bg-gp-surface-control text-gp-text-primary shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-gp-text-placeholder focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10";
 
 export default function Accounts({
   data,
@@ -47,175 +51,105 @@ export default function Accounts({
   const { role: currentUserRole } = useRoleUI();
   const isManager = currentUserRole === "MANAGER";
   const displayData = isEditMode && editedData ? editedData : data;
-  const [showPassword, setShowPassword] = useState(false);
+  const lastLogin = formatMaybeDate(data.lastLogin, true);
+  const accountCreated = formatMaybeDate(
+    data.createdAt || data.accountCreated,
+    true,
+  );
+  const reportsTo =
+    data.supervisor?.name?.trim() ||
+    data.reportsTo?.trim() ||
+    data.manager?.name?.trim() ||
+    "";
 
   return (
-    <Card className="border-secondary-light flex w-full flex-col gap-2 rounded-[14px] border-[0.8px] bg-white shadow-none">
-      <CardHeader>
-        <CardTitle className="text-dashboard-blue text-[17px] font-semibold">
-          Account & Access Information
-        </CardTitle>
-      </CardHeader>
+    <section className="member-profile-info-panel border-gp-border-default bg-gp-surface-card shadow-gp-card rounded-[16px] border p-5">
+      <ProfilePanelHeader
+        icon={Fingerprint}
+        title="Account & Organization"
+        description="Account access, reporting line and organization metadata."
+      />
 
-      <CardContent className="flex flex-col gap-4">
-        <div className="grid gap-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Mail className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Email / Username
-                </div>
-              </div>
-              {isEditMode && isManager ? (
-                <Input
-                  value={displayData.email || ""}
-                  onChange={(e) => onFieldChange?.("email", e.target.value)}
-                  className="input mt-1 h-8 text-base font-normal"
-                  placeholder="Email"
-                  type="email"
-                />
-              ) : (
-                <div className="text-base font-normal text-black">
-                  {displayData.email}
-                </div>
-              )}
-            </div>
+      <dl className="mt-1">
+        <InformationRow icon={Mail} label="Account Email" delay={40}>
+          {isEditMode && isManager ? (
+            <Input
+              value={displayData.email || ""}
+              onChange={(event) => onFieldChange?.("email", event.target.value)}
+              className={inputClassName}
+              placeholder="Email"
+              type="email"
+            />
+          ) : (
+            <CopyableValue value={displayData.email} label="Email" />
+          )}
+        </InformationRow>
 
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Lock className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Password
-                </div>
-              </div>
-              {isEditMode && isManager ? (
-                <Input
-                  type="password"
-                  value={editedData?.password || ""}
-                  onChange={(e) => onFieldChange?.("password", e.target.value)}
-                  className="input mt-1 h-8 text-base font-normal"
-                  placeholder="New password (optional)"
-                />
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="text-base font-normal text-black">
-                    {showPassword ? data.password || "N/A" : "••••••••"}
-                  </div>
-                  {isManager && data.password && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 w-8 p-0"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+        <InformationRow icon={IdCard} label="Employee ID" delay={80}>
+          <CopyableValue
+            value={data.employeeId}
+            label="Employee ID"
+            fallback="Not assigned"
+          />
+        </InformationRow>
 
-          <div className="bg-secondary-light h-px" />
+        <InformationRow
+          icon={ShieldCheck}
+          label="Access Level"
+          tooltip="Role-based access currently assigned to this member."
+          delay={120}
+        >
+          {isEditMode && isManager ? (
+            <Select
+              value={displayData.role}
+              onValueChange={(value: "SUPERVISOR" | "MEDICAL_REP") =>
+                onFieldChange?.("role", value)
+              }
+            >
+              <SelectTrigger className={`${inputClassName} w-full`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="MEDICAL_REP">
+                  Medical Representative
+                </SelectItem>
+                <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
+              </SelectContent>
+            </Select>
+          ) : (
+            <RolePill role={displayData.role} />
+          )}
+        </InformationRow>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Shield className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Employee ID
-                </div>
-              </div>
-              {isEditMode && isManager ? (
-                <Input
-                  value={displayData.employeeId || ""}
-                  onChange={(e) =>
-                    onFieldChange?.("employeeId", e.target.value)
-                  }
-                  className="input mt-1 h-8 text-base font-normal"
-                  placeholder="Employee ID"
-                />
-              ) : (
-                <div className="text-base font-normal text-black">
-                  {data.employeeId}
-                </div>
-              )}
-            </div>
+        <InformationRow icon={UsersRound} label="Reports To" delay={160}>
+          {reportsTo ? (
+            <span title={reportsTo}>{reportsTo}</span>
+          ) : (
+            <MissingValue>Not assigned</MissingValue>
+          )}
+        </InformationRow>
 
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Shield className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Access Level
-                </div>
-              </div>
-              {isEditMode && isManager ? (
-                <Select
-                  value={displayData.role}
-                  onValueChange={(value: "SUPERVISOR" | "MEDICAL_REP") =>
-                    onFieldChange?.("role", value)
-                  }
-                >
-                  <SelectTrigger className="input mt-1 h-8 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MEDICAL_REP">Medical Rep</SelectItem>
-                    <SelectItem value="SUPERVISOR">Supervisor</SelectItem>
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="mt-1">
-                  <span
-                    className={`inline-block rounded-full px-3 py-1 text-xs font-medium text-white ${
-                      data.role === "SUPERVISOR"
-                        ? "bg-dashboard-blue"
-                        : "bg-dashboard-green"
-                    }`}
-                  >
-                    {data.role === "MEDICAL_REP"
-                      ? "Medical Rep"
-                      : data.role === "SUPERVISOR"
-                        ? "Supervisor"
-                        : data.role}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
+        <InformationRow icon={Building2} label="Department" delay={200}>
+          {data.department ? (
+            <span title={data.department}>{data.department}</span>
+          ) : (
+            <MissingValue>Not provided</MissingValue>
+          )}
+        </InformationRow>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Clock4 className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Last Login
-                </div>
-              </div>
-              <div className="text-base font-normal text-black">
-                {data.lastLogin || "N/A"}
-              </div>
-            </div>
+        <InformationRow
+          icon={Clock3}
+          label="Last Login"
+          tooltip="The most recent sign-in time available for this account."
+          delay={240}
+        >
+          {lastLogin || <MissingValue>No activity yet</MissingValue>}
+        </InformationRow>
 
-            <div className="flex flex-col items-start">
-              <div className="flex items-center gap-2">
-                <Calendar className="text-secondary-dark h-4 w-4" />
-                <div className="text-secondary-dark text-sm font-normal">
-                  Account Created
-                </div>
-              </div>
-              <div className="text-base font-normal text-black">
-                {data.createdAt || "N/A"}
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+        <InformationRow icon={CalendarDays} label="Account Created" delay={280}>
+          {accountCreated || <MissingValue>Not provided</MissingValue>}
+        </InformationRow>
+      </dl>
+    </section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -22,12 +23,14 @@ type InactivateDoctorDialogProps = {
   doctorId: string;
   doctorName: string;
   isActive: boolean;
+  trigger?: ReactNode;
 };
 
 export default function InactivateDoctorDialog({
   doctorId,
   doctorName,
   isActive,
+  trigger,
 }: InactivateDoctorDialogProps) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -66,24 +69,26 @@ export default function InactivateDoctorDialog({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger asChild>
-        <Button
-          type="button"
-          className="border-dashboard-orange text-dashboard-orange inline-flex cursor-pointer items-center gap-2 rounded-md border bg-white px-4 py-2 text-sm font-medium hover:bg-orange-50"
-        >
-          <UserX size={16} />
-          {isActive ? "Inactive" : "Activate"}
-        </Button>
+        {trigger ?? (
+          <Button
+            type="button"
+            className="border-dashboard-orange text-dashboard-orange inline-flex cursor-pointer items-center gap-2 rounded-md border bg-white px-4 py-2 text-sm font-medium hover:bg-orange-50"
+          >
+            <UserX size={16} />
+            {isActive ? "Inactive" : "Activate"}
+          </Button>
+        )}
       </AlertDialogTrigger>
-      <AlertDialogContent className="w-125">
+      <AlertDialogContent className="border-gp-border-default bg-white w-125 rounded-[16px] shadow-gp-dialog">
         <AlertDialogHeader>
-          <AlertDialogTitle className="text-dashboard-orange text-lg/7 font-semibold">
-            {isActive ? "Deactivate" : "Activate"} Doctor
+          <AlertDialogTitle className="text-gp-navy-900 text-lg/7 font-semibold">
+            {isActive ? "Set doctor as inactive?" : "Reactivate doctor?"}
           </AlertDialogTitle>
-          <AlertDialogDescription className="text-secondary-dark text-sm/5">
+          <AlertDialogDescription className="text-gp-text-muted text-sm/5">
             Are you sure you want to {isActive ? "deactivate" : "activate"}{" "}
-            <span className="font-medium text-black">{doctorName}</span>?
+            <span className="font-semibold text-gp-navy-900">{doctorName}</span>?
             {isActive && (
-              <span className="mt-1 block font-medium text-orange-600">
+              <span className="text-gp-gold-700 mt-1 block font-medium">
                 The doctor will not be available for scheduling visits when
                 inactive.
               </span>
@@ -97,7 +102,7 @@ export default function InactivateDoctorDialog({
           <AlertDialogAction
             onClick={handleToggle}
             disabled={isPending}
-            className="bg-dashboard-orange hover:text-dashboard-orange border-dashboard-orange cursor-pointer rounded-md border text-white hover:bg-white"
+            className="bg-gp-navy-900 hover:bg-gp-navy-900/95 cursor-pointer rounded-[10px] border border-gp-navy-900 text-white"
           >
             {isPending
               ? `${isActive ? "Deactivating" : "Activating"}...`

@@ -40,7 +40,7 @@ export function RequestsDialog({
   const getTypeColor = (type: string) => {
     switch (type) {
       case "LEAVE":
-        return "border-dashboard-blue text-dashboard-blue";
+        return "border-gp-navy-900 text-gp-navy-900";
       case "EXPENSE":
         return "border-dashboard-gold text-dashboard-gold";
       case "SAMPLE":
@@ -129,7 +129,7 @@ export function RequestsDialog({
                         </div>
                       )}
                       {request.response && (
-                        <div className="mt-2 rounded-md bg-blue-50 p-3">
+                        <div className="bg-gp-navy-900/5 mt-2 rounded-md p-3">
                           <p className="font-medium text-black">Response:</p>
                           <p>{request.response}</p>
                         </div>

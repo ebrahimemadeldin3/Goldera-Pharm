@@ -1,5 +1,6 @@
 import SalesHeader from "@/features/sales/components/SalesHeader";
 import SalesTable from "@/features/sales/components/SalesTable";
+import { SalesErrorState } from "@/features/sales/components/SalesErrorState";
 import { getManagerRepSalesAction, getSalesAction } from "@/features/sales/api";
 import {
   extractSales,
@@ -48,8 +49,32 @@ export default async function Page({ searchParams }: PageProps) {
     getManagerTeamAction("MEDICAL_REP"),
   ]);
 
+  const repOptions = (repsRes.medicalReps ?? []).map((rep) => ({
+    id: rep.id,
+    name: rep.name,
+  }));
+
   if (!result.success) {
-    throw new Error(result.error?.message || "Failed to fetch sales");
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
+        <SalesHeader
+          sales={[]}
+          repOptions={repOptions}
+          selectedRepId={repId}
+          selectedDate={date}
+          selectedDateFrom={dateFrom}
+          selectedDateTo={dateTo}
+          selectedSheetName={sheetName}
+          selectedTimeFilter={selectedTimeFilter}
+          searchQuery={searchQuery}
+        />
+        <SalesErrorState
+          message={
+            result.error?.message || "We couldn't retrieve sales records."
+          }
+        />
+      </PageContainer>
+    );
   }
 
   let sales = extractSales(result.data);
@@ -71,18 +96,32 @@ export default async function Page({ searchParams }: PageProps) {
         });
 
     if (!allSalesResult.success) {
-      throw new Error(
-        allSalesResult.error?.message || "Failed to fetch all sales",
+      return (
+        <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
+          <SalesHeader
+            sales={sales}
+            repOptions={repOptions}
+            selectedRepId={repId}
+            selectedDate={date}
+            selectedDateFrom={dateFrom}
+            selectedDateTo={dateTo}
+            selectedSheetName={sheetName}
+            selectedTimeFilter={selectedTimeFilter}
+            searchQuery={searchQuery}
+          />
+          <SalesErrorState
+            message={
+              allSalesResult.error?.message ||
+              "We couldn't retrieve all sales records."
+            }
+          />
+        </PageContainer>
       );
     }
 
     sales = extractSales(allSalesResult.data);
   }
 
-  const repOptions = (repsRes.medicalReps ?? []).map((rep) => ({
-    id: rep.id,
-    name: rep.name,
-  }));
   const hasAppliedFilters = Boolean(
     repId ||
     date ||

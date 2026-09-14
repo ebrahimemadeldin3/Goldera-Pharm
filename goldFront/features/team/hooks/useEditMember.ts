@@ -13,8 +13,6 @@ type EditableFields = {
   region: RegionData;
   isActive: boolean;
   role: "SUPERVISOR" | "MEDICAL_REP";
-  employeeId?: string;
-  password?: string;
 };
 
 export function useEditMember(
@@ -32,8 +30,6 @@ export function useEditMember(
     region: initialData.region,
     isActive: initialData.isActive,
     role: initialData.role as "SUPERVISOR" | "MEDICAL_REP",
-    employeeId: initialData.employeeId,
-    password: "",
   });
 
   const updateField = <K extends keyof EditableFields>(
@@ -54,8 +50,6 @@ export function useEditMember(
         region: initialData.region,
         isActive: initialData.isActive,
         role: initialData.role as "SUPERVISOR" | "MEDICAL_REP",
-        employeeId: initialData.employeeId,
-        password: "",
       });
     }
   };
@@ -72,14 +66,6 @@ export function useEditMember(
           isActive: editedData.isActive,
           role: editedData.role,
         };
-
-        if (editedData.employeeId) {
-          dataToUpdate.employeeId = editedData.employeeId;
-        }
-
-        if (editedData.password && editedData.password.length > 0) {
-          dataToUpdate.password = editedData.password;
-        }
 
         const result = await updateTeamMemberAction(
           initialData.id,
@@ -117,8 +103,6 @@ export function useEditMember(
       region: initialData.region,
       isActive: initialData.isActive,
       role: initialData.role as "SUPERVISOR" | "MEDICAL_REP",
-      employeeId: initialData.employeeId,
-      password: "",
     });
     setIsEditMode(false);
   };

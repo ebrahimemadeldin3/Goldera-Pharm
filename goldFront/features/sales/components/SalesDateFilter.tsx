@@ -30,6 +30,7 @@ type SalesDateSelection = {
   to?: Date;
 };
 
+type SelectionMode = "single" | "range";
 type MonthMotionDirection = "next" | "previous" | "none";
 
 const DATE_RANGE_SEPARATOR = " \u2013 ";
@@ -37,6 +38,7 @@ const quickSelectOptions = [
   { id: "today", label: "Today" },
   { id: "week", label: "This Week" },
   { id: "month", label: "This Month" },
+  { id: "last30", label: "Last 30 Days" },
   { id: "year", label: "This Year" },
 ] as const;
 
@@ -158,6 +160,13 @@ function getQuickSelection(
     return { from, to };
   }
 
+  if (quickSelectId === "last30") {
+    return {
+      from: addCalendarDays(today, -29),
+      to: today,
+    };
+  }
+
   const { year, month } = getSaudiDateParts(now);
 
   if (quickSelectId === "month") {
@@ -220,6 +229,9 @@ export function SalesDateFilter({
   const [open, setOpen] = useState(false);
   const [draftSelection, setDraftSelection] =
     useState<SalesDateSelection>(appliedSelection);
+  const [selectionMode, setSelectionMode] = useState<SelectionMode>(
+    appliedSelection.to ? "range" : "single",
+  );
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
   const [visibleMonth, setVisibleMonth] = useState<Date>(
     appliedSelection.from ?? toCalendarDate(new Date()),
@@ -243,6 +255,7 @@ export function SalesDateFilter({
     params.delete("date");
     params.delete("dateFrom");
     params.delete("dateTo");
+    params.delete("timeFilter");
 
     if (selection.from) {
       const fromKey = getDateKey(selection.from);
@@ -267,6 +280,7 @@ export function SalesDateFilter({
 
     if (nextOpen) {
       setDraftSelection(appliedSelection);
+      setSelectionMode(appliedSelection.to ? "range" : "single");
       setHoveredDate(null);
       setVisibleMonth(appliedSelection.from ?? toCalendarDate(new Date()));
     }
@@ -277,6 +291,10 @@ export function SalesDateFilter({
 
     setHoveredDate(null);
     setDraftSelection((currentSelection) => {
+      if (selectionMode === "single") {
+        return { from: clickedDate };
+      }
+
       if (!currentSelection.from || currentSelection.to) {
         return { from: clickedDate };
       }
@@ -298,6 +316,7 @@ export function SalesDateFilter({
     quickSelectId: (typeof quickSelectOptions)[number]["id"],
   ) {
     const nextSelection = getQuickSelection(quickSelectId);
+    setSelectionMode(quickSelectId === "today" ? "single" : "range");
     setDraftSelection(nextSelection);
     setHoveredDate(null);
     setVisibleMonth(nextSelection.from ?? toCalendarDate(new Date()));
@@ -381,47 +400,97 @@ export function SalesDateFilter({
         className="sales-date-popover-content w-[min(calc(100vw-24px),370px)] overflow-hidden rounded-2xl border border-[#E5E8EF] bg-white p-0 text-[#182033] shadow-[0_18px_46px_rgba(16,27,51,0.14)]"
       >
         <div className="p-3.5">
-          <Calendar
-            mode="range"
-            month={visibleMonth}
-            selected={dayPickerSelection}
-            onDayClick={handleDraftDayClick}
-            onDayMouseEnter={(date) => setHoveredDate(toCalendarDate(date))}
-            onDayMouseLeave={() => setHoveredDate(null)}
-            onMonthChange={handleMonthChange}
-            modifiers={{
-              sales_range_preview_start: (date) =>
-                Boolean(
-                  previewSelection &&
-                  isDateInSelection(date, previewSelection, "start"),
+          <div className="mb-3 grid grid-cols-2 gap-2 rounded-[12px] border border-[#EEF1F6] bg-[#F9FAFB] p-1">
+            {[
+              { id: "single" as const, label: "Single Day" },
+              { id: "range" as const, label: "Date Range" },
+            ].map((mode) => (
+              <button
+                key={mode.id}
+                type="button"
+                aria-pressed={selectionMode === mode.id}
+                onClick={() => {
+                  setSelectionMode(mode.id);
+                  setDraftSelection((current) =>
+                    mode.id === "single" && current.from
+                      ? { from: current.from }
+                      : current,
+                  );
+                }}
+                className={cn(
+                  "h-8 rounded-[9px] text-xs font-semibold transition-[background-color,color,box-shadow] duration-[150ms] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none",
+                  selectionMode === mode.id
+                    ? "bg-[#101D36] text-white shadow-[0_4px_10px_rgba(16,29,54,0.16)]"
+                    : "text-[#667085] hover:bg-white hover:text-[#101D36]",
+                )}
+              >
+                {mode.label}
+              </button>
+            ))}
+          </div>
+          {selectionMode === "single" ? (
+            <Calendar
+              mode="single"
+              month={visibleMonth}
+              selected={draftSelection.from}
+              onDayClick={handleDraftDayClick}
+              onDayMouseEnter={(date) => setHoveredDate(toCalendarDate(date))}
+              onDayMouseLeave={() => setHoveredDate(null)}
+              onMonthChange={handleMonthChange}
+              className="sales-date-calendar w-full p-0"
+              classNames={{
+                table: cn(
+                  "sales-date-calendar-grid w-full border-collapse",
+                  monthMotionDirection === "next" &&
+                    "sales-date-calendar-grid-next",
+                  monthMotionDirection === "previous" &&
+                    "sales-date-calendar-grid-previous",
                 ),
-              sales_range_preview_middle: (date) =>
-                Boolean(
-                  previewSelection &&
-                  isDateInSelection(date, previewSelection, "middle"),
+              }}
+            />
+          ) : (
+            <Calendar
+              mode="range"
+              month={visibleMonth}
+              selected={dayPickerSelection}
+              onDayClick={handleDraftDayClick}
+              onDayMouseEnter={(date) => setHoveredDate(toCalendarDate(date))}
+              onDayMouseLeave={() => setHoveredDate(null)}
+              onMonthChange={handleMonthChange}
+              modifiers={{
+                sales_range_preview_start: (date) =>
+                  Boolean(
+                    previewSelection &&
+                    isDateInSelection(date, previewSelection, "start"),
+                  ),
+                sales_range_preview_middle: (date) =>
+                  Boolean(
+                    previewSelection &&
+                    isDateInSelection(date, previewSelection, "middle"),
+                  ),
+                sales_range_preview_end: (date) =>
+                  Boolean(
+                    previewSelection &&
+                    isDateInSelection(date, previewSelection, "end"),
+                  ),
+              }}
+              modifiersClassNames={{
+                sales_range_preview_start: "sales-date-preview-start",
+                sales_range_preview_middle: "sales-date-preview-middle",
+                sales_range_preview_end: "sales-date-preview-end",
+              }}
+              className="sales-date-calendar w-full p-0"
+              classNames={{
+                table: cn(
+                  "sales-date-calendar-grid w-full border-collapse",
+                  monthMotionDirection === "next" &&
+                    "sales-date-calendar-grid-next",
+                  monthMotionDirection === "previous" &&
+                    "sales-date-calendar-grid-previous",
                 ),
-              sales_range_preview_end: (date) =>
-                Boolean(
-                  previewSelection &&
-                  isDateInSelection(date, previewSelection, "end"),
-                ),
-            }}
-            modifiersClassNames={{
-              sales_range_preview_start: "sales-date-preview-start",
-              sales_range_preview_middle: "sales-date-preview-middle",
-              sales_range_preview_end: "sales-date-preview-end",
-            }}
-            className="sales-date-calendar w-full p-0"
-            classNames={{
-              table: cn(
-                "sales-date-calendar-grid w-full border-collapse",
-                monthMotionDirection === "next" &&
-                  "sales-date-calendar-grid-next",
-                monthMotionDirection === "previous" &&
-                  "sales-date-calendar-grid-previous",
-              ),
-            }}
-          />
+              }}
+            />
+          )}
 
           <div className="mt-3 border-t border-[#EEF1F6] pt-3">
             <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
@@ -473,7 +542,7 @@ export function SalesDateFilter({
               type="button"
               onClick={handleApplyDate}
               disabled={!draftSelection.from}
-              className="sales-date-action-apply h-9 rounded-[9px] bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] px-4 text-sm font-semibold text-white shadow-[0_4px_12px_rgba(185,139,50,0.18)] transition-[filter,transform,opacity] duration-[150ms] hover:-translate-y-px hover:brightness-[1.02] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
+              className="sales-date-action-apply h-9 rounded-[9px] bg-[#101D36] px-4 text-sm font-semibold text-white shadow-[0_6px_14px_rgba(16,29,54,0.16)] transition-[background-color,transform,opacity] duration-[150ms] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0"
             >
               Apply
             </button>
