@@ -4,6 +4,8 @@ import TeamPageClient from "@/features/team/components/TeamPageClient";
 
 export const dynamic = "force-dynamic";
 
+const TEAM_DIRECTORY_FETCH_LIMIT = 1000;
+
 type PageProps = {
   searchParams?: { page?: string; limit?: string; openDialog?: string };
 };
@@ -15,7 +17,7 @@ export default async function Page({ searchParams }: PageProps) {
   const limit = params?.limit ? Number(params.limit) : 10;
   
   const openDialog = params?.openDialog === "true";
-  const res = await getManagerTeamAction(undefined, page, limit);
+  const res = await getManagerTeamAction(undefined, 1, TEAM_DIRECTORY_FETCH_LIMIT);
   const regionsRes = await getRegionsAction();
 
   return (

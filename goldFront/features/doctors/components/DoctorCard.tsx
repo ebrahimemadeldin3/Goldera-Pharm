@@ -1,19 +1,83 @@
 "use client";
 
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Stethoscope, Phone, Mail, Building2, Calendar } from "lucide-react";
-import { DoctorCardData } from "../lib/types";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  ArrowRight,
+  Building2,
+  CalendarDays,
+  Mail,
+  MapPinned,
+  Phone,
+  Stethoscope,
+} from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn, getInitials } from "@/lib/utils";
 import { useRoleUI } from "@/core/ui/role-ui-context";
-import { cn } from "@/lib/utils";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
+import type { DoctorCardData } from "../lib/types";
+import { getTerritoryLookup } from "@/features/plan/lib/territory";
 
-export default function DoctorCard({ data }: { data: DoctorCardData }) {
+function isClean(value?: string | null): value is string {
+  return Boolean(
+    value &&
+      typeof value === "string" &&
+      value.trim() !== "" &&
+      !value.toLowerCase().includes("undefined") &&
+      !value.toLowerCase().includes("null"),
+  );
+}
+
+function InfoCell({
+  label,
+  value,
+  icon: Icon,
+  accent = false,
+}: {
+  label: string;
+  value: string | null;
+  icon: typeof Phone;
+  accent?: boolean;
+}) {
+  return (
+    <div className="border-gp-border-subtle bg-gp-surface-subtle/80 min-w-0 rounded-[10px] border px-3 py-2.5">
+      <div className="flex items-center gap-1.5">
+        <Icon
+          className={cn(
+            "size-3.5 shrink-0",
+            accent ? "text-gp-gold-600" : "text-gp-navy-900",
+          )}
+          aria-hidden="true"
+        />
+        <span className="text-gp-text-muted text-[11px] font-semibold tracking-[0.04em] uppercase">
+          {label}
+        </span>
+      </div>
+      <p
+        className={cn(
+          "mt-1 truncate text-sm font-semibold",
+          value ? "text-gp-navy-900" : "text-gp-text-placeholder italic",
+        )}
+        dir="auto"
+        title={value ?? undefined}
+      >
+        {value ?? "Not provided"}
+      </p>
+    </div>
+  );
+}
+
+export default function DoctorCard({
+  data,
+  index = 0,
+}: {
+  data: DoctorCardData;
+  index?: number;
+}) {
   const {
     id,
     nameEN,
@@ -31,19 +95,20 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
 
-  // Strict Data Sanitization (Prevent literal 'undefined' or 'null' strings)
-  const isClean = (val?: string | null): val is string =>
-    Boolean(val && typeof val === "string" && val.trim() !== "" && !val.toLowerCase().includes("undefined") && !val.toLowerCase().includes("null"));
-
-  const cleanEmail = isClean(email) ? email : null;
-  const cleanPhone = isClean(phone) ? phone : null;
-  const cleanGrade = isClean(grade) ? grade : null;
-  const cleanArea = isClean(area) ? area : null;
-  const cleanAccount = isClean(accountName) ? accountName : null;
-  const cleanSubRegion = isClean(subRegion) ? subRegion : null;
-
-  const displayName = nameEN || nameAR || "Unnamed Doctor";
-  const secondaryName = nameEN && nameAR ? nameAR : null;
+  const cleanNameAR = isClean(nameAR) ? nameAR.trim() : null;
+  const cleanNameEN = isClean(nameEN) ? nameEN.trim() : null;
+  const cleanSpecialty = isClean(specialty) ? specialty.trim() : "General Doctor";
+  const cleanEmail = isClean(email) ? email.trim() : null;
+  const cleanPhone = isClean(phone) ? phone.trim() : null;
+  const cleanGrade = isClean(grade) ? grade.trim() : null;
+  const cleanArea = isClean(area) ? area.trim() : null;
+  const cleanAccount = isClean(accountName) ? accountName.trim() : null;
+  const cleanSubRegion = isClean(subRegion) ? subRegion.trim() : null;
+  const territory = getTerritoryLookup(cleanSubRegion || cleanArea);
+  const primaryName = cleanNameAR || cleanNameEN || "Unnamed Doctor";
+  const secondaryName =
+    cleanNameAR && cleanNameEN ? cleanNameEN : cleanNameAR ? null : cleanNameAR;
+  const initials = getInitials(cleanNameEN || cleanNameAR || "Doctor");
   const patientsPerDayText = avgPatientsPerDay
     ? `${avgPatientsPerDay} patients/day`
     : null;
@@ -64,7 +129,12 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
 
   const handleOpenSchedule = async () => {
     if (doctorsList.length === 0) {
-      const doctorsRes = await getDoctorsAction(undefined, undefined, undefined, false);
+      const doctorsRes = await getDoctorsAction(
+        undefined,
+        undefined,
+        undefined,
+        false,
+      );
       if (doctorsRes.success && doctorsRes.data) {
         setDoctorsList(doctorsRes.data);
       }
@@ -79,129 +149,146 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
     <>
       <Card
         className={cn(
-          "flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-all duration-170 hover:shadow-[0_4px_14px_rgba(16,27,51,0.06)] hover:-translate-y-px",
-          isRep ? "hover:border-gp-rep-primary-border" : "hover:border-[#E9DDB8]"
+          "group/doctor border-gp-border-default bg-gp-surface-card shadow-gp-card relative flex min-h-[286px] flex-col justify-between gap-4 overflow-hidden rounded-[16px] border p-4 opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,29,54,0.09)] [animation:plans-card-in_350ms_ease-out_forwards] motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none motion-reduce:[animation:none]",
+          isRep ? "hover:border-[#168557]/40" : "hover:border-gp-gold-300",
         )}
+        style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
       >
-        <div className="flex flex-col gap-2.5">
-          {/* Top Header: Avatar + Doctor Name & Badges */}
-          <div className="flex items-start gap-3">
-            <div
+        <span
+          className={cn(
+            "absolute top-4 bottom-4 left-0 w-[3px] rounded-r-full",
+            isRep ? "bg-[#168557]" : "bg-gp-gold-500",
+          )}
+          aria-hidden="true"
+        />
+
+        <div className="flex flex-col gap-4">
+          <div className="flex items-start gap-3.5">
+            <span
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-[10px] shadow-2xs",
+                "flex size-12 shrink-0 items-center justify-center rounded-[12px] border text-sm font-semibold shadow-[0_6px_14px_rgba(16,29,54,0.15)] transition-[border-color,transform] duration-[200ms] group-hover/doctor:-translate-y-0.5 motion-reduce:transform-none",
                 isRep
-                  ? "bg-gp-rep-primary-soft border border-gp-rep-primary-border text-gp-rep-primary"
-                  : "bg-[#FFF8E5] border border-[#E9DDB8] text-[#8A6515]"
+                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] group-hover/doctor:border-[#168557]"
+                  : "border-gp-gold-300 bg-gp-navy-900 text-gp-gold-500 group-hover/doctor:border-gp-gold-500",
               )}
             >
-              <Stethoscope size={18} />
-            </div>
+              {initials}
+            </span>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <h3 className="text-base font-semibold text-[#182033] leading-snug truncate">
-                  {displayName}
-                </h3>
-                {secondaryName && (
-                  <span className="text-xs text-[#667085] font-normal truncate">
-                    ({secondaryName})
+            <div className="min-w-0 flex-1">
+              <h3
+                className="text-gp-navy-900 truncate text-base leading-6 font-semibold transition-colors duration-[180ms]"
+                dir="auto"
+              >
+                {primaryName}
+              </h3>
+              {secondaryName && (
+                <p
+                  className="text-gp-text-muted mt-0.5 truncate text-sm font-medium"
+                  dir="auto"
+                >
+                  {secondaryName}
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-full border border-[#E8D7A8] bg-[#F8F4E9] px-2.5 py-1 text-[11px] font-semibold text-[#8A681F] transition-[background-color,border-color] duration-[180ms] group-hover/doctor:border-gp-gold-400 group-hover/doctor:bg-gp-gold-50">
+                  {cleanSpecialty}
+                </span>
+
+                <span className="group/territory border-gp-border-control bg-gp-surface-control text-gp-navy-900 relative rounded-full border px-2.5 py-1 text-[11px] font-semibold">
+                  <span className="inline-flex max-w-[170px] items-center gap-1 truncate">
+                    <MapPinned
+                      className="size-3 text-gp-gold-600"
+                      aria-hidden="true"
+                    />
+                    <span className="truncate">{territory.territory}</span>
                   </span>
-                )}
-              </div>
-
-              <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-md border border-[#D7E5FF] bg-[#EDF4FF] px-2 py-0.5 text-[11px] font-semibold text-[#3972D5]">
-                  {specialty || "General Doctor"}
+                  <span className="plans-territory-tooltip pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-[232px] -translate-x-1/2 rounded-[12px] border border-gp-border-default bg-white p-3 text-left shadow-gp-popover group-hover/territory:block group-focus-within/territory:block">
+                    <span className="text-gp-navy-900 block text-xs font-bold tracking-[0.06em] uppercase">
+                      Territory
+                    </span>
+                    <span className="text-gp-text-muted mt-1 block text-xs font-medium">
+                      {territory.district}
+                    </span>
+                    <span className="text-gp-text-muted mt-1 block text-xs font-medium">
+                      {territory.region}
+                    </span>
+                    <span className="text-gp-navy-900 mt-2 block text-xs font-semibold">
+                      {territory.territory}
+                    </span>
+                  </span>
                 </span>
 
                 {cleanGrade && (
-                  <span className="rounded-md border border-[#E5E8EF] bg-[#F9FAFB] px-2 py-0.5 text-[11px] font-semibold text-[#344054]">
+                  <span className="border-gp-border-subtle bg-white text-gp-text-secondary rounded-full border px-2.5 py-1 text-[11px] font-semibold">
                     Grade {cleanGrade}
                   </span>
                 )}
-
-                {cleanSubRegion && (
-                  <span className="rounded-md border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[11px] font-medium text-[#344054]">
-                    {cleanSubRegion}
-                  </span>
-                )}
               </div>
             </div>
           </div>
 
-          {/* Contact & Volume Details */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-[#344054] bg-[#F9FAFB] p-2.5 rounded-[10px] border border-[#EEF1F6]">
-            <div className="flex items-center gap-2 truncate">
-              <Phone className="h-3.5 w-3.5 shrink-0 text-[#8A94A6]" />
-              <span className={cleanPhone ? "text-[#182033] font-medium" : "italic text-[#8A94A6]"}>
-                {cleanPhone || "No phone provided"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-2 truncate">
-              <Mail className="h-3.5 w-3.5 shrink-0 text-[#8A94A6]" />
-              <span className={cleanEmail ? "text-[#182033] font-medium truncate" : "italic text-[#8A94A6]"}>
-                {cleanEmail || "No email provided"}
-              </span>
-            </div>
-
-            {patientsPerDayText && (
-              <div className="text-[#667085] truncate">
-                Volume: <span className="font-semibold text-[#182033]">{patientsPerDayText}</span>
-              </div>
-            )}
-
-            {cleanArea && (
-              <div className="text-[#667085] truncate">
-                Area: <span className="font-semibold text-[#182033]">{cleanArea}</span>
-              </div>
-            )}
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <InfoCell label="Phone" value={cleanPhone} icon={Phone} />
+            <InfoCell label="Email" value={cleanEmail} icon={Mail} />
+            <InfoCell
+              label="Facility"
+              value={cleanAccount}
+              icon={Building2}
+              accent
+            />
+            <InfoCell
+              label="Territory"
+              value={`${territory.region} · ${territory.territory}`}
+              icon={MapPinned}
+              accent
+            />
           </div>
 
-          {/* Hospital / Account Section */}
-          {cleanAccount ? (
-            <div className="flex items-center gap-2 rounded-[8px] border border-[#E5E8EF] bg-[#FBFCFE] px-3 py-1.5 text-xs">
-              <Building2
-                size={15}
-                className={cn("shrink-0", isRep ? "text-gp-rep-primary" : "text-[#3972D5]")}
-              />
-              <div className="min-w-0 flex-1">
-                <span className="font-semibold text-[#182033] truncate block">{cleanAccount}</span>
-                <span className="text-[11px] text-[#667085] block truncate">
-                  {cleanSubRegion || "Region N/A"}{cleanArea ? `, ${cleanArea}` : ""}
+          {(patientsPerDayText || cleanArea) && (
+            <div className="text-gp-text-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
+              {patientsPerDayText && (
+                <span className="inline-flex items-center gap-1.5">
+                  <Stethoscope
+                    className="text-gp-gold-600 size-3.5"
+                    aria-hidden="true"
+                  />
+                  {patientsPerDayText}
                 </span>
-              </div>
-            </div>
-          ) : (
-            <div className="text-[11px] text-[#8A94A6] italic px-1">
-              No hospital/account assigned
+              )}
+              {cleanArea && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <MapPinned
+                    className="text-gp-gold-600 size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  <span className="truncate" dir="auto">
+                    {cleanArea}
+                  </span>
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        {/* Action Buttons Row at Bottom Right */}
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#EEF1F6] mt-1">
-          {features.doctors.canView && (
-            <Link
-              href={profilePath}
-              className="border border-[#E5E8EF] bg-white hover:bg-[#F9FAFB] text-[#182033] inline-flex h-9 items-center justify-center rounded-[10px] px-3.5 text-xs font-semibold transition-colors duration-170 focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30 focus-visible:outline-none"
-            >
-              View Profile
-            </Link>
-          )}
+        <div className="border-gp-border-subtle flex flex-col gap-2 border-t pt-3 sm:flex-row sm:justify-end">
           {features.visits.canScheduleVisit && (
             <div className="flex items-center">
               <Button
                 type="button"
                 onClick={handleOpenSchedule}
                 className={cn(
-                  "h-9 cursor-pointer px-3.5 text-xs font-semibold gap-1.5 transition-all duration-170 focus-visible:outline-none rounded-[10px]",
+                  "group/schedule h-10 w-full cursor-pointer rounded-[10px] border px-3.5 text-xs font-semibold shadow-none transition-[background-color,border-color,color,box-shadow] duration-[180ms] focus-visible:ring-3 focus-visible:outline-none sm:w-auto",
                   isRep
-                    ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
-                    : "bg-[#C9A44C] hover:bg-[#B18732] text-white shadow-[0_4px_14px_rgba(201,164,76,0.25)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                    ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] hover:border-[#168557] hover:bg-[#D5F3E4] focus-visible:ring-[#168557]/20"
+                    : "border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 hover:border-gp-gold-500 hover:bg-gp-surface-hover focus-visible:ring-gp-gold-500/20",
                 )}
               >
-                <Calendar size={13} className="stroke-[2.2]" />
+                <CalendarDays
+                  className="size-3.5 transition-transform duration-[180ms] group-hover/schedule:-translate-y-0.5 motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
                 Schedule Visit
               </Button>
               <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
@@ -209,10 +296,30 @@ export default function DoctorCard({ data }: { data: DoctorCardData }) {
               </Link>
             </div>
           )}
+
+          {features.doctors.canView && (
+            <Link
+              href={profilePath}
+              className={cn(
+                "group/profile inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-xs font-semibold text-white transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:outline-none motion-reduce:transform-none sm:w-auto",
+                isRep
+                  ? "bg-[#168557] hover:bg-[#126b46] shadow-[0_6px_16px_rgba(22,133,87,0.22)] focus-visible:ring-[#168557]/25"
+                  : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_16px_rgba(16,29,54,0.16)] hover:shadow-[0_10px_22px_rgba(16,29,54,0.2)] focus-visible:ring-gp-gold-500/25",
+              )}
+            >
+              View Profile
+              <ArrowRight
+                className={cn(
+                  "size-3.5 transition-transform duration-[180ms] group-hover/profile:translate-x-0.5 motion-reduce:transition-none",
+                  isRep ? "text-white" : "text-gp-gold-500",
+                )}
+                aria-hidden="true"
+              />
+            </Link>
+          )}
         </div>
       </Card>
 
-      {/* Schedule Visit Modal Overlay with doctor preselected */}
       {scheduleDialogOpen && (
         <AddVisitDialog
           open={scheduleDialogOpen}

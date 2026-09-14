@@ -9,7 +9,6 @@ import {
   TextSearch,
   UserRound,
   ListChecks,
-  Settings,
   Target,
   Route,
   LucideProps,
@@ -107,13 +106,6 @@ export const roleSidebarMap: Record<UserRole, SidebarItem[]> = {
       href: "/manager/profile",
       icon: UserRound,
     },
-    {
-      id: "settings",
-      label: "Settings",
-      href: "/manager/settings",
-      icon: Settings,
-      disabled: true,
-    },
   ],
   SUPERVISOR: [
     {
@@ -185,13 +177,6 @@ export const roleSidebarMap: Record<UserRole, SidebarItem[]> = {
       href: "/supervisor/profile",
       icon: UserRound,
     },
-    {
-      id: "settings",
-      label: "Settings",
-      href: "/supervisor/settings",
-      icon: Settings,
-      disabled: true,
-    },
   ],
   MEDICAL_REP: [
     {
@@ -258,12 +243,5 @@ export const roleSidebarMap: Record<UserRole, SidebarItem[]> = {
       icon: Package,
     },
     { id: "profile", label: "Profile", href: "/rep/profile", icon: UserRound },
-    {
-      id: "settings",
-      label: "Settings",
-      href: "/rep/settings",
-      icon: Settings,
-      disabled: true,
-    },
   ],
 };

@@ -3,21 +3,35 @@ import ReviewForm from "@/features/coaching/components/review/ReviewForm";
 import JointVisitReviewList from "@/features/coaching/components/review/JointVisitReviewList";
 import { getSupervisorCoachingReportsAction } from "@/features/coaching/api/supervisor";
 import { PageContainer } from "@/components/layout/page-container";
+import { CircleAlert } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
-  const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: { page?: string; limit?: string };
+}) {
+  const params = await searchParams;
+
+  const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
+  const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
+
   const result = await getSupervisorCoachingReportsAction(page, limit);
 
   if (!result.success || !result.data) {
     return (
-      <PageContainer className="flex flex-col gap-6">
-        <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-sm">
-            {result.error?.message || "Failed to load coaching reports"}
-          </p>
+      <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden">
+        <div className="border-gp-danger-border bg-gp-danger-soft text-gp-danger flex items-start gap-3 rounded-[12px] border px-4 py-3.5">
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <div>
+            <p className="text-sm font-semibold">
+              Failed to load coaching reports
+            </p>
+            <p className="text-gp-danger/80 mt-0.5 text-sm">
+              {result.error?.message}
+            </p>
+          </div>
         </div>
       </PageContainer>
     );
@@ -26,7 +40,7 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   const { reports, stats } = result.data;
 
   return (
-    <PageContainer className="flex flex-col gap-6">
+    <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden">
       <CoachingHeader data={stats} />
       <ReviewForm />
       <JointVisitReviewList

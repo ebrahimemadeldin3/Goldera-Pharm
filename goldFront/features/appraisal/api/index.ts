@@ -166,7 +166,7 @@ export async function getAppraisalReviews(
   page?: number,
   limit?: number,
 ): Promise<{
-  success: boolean;
+  success: true;
   reviews: Review[];
   totalCount: number;
   stats: {
@@ -218,7 +218,38 @@ export async function getAppraisalReviews(
 /**
  * Server action to get appraisal reviews
  */
-export async function getAppraisalReviewsAction(page?: number, limit?: number) {
+export async function getAppraisalReviewsAction(
+  page?: number,
+  limit?: number,
+): Promise<
+  | {
+      success: true;
+      reviews: Review[];
+      totalCount: number;
+      stats: {
+        avgScore: number;
+        excellentCount: number;
+        improvingCount: number;
+        totalReviews: number;
+      };
+    }
+  | {
+      success: false;
+      error: {
+        message: string;
+        code: string;
+        statusCode?: number;
+      };
+      reviews: never[];
+      totalCount: number;
+      stats: {
+        avgScore: number;
+        excellentCount: number;
+        improvingCount: number;
+        totalReviews: number;
+      };
+    }
+> {
   try {
     return await getAppraisalReviews(page, limit);
   } catch (error) {

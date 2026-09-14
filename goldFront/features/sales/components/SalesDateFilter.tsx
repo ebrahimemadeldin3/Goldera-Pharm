@@ -160,10 +160,11 @@ function getQuickSelection(
   }
 
   const { year, month } = getSaudiDateParts(now);
+  const numYear = Number(year);
+  const numMonth = Number(month);
 
   if (quickSelectId === "month") {
-    const lastDayOfMonth = new Date(Number(year), Number(month), 0).getDate();
-
+    const lastDayOfMonth = new Date(Date.UTC(numYear, numMonth, 0)).getUTCDate();
     return {
       from: parseDateValue(`${year}-${month}-01`),
       to: parseDateValue(`${year}-${month}-${padDatePart(lastDayOfMonth)}`),
@@ -176,29 +177,30 @@ function getQuickSelection(
   };
 }
 
-function getPreviewSelection(
-  draftSelection: SalesDateSelection,
-  hoveredDate: Date | null,
-): SalesDateSelection | null {
-  if (!draftSelection.from || draftSelection.to || !hoveredDate) return null;
-
-  return normalizeSelection(draftSelection.from, hoveredDate);
-}
-
 function isDateInSelection(
   date: Date,
   selection: SalesDateSelection,
-  mode: "start" | "middle" | "end",
+  boundary?: "start" | "middle" | "end",
 ): boolean {
-  if (!selection.from || !selection.to) return false;
+  if (!selection.from) return false;
 
-  const dateKey = getDateKey(date);
+  const currentKey = getDateKey(toCalendarDate(date));
   const fromKey = getDateKey(selection.from);
-  const toKey = getDateKey(selection.to);
+  const toKey = getDateKey(selection.to ?? selection.from);
 
-  if (mode === "start") return dateKey === fromKey;
-  if (mode === "end") return dateKey === toKey;
-  return dateKey > fromKey && dateKey < toKey;
+  if (boundary === "start") {
+    return currentKey === fromKey && fromKey !== toKey;
+  }
+
+  if (boundary === "end") {
+    return currentKey === toKey && fromKey !== toKey;
+  }
+
+  if (boundary === "middle") {
+    return currentKey > fromKey && currentKey < toKey;
+  }
+
+  return currentKey >= fromKey && currentKey <= toKey;
 }
 
 export function SalesDateFilter({
@@ -230,19 +232,16 @@ export function SalesDateFilter({
   const [monthMotionDirection, setMonthMotionDirection] =
     useState<MonthMotionDirection>("none");
 
-  const previewSelection = useMemo(
-    () => getPreviewSelection(draftSelection, hoveredDate),
-    [draftSelection, hoveredDate],
-  );
-  const hasAppliedDate = Boolean(appliedSelection.from);
-  const displayValue = formatDateSelection(appliedSelection);
-  const draftDisplayValue = formatDateSelection(draftSelection);
-  const dayPickerSelection = draftSelection.from
-    ? ({ from: draftSelection.from, to: draftSelection.to } satisfies DateRange)
-    : undefined;
+  const previewSelection = useMemo(() => {
+    if (!draftSelection.from || draftSelection.to || !hoveredDate) {
+      return null;
+    }
 
-  function pushDateSelection(selection: SalesDateSelection) {
-    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    return normalizeSelection(draftSelection.from, hoveredDate);
+  }, [draftSelection.from, draftSelection.to, hoveredDate]);
+
+  function applySelectionToUrl(selection: SalesDateSelection) {
+    const params = new URLSearchParams(searchParams.toString());
     params.delete("date");
     params.delete("dateFrom");
     params.delete("dateTo");
@@ -260,12 +259,11 @@ export function SalesDateFilter({
     }
 
     params.set("page", "1");
-
-    const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    const nextUrl = `${pathname}?${params.toString()}`;
+    router.push(nextUrl, { scroll: false });
   }
 
-  function handleOpenChange(nextOpen: boolean) {
+  function handlePopoverOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
 
     if (nextOpen) {
@@ -275,26 +273,22 @@ export function SalesDateFilter({
     }
   }
 
-  function handleDraftDayClick(date: Date) {
-    const clickedDate = toCalendarDate(date);
-
+  function handleDraftDayClick(clickedDate: Date) {
     setHoveredDate(null);
     setDraftSelection((currentSelection) => {
       if (!currentSelection.from || currentSelection.to) {
         return { from: clickedDate };
       }
 
-      return normalizeSelection(currentSelection.from, clickedDate);
+      const fromKey = getDateKey(currentSelection.from);
+      const clickedKey = getDateKey(clickedDate);
+
+      if (clickedKey < fromKey) {
+        return { from: clickedDate, to: currentSelection.from };
+      }
+
+      return { from: currentSelection.from, to: clickedDate };
     });
-  }
-
-  function handleMonthChange(nextMonth: Date) {
-    const nextDirection =
-      nextMonth.getTime() >= visibleMonth.getTime() ? "next" : "previous";
-
-    setMonthMotionDirection("none");
-    window.setTimeout(() => setMonthMotionDirection(nextDirection), 0);
-    setVisibleMonth(nextMonth);
   }
 
   function handleQuickSelect(
@@ -309,16 +303,8 @@ export function SalesDateFilter({
   function handleApplyDate() {
     if (!draftSelection.from) return;
 
-    const nextSelection = normalizeSelection(
-      draftSelection.from,
-      draftSelection.to,
-    );
-
+    applySelectionToUrl(draftSelection);
     setOpen(false);
-
-    if (!isSameSelection(appliedSelection, nextSelection)) {
-      pushDateSelection(nextSelection);
-    }
   }
 
   function handleCancelDate() {
@@ -327,43 +313,79 @@ export function SalesDateFilter({
     setOpen(false);
   }
 
-  function handleClearDate(event?: MouseEvent<HTMLButtonElement>) {
-    event?.preventDefault();
-    event?.stopPropagation();
-
+  function handleClearDate(event: MouseEvent<HTMLButtonElement>) {
+    event.stopPropagation();
+    applySelectionToUrl({});
     setDraftSelection({});
     setHoveredDate(null);
     setOpen(false);
-    pushDateSelection({});
   }
 
+  function handleMonthChange(nextMonth: Date) {
+    const currentMonthKey = `${visibleMonth.getFullYear()}-${visibleMonth.getMonth()}`;
+    const nextMonthKey = `${nextMonth.getFullYear()}-${nextMonth.getMonth()}`;
+
+    if (currentMonthKey === nextMonthKey) {
+      return;
+    }
+
+    const direction: MonthMotionDirection =
+      nextMonth.getTime() > visibleMonth.getTime() ? "next" : "previous";
+
+    setMonthMotionDirection(direction);
+    setVisibleMonth(toCalendarDate(nextMonth));
+    window.setTimeout(() => setMonthMotionDirection("none"), 220);
+  }
+
+  const activeQuickSelectId = useMemo(() => {
+    return (
+      quickSelectOptions.find((option) =>
+        isSameSelection(draftSelection, getQuickSelection(option.id)),
+      )?.id ?? null
+    );
+  }, [draftSelection]);
+
+  const hasAppliedDate = Boolean(appliedSelection.from);
+  const formattedTriggerLabel = formatDateSelection(appliedSelection);
+
+  const dayPickerSelection: DateRange | undefined = draftSelection.from
+    ? {
+        from: draftSelection.from,
+        to: draftSelection.to ?? draftSelection.from,
+      }
+    : undefined;
+
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <div className="relative">
+    <Popover open={open} onOpenChange={handlePopoverOpenChange}>
+      <div className="relative inline-flex">
         <PopoverTrigger asChild>
           <button
             type="button"
-            aria-label="Open sales date filter"
+            aria-label="Filter sales by date"
             className={cn(
-              "sales-date-filter-trigger flex h-11 w-full items-center rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-left text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow,color] duration-[170ms] outline-none",
-              isRep
-                ? "hover:border-[#CBEFDD] hover:bg-[#F0FDF4]/50 focus-visible:border-[#168557] focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
-                : "hover:border-[#E9DDB8] hover:bg-[#FFFDF7] focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10",
-              open && (isRep ? "border-[#168557] ring-[3px] ring-[#168557]/10" : "border-[#C9A44C] ring-[3px] ring-[#C9A44C]/10"),
-              hasAppliedDate ? "pr-10" : "text-[#667085]",
+              "sales-date-trigger group relative flex h-10 w-[240px] cursor-pointer items-center justify-between rounded-xl border bg-white px-3.5 text-sm font-semibold transition-[border-color,background-color,color,box-shadow] duration-[150ms] focus-visible:outline-none",
+              hasAppliedDate
+                ? isRep
+                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] hover:border-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                  : "border-[#E8D7A8] bg-[#FBF7EA] text-[#8A6515] hover:border-[#C9A44C] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                : isRep
+                  ? "border-[#E5E8EF] text-[#344054] hover:border-[#CBEFDD] hover:bg-[#F9FBF9] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                  : "border-[#E5E8EF] text-[#344054] hover:border-[#E8D7A8] hover:bg-[#FDFCF9] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
             )}
           >
-            <CalendarIcon
-              className="mr-2 h-4 w-4 shrink-0 text-[#667085]"
-              aria-hidden="true"
-            />
-            <span
-              className={cn(
-                "min-w-0 truncate",
-                hasAppliedDate ? "text-[#182033]" : "text-[#98A2B3]",
-              )}
-            >
-              {displayValue}
+            <span className="flex min-w-0 items-center gap-2">
+              <CalendarIcon
+                className={cn(
+                  "size-4 shrink-0 transition-colors",
+                  hasAppliedDate
+                    ? isRep
+                      ? "text-[#168557]"
+                      : "text-[#8A6515]"
+                    : "text-[#667085] group-hover:text-[#182033]"
+                )}
+                aria-hidden="true"
+              />
+              <span className="truncate text-left">{formattedTriggerLabel}</span>
             </span>
           </button>
         </PopoverTrigger>
@@ -441,47 +463,35 @@ export function SalesDateFilter({
             <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
               Quick Select
             </p>
-            <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {quickSelectOptions.map((option) => (
-                <button
-                  type="button"
-                  key={option.id}
-                  onClick={() => handleQuickSelect(option.id)}
-                  className={cn(
-                    "sales-date-quick-button h-8 rounded-[9px] border border-[#E7EAF0] bg-[#FBFCFE] px-2 text-xs font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[150ms] hover:-translate-y-px focus-visible:outline-none",
-                    isRep
-                      ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-                      : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#9A7426] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {quickSelectOptions.map((option) => {
+                const isSelected = activeQuickSelectId === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => handleQuickSelect(option.id)}
+                    className={cn(
+                      "sales-date-chip rounded-[8px] border px-2.5 py-1 text-xs font-semibold transition-[background-color,border-color,color] duration-[150ms] focus-visible:outline-none",
+                      isSelected
+                        ? isRep
+                          ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                          : "border-[#E8D7A8] bg-[#FBF7EA] text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                        : "border-[#EEF1F6] bg-white text-[#475467] hover:border-[#D8DEE8] hover:bg-[#F9FAFB]"
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
-          </div>
-
-          <div className="mt-3 rounded-[12px] border border-[#EEF1F6] bg-[#FBFCFE] px-3 py-2.5">
-            <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-              Selected
-            </p>
-            <p className="mt-1 truncate text-sm font-semibold text-[#182033]">
-              {draftDisplayValue}
-            </p>
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t border-[#EEF1F6] bg-[#FBFCFE] px-3.5 py-3">
-          <button
-            type="button"
-            onClick={handleClearDate}
-            disabled={!hasAppliedDate && !draftSelection.from}
-            className={cn(
-              "sales-date-action-clear h-9 rounded-[9px] px-3 text-sm font-semibold text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F2F4F7] hover:text-[#344054] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#667085]",
-              isRep ? "focus-visible:ring-2 focus-visible:ring-[#168557]/20" : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
-            )}
-          >
-            Clear
-          </button>
+        <div className="flex items-center justify-between border-t border-[#EEF1F6] bg-[#FBFCFE] px-3.5 py-3">
+          <p className="min-w-0 pr-2 text-xs font-semibold text-[#667085]">
+            {formatDateSelection(draftSelection)}
+          </p>
 
           <div className="flex items-center gap-2">
             <button

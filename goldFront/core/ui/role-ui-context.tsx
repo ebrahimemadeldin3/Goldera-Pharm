@@ -12,6 +12,7 @@ import { UserRole } from "@/lib/types";
 type RoleUIContextValue = {
   role: UserRole;
   user: {
+    id: string;
     name: string;
     email: string;
     profileImage?: {
@@ -36,6 +37,7 @@ export function RoleUIProvider({
 }: {
   role: UserRole;
   user: {
+    id: string;
     name: string;
     email: string;
     profileImage?: {

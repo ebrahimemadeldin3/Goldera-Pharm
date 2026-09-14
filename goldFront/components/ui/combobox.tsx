@@ -125,8 +125,8 @@ export function Combobox({
           }
         }}
         className={cn(
-          "flex h-9 w-full cursor-pointer items-center justify-between rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-900 shadow-2xs transition-all duration-150 hover:border-slate-300 focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-          open && "border-blue-500 ring-2 ring-blue-500/20",
+          "border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 flex h-9 w-full cursor-pointer items-center justify-between rounded-md border bg-white px-3 text-xs shadow-2xs transition-[border-color,background-color,color,box-shadow,opacity] duration-150 focus-visible:ring-3 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+          open && "border-gp-gold-500 ring-gp-gold-500/10 ring-3",
           triggerClassName,
         )}
         aria-expanded={open}
@@ -183,7 +183,7 @@ export function Combobox({
       {open && (
         <div
           className={cn(
-            "animate-in fade-in-50 zoom-in-95 absolute z-50 mt-1.5 max-h-72 w-full overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg",
+            "gp-combobox-content border-gp-border-control shadow-gp-popover absolute z-50 mt-1.5 max-h-72 w-full overflow-hidden rounded-md border bg-white",
             dropdownClassName,
           )}
         >
@@ -238,8 +238,8 @@ export function Combobox({
                     className={cn(
                       "flex w-full cursor-pointer items-center justify-between rounded-md px-2.5 py-2 text-left transition-colors duration-100",
                       isSelected
-                        ? "bg-blue-50 font-medium text-blue-900"
-                        : "text-slate-700 hover:bg-slate-50",
+                        ? "bg-gp-gold-50 text-gp-navy-900 font-medium"
+                        : "hover:bg-gp-surface-hover text-slate-700",
                       optionClassName,
                       isSelected && selectedOptionClassName,
                     )}
@@ -252,7 +252,7 @@ export function Combobox({
                         {opt.badge && (
                           <span
                             className={cn(
-                              "rounded-md border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700",
+                              "border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 rounded-md border px-1.5 py-0.5 text-[10px] font-medium",
                               badgeClassName,
                             )}
                           >
@@ -272,7 +272,7 @@ export function Combobox({
                       <Check
                         size={14}
                         className={cn(
-                          "ml-1 shrink-0 text-blue-600",
+                          "text-gp-gold-600 ml-1 shrink-0",
                           checkClassName,
                         )}
                       />

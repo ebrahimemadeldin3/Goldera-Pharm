@@ -47,38 +47,41 @@ export function AddCommentDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>
         <Button
-          className="bg-dashboard-green border-dashboard-green hover:text-dashboard-green cursor-pointer border text-white hover:bg-white"
+          className="bg-gp-success border-gp-success hover:bg-gp-success-soft hover:border-gp-success hover:text-gp-success cursor-pointer rounded-[10px] border text-white shadow-none transition-[background-color,border-color,color,transform] duration-[190ms] hover:-translate-y-px"
           size="sm"
         >
-          <MessageSquare className="h-4 w-4" />
+          <MessageSquare className="size-4" aria-hidden="true" />
           Add Comment
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-128">
         <DialogHeader>
-          <DialogTitle className="text-lg font-semibold text-black">
+          <DialogTitle className="text-gp-navy-900 text-lg font-semibold">
             Add Your Comment
           </DialogTitle>
-          <DialogDescription className="text-sm text-gray-600">
+          <DialogDescription className="text-gp-text-muted text-sm">
             Share your thoughts, thanks, questions, or progress updates
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* Quick responses */}
-          <div className="p-4 bg-secondary-very-light">
-            <p className="mb-3 text-sm/5 font-normal text-secondary-dark">
+          <div className="border-gp-border-subtle bg-gp-surface-subtle/60 rounded-[12px] border p-4">
+            <p className="text-gp-navy-900 mb-3 text-sm leading-5 font-semibold">
               Quick responses:
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickResponse("Thank you")}
-                className="text-xs"
+                className="text-gp-text-secondary border-gp-border-control hover:border-gp-gold-300 hover:bg-gp-gold-50 text-xs font-semibold"
               >
-                <ThumbsUp className="mr-1 h-3 w-3" />
+                <ThumbsUp
+                  className="text-gp-gold-600 mr-1 size-3"
+                  aria-hidden="true"
+                />
                 Thank you
               </Button>
               <Button
@@ -86,7 +89,7 @@ export function AddCommentDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickResponse("I agree")}
-                className="text-xs"
+                className="text-gp-text-secondary border-gp-border-control hover:border-gp-gold-300 hover:bg-gp-gold-50 text-xs font-semibold"
               >
                 I agree
               </Button>
@@ -95,7 +98,7 @@ export function AddCommentDialog({
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuickResponse("Question")}
-                className="text-xs"
+                className="text-gp-text-secondary border-gp-border-control hover:border-gp-gold-300 hover:bg-gp-gold-50 text-xs font-semibold"
               >
                 Question
               </Button>
@@ -106,7 +109,7 @@ export function AddCommentDialog({
           <div>
             <label
               htmlFor="comment"
-              className="mb-2 block text-sm font-medium text-black"
+              className="text-gp-navy-900 mb-2 block text-sm font-semibold"
             >
               Your Response
             </label>
@@ -115,9 +118,9 @@ export function AddCommentDialog({
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Examples:&#10;• Thank you for the feedback! I'll work on improving my objection handling.&#10;• I appreciate your guidance. Could you recommend specific resources for...&#10;• I've already started implementing your suggestions and seeing positive results."
-              className="placeholder:text-secondary-text min-h-30 max-h-50 border border-slate-200 bg-secondary-very-light px-3 py-2 text-sm font-normal shadow-none"
+              className="placeholder:text-gp-text-placeholder border-gp-border-control bg-gp-surface-control focus-visible:border-gp-gold-500 text-gp-navy-900 focus-visible:ring-gp-gold-500/15 max-h-50 min-h-30 rounded-[10px] px-3.5 py-2.5 text-sm shadow-none"
             />
-            <p className="text-secondary-dark mt-2 text-xs/4">
+            <p className="text-gp-text-muted mt-2 text-xs leading-4">
               You can express thanks, ask questions, or share progress updates.
             </p>
           </div>
@@ -129,7 +132,7 @@ export function AddCommentDialog({
             variant="outline"
             onClick={handleCancel}
             disabled={isPending}
-            className="border-secondary-light"
+            className="text-gp-navy-900 border-gp-border-default hover:border-gp-gold-300 hover:bg-gp-gold-50 font-semibold"
           >
             Cancel
           </Button>
@@ -137,7 +140,7 @@ export function AddCommentDialog({
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="button-system-gradient-primary disabled:cursor-not-allowed disabled:opacity-50"
+            className="bg-gp-gold-500 hover:bg-gp-gold-600 shadow-gp-gold-action font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? "Submitting..." : "Submit Comment"}
           </Button>

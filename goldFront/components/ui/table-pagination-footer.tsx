@@ -2,9 +2,7 @@
 
 import { useMemo, useTransition } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useRoleUI } from "@/core/ui/role-ui-context";
-import { cn } from "@/lib/utils";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -12,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useRoleUI } from "@/core/ui/role-ui-context";
+import { cn } from "@/lib/utils";
 import { getPaginationItems } from "./pagination-items";
 
 interface TablePaginationFooterProps {
@@ -23,6 +23,9 @@ interface TablePaginationFooterProps {
   pageNavAriaLabel?: string;
   pageSizeOptions?: number[];
   onPageChangeStart?: () => void;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  tone?: "gold" | "navy";
 }
 
 type PaginationDisplayItem = number | "ellipsis-start" | "ellipsis-end";
@@ -55,10 +58,14 @@ export function TablePaginationFooter({
   pageNavAriaLabel = "Page navigation",
   pageSizeOptions,
   onPageChangeStart,
+  onPageChange,
+  onPageSizeChange,
+  tone = "navy",
 }: TablePaginationFooterProps) {
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP";
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startPageTransition] = useTransition();
 
@@ -107,8 +114,20 @@ export function TablePaginationFooter({
     params.set("page", String(clampedPage));
     params.set("limit", String(nextLimit));
     onPageChangeStart?.();
+
+    if (onPageChange || onPageSizeChange) {
+      startPageTransition(() => {
+        if (nextLimit !== limit) {
+          onPageSizeChange?.(nextLimit);
+        }
+
+        onPageChange?.(clampedPage);
+      });
+      return;
+    }
+
     startPageTransition(() => {
-      router.push(`${window.location.pathname}?${params.toString()}`);
+      router.push(`${pathname}?${params.toString()}`);
     });
   }
 
@@ -116,20 +135,16 @@ export function TablePaginationFooter({
   const endItem = Math.min(totalCount, currentPage * limit);
   const isFirstPage = currentPage <= 1;
   const isLastPage = currentPage >= totalPages;
+  const usesNavyTone = tone === "navy";
+  const arrowButtonClassName =
+    `sales-pagination-button group inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border border-[#E5E8EF] bg-white transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[170ms] ease-out hover:-translate-y-px hover:shadow-[0_6px_14px_rgba(16,29,54,0.07)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 disabled:hover:border-[#E5E8EF] disabled:hover:bg-white disabled:hover:shadow-none motion-reduce:transition-none ${
+      usesNavyTone
+        ? "text-gp-navy-900 hover:border-gp-navy-900/20 hover:bg-gp-navy-900/5 hover:text-gp-navy-900 disabled:hover:text-gp-navy-900"
+        : "text-[#667085] hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] disabled:hover:text-[#667085]"
+    }`;
+  const pageButtonClassName =
+    "sales-pagination-button relative inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border text-sm font-semibold transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-[170ms] ease-out focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none disabled:cursor-wait motion-reduce:transition-none motion-reduce:hover:translate-y-0";
 
-  const arrowButtonClassName = cn(
-    "group inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border transition-all duration-170 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 disabled:hover:shadow-none",
-    isRep
-      ? "border-[#E5E8EF] bg-white text-[#667085] hover:-translate-y-px hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30 disabled:hover:border-[#E5E8EF] disabled:hover:bg-white disabled:hover:text-[#667085]"
-      : "sales-pagination-button border-[#E5E8EF] bg-white text-[#667085] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 disabled:hover:border-[#E5E8EF] disabled:hover:bg-white disabled:hover:text-[#667085]"
-  );
-
-  const pageButtonClassName = cn(
-    "relative inline-flex size-10 shrink-0 items-center justify-center rounded-[11px] border text-sm font-semibold transition-all duration-170 focus-visible:outline-none disabled:cursor-wait",
-    isRep
-      ? "focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
-      : "sales-pagination-button focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25"
-  );
 
   function renderPageItems(items: PaginationDisplayItem[], isMobile = false) {
     return items.map((item) =>
@@ -145,18 +160,18 @@ export function TablePaginationFooter({
             pageButtonClassName,
             isMobile && "size-9 rounded-[10px] text-xs",
             item === currentPage
-              ? isRep
-                ? "bg-gp-rep-primary border-gp-rep-primary text-white font-bold shadow-[0_4px_12px_rgba(22,133,87,0.22)]"
+              ? usesNavyTone
+                ? "sales-pagination-active-page bg-gp-navy-900 border-transparent text-white shadow-[0_6px_16px_rgba(16,29,54,0.24)]"
                 : "sales-pagination-active-page border-transparent bg-[linear-gradient(135deg,#D8B85A_0%,#C9A44C_55%,#B18732_100%)] text-white shadow-[0_6px_16px_rgba(185,139,50,0.24)]"
-              : isRep
-              ? "border-[#E5E8EF] bg-white text-[#182033] hover:-translate-y-px hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary"
-              : "border-[#E5E8EF] bg-white text-[#182033] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)]"
+              : usesNavyTone
+                ? "text-gp-navy-900 border-[#E5E8EF] bg-white hover:-translate-y-px hover:border-gp-navy-900/20 hover:bg-gp-navy-900/5 hover:text-gp-navy-900 hover:shadow-[0_6px_14px_rgba(16,29,54,0.07)]"
+                : "border-[#E5E8EF] bg-white text-[#182033] hover:-translate-y-px hover:border-[#E9DDB8] hover:bg-[#FFFCF4] hover:text-[#8A6515] hover:shadow-[0_6px_14px_rgba(16,27,51,0.07)]",
           )}
         >
           {item}
           {item === currentPage && !isRep && (
             <span
-              className="sales-pagination-active-dot absolute -bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-[#D8B85A]"
+              className="sales-pagination-active-dot bg-gp-gold-500 absolute -bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full"
               aria-hidden="true"
             />
           )}
@@ -198,10 +213,17 @@ export function TablePaginationFooter({
       >
         <p className="text-sm font-medium text-[#667085]">
           Showing{" "}
-          <span className="font-semibold text-[#182033]">
-            {startItem}–{endItem}
+          <span
+            className={`font-semibold ${usesNavyTone ? "text-gp-navy-900" : "text-[#182033]"}`}
+          >
+            {startItem}-{endItem}
           </span>{" "}
-          of <span className="font-semibold text-[#182033]">{totalCount}</span>{" "}
+          of{" "}
+          <span
+            className={`font-semibold ${usesNavyTone ? "text-gp-navy-900" : "text-[#182033]"}`}
+          >
+            {totalCount}
+          </span>{" "}
           {itemLabel}
         </p>
         {totalPages > 1 && (
@@ -307,6 +329,8 @@ export function TablePaginationFooter({
                     "h-8 cursor-pointer rounded-md py-0 pr-2 pl-7 text-sm font-semibold transition-colors",
                     isRep
                       ? "text-[#182033] focus:bg-gp-rep-primary-soft focus:text-gp-rep-primary data-[state=checked]:text-gp-rep-primary"
+                      : usesNavyTone
+                      ? "text-gp-navy-900 focus:bg-gp-navy-900/5 focus:text-gp-navy-900 data-[state=checked]:text-gp-navy-900"
                       : "text-[#182033] focus:bg-[#FBF7EA] focus:text-[#8A6515] data-[state=checked]:text-[#8A6515]"
                   )}
                 >

@@ -46,11 +46,13 @@ export default async function Page({
 
   if (result.results !== undefined) {
     totalCount = result.results;
+  } else {
+    totalCount = doctors.length;
   }
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)]">
-      <DoctorsHeader doctors={doctors} />
+      <DoctorsHeader doctors={doctors} totalCount={totalCount} />
       <DoctorsList doctors={doctors} page={page} limit={limit} totalCount={totalCount} />
     </PageContainer>
   );

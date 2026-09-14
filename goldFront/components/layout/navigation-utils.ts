@@ -43,7 +43,7 @@ const navigationGroupDefinitions: NavigationGroupDefinition[] = [
   {
     id: "account",
     label: "Account",
-    itemIds: ["profile", "settings"],
+    itemIds: ["profile"],
   },
 ];
 

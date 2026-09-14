@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { CSSProperties } from "react";
 import {
   Calendar,
   AlertCircle,
@@ -10,6 +11,7 @@ import {
   CircleCheckBig,
   MessageSquare,
   Check,
+  ListChecks,
 } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,13 +20,16 @@ import { StarRating } from "./ui/StarRating";
 import { addRepCommentAction } from "../api/rep";
 import { toast } from "@/lib/utils/toast";
 import { AddCommentDialog } from "./AddCommentDialog";
+import { cn } from "@/lib/utils";
 
 export default function CoachingReportCard({
   report,
   isRep = false,
+  animationIndex = 0,
 }: {
   report: CoachingReport;
   isRep?: boolean;
+  animationIndex?: number;
 }) {
   const r = report;
   const router = useRouter();
@@ -59,79 +64,125 @@ export default function CoachingReportCard({
   const isCompleted = r.status === "Completed";
 
   return (
-    <Card className="rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none transition-all hover:border-[#CBEFDD] space-y-4">
-      <CardHeader className="flex flex-wrap items-start justify-between gap-3 p-0">
+    <Card
+      className="coaching-card coaching-card-reveal border-gp-border-default bg-gp-surface-card shadow-gp-card gap-0 overflow-hidden rounded-[16px] border py-0"
+      style={
+        {
+          "--coaching-card-delay": `${animationIndex * 60}ms`,
+        } as CSSProperties
+      }
+    >
+      <CardHeader className="flex flex-wrap items-start justify-between gap-3 p-4 sm:p-5">
         <div className="flex items-start gap-3">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] text-[#168557] font-bold text-sm">
+          <div className="coaching-card-avatar text-gp-gold-500 bg-gp-navy-900 border-gp-gold-300/60 flex size-14 shrink-0 items-center justify-center rounded-full border text-sm font-bold">
+
             {r.rep.initials}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-base font-bold text-[#182033]">
+              <p className="text-gp-navy-900 text-base leading-6 font-semibold">
                 {isRep ? "Coaching Session" : r.rep.name}
-              </h3>
-              <span className="rounded-md border border-[#D7E5FF] bg-[#EDF4FF] px-2 py-0.5 text-[10px] font-semibold text-[#3972D5]">
+              </p>
+              <span className="text-gp-navy-900 border-gp-border-control bg-gp-surface-subtle rounded-full border px-2 py-0.5 text-xs leading-4 font-semibold">
                 {r.visitType}
               </span>
               <span
-                className={`rounded-md border px-2 py-0.5 text-[10px] font-semibold ${
-                  isCompleted
-                    ? "bg-[#E9F8F1] text-[#168557] border-[#CBEFDD]"
-                    : "bg-[#FFF8E5] text-[#B18732] border-[#E9DDB8]"
-                }`}
+                className={cn(
+                  "coaching-status-badge inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs leading-4 font-semibold",
+                  r.status === "Completed"
+                    ? "text-gp-success border-gp-success-border bg-gp-success-soft"
+                    : "text-gp-warning border-gp-warning-border bg-gp-warning-soft",
+                )}
+
               >
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    r.status === "Completed"
+                      ? "bg-gp-success"
+                      : "bg-gp-warning",
+                  )}
+                  aria-hidden="true"
+                />
                 {r.status}
               </span>
             </div>
-
-            <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#667085]">
-              <p className="flex items-center gap-1">
-                <User2 size={13} className="text-[#98A2B3]" />
-                <span>Coach: <strong className="text-[#182033] font-medium">{r.supervisor}</strong></span>
+            <div className="text-gp-text-secondary mt-1.5 flex w-full flex-wrap items-center gap-x-4 gap-y-1 text-sm leading-5">
+              <p className="flex items-center gap-1.5">
+                <User2
+                  className="coaching-meta-icon size-3.5"
+                  aria-hidden="true"
+                />
+                <span className="font-medium">Supervisor: {r.supervisor}</span>
               </p>
-              <p className="flex items-center gap-1">
-                <Calendar size={13} className="text-[#98A2B3]" />
-                <span>{r.date}</span>
+              <p className="flex items-center gap-1.5">
+                <Calendar
+                  className="coaching-meta-icon size-3.5"
+                  aria-hidden="true"
+                />
+                <span className="font-medium">{r.date}</span>
               </p>
-              <p className="flex items-center gap-1">
-                <FileText size={13} className="text-[#98A2B3]" />
-                <span>Dr. {r.doctor} ({r.hospital})</span>
+              <p className="flex items-center gap-1.5">
+                <FileText
+                  className="coaching-meta-icon size-3.5"
+                  aria-hidden="true"
+                />
+                <span className="font-medium">
+                  Dr. {r.doctor}
+                  {r.hospital ? ` - ${r.hospital}` : ""}
+                </span>
               </p>
             </div>
           </div>
         </div>
-
-        <StarRating value={r.rating} isRep={isRep} />
+        <div className="border-gp-border-subtle bg-gp-surface-subtle/60 flex items-center gap-3 rounded-[12px] border px-3 py-2">
+          <span className="text-gp-text-muted text-xs font-semibold">
+            Rating
+          </span>
+          <StarRating value={r.rating} />
+        </div>
       </CardHeader>
 
-      <CardContent className="p-0 space-y-3">
+      <CardContent className="p-4 sm:p-5">
         {/* Two columns: Strengths / Improvements */}
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/40 p-3.5 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#168557]">
-              <CircleCheckBig size={15} />
+          <div className="coaching-card-panel border-gp-border-subtle bg-gp-surface-subtle/40 relative overflow-hidden rounded-[12px] border p-4">
+            <span
+              className="coaching-panel-rail bg-gp-success absolute top-3 bottom-3 left-0 w-[3px]"
+              aria-hidden="true"
+            />
+            <div className="text-gp-success flex items-center gap-2 text-sm leading-5 font-semibold">
+              <CircleCheckBig className="size-4" aria-hidden="true" />
               Strengths
             </div>
-            <ul className="space-y-1.5">
+            <ul className="mt-3 space-y-2">
               {r.strengths.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-[#344054]">
-                  <span className="size-1.5 rounded-full bg-[#168557] mt-1.5 shrink-0" />
-                  <span>{s}</span>
+                <li key={i} className="flex items-start gap-2">
+                  <span className="bg-gp-success mt-[7px] h-1 w-1 rounded-full" />
+                  <span className="text-gp-text-secondary text-sm leading-5">
+                    {s}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
 
-          <div className="rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5]/40 p-3.5 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-[#B18732]">
-              <AlertCircle size={15} />
+          <div className="coaching-card-panel border-gp-border-subtle bg-gp-surface-subtle/40 relative overflow-hidden rounded-[12px] border p-4">
+            <span
+              className="coaching-panel-rail bg-gp-warning absolute top-3 bottom-3 left-0 w-[3px]"
+              aria-hidden="true"
+            />
+            <div className="text-gp-warning flex items-center gap-2 text-sm leading-5 font-semibold">
+              <AlertCircle className="size-4" aria-hidden="true" />
               Areas for Improvement
             </div>
-            <ul className="space-y-1.5">
+            <ul className="mt-3 space-y-2">
               {r.improvements.map((s, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-[#344054]">
-                  <span className="size-1.5 rounded-full bg-[#B18732] mt-1.5 shrink-0" />
-                  <span>{s}</span>
+                <li key={i} className="flex items-start gap-2">
+                  <span className="bg-gp-warning mt-[7px] h-1 w-1 rounded-full" />
+                  <span className="text-gp-text-secondary text-sm leading-5">
+                    {s}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -139,35 +190,64 @@ export default function CoachingReportCard({
         </div>
 
         {/* Action Plan */}
-        {r.actionPlan && (
-          <div className="rounded-[10px] border border-[#D7E5FF] bg-[#EDF4FF]/40 p-3.5">
-            <p className="text-xs font-bold text-[#3972D5] mb-1">Action Plan</p>
-            <p className="text-xs text-[#344054]">{r.actionPlan}</p>
+        <div className="border-gp-border-subtle bg-gp-surface-subtle/40 relative mt-3 overflow-hidden rounded-[12px] border p-4">
+          <span
+            className="coaching-panel-rail bg-gp-navy-900 absolute top-3 bottom-3 left-0 w-[3px]"
+            aria-hidden="true"
+          />
+          <div className="text-gp-navy-900 flex items-center gap-2 text-sm leading-5 font-semibold">
+            <ListChecks className="size-4" aria-hidden="true" />
+            Action Plan
           </div>
-        )}
+          <p className="text-gp-text-secondary mt-2 text-sm leading-6">
+            {r.actionPlan}
+          </p>
+        </div>
 
         {/* Supervisor Comments */}
-        {r.supervisorComments && (
-          <div className="rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-3.5">
-            <p className="text-xs font-bold text-[#182033] mb-1 flex items-center gap-1.5">
-              <MessageSquare size={13} className="text-[#168557]" />
-              Supervisor Comments
-            </p>
-            <p className="text-xs text-[#667085]">{r.supervisorComments}</p>
-          </div>
-        )}
+        <div className="border-gp-border-subtle bg-gp-surface-subtle/40 mt-3 rounded-[12px] border p-4">
+          <p className="text-gp-navy-900 flex items-center gap-2 text-sm leading-5 font-semibold">
+            <MessageSquare
+              className="text-gp-navy-900 size-4"
+              aria-hidden="true"
+            />
+            Supervisor Comments
+          </p>
+          <p className="text-gp-text-secondary mt-2 text-sm leading-6">
+            {r.supervisorComments}
+          </p>
+        </div>
 
-        {/* Rep Response / Actions */}
+        {/* Rep Response */}
+        <div className="border-gp-success-border bg-gp-success-soft/40 relative mt-3 overflow-hidden rounded-[12px] border p-4">
+          <span
+            className="coaching-panel-rail bg-gp-success absolute top-3 bottom-3 left-0 w-[3px]"
+            aria-hidden="true"
+          />
+          <p className="text-gp-navy-900 flex items-center gap-2 text-sm leading-5 font-semibold">
+            <MessageSquare
+              className="text-gp-success size-4"
+              aria-hidden="true"
+            />
+            {isRep ? "Your Response" : `${r.rep.name}'s Response`}
+          </p>
+          {isRep && r.status === "Completed" && (
+            <p className="text-gp-text-secondary mt-2 text-sm leading-6">
+              {r.repResponse}
+            </p>
+          )}
+        </div>
+
         {isRep && r.status === "Pending Feedback" && (
-          <div className="mt-3 flex items-center justify-end gap-3 pt-2 border-t border-[#EEF1F6]">
+          <div className="mt-4 flex w-full flex-wrap gap-3 *:h-10 *:flex-1">
             <Button
               onClick={handleAcceptSilently}
               disabled={isPending}
               variant="outline"
               size="sm"
-              className="h-9 rounded-[10px] border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] hover:bg-[#F6F8FB]"
+              className="border-gp-success-border text-gp-success hover:bg-gp-success-soft hover:border-gp-success bg-gp-surface-card hover:text-gp-success cursor-pointer rounded-[10px] border transition-[background-color,border-color,color,transform] duration-[190ms] hover:-translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Check className="mr-1.5 size-3.5 text-[#168557]" />
+              <Check className="size-4" aria-hidden="true" />
               {isPending ? "Processing..." : "Accept Silently"}
             </Button>
 

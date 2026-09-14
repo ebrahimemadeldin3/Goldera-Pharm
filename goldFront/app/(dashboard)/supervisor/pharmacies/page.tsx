@@ -6,9 +6,16 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
-  const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?:
+    | Promise<{ page?: string; limit?: string }>
+    | { page?: string; limit?: string };
+}) {
+  const params = await searchParams;
+  const page = params?.page ? Number(params.page) : 1;
+  const limit = params?.limit ? Number(params.limit) : 10;
 
   const result = await getPharmaciesAction(page, limit);
 
@@ -26,12 +33,18 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
     else if (Array.isArray(raw)) pharmacies = raw as PharmacyApiResponse[];
   }
 
-  const totalCount = typeof result.results === "number" ? result.results : pharmacies.length;
+  const totalCount =
+    typeof result.results === "number" ? result.results : pharmacies.length;
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)]">
-      <PharmaciesHeader pharmacies={pharmacies} />
-      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={totalCount} />
+      <PharmaciesHeader pharmacies={pharmacies} totalCount={totalCount} />
+      <PharmaciesList
+        pharmacies={pharmacies}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+      />
     </PageContainer>
   );
 }

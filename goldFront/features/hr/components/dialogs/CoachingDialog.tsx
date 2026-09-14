@@ -76,7 +76,7 @@ export function CoachingDialog({
                     {repCoachings.map((coaching, idx) => (
                       <div
                         key={coaching.id || idx}
-                        className="rounded-lg border border-blue-200 bg-blue-50 p-4"
+                        className="border-gp-navy-900/15 bg-gp-navy-900/5 rounded-lg border p-4"
                       >
                         <pre className="max-h-60 overflow-x-auto overflow-y-auto text-xs text-slate-600">
                           {JSON.stringify(coaching, null, 2)}

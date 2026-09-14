@@ -6,14 +6,20 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page: string; limit?: string } }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?:
+    | Promise<{ page?: string; limit?: string }>
+    | { page?: string; limit?: string };
+}) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
   const result = await getPharmaciesAction(page, limit);
- 
+
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch pharmacies");
   }
@@ -29,13 +35,18 @@ export default async function Page({ searchParams }: { searchParams?: { page: st
     else if (Array.isArray(raw)) pharmacies = raw as PharmacyApiResponse[];
   }
 
-  const totalCount = typeof result.results === "number" ? result.results : pharmacies.length;
-
+  const totalCount =
+    typeof result.results === "number" ? result.results : pharmacies.length;
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)]">
-      <PharmaciesHeader pharmacies={pharmacies} />
-      <PharmaciesList pharmacies={pharmacies} page={page} limit={limit} totalCount={totalCount} />
+      <PharmaciesHeader pharmacies={pharmacies} totalCount={totalCount} />
+      <PharmaciesList
+        pharmacies={pharmacies}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+      />
     </PageContainer>
   );
 }

@@ -5,19 +5,17 @@ import { cn } from "@/lib/utils";
 type InfoFieldProps = {
   label: string;
   icon?: LucideIcon;
-  accent?: "gold" | "blue" | "green" | "teal" | "purple" | "slate";
+  accent?: "gold" | "navy" | "green" | "slate";
   delay?: number;
   span?: boolean;
   children: React.ReactNode;
 };
 
 const accentClass = {
-  gold: "bg-gold-50 text-gold-600 ring-gold-300/50",
-  blue: "bg-blue-50 text-[#3972D5] ring-blue-200",
-  green: "bg-emerald-50 text-emerald-600 ring-emerald-200",
-  teal: "bg-teal-50 text-[#17A392] ring-teal-200",
-  purple: "bg-violet-50 text-[#7857C8] ring-violet-200",
-  slate: "bg-slate-100 text-[#667085] ring-slate-200",
+  gold: "bg-gp-gold-50 text-gp-gold-700 ring-gp-gold-300",
+  navy: "text-gp-navy-900 bg-gp-surface-subtle ring-gp-border-control",
+  green: "bg-gp-success-soft text-gp-success ring-gp-success-border",
+  slate: "bg-gp-surface-control text-gp-text-muted ring-gp-border-control",
 } satisfies Record<NonNullable<InfoFieldProps["accent"]>, string>;
 
 /**

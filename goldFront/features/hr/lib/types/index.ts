@@ -5,10 +5,23 @@ import { UserRole } from "@/lib/types";
 export type SubRegion = {
   id: string;
   name: string;
-  regionId: string;
-  createdAt: string;
-  updatedAt: string;
+  region?: {
+    id: string;
+    name: string;
+  } | null;
 };
+
+export type HRDocumentValue =
+  | string
+  | {
+      url?: string;
+      secure_url?: string;
+      name?: string;
+      original_filename?: string;
+      public_id?: string;
+      [key: string]: unknown;
+    }
+  | null;
 
 // Visit type
 export type Visit = {
@@ -119,8 +132,6 @@ export type Appraisal = {
 export type UserReference = {
   id: string;
   name: string;
-  email: string;
-  role: UserRole;
 };
 
 // Main HR Member type with all details
@@ -136,38 +147,20 @@ export type HRMember = {
   location: string | null;
   bio: string | null;
   educationBackground: string | null;
-  iqamaNumber: string;
+  iqamaNumber: string | null;
   passportNumber: string | null;
-  resume: string | null;
-  certificates: string[];
+  resume: HRDocumentValue;
+  certificates: HRDocumentValue[];
   lastLogin: string | null;
-  isActive: boolean;
-  profileImage: {
-    url: string;
-    public_id: string;
-  } | null;
+  isActive: boolean | null;
+  profileImage: HRDocumentValue;
   leaveStartDate: string | null;
   leaveEndDate: string | null;
   leaveDaysCountTotal: number;
-  regions: unknown[]; // Regions array for managers/supervisors
+  regions: { id: string; name: string }[];
   subRegion: SubRegion | null;
-  subRegionId: string | null;
-  supervisorId: string | null;
-  managerId: string | null;
   supervisor: UserReference | null;
   manager: UserReference | null;
-  reps: unknown[]; // Team reps for supervisors
-  users: unknown[]; // Team users for managers
-  visits: Visit[];
-  requests: Request[];
-  visitReports: VisitReport[];
-  plans: Plan[];
-  repPlans: Plan[];
-  forecasts: Forecast[];
-  coachings: unknown[]; // Coaching sessions given
-  repCoachings: unknown[]; // Coaching sessions received
-  appraisalsByManager: Appraisal[];
-  appraisalsForRep: Appraisal[];
   createdAt: string;
   updatedAt: string;
 };

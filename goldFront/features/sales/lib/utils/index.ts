@@ -167,6 +167,76 @@ function stringifySearchValue(value: unknown): string {
   return String(value);
 }
 
+export function readSalePrimitiveValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "";
+  if (typeof value === "number") return value.toLocaleString();
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+
+  if (typeof value === "object") {
+    const obj = value as Record<string, unknown>;
+    if (typeof obj.name === "string" && obj.name.trim()) {
+      return obj.name;
+    }
+    if (typeof obj.internalRef === "string" && obj.internalRef.trim()) {
+      return obj.internalRef;
+    }
+    if (typeof obj.id === "string" && obj.id.trim()) {
+      return obj.id;
+    }
+    return "";
+  }
+
+  return String(value);
+}
+
+export function getSaleFirstValue(
+  sale: SaleApiResponse,
+  keys: string[],
+): string {
+  for (const key of keys) {
+    const value = readSalePrimitiveValue(sale[key]);
+    if (value) return value;
+  }
+
+  return "";
+}
+
+export function getSaleNumericValue(
+  sale: SaleApiResponse,
+  keys: string[],
+): number | null {
+  for (const key of keys) {
+    const value = sale[key];
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+
+    if (typeof value === "string") {
+      const parsed = Number(value.replace(/,/g, ""));
+      if (Number.isFinite(parsed)) return parsed;
+    }
+  }
+
+  return null;
+}
+
+export function getSaleAmount(sale: SaleApiResponse): number {
+  return (
+    getSaleNumericValue(sale, [
+      "untaxedTotal",
+      "amount",
+      "total",
+      "totalAmount",
+    ]) ?? 0
+  );
+}
+
+export function getSaleQuantity(sale: SaleApiResponse): number {
+  return getSaleNumericValue(sale, ["qtyOrdered", "quantity", "qty"]) ?? 0;
+}
+
+export function getSaleOrderKey(sale: SaleApiResponse): string {
+  return getSaleFirstValue(sale, ["order", "orderNumber", "orderNo"]);
+}
+
 export function filterSales(
   sales: SaleApiResponse[],
   filters: {

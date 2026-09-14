@@ -1,23 +1,32 @@
 "use client";
 
 import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Plus, Loader2 } from "lucide-react";
-import { useState, useTransition, useEffect } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  ArrowLeft,
+  BriefcaseMedical,
+  Layers3,
+  Loader2,
+  MapPin,
+  MapPinned,
+  Phone,
+  Plus,
+  Stethoscope,
+  UserRound,
+} from "lucide-react";
 import { createDoctorAction } from "../api";
 import { addDoctorSchema, type AddDoctorFormValues } from "../lib/schemas";
 import { useRoleUI } from "@/core/ui/role-ui-context";
-import { getRegionsAction } from "@/lib/requests/regions";
-import { SubRegion } from "@/lib/types/regions";
-
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import {
@@ -29,12 +38,78 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { PageContainer } from "@/components/layout/page-container";
+import { cn } from "@/lib/utils";
+import {
+  KSA_TERRITORY_STRUCTURE,
+  getTerritoryLookup,
+} from "@/features/plan/lib/territory";
 
 type AddDoctorFormProps = {
   isModal?: boolean;
   onSuccess?: () => void;
   onCancel?: () => void;
 };
+
+const fieldClassName =
+  "border-gp-border-default bg-white text-gp-navy-900 placeholder:text-gp-text-placeholder focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 h-11 rounded-[12px] text-sm font-medium shadow-none transition-[border-color,box-shadow,background-color] duration-[150ms]";
+const labelClassName = "text-gp-navy-900 text-xs font-semibold";
+const selectContentClassName =
+  "plans-select-content border-gp-border-control bg-white p-1 shadow-gp-popover";
+const selectItemClassName =
+  "min-h-10 cursor-pointer rounded-[8px] py-1.5 pr-8 pl-2 text-sm font-semibold text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900";
+
+function RequiredMark() {
+  return <span className="text-gp-danger">*</span>;
+}
+
+function FormSection({
+  title,
+  subtitle,
+  icon: Icon,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  icon: typeof UserRound;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-gp-border-subtle bg-white rounded-[14px] border p-4">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 flex size-9 shrink-0 items-center justify-center rounded-[10px] border">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-gp-navy-900 text-sm font-semibold">{title}</h3>
+          <p className="text-gp-text-muted mt-0.5 text-xs font-medium">
+            {subtitle}
+          </p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">{children}</div>
+    </section>
+  );
+}
+
+function FieldShell({
+  label,
+  required = false,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <FormItem>
+      <FormLabel className={labelClassName}>
+        {label} {required && <RequiredMark />}
+      </FormLabel>
+      <FormControl>{children}</FormControl>
+      <FormMessage className="text-gp-danger text-xs font-medium" />
+    </FormItem>
+  );
+}
 
 export default function AddDoctorForm({
   isModal = false,
@@ -45,30 +120,10 @@ export default function AddDoctorForm({
   const { role } = useRoleUI();
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>("");
-  const [subRegions, setSubRegions] = useState<SubRegion[]>([]);
-
-  // Fetch all subregions from all regions on mount
-  useEffect(() => {
-    const fetchSubRegions = async () => {
-      const result = await getRegionsAction();
-      if (result.success && result.regions) {
-        const allSubRegions = result.regions.flatMap(
-          (region) => region.subRegions,
-        );
-        setSubRegions(allSubRegions);
-      }
-    };
-    fetchSubRegions();
-  }, []);
-
-  const getBackHref = () => {
-    if (role === "MANAGER") return "/manager/doctors";
-    if (role === "SUPERVISOR") return "/supervisor/doctors";
-    return "/rep/doctors";
-  };
 
   const form = useForm<AddDoctorFormValues>({
     resolver: zodResolver(addDoctorSchema),
+    shouldFocusError: true,
     defaultValues: {
       nameEN: "",
       nameAR: "",
@@ -83,22 +138,60 @@ export default function AddDoctorForm({
     },
   });
 
+  const selectedTerritory = useWatch({
+    control: form.control,
+    name: "subRegion",
+  });
+  const territoryLookup = getTerritoryLookup(selectedTerritory);
+  const [district, setDistrict] = useState("");
+  const [region, setRegion] = useState("");
+
+  const regionOptions = useMemo(() => {
+    return (
+      KSA_TERRITORY_STRUCTURE.find((item) => item.name === district)?.regions ??
+      []
+    );
+  }, [district]);
+
+  const territoryOptions = useMemo(() => {
+    return (
+      regionOptions.find((item) => item.name === region)?.territories ?? []
+    );
+  }, [region, regionOptions]);
+
+  const getBackHref = () => {
+    if (role === "MANAGER") return "/manager/doctors";
+    if (role === "SUPERVISOR") return "/supervisor/doctors";
+    return "/rep/doctors";
+  };
+
+  const updateDistrict = (value: string) => {
+    setDistrict(value);
+    setRegion("");
+    form.setValue("subRegion", "", { shouldValidate: true });
+  };
+
+  const updateRegion = (value: string) => {
+    setRegion(value);
+    form.setValue("subRegion", "", { shouldValidate: true });
+  };
+
   const onSubmit = (values: AddDoctorFormValues) => {
     setError("");
     startTransition(async () => {
       try {
         const result = await createDoctorAction({
-          nameEN: values.nameEN,
-          nameAR: values.nameAR,
-          email: values.email || undefined,
-          phone: values.phone,
+          nameEN: values.nameEN.trim(),
+          nameAR: values.nameAR.trim(),
+          email: values.email?.trim() || undefined,
+          phone: values.phone.trim(),
           grade: values.grade,
-          specialty: values.specialty,
-          LicenseNumber: values.license || undefined,
+          specialty: values.specialty.trim(),
+          LicenseNumber: values.license?.trim() || undefined,
           avgPatientsPerDay: values.avgPatients
-            ? parseInt(values.avgPatients)
+            ? Number(values.avgPatients)
             : undefined,
-          accountName: values.accountName,
+          accountName: values.accountName.trim(),
           subRegion: values.subRegion,
         });
         if (result.success) {
@@ -117,213 +210,310 @@ export default function AddDoctorForm({
     });
   };
 
-  const inputBase =
-    "bg-secondary-very-light border-[.8px] border-[#E2E8F0] px-4 placeholder:text-secondary-text placeholder:text-sm placeholder:font-normal";
-
   const formContent = (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="grid grid-cols-1 gap-4 md:grid-cols-2"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          !isModal && "rounded-[16px] border border-gp-border-default bg-white",
+        )}
       >
-        <FormField
-          control={form.control}
-          name="nameEN"
-          render={() => (
-            <FormItem>
-              <FormLabel>English Name *</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="Dr. Mohammed Al-Rashid"
-                  {...form.register("nameEN", { required: true })}
-                />
-              </FormControl>
-            </FormItem>
+        <div
+          className={cn(
+            "space-y-4",
+            isModal
+              ? "min-h-0 flex-1 overflow-y-auto bg-gp-surface-page px-5 py-5 sm:px-6"
+              : "p-4 sm:p-6",
           )}
-        />
-
-        <FormField
-          control={form.control}
-          name="nameAR"
-          render={() => (
-            <FormItem>
-              <FormLabel>Arabic Name *</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="د. محمد الراشد"
-                  {...form.register("nameAR", { required: true })}
-                />
-              </FormControl>
-            </FormItem>
+        >
+          {error && (
+            <div className="border-gp-danger-border bg-gp-danger-soft text-gp-danger rounded-[12px] border p-3 text-sm font-medium">
+              {error}
+            </div>
           )}
-        />
 
-        <FormField
-          control={form.control}
-          name="specialty"
-          render={() => (
-            <FormItem>
-              <FormLabel>Specialty *</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="e.g. Cardiology"
-                  {...form.register("specialty", { required: true })}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="grade"
-          render={() => (
-            <FormItem>
-              <FormLabel>Grade *</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={(v) => form.setValue("grade", v)}
-                  defaultValue=""
+          <div className="grid gap-2 rounded-[14px] border border-gp-border-subtle bg-white p-3 sm:grid-cols-3">
+            {["01 Basic Information", "02 Professional Details", "03 Territory & Account"].map(
+              (step) => (
+                <div
+                  key={step}
+                  className="border-gp-border-subtle bg-gp-surface-subtle text-gp-navy-900 rounded-[10px] border px-3 py-2 text-xs font-semibold"
                 >
-                  <SelectTrigger className={`${inputBase} w-full cursor-pointer`}>
-                    <SelectValue placeholder="Select grade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="A">A</SelectItem>
-                    <SelectItem value="B">B</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
-                    <SelectItem value="D">D</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormControl>
-            </FormItem>
-          )}
-        />
+                  {step}
+                </div>
+              ),
+            )}
+          </div>
 
-        <FormField
-          control={form.control}
-          name="subRegion"
-          render={() => (
+          <FormSection
+            title="Identity"
+            subtitle="Doctor names as they should appear across CRM records."
+            icon={UserRound}
+          >
+            <FormField
+              control={form.control}
+              name="nameEN"
+              render={({ field }) => (
+                <FieldShell label="English Name" required>
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="Dr. Mohammed Al-Rashid"
+                    autoComplete="name"
+                  />
+                </FieldShell>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="nameAR"
+              render={({ field }) => (
+                <FieldShell label="Arabic Name" required>
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="د. محمد الراشد"
+                    dir="auto"
+                  />
+                </FieldShell>
+              )}
+            />
+          </FormSection>
+
+          <FormSection
+            title="Professional Information"
+            subtitle="Clinical specialty, grade and professional identifiers."
+            icon={BriefcaseMedical}
+          >
+            <FormField
+              control={form.control}
+              name="specialty"
+              render={({ field }) => (
+                <FieldShell label="Specialty" required>
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="e.g. Dermatologist"
+                  />
+                </FieldShell>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="grade"
+              render={({ field }) => (
+                <FieldShell label="Grade" required>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <SelectTrigger className={fieldClassName}>
+                      <SelectValue placeholder="Select grade" />
+                    </SelectTrigger>
+                    <SelectContent className={selectContentClassName}>
+                      {["A", "B", "C", "D"].map((grade) => (
+                        <SelectItem
+                          key={grade}
+                          value={grade}
+                          className={selectItemClassName}
+                        >
+                          Grade {grade}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FieldShell>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="license"
+              render={({ field }) => (
+                <FieldShell label="License Number">
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="License number"
+                  />
+                </FieldShell>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="avgPatients"
+              render={({ field }) => (
+                <FieldShell label="Avg. Patients / Day">
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    type="number"
+                    min={0}
+                    placeholder="50"
+                  />
+                </FieldShell>
+              )}
+            />
+          </FormSection>
+
+          <FormSection
+            title="Contact"
+            subtitle="Direct contact details used by field teams."
+            icon={Phone}
+          >
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FieldShell label="Phone Number" required>
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="+966 50 123 4567"
+                    autoComplete="tel"
+                  />
+                </FieldShell>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FieldShell label="Email">
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    type="email"
+                    placeholder="doctor@hospital.sa"
+                    autoComplete="email"
+                  />
+                </FieldShell>
+              )}
+            />
+          </FormSection>
+
+          <FormSection
+            title="Territory & Account"
+            subtitle="Assign the doctor to the official field hierarchy."
+            icon={MapPinned}
+          >
             <FormItem>
-              <FormLabel>Area *</FormLabel>
-              <FormControl>
-                <Select
-                  onValueChange={(v) => form.setValue("subRegion", v)}
-                  defaultValue=""
-                >
-                  <SelectTrigger className={`${inputBase} w-full cursor-pointer`}>
-                    <SelectValue placeholder="Select area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {subRegions.map((subRegion) => (
-                      <SelectItem key={subRegion.id} value={subRegion.name}>
-                        {subRegion.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormControl>
+              <FormLabel className={labelClassName}>
+                District <RequiredMark />
+              </FormLabel>
+              <Select onValueChange={updateDistrict} value={district}>
+                <SelectTrigger className={fieldClassName}>
+                  <Layers3 className="size-4 text-gp-gold-600" />
+                  <SelectValue placeholder="Select district" />
+                </SelectTrigger>
+                <SelectContent className={selectContentClassName}>
+                  {KSA_TERRITORY_STRUCTURE.map((item) => (
+                    <SelectItem
+                      key={item.name}
+                      value={item.name}
+                      className={selectItemClassName}
+                    >
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormItem>
-          )}
-        />
 
-        <FormField
-          control={form.control}
-          name="accountName"
-          render={() => (
             <FormItem>
-              <FormLabel>Account Name *</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="King Faisal Hospital"
-                  {...form.register("accountName", { required: true })}
-                />
-              </FormControl>
+              <FormLabel className={labelClassName}>
+                Region <RequiredMark />
+              </FormLabel>
+              <Select
+                onValueChange={updateRegion}
+                value={region}
+                disabled={!district}
+              >
+                <SelectTrigger className={fieldClassName}>
+                  <MapPinned className="size-4 text-gp-gold-600" />
+                  <SelectValue placeholder="Select region" />
+                </SelectTrigger>
+                <SelectContent className={selectContentClassName}>
+                  {regionOptions.map((item) => (
+                    <SelectItem
+                      key={item.name}
+                      value={item.name}
+                      className={selectItemClassName}
+                    >
+                      {item.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </FormItem>
-          )}
-        />
 
-        <FormField
-          control={form.control}
-          name="license"
-          render={() => (
-            <FormItem>
-              <FormLabel>License Number</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="License number"
-                  {...form.register("license")}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="subRegion"
+              render={({ field }) => (
+                <FieldShell label="Territory" required>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={!region}
+                  >
+                    <SelectTrigger className={fieldClassName}>
+                      <MapPin className="size-4 text-gp-gold-600" />
+                      <SelectValue placeholder="Select territory" />
+                    </SelectTrigger>
+                    <SelectContent className={selectContentClassName}>
+                      {territoryOptions.map((item) => (
+                        <SelectItem
+                          key={item.name}
+                          value={item.name}
+                          className={selectItemClassName}
+                        >
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FieldShell>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={() => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="doctor@hospital.sa"
-                  {...form.register("email")}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={form.control}
+              name="accountName"
+              render={({ field }) => (
+                <FieldShell label="Account / Facility" required>
+                  <Input
+                    {...field}
+                    className={fieldClassName}
+                    placeholder="King Faisal Hospital"
+                    dir="auto"
+                  />
+                </FieldShell>
+              )}
+            />
 
-        <FormField
-          control={form.control}
-          name="phone"
-          render={() => (
-            <FormItem>
-              <FormLabel>Phone Number *</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  placeholder="+966 50 123 4567"
-                  {...form.register("phone", { required: true })}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
+            {selectedTerritory && (
+              <div className="border-gp-border-subtle bg-gp-surface-subtle text-gp-text-muted rounded-[10px] border px-3 py-2 text-xs font-medium md:col-span-2">
+                Selected hierarchy:{" "}
+                <span className="text-gp-navy-900 font-semibold">
+                  {territoryLookup.district} / {territoryLookup.region} /{" "}
+                  {territoryLookup.territory}
+                </span>
+              </div>
+            )}
+          </FormSection>
+        </div>
 
-        <FormField
-          control={form.control}
-          name="avgPatients"
-          render={() => (
-            <FormItem>
-              <FormLabel>Avg. Patients Per Day</FormLabel>
-              <FormControl>
-                <Input
-                  className={inputBase}
-                  type="number"
-                  placeholder="50"
-                  {...form.register("avgPatients")}
-                />
-              </FormControl>
-            </FormItem>
+        <div
+          className={cn(
+            "border-gp-border-subtle bg-white flex flex-col-reverse gap-3 border-t px-5 py-4 sm:flex-row sm:justify-end",
+            isModal && "sticky bottom-0 z-10",
           )}
-        />
-
-        {/* Modal Action Footer */}
-        <div className="col-span-1 mt-4 border-t border-slate-100 pt-4 md:col-span-2 flex items-center justify-end gap-3">
+        >
           {onCancel && (
             <Button
               type="button"
               variant="outline"
               onClick={onCancel}
-              className="h-10 border-[#E5E8EF] bg-white text-[#182033] hover:bg-[#F9FAFB] px-5 text-xs font-semibold rounded-[10px]"
+              disabled={isPending}
+              className="border-gp-border-control text-gp-navy-900 h-10 cursor-pointer rounded-[10px] px-5 text-sm font-semibold shadow-none"
             >
               Cancel
             </Button>
@@ -331,12 +521,15 @@ export default function AddDoctorForm({
           <Button
             type="submit"
             disabled={isPending}
-            className="bg-[#C9A44C] hover:bg-[#B18732] text-white h-10 cursor-pointer items-center justify-center gap-2 px-5 text-xs font-semibold rounded-[10px] shadow-[0_4px_14px_rgba(201,164,76,0.25)] transition-all duration-170 disabled:opacity-50"
+            className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.2)] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
           >
             {isPending ? (
-              <Loader2 size={16} className="animate-spin" />
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
-              <Plus size={16} />
+              <Plus
+                className="size-4 text-gp-gold-500 transition-transform duration-[170ms] group-hover:rotate-90 motion-reduce:transition-none"
+                aria-hidden="true"
+              />
             )}
             {isPending ? "Adding Doctor..." : "Add Doctor"}
           </Button>
@@ -345,46 +538,35 @@ export default function AddDoctorForm({
     </Form>
   );
 
-  if (isModal) {
-    return (
-      <div className="space-y-4">
-        {error && (
-          <div className="text-dashboard-red rounded-lg border border-red-200 bg-red-50 p-3 text-xs">
-            {error}
-          </div>
-        )}
-        {formContent}
-      </div>
-    );
-  }
+  if (isModal) return formContent;
 
   return (
-    <PageContainer className="flex flex-col gap-6">
-      <header className="flex flex-wrap items-center justify-start gap-2">
+    <PageContainer className="flex flex-col gap-5">
+      <header className="flex flex-wrap items-center gap-3">
         <Link
           href={getBackHref()}
-          className="border-system-primary text-system-primary hover:bg-system-primary inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-white hover:border-transparent hover:text-white"
+          className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] border bg-white transition-colors"
+          aria-label="Back to doctors"
         >
-          <ArrowLeft size={16} />
+          <ArrowLeft className="size-4" aria-hidden="true" />
         </Link>
-        <div className="ml-3 min-w-0 flex-1">
-          <h1 className="font-normal text-2xl text-black md:text-[34px]">Add New Doctor</h1>
-          <p className="text-secondary-dark text-sm">
-            Add a new doctor to the database
+        <div className="min-w-0 flex-1">
+          <p className="text-gp-gold-700 text-[11px] font-semibold tracking-[0.14em] uppercase">
+            Field Operations
+          </p>
+          <h1 className="text-gp-navy-900 mt-1 text-2xl font-semibold md:text-3xl">
+            Add New Doctor
+          </h1>
+          <p className="text-gp-text-muted mt-1 text-sm font-medium">
+            Create a doctor profile and assign territory coverage.
           </p>
         </div>
+        <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 hidden size-11 items-center justify-center rounded-[12px] border sm:flex">
+          <Stethoscope className="size-5" aria-hidden="true" />
+        </span>
       </header>
 
-      {error && (
-        <div className="text-dashboard-red rounded-lg border border-red-200 bg-red-50 p-4 text-sm">
-          {error}
-        </div>
-      )}
-
-      <section className="border-secondary-light rounded-[14px] border-[.8px] bg-white p-6">
-        <h2 className="mb-6 text-[22px]/8 font-normal">Doctor Information</h2>
-        {formContent}
-      </section>
+      {formContent}
     </PageContainer>
   );
 }

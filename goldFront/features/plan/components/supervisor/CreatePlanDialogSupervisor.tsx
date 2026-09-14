@@ -4,14 +4,7 @@ import { useState, useTransition, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { FormDrawer } from "@/components/shared/FormDrawer";
 import {
   Select,
   SelectContent,
@@ -164,6 +157,12 @@ export default function CreatePlanDialogSupervisor({
 
   const handlePrevious = () => setStep(1);
 
+  const closeAndReset = () => {
+    setOpen(false);
+    form.reset();
+    setStep(1);
+  };
+
   const handleSubmit = (values: CreateSupervisorPlanFormValues) => {
     startTransition(async () => {
       try {
@@ -218,497 +217,488 @@ export default function CreatePlanDialogSupervisor({
       : hospitalsWithDoctors.filter((h) => h.name === selectedHospitalName);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button className="button-system-gradient-primary">
-          <Plus size={16} />
+    <FormDrawer
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
+        <Button className="bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 cursor-pointer rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[box-shadow,transform,background-color] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-[3px] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+          <Plus className="text-gp-gold-500 size-4" />
           Create New Plan
         </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Create New Plan</DialogTitle>
-          <DialogDescription>
+      }
+      title="Create New Plan"
+      eyebrow="Plan Builder"
+      description={
+        step === 1
+          ? "Configure plan details and assign to a medical rep."
+          : "Select doctors and assign visit dates."
+      }
+      icon={<CalendarIcon className="size-5" aria-hidden="true" />}
+      width="xl"
+      footer={
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-gp-text-muted text-xs font-medium">
             {step === 1
-              ? "Configure plan details and assign to a medical rep"
-              : "Select doctors and assign visit dates"}
-          </DialogDescription>
-        </DialogHeader>
+              ? "Complete required plan details before selecting doctors."
+              : `${doctorsWithDates.length} doctor${
+                  doctorsWithDates.length === 1 ? "" : "s"
+                } selected.`}
+          </p>
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={step === 1 ? closeAndReset : handlePrevious}
+              disabled={isPending}
+              className="border-gp-border-default text-gp-text-secondary hover:border-gp-border-control hover:bg-gp-surface-control hover:text-gp-text-primary focus-visible:ring-gp-gold-500/15 h-11 cursor-pointer rounded-[10px] px-5 text-sm font-semibold transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:ring-[3px] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              {step === 1 ? "Cancel" : "Previous"}
+            </Button>
+            <Button
+              type="button"
+              onClick={
+                step === 1 ? handleNext : form.handleSubmit(handleSubmit)
+              }
+              disabled={
+                isPending || (step === 2 && doctorsWithDates.length === 0)
+              }
+              className="gp-primary-action bg-gp-navy-900 hover:bg-gp-navy-900/95 h-11 cursor-pointer rounded-[10px] px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+            >
+              {isPending ? (
+                "Creating..."
+              ) : step === 1 ? (
+                "Next: Select Doctors"
+              ) : (
+                <>
+                  <Send className="text-gp-gold-500 size-4" />
+                  Create Plan
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      }
+    >
+      <Form {...form}>
+        {step === 1 && (
+          <div className="space-y-4">
+            <p className="text-secondary-dark text-xs">
+              Date selection uses Saudi Arabia timezone (Asia/Riyadh).
+            </p>
+            {/* Plan Type */}
+            <FormField
+              control={form.control}
+              name="planType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Plan Type <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger className="bg-secondary-very-light w-full cursor-pointer border-[0.8px]">
+                        <SelectValue placeholder="Select plan type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="WEEKLY">Weekly Plan</SelectItem>
+                      <SelectItem value="MONTHLY">Monthly Plan</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-sm text-red-500" />
+                </FormItem>
+              )}
+            />
 
-        <Form {...form}>
-          {step === 1 && (
-            <div className="space-y-4">
-              <p className="text-secondary-dark text-xs">
-                Date selection uses Saudi Arabia timezone (Asia/Riyadh).
+            {/* Plan Title */}
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Plan Title <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      className="bg-secondary-very-light"
+                      placeholder="Enter plan title"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-sm text-red-500" />
+                </FormItem>
+              )}
+            />
+
+            {/* Description */}
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Description <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="Describe the plan goals and focus areas..."
+                      rows={3}
+                      className="bg-secondary-very-light resize-none"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-sm text-red-500" />
+                </FormItem>
+              )}
+            />
+
+            {/* Medical Rep */}
+            <FormField
+              control={form.control}
+              name="repId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Medical Rep <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isLoadingReps}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="bg-secondary-very-light w-full cursor-pointer border-[0.8px]">
+                        <SelectValue
+                          placeholder={
+                            isLoadingReps
+                              ? "Loading reps..."
+                              : "Select medical rep"
+                          }
+                        />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {reps.map((rep) => (
+                        <SelectItem key={rep.id} value={rep.id}>
+                          {rep.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-sm text-red-500" />
+                </FormItem>
+              )}
+            />
+
+            {/* Objectives */}
+            <FormField
+              control={form.control}
+              name="objectives"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Objectives (one per line)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      placeholder="List your objectives, one per line..."
+                      rows={3}
+                      className="bg-secondary-very-light resize-none"
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {/* Date Range */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="startDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Start Date <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className="bg-secondary-very-light w-full cursor-pointer justify-start text-left"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value
+                              ? formatSaudiDateDisplay(field.value)
+                              : "Select date"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage className="text-sm text-red-500" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="endDate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      End Date <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant="outline"
+                            className="bg-secondary-very-light w-full cursor-pointer justify-start text-left"
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {field.value
+                              ? formatSaudiDateDisplay(field.value)
+                              : "Select date"}
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormMessage className="text-sm text-red-500" />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* Target Visits */}
+            <FormField
+              control={form.control}
+              name="targetVisits"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    Target Visits <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      min="1"
+                      className="bg-secondary-very-light"
+                      placeholder="Number of visits"
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-sm text-red-500" />
+                </FormItem>
+              )}
+            />
+          </div>
+        )}
+
+        {step === 2 && (
+          <div className="space-y-4">
+            {/* Hospital Filter */}
+            <Select
+              value={selectedHospitalName}
+              onValueChange={setSelectedHospitalName}
+            >
+              <SelectTrigger className="bg-secondary-very-light w-full">
+                <SelectValue placeholder="All Hospitals" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Hospitals</SelectItem>
+                {hospitalsWithDoctors.map((h) => (
+                  <SelectItem key={h.name} value={h.name}>
+                    {h.name} ({h.doctors.length} doctors)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {doctorsWithDates.length > 0 && (
+              <p className="text-dashboard-green text-xs">
+                {doctorsWithDates.length} doctor
+                {doctorsWithDates.length !== 1 ? "s" : ""} selected
               </p>
-              {/* Plan Type */}
-              <FormField
-                control={form.control}
-                name="planType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Plan Type <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger className="bg-secondary-very-light w-full cursor-pointer border-[0.8px]">
-                          <SelectValue placeholder="Select plan type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="WEEKLY">Weekly Plan</SelectItem>
-                        <SelectItem value="MONTHLY">Monthly Plan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
+            )}
 
-              {/* Plan Title */}
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Plan Title <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        className="bg-secondary-very-light"
-                        placeholder="Enter plan title"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
+            {form.formState.errors.doctorsWithDates && (
+              <p className="text-sm text-red-500">
+                At least one doctor must be selected
+              </p>
+            )}
 
-              {/* Description */}
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Description <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Describe the plan goals and focus areas..."
-                        rows={3}
-                        className="bg-secondary-very-light resize-none"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
-
-              {/* Medical Rep */}
-              <FormField
-                control={form.control}
-                name="repId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Medical Rep <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      disabled={isLoadingReps}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-secondary-very-light w-full cursor-pointer border-[0.8px]">
-                          <SelectValue
-                            placeholder={
-                              isLoadingReps
-                                ? "Loading reps..."
-                                : "Select medical rep"
-                            }
-                          />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {reps.map((rep) => (
-                          <SelectItem key={rep.id} value={rep.id}>
-                            {rep.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
-
-              {/* Objectives */}
-              <FormField
-                control={form.control}
-                name="objectives"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Objectives (one per line)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="List your objectives, one per line..."
-                        rows={3}
-                        className="bg-secondary-very-light resize-none"
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* Date Range */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Start Date <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="bg-secondary-very-light w-full cursor-pointer justify-start text-left"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value
-                                ? formatSaudiDateDisplay(field.value)
-                                : "Select date"}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage className="text-sm text-red-500" />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="endDate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        End Date <span className="text-red-500">*</span>
-                      </FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="bg-secondary-very-light w-full cursor-pointer justify-start text-left"
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value
-                                ? formatSaudiDateDisplay(field.value)
-                                : "Select date"}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage className="text-sm text-red-500" />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              {/* Target Visits */}
-              <FormField
-                control={form.control}
-                name="targetVisits"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Target Visits <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="number"
-                        min="1"
-                        className="bg-secondary-very-light"
-                        placeholder="Number of visits"
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex gap-2 *:flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setOpen(false);
-                    form.reset();
-                  }}
-                  disabled={isPending}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleNext}
-                  className="button-system-gradient-primary"
-                  disabled={isPending}
-                >
-                  Next: Select Doctors
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              {/* Hospital Filter */}
-              <Select
-                value={selectedHospitalName}
-                onValueChange={setSelectedHospitalName}
-              >
-                <SelectTrigger className="bg-secondary-very-light w-full">
-                  <SelectValue placeholder="All Hospitals" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Hospitals</SelectItem>
-                  {hospitalsWithDoctors.map((h) => (
-                    <SelectItem key={h.name} value={h.name}>
-                      {h.name} ({h.doctors.length} doctors)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {doctorsWithDates.length > 0 && (
-                <p className="text-dashboard-green text-xs">
-                  {doctorsWithDates.length} doctor
-                  {doctorsWithDates.length !== 1 ? "s" : ""} selected
-                </p>
-              )}
-
-              {form.formState.errors.doctorsWithDates && (
-                <p className="text-sm text-red-500">
-                  At least one doctor must be selected
-                </p>
-              )}
-
-              {/* Hospitals and Doctors List */}
-              <div className="max-h-[400px] space-y-5 overflow-y-auto pr-1">
-                {filteredHospitals.length === 0 ? (
-                  <div className="text-secondary-dark py-8 text-center text-sm">
-                    No hospitals available
-                  </div>
-                ) : (
-                  filteredHospitals.map((hospital) => (
-                    <div key={hospital.name} className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Building2 className="text-dashboard-blue size-5" />
-                        <span className="text-sm/6 font-normal">
-                          {hospital.name}
-                        </span>
-                        <span className="bg-secondary-text rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
-                          {hospital.doctors.length}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {hospital.doctors.map((doctor) => {
-                          const selected = doctorsWithDates.find(
-                            (d) => d.doctorId === doctor.id,
-                          );
-                          return (
-                            <Popover
-                              key={doctor.id}
-                              open={openDatePickerForDoctorId === doctor.id}
-                              onOpenChange={(o) =>
-                                !o && setOpenDatePickerForDoctorId(null)
-                              }
-                            >
-                              <PopoverTrigger asChild>
-                                <Card
-                                  onClick={() => {
-                                    if (selected) {
-                                      removeDoctor(doctor.id);
-                                    } else {
-                                      setOpenDatePickerForDoctorId(doctor.id);
-                                    }
-                                  }}
-                                  className={cn(
-                                    "cursor-pointer p-3 transition-all hover:shadow-md",
-                                    selected
-                                      ? "border-dashboard-green bg-green-stroke"
-                                      : "border-gray-200",
-                                  )}
-                                >
-                                  <div className="space-y-1">
-                                    <div className="flex items-start justify-between gap-1">
-                                      <h4 className="text-sm/5 leading-tight font-normal">
-                                        {doctor.nameEN}
-                                      </h4>
-                                      <div className="flex shrink-0 items-center gap-1">
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <button
-                                              type="button"
-                                              onClick={(e) =>
-                                                e.stopPropagation()
-                                              }
-                                              className="text-gray-400 hover:text-gray-600"
-                                            >
-                                              <Info className="h-3.5 w-3.5" />
-                                            </button>
-                                          </TooltipTrigger>
-                                          <TooltipContent
-                                            side="top"
-                                            className="max-w-56 space-y-0.5 p-3 text-left text-xs"
-                                          >
-                                            <p className="font-semibold">
-                                              {doctor.nameEN}
-                                            </p>
-                                            {doctor.nameAR && (
-                                              <p className="opacity-70">
-                                                {doctor.nameAR}
-                                              </p>
-                                            )}
-                                            {doctor.specialty && (
-                                              <p>
-                                                Specialty: {doctor.specialty}
-                                              </p>
-                                            )}
-                                            {doctor.grade && (
-                                              <p>Grade: {doctor.grade}</p>
-                                            )}
-                                            {doctor.phone && (
-                                              <p>Phone: {doctor.phone}</p>
-                                            )}
-                                            {doctor.email && (
-                                              <p>Email: {doctor.email}</p>
-                                            )}
-                                            {doctor.subRegion && (
-                                              <p>
-                                                Sub-region: {doctor.subRegion}
-                                              </p>
-                                            )}
-                                            {doctor.area && (
-                                              <p>Area: {doctor.area}</p>
-                                            )}
-                                            {doctor.avgPatientsPerDay !=
-                                              null && (
-                                              <p>
-                                                Avg patients/day:{" "}
-                                                {doctor.avgPatientsPerDay}
-                                              </p>
-                                            )}
-                                          </TooltipContent>
-                                        </Tooltip>
-                                        {selected && (
-                                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
-                                            <Check className="h-3 w-3 text-white" />
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <p className="text-secondary-dark text-xs">
-                                      {doctor.specialty}
-                                    </p>
-                                    {selected && (
-                                      <p className="text-dashboard-green text-xs font-medium">
-                                        {formatSaudiDateDisplay(
-                                          selected.visitDate,
-                                        )}
-                                      </p>
-                                    )}
-                                  </div>
-                                </Card>
-                              </PopoverTrigger>
-                              <PopoverContent
-                                className="w-auto p-0"
-                                align="start"
-                              >
-                                <p className="border-b px-3 py-2 text-center text-xs font-medium text-gray-600">
-                                  Visit date for {doctor.nameEN}
-                                </p>
-                                <Calendar
-                                  mode="single"
-                                  fromDate={startDate}
-                                  toDate={endDate}
-                                  disabled={(date) =>
-                                    (startDate ? date < startDate : false) ||
-                                    (endDate ? date > endDate : false)
-                                  }
-                                  onSelect={(date) => {
-                                    if (date) {
-                                      addDoctor(doctor.id, date);
-                                      setOpenDatePickerForDoctorId(null);
-                                    }
-                                  }}
-                                />
-                              </PopoverContent>
-                            </Popover>
-                          );
-                        })}
-                      </div>
+            {/* Hospitals and Doctors List */}
+            <div className="max-h-[400px] space-y-5 overflow-y-auto pr-1">
+              {filteredHospitals.length === 0 ? (
+                <div className="text-secondary-dark py-8 text-center text-sm">
+                  No hospitals available
+                </div>
+              ) : (
+                filteredHospitals.map((hospital) => (
+                  <div key={hospital.name} className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Building2 className="text-dashboard-blue size-5" />
+                      <span className="text-sm/6 font-normal">
+                        {hospital.name}
+                      </span>
+                      <span className="bg-secondary-text rounded-full px-2 py-0.5 text-xs/4 font-medium text-white">
+                        {hospital.doctors.length}
+                      </span>
                     </div>
-                  ))
-                )}
-              </div>
 
-              <div className="flex gap-2 *:flex-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handlePrevious}
-                  disabled={isPending}
-                >
-                  Previous
-                </Button>
-                <Button
-                  type="button"
-                  onClick={form.handleSubmit(handleSubmit)}
-                  disabled={isPending || doctorsWithDates.length === 0}
-                  className="button-system-gradient-primary disabled:opacity-50"
-                >
-                  {isPending ? (
-                    "Creating..."
-                  ) : (
-                    <>
-                      <Send size={16} />
-                      Create Plan
-                    </>
-                  )}
-                </Button>
-              </div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {hospital.doctors.map((doctor) => {
+                        const selected = doctorsWithDates.find(
+                          (d) => d.doctorId === doctor.id,
+                        );
+                        return (
+                          <Popover
+                            key={doctor.id}
+                            open={openDatePickerForDoctorId === doctor.id}
+                            onOpenChange={(o) =>
+                              !o && setOpenDatePickerForDoctorId(null)
+                            }
+                          >
+                            <PopoverTrigger asChild>
+                              <Card
+                                onClick={() => {
+                                  if (selected) {
+                                    removeDoctor(doctor.id);
+                                  } else {
+                                    setOpenDatePickerForDoctorId(doctor.id);
+                                  }
+                                }}
+                                className={cn(
+                                  "cursor-pointer p-3 transition-all hover:shadow-md",
+                                  selected
+                                    ? "border-dashboard-green bg-green-stroke"
+                                    : "border-gray-200",
+                                )}
+                              >
+                                <div className="space-y-1">
+                                  <div className="flex items-start justify-between gap-1">
+                                    <h4 className="text-sm/5 leading-tight font-normal">
+                                      {doctor.nameEN}
+                                    </h4>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-gray-400 hover:text-gray-600"
+                                          >
+                                            <Info className="h-3.5 w-3.5" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                          side="top"
+                                          className="max-w-56 space-y-0.5 p-3 text-left text-xs"
+                                        >
+                                          <p className="font-semibold">
+                                            {doctor.nameEN}
+                                          </p>
+                                          {doctor.nameAR && (
+                                            <p className="opacity-70">
+                                              {doctor.nameAR}
+                                            </p>
+                                          )}
+                                          {doctor.specialty && (
+                                            <p>Specialty: {doctor.specialty}</p>
+                                          )}
+                                          {doctor.grade && (
+                                            <p>Grade: {doctor.grade}</p>
+                                          )}
+                                          {doctor.phone && (
+                                            <p>Phone: {doctor.phone}</p>
+                                          )}
+                                          {doctor.email && (
+                                            <p>Email: {doctor.email}</p>
+                                          )}
+                                          {doctor.subRegion && (
+                                            <p>
+                                              Sub-region: {doctor.subRegion}
+                                            </p>
+                                          )}
+                                          {doctor.area && (
+                                            <p>Area: {doctor.area}</p>
+                                          )}
+                                          {doctor.avgPatientsPerDay != null && (
+                                            <p>
+                                              Avg patients/day:{" "}
+                                              {doctor.avgPatientsPerDay}
+                                            </p>
+                                          )}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      {selected && (
+                                        <div className="flex h-5 w-5 items-center justify-center rounded-full bg-green-500">
+                                          <Check className="h-3 w-3 text-white" />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <p className="text-secondary-dark text-xs">
+                                    {doctor.specialty}
+                                  </p>
+                                  {selected && (
+                                    <p className="text-dashboard-green text-xs font-medium">
+                                      {formatSaudiDateDisplay(
+                                        selected.visitDate,
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              </Card>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
+                              <p className="border-b px-3 py-2 text-center text-xs font-medium text-gray-600">
+                                Visit date for {doctor.nameEN}
+                              </p>
+                              <Calendar
+                                mode="single"
+                                fromDate={startDate}
+                                toDate={endDate}
+                                disabled={(date) =>
+                                  (startDate ? date < startDate : false) ||
+                                  (endDate ? date > endDate : false)
+                                }
+                                onSelect={(date) => {
+                                  if (date) {
+                                    addDoctor(doctor.id, date);
+                                    setOpenDatePickerForDoctorId(null);
+                                  }
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
-          )}
-        </Form>
-      </DialogContent>
-    </Dialog>
+          </div>
+        )}
+      </Form>
+    </FormDrawer>
   );
 }

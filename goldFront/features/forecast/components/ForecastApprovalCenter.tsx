@@ -14,7 +14,6 @@ import {
   Package,
   RefreshCw,
   Search,
-  SlidersHorizontal,
   TrendingUp,
   Users,
   XCircle,
@@ -128,17 +127,17 @@ function ForecastPageHeader() {
           aria-hidden="true"
         />
         <p className="text-[11px] leading-none font-semibold tracking-[0.12em] text-[#C9A44C] uppercase">
-          Forecast Management
+          Commercial
         </p>
       </div>
       <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           <h1 className="text-[30px] leading-tight font-semibold text-[#182033] md:text-[34px]">
-            Forecast Requests
+            Forecast Management
           </h1>
           <p className="mt-2 max-w-[720px] text-sm leading-6 font-medium text-[#667085] md:text-base">
-            Review, evaluate and manage product forecast submissions from your
-            medical representatives.
+            Review forecast submissions, monitor projected performance and
+            compare commercial expectations.
           </p>
         </div>
         <span className="inline-flex w-fit items-center gap-2 rounded-full border border-[#E9DDB8] bg-[#FFFBF1] px-3 py-1.5 text-xs font-semibold text-[#6F5A20]">
@@ -158,22 +157,15 @@ function ForecastKpiCard({
   value,
   helper,
   icon: Icon,
-  tone,
   delay,
 }: {
   label: string;
   value: number;
   helper: string;
   icon: LucideIcon;
-  tone: "navy" | "gold" | "green" | "red";
   delay: string;
 }) {
-  const toneClassName = {
-    navy: "bg-[#EDF4FF] text-[#3972D5]",
-    gold: "bg-[#FFF3D7] text-[#B18732]",
-    green: "bg-[#E9F8F1] text-[#168557]",
-    red: "bg-[#FFF1F0] text-[#B42318]",
-  }[tone];
+  const toneClassName = "border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]";
 
   return (
     <article
@@ -220,7 +212,6 @@ function ForecastStats({
         value={totalCount}
         helper="All forecast submissions"
         icon={Inbox}
-        tone="navy"
         delay="80ms"
       />
       <ForecastKpiCard
@@ -228,7 +219,6 @@ function ForecastStats({
         value={counts.pending}
         helper="Awaiting your decision"
         icon={Clock3}
-        tone="gold"
         delay="150ms"
       />
       <ForecastKpiCard
@@ -236,7 +226,6 @@ function ForecastStats({
         value={counts.approved}
         helper="Approved forecasts"
         icon={CheckCircle2}
-        tone="green"
         delay="220ms"
       />
       <ForecastKpiCard
@@ -244,7 +233,6 @@ function ForecastStats({
         value={counts.rejected}
         helper="Rejected forecasts"
         icon={CircleX}
-        tone="red"
         delay="290ms"
       />
     </section>
@@ -271,7 +259,7 @@ function ForecastToolbar({
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
-  statusOptions,
+  statusCounts,
   periodFilter,
   onPeriodFilterChange,
   periodOptions,
@@ -283,15 +271,52 @@ function ForecastToolbar({
   onSearchChange: (value: string) => void;
   statusFilter: StatusFilter;
   onStatusFilterChange: (value: StatusFilter) => void;
-  statusOptions: ForecastStatus[];
+  statusCounts: Record<ForecastStatus, number>;
   periodFilter: string;
   onPeriodFilterChange: (value: string) => void;
   periodOptions: Array<{ value: string; label: string }>;
   activeFilterCount: number;
   onClearFilters: () => void;
 }) {
+  const statusTabs: Array<{
+    value: StatusFilter;
+    label: string;
+    count: number;
+    icon: LucideIcon;
+    countClassName: string;
+  }> = [
+    {
+      value: "all",
+      label: "All",
+      count: Object.values(statusCounts).reduce((sum, count) => sum + count, 0),
+      icon: Inbox,
+      countClassName: "text-[#C9A44C]",
+    },
+    {
+      value: "pending",
+      label: "Pending",
+      count: statusCounts.pending,
+      icon: Clock3,
+      countClassName: "text-[#B18732]",
+    },
+    {
+      value: "approved",
+      label: "Approved",
+      count: statusCounts.approved,
+      icon: CheckCircle2,
+      countClassName: "text-[#168557]",
+    },
+    {
+      value: "rejected",
+      label: "Rejected",
+      count: statusCounts.rejected,
+      icon: CircleX,
+      countClassName: "text-[#B42318]",
+    },
+  ];
+
   return (
-    <div className="forecast-panel-toolbar flex flex-col gap-3 border-b border-[#E5E8EF] bg-[#FBFCFE] px-4 py-4 sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+    <div className="forecast-panel-toolbar flex flex-col gap-4 border-b border-[#E5E8EF] bg-[#FBFCFE] px-4 py-4 sm:px-5">
       <div>
         <h2 className="text-base font-semibold text-[#182033]">
           Forecast Requests
@@ -300,77 +325,86 @@ function ForecastToolbar({
           Showing {numberFormatter.format(showingCount)} requests
         </p>
       </div>
-      <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_150px_170px] lg:w-[620px]">
-        <div className="relative min-w-0">
-          <Search
-            className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#8A94A6]"
-            aria-hidden="true"
-          />
-          <input
-            value={searchQuery}
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Search representative or forecast..."
-            className="forecast-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] outline-none placeholder:text-[#98A2B3]"
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => onSearchChange("")}
-              className="absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#8A94A6] transition-[background-color,color] hover:bg-[#F4F6FA] hover:text-[#182033]"
-              aria-label="Clear forecast search"
-            >
-              <XCircle className="size-3.5" aria-hidden="true" />
-            </button>
-          )}
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(280px,520px)] xl:items-center">
+        <div className="forecast-status-tabs grid gap-1 rounded-[13px] border border-[#E7EAF0] bg-[#F5F7FA] p-1 sm:grid-cols-4">
+          {statusTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = statusFilter === tab.value;
+
+            return (
+              <button
+                type="button"
+                key={tab.value}
+                aria-pressed={isActive}
+                onClick={() => onStatusFilterChange(tab.value)}
+                className={`forecast-status-tab inline-flex h-10 min-w-0 items-center justify-center gap-2 rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,box-shadow,transform] duration-[180ms] ease-out focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none ${
+                  isActive
+                    ? "bg-[#101D36] text-white shadow-[0_6px_14px_rgba(16,29,54,0.18)]"
+                    : "text-[#344054] hover:bg-[#101D36]/5 hover:text-[#101D36]"
+                }`}
+              >
+                <Icon
+                  className={`size-3.5 shrink-0 ${isActive ? "text-[#C9A44C]" : "text-[#667085]"}`}
+                  aria-hidden="true"
+                />
+                <span className="truncate">{tab.label}</span>
+                <span
+                  className={`shrink-0 font-bold ${isActive ? "text-[#C9A44C]" : tab.countClassName}`}
+                >
+                  {numberFormatter.format(tab.count)}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        <Select
-          value={statusFilter}
-          onValueChange={(value) => onStatusFilterChange(value as StatusFilter)}
-        >
-          <SelectTrigger className="forecast-select-trigger h-11 rounded-[12px] border-[#E5E8EF] bg-white text-sm font-semibold text-[#4B5568]">
-            <span className="flex min-w-0 items-center gap-2">
-              <SlidersHorizontal className="size-4 text-[#8A94A6]" />
-              <SelectValue placeholder="Status" />
-              {activeFilterCount > 0 && (
-                <span className="ml-auto inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#C9A44C] px-1.5 text-[11px] font-bold text-[#182033]">
-                  {activeFilterCount}
-                </span>
-              )}
-            </span>
-          </SelectTrigger>
-          <SelectContent className="forecast-select-content rounded-[12px] border-[#E5E8EF] bg-white shadow-[0_16px_34px_rgba(16,24,40,0.14)]">
-            <SelectItem value="all">All Statuses</SelectItem>
-            {statusOptions.map((status) => (
-              <SelectItem key={status} value={status}>
-                {statusMeta[status].label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="grid gap-2 sm:grid-cols-[minmax(220px,1fr)_170px]">
+          <div className="relative min-w-0">
+            <Search
+              className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#344054]"
+              aria-hidden="true"
+            />
+            <input
+              value={searchQuery}
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder="Search representative or forecast..."
+              className="forecast-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] outline-none placeholder:text-[#98A2B3]"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => onSearchChange("")}
+                className="absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#8A94A6] transition-[background-color,color] hover:bg-[#F4F6FA] hover:text-[#182033]"
+                aria-label="Clear forecast search"
+              >
+                <XCircle className="size-3.5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
 
-        <Select value={periodFilter} onValueChange={onPeriodFilterChange}>
-          <SelectTrigger className="forecast-select-trigger h-11 rounded-[12px] border-[#E5E8EF] bg-white text-sm font-semibold text-[#4B5568]">
-            <span className="flex min-w-0 items-center gap-2">
-              <CalendarDays className="size-4 text-[#8A94A6]" />
-              <SelectValue placeholder="Period" />
-            </span>
-          </SelectTrigger>
-          <SelectContent className="forecast-select-content rounded-[12px] border-[#E5E8EF] bg-white shadow-[0_16px_34px_rgba(16,24,40,0.14)]">
-            <SelectItem value="all">All Periods</SelectItem>
-            {periodOptions.map((period) => (
-              <SelectItem key={period.value} value={period.value}>
-                {period.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          <Select value={periodFilter} onValueChange={onPeriodFilterChange}>
+            <SelectTrigger className="forecast-select-trigger h-11 rounded-[12px] border-[#E5E8EF] bg-white text-sm font-semibold text-[#4B5568]">
+              <span className="flex min-w-0 items-center gap-2">
+                <CalendarDays className="size-4 text-[#344054]" />
+                <SelectValue placeholder="Period" />
+              </span>
+            </SelectTrigger>
+            <SelectContent className="forecast-select-content rounded-[12px] border-[#E5E8EF] bg-white shadow-[0_16px_34px_rgba(16,24,40,0.14)]">
+              <SelectItem value="all">All Periods</SelectItem>
+              {periodOptions.map((period) => (
+                <SelectItem key={period.value} value={period.value}>
+                  {period.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
       {activeFilterCount > 0 && (
         <button
           type="button"
           onClick={onClearFilters}
-          className="w-fit rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] hover:bg-[#FFF8E5] hover:text-[#182033] lg:hidden"
+          className="w-fit rounded-full px-2.5 py-1 text-xs font-bold text-[#9A7628] transition-[background-color,color] hover:bg-[#FFF8E5] hover:text-[#182033]"
         >
           Clear filters
         </button>
@@ -391,7 +425,7 @@ function ForecastEmptyState({
       <div className="forecast-empty-visual relative mx-auto flex size-28 items-center justify-center rounded-[28px] bg-[#FFFBF1]">
         <span className="forecast-empty-ring absolute inset-0 rounded-[28px] border border-[#E9DDB8]" />
         <FileText className="size-11 text-[#182033]" aria-hidden="true" />
-        <span className="absolute -right-2 -bottom-2 flex size-10 items-center justify-center rounded-full border border-[#CBEFDD] bg-white text-[#168557] shadow-[0_8px_22px_rgba(16,24,40,0.12)]">
+        <span className="absolute -right-2 -bottom-2 flex size-10 items-center justify-center rounded-full border border-[#E9DDB8] bg-white text-[#B18732] shadow-[0_8px_22px_rgba(16,24,40,0.12)]">
           <CheckCircle2 className="size-5" aria-hidden="true" />
         </span>
         <span className="absolute -top-3 -left-3 flex size-9 items-center justify-center rounded-full border border-[#E9DDB8] bg-white text-[#B18732] shadow-[0_8px_22px_rgba(16,24,40,0.1)]">
@@ -416,7 +450,7 @@ function ForecastEmptyState({
         <button
           type="button"
           onClick={onClearFilters}
-          className="mt-4 rounded-[10px] border border-[#C9A44C] bg-[#C9A44C] px-4 py-2 text-sm font-bold text-[#182033] transition-[background-color,transform] hover:-translate-y-px hover:bg-[#D7B861]"
+          className="mt-4 rounded-[10px] border border-[#101D36] bg-[#101D36] px-4 py-2 text-sm font-bold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,transform] hover:-translate-y-px hover:bg-[#101D36]/95"
         >
           Clear filters
         </button>
@@ -472,15 +506,15 @@ function ForecastRequestCard({
         <button
           type="button"
           onClick={onToggleExpanded}
-          className="forecast-review-button inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#E5E8EF] bg-white px-4 text-sm font-bold text-[#182033] transition-[background-color,border-color,color,transform] hover:border-[#C9A44C] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none lg:ml-auto"
+          className="forecast-review-button inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,border-color,color,transform] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none lg:ml-auto"
           aria-expanded={isExpanded}
         >
-          Review Forecast
+          View Details
           {isExpanded ? (
-            <ChevronUp className="size-4" aria-hidden="true" />
+            <ChevronUp className="size-4 text-[#C9A44C]" aria-hidden="true" />
           ) : (
             <ArrowRight
-              className="forecast-review-arrow size-4"
+              className="forecast-review-arrow size-4 text-[#C9A44C]"
               aria-hidden="true"
             />
           )}
@@ -499,7 +533,7 @@ function ForecastRequestCard({
         </div>
         <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
           <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <Package className="size-4 text-[#3972D5]" />
+            <Package className="size-4 text-[#B18732]" />
             Products
           </dt>
           <dd className="mt-2 text-sm font-semibold text-[#182033]">
@@ -509,7 +543,7 @@ function ForecastRequestCard({
         </div>
         <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
           <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <Users className="size-4 text-[#168557]" />
+            <Users className="size-4 text-[#B18732]" />
             Doctors Covered
           </dt>
           <dd className="mt-2 text-sm font-semibold text-[#182033]">
@@ -661,10 +695,18 @@ export default function ForecastApprovalCenter({
   const [feedback, setFeedback] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const statusOptions = useMemo(
+  const statusCounts = useMemo(
     () =>
-      Array.from(new Set(forecasts.map(getForecastStatus))).sort((a, b) =>
-        statusMeta[a].label.localeCompare(statusMeta[b].label),
+      forecasts.reduce(
+        (acc, forecast) => {
+          acc[getForecastStatus(forecast)] += 1;
+          return acc;
+        },
+        {
+          pending: 0,
+          approved: 0,
+          rejected: 0,
+        } as Record<ForecastStatus, number>,
       ),
     [forecasts],
   );
@@ -818,7 +860,7 @@ export default function ForecastApprovalCenter({
             onSearchChange={setSearchQuery}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
-            statusOptions={statusOptions}
+            statusCounts={statusCounts}
             periodFilter={periodFilter}
             onPeriodFilterChange={setPeriodFilter}
             periodOptions={periodOptions}
@@ -852,6 +894,9 @@ export default function ForecastApprovalCenter({
               page={displayPage}
               limit={limit}
               totalCount={displayTotalCount}
+              itemLabel="forecast requests"
+              ariaLabel="Forecast pagination"
+              pageNavAriaLabel="Forecast request pages"
             />
           </div>
         )}

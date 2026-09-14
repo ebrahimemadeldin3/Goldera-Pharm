@@ -7,12 +7,19 @@ import Details from "./Details";
 import Accounts from "./Accounts";
 import TeamMembers from "./TeamMembers";
 import Performance from "./Performance";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import { Region } from "@/lib/types/regions";
 import { useState, useEffect } from "react";
 import { getRegionsAction } from "@/lib/requests/regions";
 import { PageContainer } from "@/components/layout/page-container";
+import { Files, Gauge, LayoutDashboard, UsersRound } from "lucide-react";
+import {
+  DocumentsEmploymentCard,
+  MemberInformationCard,
+  ProfileNavigation,
+  type ProfileTabId,
+  type ProfileTabItem,
+} from "./ProfileInfoCards";
 
 type ProfileClientProps = {
   memberDetails: User;
@@ -25,10 +32,11 @@ export default function ProfileClient({
   supervisorTeamMembers = [],
   backUrl,
 }: ProfileClientProps) {
-  const { role: currentUserRole } = useRoleUI();
+  const { role: currentUserRole, user: currentUser } = useRoleUI();
   const isManager = currentUserRole === "MANAGER";
   const isSupervisor = memberDetails.role === "SUPERVISOR";
   const [regions, setRegions] = useState<Region[]>([]);
+  const [activeTab, setActiveTab] = useState<ProfileTabId>("overview");
 
   const {
     isEditMode,
@@ -39,6 +47,43 @@ export default function ProfileClient({
     saveChanges,
     cancelEdit,
   } = useEditMember(memberDetails, currentUserRole as "MANAGER" | "SUPERVISOR");
+  const contextualMemberDetails =
+    currentUserRole === "SUPERVISOR" && !memberDetails.reportsTo
+      ? { ...memberDetails, reportsTo: currentUser.name }
+      : memberDetails;
+  const displayMemberDetails = isEditMode
+    ? {
+        ...contextualMemberDetails,
+        name: editedData.name,
+        email: editedData.email,
+        phone: editedData.phone,
+        region: editedData.region,
+        isActive: editedData.isActive,
+        role: editedData.role,
+      }
+    : contextualMemberDetails;
+  const hasPerformanceData =
+    isManager &&
+    ((typeof memberDetails.overall === "number" &&
+      Number.isFinite(memberDetails.overall)) ||
+      Boolean(
+        memberDetails.categories && memberDetails.categories.length > 0,
+      ) ||
+      Boolean(memberDetails.reviewedBy));
+  const hasTeamData =
+    isManager && isSupervisor && supervisorTeamMembers.length > 0;
+  const navigationItems: ProfileTabItem[] = [
+    { id: "overview", label: "Overview", icon: LayoutDashboard },
+    ...(isManager
+      ? [{ id: "documents", label: "Documents", icon: Files } as const]
+      : []),
+    ...(hasTeamData
+      ? [{ id: "team", label: "Team", icon: UsersRound } as const]
+      : []),
+    ...(hasPerformanceData
+      ? [{ id: "performance", label: "Performance", icon: Gauge } as const]
+      : []),
+  ];
 
   // Fetch regions lazily when edit mode is activated
   useEffect(() => {
@@ -65,25 +110,30 @@ export default function ProfileClient({
   }, [isEditMode, regions.length]);
 
   return (
-    <PageContainer className="flex flex-col gap-6">
+    <PageContainer className="member-profile-page bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden">
       <ProfileHeader
         memberDetails={memberDetails}
         backUrl={backUrl}
         isEditMode={isEditMode}
         isPending={isPending}
-        onToggleEdit={toggleEditMode}
+        onToggleEdit={() => {
+          setActiveTab("overview");
+          toggleEditMode();
+        }}
         onSave={saveChanges}
         onCancel={cancelEdit}
       />
 
       <Details
-        data={memberDetails}
+        data={contextualMemberDetails}
         isEditMode={isEditMode}
         editedData={{
           name: editedData.name,
+          email: editedData.email,
           phone: editedData.phone,
           region: editedData.region,
           isActive: editedData.isActive,
+          role: editedData.role,
         }}
         regions={regions}
         onFieldChange={(field, value) => {
@@ -91,83 +141,92 @@ export default function ProfileClient({
         }}
       />
 
-      {isManager && isSupervisor && supervisorTeamMembers.length > 0 && (
-        <TeamMembers members={supervisorTeamMembers} baseUrl="/manager/team" />
-      )}
-
-      {isManager && (
-        <Accounts
-          data={memberDetails}
-          isEditMode={isEditMode}
-          editedData={{
-            email: editedData.email,
-            employeeId: editedData.employeeId,
-            password: editedData.password,
-            role: editedData.role,
-          }}
-          onFieldChange={(field, value) =>
-            updateField(field as keyof typeof editedData, value as never)
-          }
+      {navigationItems.length > 1 && (
+        <ProfileNavigation
+          items={navigationItems}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
         />
       )}
 
-      {isManager &&
-        (memberDetails.overall ||
-          (memberDetails.categories && memberDetails.categories.length > 0) ||
-          memberDetails.reviewedBy) && (
-          <Performance performanceData={memberDetails} />
+      <section
+        id="member-profile-panel-overview"
+        role="tabpanel"
+        aria-labelledby={
+          navigationItems.length > 1 ? "member-profile-tab-overview" : undefined
+        }
+        aria-label={navigationItems.length > 1 ? undefined : "Overview"}
+        hidden={activeTab !== "overview"}
+      >
+        {activeTab === "overview" && (
+          <div
+            className={`member-profile-tab-panel grid grid-cols-1 gap-5 ${isManager ? "xl:grid-cols-2" : ""}`}
+          >
+            <MemberInformationCard data={displayMemberDetails} />
+
+            {isManager && (
+              <Accounts
+                data={contextualMemberDetails}
+                isEditMode={isEditMode}
+                editedData={{
+                  email: editedData.email,
+                  role: editedData.role,
+                }}
+                onFieldChange={(field, value) =>
+                  updateField(field as keyof typeof editedData, value as never)
+                }
+              />
+            )}
+          </div>
         )}
+      </section>
 
-      {!isManager && (
-        <Card className="border-secondary-light flex w-full flex-col gap-2 rounded-[14px] border-[0.8px] bg-white shadow-none">
-          <CardHeader>
-            <CardTitle className="text-dashboard-green text-[17px] font-semibold">
-              Additional Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-secondary-dark text-sm font-normal">
-                  Department
-                </span>
-                <span className="text-base font-normal text-black">
-                  {memberDetails.department || "Sales - Jeddah Region"}
-                </span>
-              </div>
-
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-secondary-dark text-sm font-normal">
-                  Employment Type
-                </span>
-                <span className="text-base font-normal text-black">
-                  Full-time
-                </span>
-              </div>
-
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-secondary-dark text-sm font-normal">
-                  Reports to
-                </span>
-                <span className="text-base font-normal text-black">
-                  {memberDetails.supervisor?.name || "Regional Supervisor"}
-                </span>
-              </div>
-
-              <div className="flex flex-col items-start gap-1">
-                <span className="text-secondary-dark text-sm font-normal">
-                  Location
-                </span>
-                <span className="text-base font-normal text-black">
-                  {memberDetails.region?.name &&
-                  memberDetails.region?.subRegion?.name
-                    ? `${memberDetails.region.name} - ${memberDetails.region.subRegion.name}`
-                    : "N/A"}
-                </span>
-              </div>
+      {isManager && (
+        <div
+          id="member-profile-panel-documents"
+          role="tabpanel"
+          aria-labelledby="member-profile-tab-documents"
+          hidden={activeTab !== "documents"}
+        >
+          {activeTab === "documents" && (
+            <div className="member-profile-tab-panel">
+              <DocumentsEmploymentCard data={displayMemberDetails} />
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
+      )}
+
+      {hasTeamData && (
+        <div
+          id="member-profile-panel-team"
+          role="tabpanel"
+          aria-labelledby="member-profile-tab-team"
+          hidden={activeTab !== "team"}
+        >
+          {activeTab === "team" && (
+            <div className="member-profile-tab-panel">
+              <TeamMembers
+                members={supervisorTeamMembers}
+                baseUrl="/manager/team"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {hasPerformanceData && (
+        <div
+          id="member-profile-panel-performance"
+          role="tabpanel"
+          aria-labelledby="member-profile-tab-performance"
+          hidden={activeTab !== "performance"}
+        >
+          {activeTab === "performance" && (
+            <div className="member-profile-tab-panel">
+              <Performance performanceData={memberDetails} />
+            </div>
+          )}
+        </div>
       )}
     </PageContainer>
   );

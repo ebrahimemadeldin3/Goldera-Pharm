@@ -1,135 +1,169 @@
 "use client";
 
-import {
-  Star,
-  TrendingUp,
-  Award,
-  CircleCheckBig,
-  SquarePen,
-} from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
+import type { CSSProperties } from "react";
+import { Award, CircleCheckBig, Star, TrendingUp } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { User } from "@/features/team/lib/types"
+import { User } from "@/features/team/lib/types";
+import {
+  formatMaybeDate,
+  MissingValue,
+  ProfilePanelHeader,
+} from "./ProfileInfoCards";
 
 export default function Performance({
   performanceData,
 }: {
   performanceData: User;
 }) {
+  const hasOverall =
+    typeof performanceData.overall === "number" &&
+    Number.isFinite(performanceData.overall);
+  const overall = hasOverall
+    ? Math.min(Math.max(performanceData.overall || 0, 0), 100)
+    : 0;
+  const lastReview = formatMaybeDate(performanceData.lastReview);
+  const nextReview = formatMaybeDate(performanceData.nextReview);
+
   return (
-    <Card className="border-secondary-light flex w-full flex-col gap-2 rounded-[14px] border-[0.8px] bg-white shadow-none">
-      <CardHeader className="flex items-center justify-start gap-1">
-        <Star size={20} className="text-gold" />
-        <h3 className="text-base font-normal text-black">
-          Performance Appraisal
-        </h3>
-        <div className="ml-auto rounded-xl bg-[#C9A961] px-2 py-0.5 text-xs font-medium text-white">
-          {performanceData.quarter || "Q4 2024"}
-        </div>
-      </CardHeader>
-      <CardContent className="mt-2 flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <div className="flex w-full items-center justify-between">
-            <div>
-              <p className="text-secondary-dark text-base font-normal">
-                Overall Performance Score
-              </p>
-              <div className="flex items-center gap-3 text-base font-normal">
-                <span className="text-[#0F172A]">
-                  {performanceData.overall || 0}%
-                </span>
-                <span className="text-dashboard-blue flex items-center gap-1">
-                  <TrendingUp size={16} />
-                  {performanceData.deltaLabel || "No data"}
-                </span>
-              </div>
-            </div>
-            <div className="gradient-brown flex size-16 items-center justify-center rounded-[10px] text-white">
-              <Award size={32} />
-            </div>
-          </div>
-          <Progress
-            value={performanceData.overall || 0}
-            className="*:bg-dashboard-blue h-3 rounded-full bg-[#2563EB33]"
+    <Card
+      className="member-profile-info-panel member-profile-section-enter border-gp-border-default bg-gp-surface-card shadow-gp-card gap-0 rounded-[16px] border py-0"
+      style={{ "--member-profile-delay": "260ms" } as CSSProperties}
+    >
+      <CardContent className="p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <ProfilePanelHeader
+            icon={Star}
+            title="Performance Appraisal"
+            description="Current review score, categories and manager feedback."
           />
-        </div>
-        <div>
-          <h4 className="text-secondary-dark text-base font-normal">
-            Performance Categories
-          </h4>
-          {performanceData.categories &&
-          performanceData.categories.length > 0 ? (
-            <div className="mt-3 grid grid-cols-1 gap-x-6 gap-y-3 md:grid-cols-2">
-              {performanceData.categories.map((category) => (
-                <div
-                  key={category.id}
-                  className="rounded-[10px] border border-[##D9D9D9] px-3 pt-3 pb-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="text-secondary-dark text-sm font-normal">
-                      {category.title}
-                    </div>
-                    <div className="text-base font-normal text-black">
-                      {category.value}%
-                    </div>
-                  </div>
-                  <Progress
-                    value={category.value}
-                    className="bg-secondary-light *:bg-dashboard-blue mt-2 h-2 rounded-full"
-                  />
-                </div>
-              ))}
-            </div>
+          {performanceData.quarter ? (
+            <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex h-7 shrink-0 items-center rounded-full border px-3 text-xs font-bold">
+              {performanceData.quarter}
+            </span>
           ) : (
-            <div className="mt-3 rounded-[10px] border border-[#D9D9D9] p-6 text-center">
-              <p className="text-secondary-dark text-sm">
-                No performance categories available
-              </p>
-            </div>
+            <span className="border-gp-border-subtle bg-gp-surface-subtle text-gp-text-placeholder inline-flex h-7 shrink-0 items-center rounded-full border px-3 text-xs font-semibold">
+              Period not set
+            </span>
           )}
         </div>
-        <div className="border-secondary-light bg-secondary-very-light flex flex-col justify-start gap-1 rounded-[10px] border p-3">
-          <div className="flex items-center gap-2 text-base font-normal text-black">
-            <CircleCheckBig size={16} />
-            <span className="text-base font-medium">Manager Comments</span>
-          </div>
-          <span className="text-secondary-dark ml-6 text-sm font-normal">
-            {performanceData.managerComments || "No comments available yet"}
-          </span>
+
+        <div className="mt-6 grid gap-5">
+          <section className="border-gp-border-subtle bg-gp-surface-subtle rounded-[14px] border p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-gp-text-muted text-[11px] font-semibold tracking-[0.04em] uppercase">
+                  Overall Performance Score
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <span className="text-gp-text-primary text-2xl leading-none font-semibold">
+                    {hasOverall ? (
+                      `${overall}%`
+                    ) : (
+                      <MissingValue>Not scored</MissingValue>
+                    )}
+                  </span>
+                  {performanceData.deltaLabel && (
+                    <span className="text-gp-success inline-flex items-center gap-1 text-sm font-semibold">
+                      <TrendingUp className="size-4" aria-hidden="true" />
+                      {performanceData.deltaLabel}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 flex size-12 shrink-0 items-center justify-center rounded-[12px] border">
+                <Award className="size-6" aria-hidden="true" />
+              </span>
+            </div>
+            <Progress
+              value={overall}
+              className="bg-gp-border-subtle mt-4 h-2.5"
+              indicatorClassName="bg-gp-gold-500"
+            />
+          </section>
+
+          <section>
+            <h3 className="text-gp-navy-900 text-sm font-semibold">
+              Performance Categories
+            </h3>
+            {performanceData.categories &&
+            performanceData.categories.length > 0 ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                {performanceData.categories.map((category) => (
+                  <div
+                    key={category.id}
+                    className="member-profile-category-card border-gp-border-subtle rounded-[12px] border bg-white p-3.5"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="text-gp-text-secondary min-w-0 truncate text-sm font-semibold">
+                        {category.title}
+                      </div>
+                      <div className="text-gp-text-primary shrink-0 text-sm font-bold">
+                        {category.value}%
+                      </div>
+                    </div>
+                    <Progress
+                      value={Math.min(Math.max(category.value, 0), 100)}
+                      className="bg-gp-border-subtle mt-3 h-2"
+                      indicatorClassName="bg-gp-gold-500"
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border-gp-border-control bg-gp-surface-subtle mt-3 rounded-[12px] border border-dashed p-6 text-center">
+                <p className="text-gp-text-muted text-sm font-medium">
+                  No performance categories available.
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="border-gp-border-subtle bg-gp-surface-subtle rounded-[12px] border p-4">
+            <div className="text-gp-text-primary flex items-center gap-2 text-sm font-semibold">
+              <CircleCheckBig
+                className="text-gp-gold-700 size-4"
+                aria-hidden="true"
+              />
+              Manager Comments
+            </div>
+            <p className="text-gp-text-muted mt-2 text-sm leading-6 font-medium">
+              {performanceData.managerComments || "No comments available yet."}
+            </p>
+          </section>
         </div>
       </CardContent>
-      <CardFooter className="mt-2 flex w-full flex-col gap-6">
-        <div className="borrder-[#D9D9D9] flex w-full flex-wrap items-center justify-between gap-4 border-t py-4 pr-6 *:flex *:flex-col *:justify-start sm:pr-30">
-          <div>
-            <span className="text-secondary-dark text-base">Reviewed By</span>
-            <span className="mt-1 text-base font-medium text-[#0F172A]">
-              {performanceData.reviewedBy || "Not reviewed"}
-            </span>
+
+      <footer className="border-gp-border-subtle border-t p-5">
+        <dl className="grid w-full grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="min-w-0">
+            <dt className="text-gp-text-muted text-[11px] font-semibold tracking-[0.04em] uppercase">
+              Reviewed By
+            </dt>
+            <dd className="text-gp-text-primary mt-1 truncate text-sm font-semibold">
+              {performanceData.reviewedBy || (
+                <MissingValue>Not reviewed</MissingValue>
+              )}
+            </dd>
           </div>
-          <div>
-            <span className="text-secondary-dark text-base">Last Review</span>
-            <span className="mt-1 text-base font-medium text-[#0F172A]">
-              {performanceData.lastReview || "N/A"}
-            </span>
+          <div className="min-w-0">
+            <dt className="text-gp-text-muted text-[11px] font-semibold tracking-[0.04em] uppercase">
+              Last Review
+            </dt>
+            <dd className="text-gp-text-primary mt-1 truncate text-sm font-semibold">
+              {lastReview || <MissingValue>Not provided</MissingValue>}
+            </dd>
           </div>
-          <div>
-            <span className="text-secondary-dark text-base">Next Review</span>
-            <span className="mt-1 text-base font-medium text-[#0F172A]">
-              {performanceData.nextReview || "N/A"}
-            </span>
+          <div className="min-w-0">
+            <dt className="text-gp-text-muted text-[11px] font-semibold tracking-[0.04em] uppercase">
+              Next Review
+            </dt>
+            <dd className="text-gp-text-primary mt-1 truncate text-sm font-semibold">
+              {nextReview || <MissingValue>Not provided</MissingValue>}
+            </dd>
           </div>
-        </div>
-        <Button className="bg-gold hover:text-gold hover:border-gold ml-auto cursor-pointer rounded-[7px] border border-transparent text-sm font-medium text-white hover:bg-white">
-          <SquarePen className="h-4 w-4" />
-          Update Appraisal
-        </Button>
-      </CardFooter>
+        </dl>
+      </footer>
     </Card>
   );
 }

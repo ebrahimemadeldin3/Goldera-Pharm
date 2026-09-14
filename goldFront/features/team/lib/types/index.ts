@@ -34,14 +34,14 @@ export type User = {
   supervisor?: {
     id: string;
     name: string;
-    email: string;
-    phone: string;
+    email?: string;
+    phone?: string;
   };
   manager?: {
     id: string;
     name: string;
-    email: string;
-    phone: string;
+    email?: string;
+    phone?: string;
   };
 
   // Personal Information
@@ -120,18 +120,33 @@ export type AddMemberFormData = {
 export type SubRegion = {
   id: string;
   name: string;
-  regionId: string;
-  createdAt: string;
-  updatedAt: string;
+  regionId?: string;
+  region?: {
+    id: string;
+    name: string;
+  };
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type UserReference = {
   id: string;
   name: string;
-  email: string;
-  phone: string | null;
-  role: UserRole;
+  email?: string;
+  phone?: string | null;
+  role?: UserRole;
 };
+
+export type UserApiDocument =
+  | string
+  | {
+      url?: string;
+      secure_url?: string;
+      public_id?: string;
+      name?: string;
+      originalname?: string;
+    }
+  | null;
 
 export type UserApiResponse = {
   id: string;
@@ -139,7 +154,9 @@ export type UserApiResponse = {
   email: string;
   phone: string | null;
   role: UserRole;
-  password: string;
+  password?: string;
+  employeeId?: string | null;
+  employee_id?: string | null;
   dateOfBirth: string;
   dateOfRecruitment: string;
   department: string | null;
@@ -148,8 +165,8 @@ export type UserApiResponse = {
   educationBackground: string | null;
   iqamaNumber: string;
   passportNumber: string | null;
-  resume: string | null;
-  certificates: string[];
+  resume: UserApiDocument;
+  certificates: UserApiDocument[];
   lastLogin: string | null;
   profileImage: {
     url: string;
@@ -169,6 +186,10 @@ export type UserApiResponse = {
       name: string;
     };
   };
+  regions?: Array<{
+    id: string;
+    name: string;
+  }>;
   supervisorId: string | null;
   managerId: string | null;
   supervisor: UserReference | null;
