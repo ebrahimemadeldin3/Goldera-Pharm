@@ -53,9 +53,9 @@ function VisitSummaryCard({
   return (
     <article
       className={cn(
-        "visits-kpi-card visits-page-enter group/kpi flex min-h-[96px] items-start justify-between gap-4 rounded-[14px] p-4 sm:p-4.5 shadow-none transition-all",
+        "visits-kpi-card visits-page-enter group/kpi flex min-h-[96px] items-start justify-between gap-4 rounded-[14px] p-4 shadow-none transition-all sm:p-4.5",
         cardBorder,
-        isPrimary && "shadow-[0_4px_16px_rgba(22,133,87,0.08)]"
+        isPrimary && "shadow-[0_4px_16px_rgba(22,133,87,0.08)]",
       )}
       style={
         {
@@ -69,7 +69,7 @@ function VisitSummaryCard({
             {label}
           </p>
           {isPrimary && (
-            <span className="inline-flex rounded-full bg-[#168557] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white">
+            <span className="inline-flex rounded-full bg-[#168557] px-2 py-0.5 text-[9px] font-bold tracking-wider text-white uppercase">
               Primary Focus
             </span>
           )}
@@ -84,7 +84,7 @@ function VisitSummaryCard({
       <span
         className={cn(
           "flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover/kpi:scale-105",
-          iconBg
+          iconBg,
         )}
       >
         <Icon className="size-5" aria-hidden="true" />
@@ -133,6 +133,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
 
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
 
   const completionPercent =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
@@ -154,7 +155,10 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
           id: "completed-visits",
           label: "Completed",
           value: stats.completed,
-          helper: stats.total > 0 ? `${completionPercent}% completion rate` : "Reports submitted",
+          helper:
+            stats.total > 0
+              ? `${completionPercent}% completion rate`
+              : "Reports submitted",
           icon: CheckCircle2,
           isPrimary: false,
           iconBg: "bg-[#E9F8F1] text-[#168557]",
@@ -173,41 +177,80 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
           animationDelay: "120ms",
         },
       ]
-    : [
-        {
-          id: "total-visits",
-          label: "Total Visits",
-          value: stats.total,
-          helper: "All scheduled records",
-          icon: CalendarDays,
-          isPrimary: false,
-          iconBg: "bg-[#EEF4FF] text-[#3972D5]",
-          cardBorder: "border-[#E5E8EF] bg-white",
-          animationDelay: "0ms",
-        },
-        {
-          id: "completed-visits",
-          label: "Completed",
-          value: stats.completed,
-          helper: "Reports submitted",
-          icon: CheckCircle2,
-          isPrimary: false,
-          iconBg: "bg-[#E9F8F1] text-[#168557]",
-          cardBorder: "border-[#E5E8EF] bg-white",
-          animationDelay: "60ms",
-        },
-        {
-          id: "today-visits",
-          label: "Today",
-          value: stats.today,
-          helper: "Scheduled for today",
-          icon: Clock3,
-          isPrimary: false,
-          iconBg: "bg-[#FFF3D7] text-[#B18732]",
-          cardBorder: "border-[#E5E8EF] bg-white",
-          animationDelay: "120ms",
-        },
-      ];
+    : isManager
+      ? [
+          {
+            id: "total-visits",
+            label: "Total Visits",
+            value: stats.total,
+            helper: "All scheduled",
+            icon: CalendarDays,
+            isPrimary: false,
+            iconBg: "border border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]",
+            cardBorder:
+              "border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#DDE3EE] hover:shadow-[0_8px_22px_rgba(16,29,54,0.06)]",
+            animationDelay: "0ms",
+          },
+          {
+            id: "completed-visits",
+            label: "Completed",
+            value: stats.completed,
+            helper: "Reports submitted",
+            icon: CheckCircle2,
+            isPrimary: false,
+            iconBg: "border border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]",
+            cardBorder:
+              "border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#DDE3EE] hover:shadow-[0_8px_22px_rgba(16,29,54,0.06)]",
+            animationDelay: "60ms",
+          },
+          {
+            id: "today-visits",
+            label: "Today",
+            value: stats.today,
+            helper: "Scheduled for today",
+            icon: Clock3,
+            isPrimary: false,
+            iconBg: "border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]",
+            cardBorder:
+              "border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)] hover:border-[#DDE3EE] hover:shadow-[0_8px_22px_rgba(16,29,54,0.06)]",
+            animationDelay: "120ms",
+          },
+        ]
+      : [
+          {
+            id: "total-visits",
+            label: "Total Visits",
+            value: stats.total,
+            helper: "All scheduled records",
+            icon: CalendarDays,
+            isPrimary: false,
+            iconBg: "bg-[#EEF4FF] text-[#3972D5]",
+            cardBorder: "border-[#E5E8EF] bg-white",
+            animationDelay: "0ms",
+          },
+          {
+            id: "completed-visits",
+            label: "Completed",
+            value: stats.completed,
+            helper: "Reports submitted",
+            icon: CheckCircle2,
+            isPrimary: false,
+            iconBg: "bg-[#E9F8F1] text-[#168557]",
+            cardBorder: "border-[#E5E8EF] bg-white",
+            animationDelay: "60ms",
+          },
+          {
+            id: "today-visits",
+            label: "Today",
+            value: stats.today,
+            helper: "Scheduled for today",
+            icon: Clock3,
+            isPrimary: false,
+            iconBg: "bg-[#FFF3D7] text-[#B18732]",
+            cardBorder: "border-[#E5E8EF] bg-white",
+            animationDelay: "120ms",
+          },
+        ];
 
   return (
     <>
@@ -217,7 +260,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
             <Button
               type="button"
               onClick={() => setDialogOpen(true)}
-              className="visits-add-trigger group inline-flex h-10 items-center justify-center gap-2 rounded-[10px] bg-gp-rep-primary px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:-translate-y-px hover:bg-gp-rep-primary-hover hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30 cursor-pointer"
+              className="visits-add-trigger group bg-gp-rep-primary hover:bg-gp-rep-primary-hover focus-visible:ring-gp-rep-primary/30 inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:outline-none"
             >
               <CalendarPlus
                 className="visits-add-trigger-icon h-4 w-4"
@@ -233,7 +276,14 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
         ) : (
           <header className="visits-page-enter flex w-full flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
-              <h1 className="text-[26px] leading-tight font-semibold text-[#182033] sm:text-[30px]">
+              <h1
+                className={cn(
+                  "leading-tight font-semibold text-[#182033]",
+                  isManager
+                    ? "text-[30px] sm:text-[34px]"
+                    : "text-[26px] sm:text-[30px]",
+                )}
+              >
                 Visit Calendar
               </h1>
               <p className="mt-1 max-w-2xl text-sm leading-6 text-[#667085]">
@@ -247,12 +297,17 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
                 type="button"
                 onClick={() => setDialogOpen(true)}
                 className={cn(
-                  "visits-add-trigger group h-11 w-full items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto cursor-pointer",
-                  "bg-[#C9A44C] hover:bg-[#B18732] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                  "visits-add-trigger group h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto",
+                  isManager
+                    ? "bg-[#101D36] shadow-[0_8px_18px_rgba(16,29,54,0.16)] hover:bg-[#182033] hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25"
+                    : "bg-[#C9A44C] shadow-[0_4px_14px_rgba(201,164,76,0.25)] hover:bg-[#B18732] hover:shadow-[0_8px_20px_rgba(201,164,76,0.3)] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30",
                 )}
               >
                 <CalendarPlus
-                  className="visits-add-trigger-icon h-4 w-4"
+                  className={cn(
+                    "visits-add-trigger-icon h-4 w-4",
+                    isManager && "text-[#D4AF4F]",
+                  )}
                   aria-hidden="true"
                 />
                 Add Visit

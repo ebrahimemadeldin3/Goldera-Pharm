@@ -78,7 +78,10 @@ function VisitCalendarDayButton({
   isRep = false,
   children,
   ...props
-}: DayButtonProps & { statusDotsByDate: Map<string, VisitStatus[]>; isRep?: boolean }) {
+}: DayButtonProps & {
+  statusDotsByDate: Map<string, VisitStatus[]>;
+  isRep?: boolean;
+}) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dateKey = formatDateOnly(day.date);
   const rawStatusDots = statusDotsByDate.get(dateKey) ?? [];
@@ -92,7 +95,11 @@ function VisitCalendarDayButton({
   }, []);
 
   const dayStart = useMemo(() => {
-    return new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+    return new Date(
+      day.date.getFullYear(),
+      day.date.getMonth(),
+      day.date.getDate(),
+    );
   }, [day.date]);
 
   const isPast = isRep && dayStart < todayStart;
@@ -108,18 +115,28 @@ function VisitCalendarDayButton({
     ? "size-9 sm:size-10 mx-auto opacity-35 cursor-not-allowed pointer-events-none text-[#98A2B3] border-transparent bg-transparent hover:bg-transparent hover:text-[#98A2B3] shadow-none"
     : cn(
         "size-9 sm:size-10 mx-auto text-[#182033] hover:bg-gp-rep-primary-soft hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/25",
-        modifiers.outside && "text-[#98A2B3] opacity-40 hover:bg-transparent hover:text-[#98A2B3]",
-        modifiers.today && !modifiers.selected && "border border-gp-rep-primary font-bold text-gp-rep-primary bg-transparent hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary shadow-none",
+        modifiers.outside &&
+          "text-[#98A2B3] opacity-40 hover:bg-transparent hover:text-[#98A2B3]",
+        modifiers.today &&
+          !modifiers.selected &&
+          "border border-gp-rep-primary font-bold text-gp-rep-primary bg-transparent hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary shadow-none",
         "data-[range-middle=true]:bg-gp-rep-primary-soft data-[range-middle=true]:text-gp-rep-primary data-[range-middle=true]:rounded-none",
         "data-[range-start=true]:bg-gp-rep-primary data-[range-start=true]:text-white",
         "data-[range-end=true]:bg-gp-rep-primary data-[range-end=true]:text-white",
-        "data-[selected-single=true]:bg-gp-rep-primary data-[selected-single=true]:text-white data-[selected-single=true]:border-transparent data-[selected-single=true]:shadow-[0_4px_10px_rgba(22,133,87,0.22)]"
+        "data-[selected-single=true]:bg-gp-rep-primary data-[selected-single=true]:text-white data-[selected-single=true]:border-transparent data-[selected-single=true]:shadow-[0_4px_10px_rgba(22,133,87,0.22)]",
       );
 
   const managerDayClasses = cn(
-    "text-[#182033] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
+    "size-9 sm:size-10 mx-auto text-[#182033] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
+    modifiers.outside &&
+      "text-[#98A2B3] opacity-40 hover:bg-transparent hover:text-[#98A2B3]",
+    modifiers.today &&
+      !modifiers.selected &&
+      "border-[#C9A44C] bg-white text-[#101D36] shadow-[0_0_0_2px_rgba(201,164,76,0.08)]",
     "data-[range-middle=true]:bg-[#F8F1DC] data-[range-middle=true]:rounded-none",
-    "data-[selected-single=true]:bg-[#101D36] data-[selected-single=true]:text-white data-[selected-single=true]:shadow-[0_6px_14px_rgba(16,29,54,0.22)]"
+    "data-[range-start=true]:bg-[#101D36] data-[range-start=true]:text-white",
+    "data-[range-end=true]:bg-[#101D36] data-[range-end=true]:text-white",
+    "data-[selected-single=true]:bg-[#101D36] data-[selected-single=true]:text-white data-[selected-single=true]:shadow-[0_6px_14px_rgba(16,29,54,0.22)]",
   );
 
   return (
@@ -137,7 +154,11 @@ function VisitCalendarDayButton({
       data-range-start={!isPast && modifiers.range_start}
       data-range-end={!isPast && modifiers.range_end}
       data-range-middle={!isPast && modifiers.range_middle}
-      className={cn(baseDayClasses, isRep ? repDayClasses : managerDayClasses, className)}
+      className={cn(
+        baseDayClasses,
+        isRep ? repDayClasses : managerDayClasses,
+        className,
+      )}
       {...props}
     >
       <span className="visit-calendar-day-number">{children}</span>
@@ -173,6 +194,7 @@ export default function VisitsPlanner({
 
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
 
   const statusDotsByDate = useMemo(() => {
     const statusSetsByDate = new Map<string, Set<VisitStatus>>();
@@ -236,9 +258,17 @@ export default function VisitsPlanner({
 
   function selectDate(nextDate: Date) {
     if (isRep) {
-      const nextStart = new Date(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
+      const nextStart = new Date(
+        nextDate.getFullYear(),
+        nextDate.getMonth(),
+        nextDate.getDate(),
+      );
       const now = new Date();
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const todayStart = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+      );
       if (nextStart < todayStart) {
         return; // Prevent selecting past dates
       }
@@ -297,7 +327,12 @@ export default function VisitsPlanner({
   const resultsMotionKey = `${mode}-${formatDateOnly(selected)}-${trimmedSearchQuery}-${filteredVisits.length}`;
 
   return (
-    <section className="visits-page-enter visits-page-enter-delay-2 overflow-hidden rounded-[18px] border border-[#E5E8EF] bg-white shadow-none">
+    <section
+      className={cn(
+        "visits-page-enter visits-page-enter-delay-2 overflow-hidden rounded-[18px] border border-[#E5E8EF] bg-white",
+        isManager ? "shadow-[0_1px_2px_rgba(16,24,40,0.04)]" : "shadow-none",
+      )}
+    >
       <div className="border-b border-[#EEF1F6] px-4 py-5 sm:px-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
@@ -305,7 +340,11 @@ export default function VisitsPlanner({
               <span
                 className={cn(
                   "flex size-10 shrink-0 items-center justify-center rounded-[10px]",
-                  isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-[#FBF7EA] text-[#B18732]"
+                  isRep
+                    ? "bg-[#E9F8F1] text-[#168557]"
+                    : isManager
+                      ? "border border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]"
+                      : "bg-[#FBF7EA] text-[#B18732]",
                 )}
               >
                 <CalendarDays className="size-5" aria-hidden="true" />
@@ -338,7 +377,8 @@ export default function VisitsPlanner({
               <span
                 className={cn(
                   "visits-mode-switch-indicator",
-                  isRep && "visits-mode-switch-indicator-rep"
+                  isManager && "visits-mode-switch-indicator-manager",
+                  isRep && "visits-mode-switch-indicator-rep",
                 )}
                 aria-hidden="true"
               />
@@ -360,14 +400,18 @@ export default function VisitsPlanner({
                       "visits-mode-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
                       isActive
                         ? isRep
-                          ? "text-[#168557] font-bold"
-                          : "text-[#182033]"
+                          ? "font-bold text-[#168557]"
+                          : isManager
+                            ? "text-white"
+                            : "text-[#182033]"
                         : isRep
-                        ? "text-[#667085] hover:text-[#168557]"
-                        : "text-[#667085]",
+                          ? "text-[#667085] hover:text-[#168557]"
+                          : isManager
+                            ? "text-[#344054] hover:text-[#101D36]"
+                            : "text-[#667085]",
                       isRep
                         ? "focus-visible:ring-2 focus-visible:ring-[#168557]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA]"
-                        : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA]"
+                        : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30 focus-visible:ring-offset-1 focus-visible:ring-offset-[#F5F7FA]",
                     )}
                   >
                     <span className="truncate">{label}</span>
@@ -380,7 +424,7 @@ export default function VisitsPlanner({
               <Search
                 className={cn(
                   "visits-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]",
-                  isRep && "group-focus-within:text-[#168557]"
+                  isRep && "group-focus-within:text-[#168557]",
                 )}
                 aria-hidden="true"
               />
@@ -393,7 +437,9 @@ export default function VisitsPlanner({
                   "visits-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3]",
                   isRep
                     ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30 focus:ring-2 focus:ring-[#168557]/20"
-                    : "focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0"
+                    : isManager
+                      ? "focus:border-[#101D36] focus:bg-white focus:ring-2 focus:ring-[#C9A44C]/10"
+                      : "focus:border-[#C9A44C] focus:bg-[#FFFDF7] focus:ring-0",
                 )}
               />
               {searchQuery && (
@@ -405,7 +451,7 @@ export default function VisitsPlanner({
                     "visits-search-clear absolute top-1/2 right-2.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full text-[#98A2B3] transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
                     isRep
                       ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
-                      : "hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+                      : "hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
                   )}
                 >
                   <X className="size-3.5" aria-hidden="true" />
@@ -433,7 +479,7 @@ export default function VisitsPlanner({
                 "inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
                 isRep
                   ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349] focus-visible:ring-2 focus-visible:ring-[#168557]/25"
-                  : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25"
+                  : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25",
               )}
             >
               <RotateCcw className="size-3.5" aria-hidden="true" />
@@ -456,16 +502,18 @@ export default function VisitsPlanner({
                   : `${weekRangeLabel} selected`}
               </p>
             </div>
-            <span
-              className={cn(
-                "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold",
-                isRep
-                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
-                  : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
-              )}
-            >
-              STATUS
-            </span>
+            {!isManager && (
+              <span
+                className={cn(
+                  "inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                  isRep
+                    ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                    : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]",
+                )}
+              >
+                STATUS
+              </span>
+            )}
           </div>
 
           <div
@@ -484,14 +532,14 @@ export default function VisitsPlanner({
                       before: new Date(
                         new Date().getFullYear(),
                         new Date().getMonth(),
-                        new Date().getDate()
+                        new Date().getDate(),
                       ),
                     }
                   : undefined
               }
               className={cn(
                 "visits-calendar rounded-none bg-transparent p-0",
-                isRep && "visits-calendar-rep"
+                isRep && "visits-calendar-rep",
               )}
               components={{
                 DayButton: (dayButtonProps) => (
@@ -512,15 +560,24 @@ export default function VisitsPlanner({
             {isRep ? (
               <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] font-medium text-[#667085]">
                 <div className="flex items-center gap-1.5">
-                  <span className="size-2 shrink-0 rounded-xs bg-[#168557]" aria-hidden="true" />
+                  <span
+                    className="size-2 shrink-0 rounded-xs bg-[#168557]"
+                    aria-hidden="true"
+                  />
                   <span>Selected</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="size-2 shrink-0 rounded-full border border-[#168557] bg-transparent" aria-hidden="true" />
+                  <span
+                    className="size-2 shrink-0 rounded-full border border-[#168557] bg-transparent"
+                    aria-hidden="true"
+                  />
                   <span>Today</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="size-2 shrink-0 rounded-full bg-[#D92D20]" aria-hidden="true" />
+                  <span
+                    className="size-2 shrink-0 rounded-full bg-[#D92D20]"
+                    aria-hidden="true"
+                  />
                   <span>Cancelled</span>
                 </div>
               </div>
@@ -548,7 +605,10 @@ export default function VisitsPlanner({
 
         <section
           id="visits-results-panel"
-          className="visits-results-panel min-w-0 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white"
+          className={cn(
+            "visits-results-panel min-w-0 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white",
+            isManager && "shadow-[0_1px_2px_rgba(16,24,40,0.03)]",
+          )}
         >
           <div className="flex flex-col gap-3 border-b border-[#EEF1F6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="min-w-0">
@@ -572,7 +632,7 @@ export default function VisitsPlanner({
                       "visits-week-nav-button visits-week-nav-button-prev inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:ring-2 focus-visible:outline-none",
                       isRep
                         ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-[#168557]/25"
-                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25"
+                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25",
                     )}
                   >
                     <ChevronLeft className="size-4" aria-hidden="true" />
@@ -590,7 +650,7 @@ export default function VisitsPlanner({
                       "visits-week-nav-button visits-week-nav-button-next inline-flex size-7 items-center justify-center rounded-[8px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:ring-2 focus-visible:outline-none",
                       isRep
                         ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-[#168557]/25"
-                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25"
+                        : "hover:bg-white hover:text-[#8A6515] focus-visible:ring-[#C9A44C]/25",
                     )}
                   >
                     <ChevronRight className="size-4" aria-hidden="true" />
@@ -614,6 +674,7 @@ export default function VisitsPlanner({
                 visits={filteredVisits}
                 reportBasePath={reportBasePath}
                 isSearching={isSearching}
+                managerTheme={isManager}
               />
             ) : (
               <WeekVisitsPanel
@@ -622,6 +683,7 @@ export default function VisitsPlanner({
                 reportBasePath={reportBasePath}
                 selectedDate={selected}
                 isSearching={isSearching}
+                managerTheme={isManager}
               />
             )}
           </div>

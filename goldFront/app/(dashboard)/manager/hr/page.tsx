@@ -45,7 +45,7 @@ export default async function Page({ searchParams }: HRPageProps) {
 
   if (!result.success || !result.data) {
     return (
-      <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5">
+      <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden">
         <HRPageHeader />
         <section
           role="alert"

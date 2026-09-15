@@ -7,13 +7,19 @@ import { PageContainer } from "@/components/layout/page-container";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
- 
-  const visitsResponse = await getManagerVisitsAction(undefined, undefined, false);
-  const visits = visitsResponse.success && visitsResponse.visits ? visitsResponse.visits : [];
+  const visitsResponse = await getManagerVisitsAction(
+    undefined,
+    undefined,
+    false,
+  );
+  const visits =
+    visitsResponse.success && visitsResponse.visits
+      ? visitsResponse.visits
+      : [];
   const stats = calculateVisitStats(visits);
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
+    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
       <VisitsHeader role="MANAGER" stats={stats} />
       <div className="mt-6">
         <VisitsPlanner

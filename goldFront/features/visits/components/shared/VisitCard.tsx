@@ -26,6 +26,7 @@ type VisitCardProps = {
   visit: Visit;
   reportBasePath?: string;
   animationDelay?: string;
+  managerTheme?: boolean;
 };
 
 const statusBadgeStyles: Record<VisitStatus, string> = {
@@ -46,10 +47,13 @@ export default function VisitCard({
   visit,
   reportBasePath,
   animationDelay = "0ms",
+  managerTheme = false,
 }: VisitCardProps) {
   const pathname = usePathname();
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager =
+    managerTheme || role === "MANAGER" || pathname?.startsWith("/manager");
   const [showTechDetails, setShowTechDetails] = useState(false);
 
   const createdAtLabel = visit.createdAt
@@ -67,10 +71,11 @@ export default function VisitCard({
   return (
     <Card
       className={cn(
-        "visits-record-card visits-row-enter group/visit flex flex-col gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none focus-within:outline-none",
+        "visits-record-card visits-row-enter group/visit flex flex-col gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 focus-within:outline-none",
+        isManager ? "shadow-[0_1px_2px_rgba(16,24,40,0.04)]" : "shadow-none",
         isRep
           ? "focus-within:ring-2 focus-within:ring-[#168557]/25"
-          : "focus-within:ring-2 focus-within:ring-[#C9A44C]/25"
+          : "focus-within:ring-2 focus-within:ring-[#C9A44C]/25",
       )}
       style={
         {
@@ -85,7 +90,9 @@ export default function VisitCard({
               "flex size-10 shrink-0 items-center justify-center rounded-[10px] border",
               isRep
                 ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
-                : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
+                : isManager
+                  ? "border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]"
+                  : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]",
             )}
           >
             <UserRound className="size-5" aria-hidden="true" />
@@ -193,7 +200,7 @@ export default function VisitCard({
             "inline-flex items-center gap-1.5 rounded-full px-1 text-[11px] font-semibold text-[#667085] transition-colors duration-[150ms] focus-visible:outline-none",
             isRep
               ? "hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-              : "hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+              : "hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
           )}
         >
           {showTechDetails ? (

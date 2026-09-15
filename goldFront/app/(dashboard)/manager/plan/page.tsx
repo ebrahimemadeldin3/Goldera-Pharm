@@ -5,7 +5,11 @@ import { ClipboardList } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: { page?: string; limit?: string };
+}) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
@@ -15,7 +19,7 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
 
   if (!plansResult.success || !plansResult.data) {
     return (
-      <PageContainer>
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
         <div className="text-dashboard-red flex items-center justify-center rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-sm">
             {plansResult.error?.message || "Failed to load plans"}
@@ -26,7 +30,7 @@ export default async function Page({ searchParams }: { searchParams?: { page?: s
   }
 
   return (
-    <PageContainer className="space-y-5">
+    <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
       <header className="relative overflow-hidden py-0.5">
         <span
           className="pointer-events-none absolute inset-x-0 -bottom-8 h-16 bg-[linear-gradient(100deg,rgba(201,164,76,0.14)_0%,rgba(201,164,76,0)_42%,rgba(16,29,54,0.06)_100%)]"

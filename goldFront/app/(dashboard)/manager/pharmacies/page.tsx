@@ -39,7 +39,7 @@ export default async function Page({
     typeof result.results === "number" ? result.results : pharmacies.length;
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
+    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
       <PharmaciesHeader pharmacies={pharmacies} totalCount={totalCount} />
       <PharmaciesList
         pharmacies={pharmacies}

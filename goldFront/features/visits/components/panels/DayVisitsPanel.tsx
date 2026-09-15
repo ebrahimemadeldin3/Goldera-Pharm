@@ -18,6 +18,7 @@ type DayVisitsPanelProps = {
   visits: Visit[];
   reportBasePath?: string;
   isSearching?: boolean;
+  managerTheme?: boolean;
 };
 
 export default function DayVisitsPanel({
@@ -25,10 +26,13 @@ export default function DayVisitsPanel({
   visits,
   reportBasePath,
   isSearching = false,
+  managerTheme = false,
 }: DayVisitsPanelProps) {
   const pathname = usePathname();
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager =
+    managerTheme || role === "MANAGER" || pathname?.startsWith("/manager");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
   const [expanded, setExpanded] = useState(false);
@@ -68,9 +72,11 @@ export default function DayVisitsPanel({
           <span
             className={cn(
               "flex size-12 items-center justify-center rounded-full",
-              role === "MEDICAL_REP"
+              isRep
                 ? "bg-gp-rep-primary-soft text-gp-rep-primary"
-                : "bg-[#FFF8E5] text-[#B18732]"
+                : isManager
+                  ? "border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]"
+                  : "bg-[#FFF8E5] text-[#B18732]",
             )}
           >
             <Calendar className="size-5" aria-hidden="true" />
@@ -86,13 +92,18 @@ export default function DayVisitsPanel({
               type="button"
               onClick={handleOpenSchedule}
               className={cn(
-                "inline-flex h-10 items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none cursor-pointer",
-                role === "MEDICAL_REP"
+                "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none",
+                isRep
                   ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
-                  : "border border-[#C9A44C] bg-white text-[#8A6515] hover:bg-[#FFF8E5] hover:text-[#182033]"
+                  : isManager
+                    ? "border border-[#E9DDB8] bg-white text-[#101D36] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#101D36] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                    : "border border-[#C9A44C] bg-white text-[#8A6515] hover:bg-[#FFF8E5] hover:text-[#182033]",
               )}
             >
-              <Plus className="size-4" aria-hidden="true" />
+              <Plus
+                className={cn("size-4", isManager && "text-[#C9A44C]")}
+                aria-hidden="true"
+              />
               Schedule Visit
             </button>
             <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
@@ -109,6 +120,7 @@ export default function DayVisitsPanel({
                 visit={v}
                 reportBasePath={reportBasePath}
                 animationDelay={`${Math.min(index * 24, 120)}ms`}
+                managerTheme={isManager}
               />
             ))}
           </div>
@@ -121,8 +133,8 @@ export default function DayVisitsPanel({
                 className={cn(
                   "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
                   isRep
-                    ? "hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary focus-visible:ring-2 focus-visible:ring-gp-rep-primary/20"
-                    : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                    ? "hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary focus-visible:ring-gp-rep-primary/20 focus-visible:ring-2"
+                    : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
                 )}
               >
                 {expanded ? (

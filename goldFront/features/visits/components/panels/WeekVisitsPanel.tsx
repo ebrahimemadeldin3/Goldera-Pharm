@@ -36,16 +36,20 @@ export default function WeekVisitsPanel({
   reportBasePath,
   selectedDate,
   isSearching = false,
+  managerTheme = false,
 }: {
   range: { start: Date; end: Date };
   visits: Visit[];
   reportBasePath?: string;
   selectedDate?: Date;
   isSearching?: boolean;
+  managerTheme?: boolean;
 }) {
   const pathname = usePathname();
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager =
+    managerTheme || role === "MANAGER" || pathname?.startsWith("/manager");
   const days = eachDayOfInterval(range);
 
   const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>(
@@ -108,7 +112,10 @@ export default function WeekVisitsPanel({
             className={cn(
               "visits-week-day overflow-hidden rounded-[14px] border bg-white shadow-none transition-[background-color,border-color,box-shadow,transform] duration-[170ms]",
               hasVisits ? "border-[#E5E8EF]" : "border-[#E7EAF0] bg-[#FBFCFE]",
-              isSelectedDay && (isRep ? "border-[#CBEFDD] bg-[#E9F8F1]/40" : "border-[#E9DDB8] bg-[#FFFDF7]"),
+              isSelectedDay &&
+                (isRep
+                  ? "border-[#CBEFDD] bg-[#E9F8F1]/40"
+                  : "border-[#E9DDB8] bg-[#FFFDF7]"),
             )}
           >
             <button
@@ -143,7 +150,9 @@ export default function WeekVisitsPanel({
                         ? "bg-[#168557] text-white shadow-[0_4px_10px_rgba(22,133,87,0.22)]"
                         : "bg-[#101D36] text-white"
                       : hasVisits
-                        ? "bg-[#EEF4FF] text-[#3972D5]"
+                        ? isManager
+                          ? "border border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]"
+                          : "bg-[#EEF4FF] text-[#3972D5]"
                         : "bg-[#F4F6FA] text-[#98A2B3]",
                   )}
                 >
@@ -214,6 +223,7 @@ export default function WeekVisitsPanel({
                           visit={v}
                           reportBasePath={reportBasePath}
                           animationDelay={`${Math.min(index * 24, 120)}ms`}
+                          managerTheme={isManager}
                         />
                       ))}
                     </div>
@@ -230,7 +240,7 @@ export default function WeekVisitsPanel({
                             "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-3.5 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
                             isRep
                               ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-                              : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                              : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
                           )}
                         >
                           {isVisitsExpanded ? (

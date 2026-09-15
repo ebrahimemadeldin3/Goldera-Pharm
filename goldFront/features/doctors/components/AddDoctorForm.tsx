@@ -74,7 +74,7 @@ function FormSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-gp-border-subtle bg-white rounded-[14px] border p-4">
+    <section className="border-gp-border-subtle rounded-[14px] border bg-white p-4">
       <div className="mb-4 flex items-start gap-3">
         <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 flex size-9 shrink-0 items-center justify-center rounded-[10px] border">
           <Icon className="size-4" aria-hidden="true" />
@@ -118,6 +118,7 @@ export default function AddDoctorForm({
 }: AddDoctorFormProps) {
   const router = useRouter();
   const { role } = useRoleUI();
+  const isManager = role === "MANAGER";
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string>("");
 
@@ -216,14 +217,14 @@ export default function AddDoctorForm({
         onSubmit={form.handleSubmit(onSubmit)}
         className={cn(
           "flex min-h-0 flex-1 flex-col",
-          !isModal && "rounded-[16px] border border-gp-border-default bg-white",
+          !isModal && "border-gp-border-default rounded-[16px] border bg-white",
         )}
       >
         <div
           className={cn(
             "space-y-4",
             isModal
-              ? "min-h-0 flex-1 overflow-y-auto bg-gp-surface-page px-5 py-5 sm:px-6"
+              ? "bg-gp-surface-page min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-6"
               : "p-4 sm:p-6",
           )}
         >
@@ -233,17 +234,19 @@ export default function AddDoctorForm({
             </div>
           )}
 
-          <div className="grid gap-2 rounded-[14px] border border-gp-border-subtle bg-white p-3 sm:grid-cols-3">
-            {["01 Basic Information", "02 Professional Details", "03 Territory & Account"].map(
-              (step) => (
-                <div
-                  key={step}
-                  className="border-gp-border-subtle bg-gp-surface-subtle text-gp-navy-900 rounded-[10px] border px-3 py-2 text-xs font-semibold"
-                >
-                  {step}
-                </div>
-              ),
-            )}
+          <div className="border-gp-border-subtle grid gap-2 rounded-[14px] border bg-white p-3 sm:grid-cols-3">
+            {[
+              "01 Basic Information",
+              "02 Professional Details",
+              "03 Territory & Account",
+            ].map((step) => (
+              <div
+                key={step}
+                className="border-gp-border-subtle bg-gp-surface-subtle text-gp-navy-900 rounded-[10px] border px-3 py-2 text-xs font-semibold"
+              >
+                {step}
+              </div>
+            ))}
           </div>
 
           <FormSection
@@ -400,7 +403,7 @@ export default function AddDoctorForm({
               </FormLabel>
               <Select onValueChange={updateDistrict} value={district}>
                 <SelectTrigger className={fieldClassName}>
-                  <Layers3 className="size-4 text-gp-gold-600" />
+                  <Layers3 className="text-gp-gold-600 size-4" />
                   <SelectValue placeholder="Select district" />
                 </SelectTrigger>
                 <SelectContent className={selectContentClassName}>
@@ -427,7 +430,7 @@ export default function AddDoctorForm({
                 disabled={!district}
               >
                 <SelectTrigger className={fieldClassName}>
-                  <MapPinned className="size-4 text-gp-gold-600" />
+                  <MapPinned className="text-gp-gold-600 size-4" />
                   <SelectValue placeholder="Select region" />
                 </SelectTrigger>
                 <SelectContent className={selectContentClassName}>
@@ -455,7 +458,7 @@ export default function AddDoctorForm({
                     disabled={!region}
                   >
                     <SelectTrigger className={fieldClassName}>
-                      <MapPin className="size-4 text-gp-gold-600" />
+                      <MapPin className="text-gp-gold-600 size-4" />
                       <SelectValue placeholder="Select territory" />
                     </SelectTrigger>
                     <SelectContent className={selectContentClassName}>
@@ -503,7 +506,7 @@ export default function AddDoctorForm({
 
         <div
           className={cn(
-            "border-gp-border-subtle bg-white flex flex-col-reverse gap-3 border-t px-5 py-4 sm:flex-row sm:justify-end",
+            "border-gp-border-subtle flex flex-col-reverse gap-3 border-t bg-white px-5 py-4 sm:flex-row sm:justify-end",
             isModal && "sticky bottom-0 z-10",
           )}
         >
@@ -527,7 +530,7 @@ export default function AddDoctorForm({
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
               <Plus
-                className="size-4 text-gp-gold-500 transition-transform duration-[170ms] group-hover:rotate-90 motion-reduce:transition-none"
+                className="text-gp-gold-500 size-4 transition-transform duration-[170ms] group-hover:rotate-90 motion-reduce:transition-none"
                 aria-hidden="true"
               />
             )}
@@ -541,7 +544,12 @@ export default function AddDoctorForm({
   if (isModal) return formContent;
 
   return (
-    <PageContainer className="flex flex-col gap-5">
+    <PageContainer
+      className={cn(
+        "flex flex-col gap-5",
+        isManager && "min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]",
+      )}
+    >
       <header className="flex flex-wrap items-center gap-3">
         <Link
           href={getBackHref()}
@@ -554,7 +562,14 @@ export default function AddDoctorForm({
           <p className="text-gp-gold-700 text-[11px] font-semibold tracking-[0.14em] uppercase">
             Field Operations
           </p>
-          <h1 className="text-gp-navy-900 mt-1 text-2xl font-semibold md:text-3xl">
+          <h1
+            className={cn(
+              "text-gp-navy-900 mt-1 font-semibold",
+              isManager
+                ? "text-[30px] leading-tight sm:text-[34px]"
+                : "text-2xl md:text-3xl",
+            )}
+          >
             Add New Doctor
           </h1>
           <p className="text-gp-text-muted mt-1 text-sm font-medium">

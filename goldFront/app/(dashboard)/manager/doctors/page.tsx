@@ -9,7 +9,9 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: Promise<{ page?: string; limit?: string; subRegion?: string }> | { page?: string; limit?: string; subRegion?: string };
+  searchParams?:
+    | Promise<{ page?: string; limit?: string; subRegion?: string }>
+    | { page?: string; limit?: string; subRegion?: string };
 }) {
   const params = await searchParams;
 
@@ -24,24 +26,26 @@ export default async function Page({
   }
   if (result.data == null) {
     return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
-      <DoctorsHeader doctors={[]} />
-      <DoctorsList doctors={[]} />
-    </PageContainer>
-  );
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+        <DoctorsHeader doctors={[]} />
+        <DoctorsList doctors={[]} />
+      </PageContainer>
+    );
   }
 
- 
   let doctors: DoctorApiResponse[] = [];
   let totalCount = 0;
 
   if (result.data) {
-    const res = result.data as unknown as { data?: DoctorApiResponse[]; results?: number };
+    const res = result.data as unknown as {
+      data?: DoctorApiResponse[];
+      results?: number;
+    };
     doctors = Array.isArray(res.data as unknown)
       ? (res.data as DoctorApiResponse[])
       : Array.isArray(result.data)
-      ? (result.data as DoctorApiResponse[])
-      : [];
+        ? (result.data as DoctorApiResponse[])
+        : [];
   }
 
   if (result.results !== undefined) {
@@ -51,9 +55,14 @@ export default async function Page({
   }
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)]">
+    <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
       <DoctorsHeader doctors={doctors} totalCount={totalCount} />
-      <DoctorsList doctors={doctors} page={page} limit={limit} totalCount={totalCount} />
+      <DoctorsList
+        doctors={doctors}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+      />
     </PageContainer>
   );
 }

@@ -5391,6 +5391,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
   will-change: transform;
 }
 
+.visits-mode-switch-indicator-manager {
+  border-color: #101d36;
+  background: #101d36;
+  box-shadow: 0 6px 14px rgba(16, 29, 54, 0.16);
+}
+
 [data-role="MEDICAL_REP"] .visits-mode-switch-indicator,
 .visits-mode-switch-indicator-rep {
   border: 1px solid #CBEFDD !important;
