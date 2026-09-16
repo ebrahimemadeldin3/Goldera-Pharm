@@ -24,9 +24,11 @@ import {
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import DoctorCard from "./DoctorCard";
-import type { DoctorCardData } from "../lib/types";
 import type { DoctorApiResponse } from "../lib/types/api";
-import { mapToDoctorCard } from "../lib/utils/mappers";
+import {
+  normalizeDoctorForDirectory,
+  type DoctorDirectoryData,
+} from "../lib/utils/mappers";
 import {
   Select,
   SelectContent,
@@ -50,7 +52,6 @@ import {
   KSA_TERRITORY_STRUCTURE,
   UNASSIGNED_DISTRICT,
   getTerritoryLookup,
-  type TerritoryLookup,
 } from "@/features/plan/lib/territory";
 
 interface DoctorsListProps {
@@ -67,10 +68,6 @@ type ControlOption = {
   label: string;
   helper?: string;
 };
-type DoctorDirectoryRow = DoctorCardData & {
-  createdAt?: string;
-  territory: TerritoryLookup;
-};
 
 const ALL = "all";
 const sortOptions: Array<{ value: SortKey; label: string }> = [
@@ -83,20 +80,37 @@ const sortOptions: Array<{ value: SortKey; label: string }> = [
 function isClean(value?: string | null): value is string {
   return Boolean(
     value &&
-      typeof value === "string" &&
-      value.trim() !== "" &&
-      !value.toLowerCase().includes("undefined") &&
-      !value.toLowerCase().includes("null"),
+    typeof value === "string" &&
+    value.trim() !== "" &&
+    !value.toLowerCase().includes("undefined") &&
+    !value.toLowerCase().includes("null"),
   );
 }
 
 function uniqueSorted(values: Array<string | null | undefined>) {
-  return Array.from(new Set(values.filter(isClean).map((value) => value.trim())))
-    .sort((a, b) => a.localeCompare(b));
+  const labelsByValue = new Map<string, string>();
+
+  values.filter(isClean).forEach((value) => {
+    const label = value.trim().replace(/\s+/g, " ");
+    const canonicalValue = normalizeFilterValue(label);
+
+    if (!labelsByValue.has(canonicalValue)) {
+      labelsByValue.set(canonicalValue, label);
+    }
+  });
+
+  return Array.from(labelsByValue.values()).sort((a, b) => a.localeCompare(b));
+}
+
+function normalizeFilterValue(value?: string | null) {
+  return String(value ?? "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase();
 }
 
 function includesNormalized(value: string | null | undefined, query: string) {
-  return String(value ?? "").toLowerCase().includes(query);
+  return normalizeFilterValue(value).includes(query);
 }
 
 function dateValue(value?: string) {
@@ -104,7 +118,7 @@ function dateValue(value?: string) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function getDisplayName(row: DoctorDirectoryRow) {
+function getDisplayName(row: DoctorDirectoryData) {
   return row.nameEN || row.nameAR || "Unnamed Doctor";
 }
 
@@ -118,9 +132,9 @@ function getCompactRegionLabel(value: string) {
   return value.replace(" Region", "");
 }
 
-function getCompactTerritoryLabel(value: string) {
+function getCompactTerritoryLabel(value: string, useManagerLabel = false) {
   if (value === ALL) return "All Territories";
-  return value;
+  return useManagerLabel && value === "Southern" ? "Southern Area" : value;
 }
 
 function getActiveFilterCount({
@@ -164,13 +178,13 @@ function FilterChip({
     <button
       type="button"
       onClick={onClear}
-      className="plans-filter-chip inline-flex h-8 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-3 text-xs font-semibold text-[#7D5A12] transition-[background-color,border-color,color,transform] duration-[160ms] hover:border-gp-gold-500 hover:bg-gp-gold-50"
+      className="plans-filter-chip hover:border-gp-gold-500 hover:bg-gp-gold-50 inline-flex h-8 max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-3 text-xs font-semibold text-[#7D5A12] transition-[background-color,border-color,color,transform] duration-[160ms]"
     >
       <span className="truncate">
         <span className="text-gp-navy-900">{prefix}: </span>
         {label}
       </span>
-      <X className="size-3 shrink-0 text-gp-gold-700" aria-hidden="true" />
+      <X className="text-gp-gold-700 size-3 shrink-0" aria-hidden="true" />
     </button>
   );
 }
@@ -189,6 +203,7 @@ function FilterSelect({
   searchValue = "",
   onSearchChange,
   searchPlaceholder = "Search...",
+  disabled = false,
 }: {
   value: string;
   onValueChange: (value: string) => void;
@@ -203,6 +218,7 @@ function FilterSelect({
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   searchPlaceholder?: string;
+  disabled?: boolean;
 }) {
   const isSelected = value !== ALL;
   const searchTerm = searchValue.trim().toLowerCase();
@@ -216,25 +232,27 @@ function FilterSelect({
       : options;
 
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger
         aria-label={label}
         title={isSelected ? `${label}: ${displayValue ?? value}` : allLabel}
         className={cn(
-          "plans-filter-control h-11 w-full cursor-pointer rounded-[12px] border bg-white px-3 text-sm font-semibold shadow-none transition-[border-color,background-color,box-shadow,color] duration-[150ms] focus-visible:border-gp-gold-500 focus-visible:ring-3 focus-visible:ring-gp-gold-500/10 [&>svg:last-child]:text-gp-text-placeholder",
+          "plans-filter-control focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 [&>svg:last-child]:text-gp-text-placeholder h-11 w-full cursor-pointer rounded-[12px] border bg-white px-3 text-sm font-semibold shadow-none transition-[border-color,background-color,box-shadow,color] duration-[150ms] focus-visible:ring-3",
           isSelected
             ? "border-gp-gold-500 bg-gp-surface-hover text-gp-navy-900"
             : "border-gp-border-default text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover",
           secondary && !isSelected && "text-gp-text-secondary",
+          disabled &&
+            "border-gp-border-subtle bg-gp-surface-subtle text-gp-text-placeholder hover:border-gp-border-subtle hover:bg-gp-surface-subtle cursor-not-allowed",
           className,
         )}
       >
-        <Icon className="size-4 shrink-0 text-gp-gold-600" aria-hidden="true" />
+        <Icon className="text-gp-gold-600 size-4 shrink-0" aria-hidden="true" />
         <span className="min-w-0 flex-1 truncate text-left">
           {displayValue ?? allLabel}
         </span>
       </SelectTrigger>
-      <SelectContent className="plans-select-content border-gp-border-control max-h-[300px] bg-white p-0 shadow-gp-popover [&>div:not([data-slot])]:p-1">
+      <SelectContent className="plans-select-content border-gp-border-control shadow-gp-popover max-h-[300px] bg-white p-0 [&>div:not([data-slot])]:p-1">
         {searchable && options.length > 8 && (
           <div
             className="border-gp-border-subtle sticky top-0 z-10 border-b bg-white p-2"
@@ -251,17 +269,20 @@ function FilterSelect({
                 value={searchValue}
                 onChange={(event) => onSearchChange?.(event.target.value)}
                 placeholder={searchPlaceholder}
-                className="border-gp-border-control focus:border-gp-gold-500 focus:ring-gp-gold-500/10 h-9 w-full rounded-[9px] border bg-white pr-2 pl-8 text-xs font-medium text-gp-navy-900 outline-none transition-[border-color,box-shadow] duration-[150ms] focus:ring-3"
+                className="border-gp-border-control focus:border-gp-gold-500 focus:ring-gp-gold-500/10 text-gp-navy-900 h-9 w-full rounded-[9px] border bg-white pr-2 pl-8 text-xs font-medium transition-[border-color,box-shadow] duration-[150ms] outline-none focus:ring-3"
               />
             </div>
           </div>
         )}
         <SelectItem
           value={ALL}
-          className="h-10 cursor-pointer rounded-[8px] py-0 pr-8 pl-2 text-sm font-semibold text-gp-text-secondary focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900"
+          className="text-gp-text-secondary focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900 h-10 cursor-pointer rounded-[8px] py-0 pr-8 pl-2 text-sm font-semibold"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <Icon className="size-4 shrink-0 text-gp-gold-600" aria-hidden="true" />
+            <Icon
+              className="text-gp-gold-600 size-4 shrink-0"
+              aria-hidden="true"
+            />
             <span className="truncate">{allLabel}</span>
           </span>
         </SelectItem>
@@ -269,11 +290,11 @@ function FilterSelect({
           <SelectItem
             key={option.value}
             value={option.value}
-            className="min-h-10 cursor-pointer rounded-[8px] py-1.5 pr-8 pl-2 text-sm font-semibold text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900"
+            className="text-gp-navy-900 focus:bg-gp-gold-50 focus:text-gp-navy-900 data-[state=checked]:bg-gp-gold-50 data-[state=checked]:text-gp-navy-900 min-h-10 cursor-pointer rounded-[8px] py-1.5 pr-8 pl-2 text-sm font-semibold"
           >
             <span className="flex min-w-0 items-start gap-2">
               <Icon
-                className="mt-0.5 size-4 shrink-0 text-gp-gold-600"
+                className="text-gp-gold-600 mt-0.5 size-4 shrink-0"
                 aria-hidden="true"
               />
               <span className="min-w-0">
@@ -309,18 +330,23 @@ export default function DoctorsList({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const isManager = role === "MANAGER" && pathname?.startsWith("/manager");
 
   const initialSubRegion =
     searchParams.get("subRegion") || selectedSubRegion || ALL;
+  const initialTerritoryLookup = getTerritoryLookup(initialSubRegion);
   const initialTerritory =
-    initialSubRegion === ALL
-      ? ALL
-      : getTerritoryLookup(initialSubRegion).territory;
+    initialSubRegion === ALL ? ALL : initialTerritoryLookup.territory;
 
   const [query, setQuery] = useState("");
-  const [districtFilter, setDistrictFilter] = useState(ALL);
-  const [regionFilter, setRegionFilter] = useState(ALL);
+  const [districtFilter, setDistrictFilter] = useState(
+    isManager && initialSubRegion !== ALL
+      ? initialTerritoryLookup.district
+      : ALL,
+  );
+  const [regionFilter, setRegionFilter] = useState(
+    isManager && initialSubRegion !== ALL ? initialTerritoryLookup.region : ALL,
+  );
   const [territoryFilter, setTerritoryFilter] = useState(initialTerritory);
   const [specialtyFilter, setSpecialtyFilter] = useState(ALL);
   const [facilityFilter, setFacilityFilter] = useState(ALL);
@@ -328,16 +354,8 @@ export default function DoctorsList({
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [facilitySearch, setFacilitySearch] = useState("");
 
-  const rows = useMemo<DoctorDirectoryRow[]>(
-    () =>
-      doctors.map((doctor) => {
-        const card = mapToDoctorCard(doctor);
-        return {
-          ...card,
-          createdAt: doctor.createdAt,
-          territory: getTerritoryLookup(card.subRegion || card.area),
-        };
-      }),
+  const rows = useMemo<DoctorDirectoryData[]>(
+    () => doctors.map(normalizeDoctorForDirectory),
     [doctors],
   );
 
@@ -370,8 +388,7 @@ export default function DoctorsList({
       rows
         .filter(
           (row) =>
-            districtFilter === ALL ||
-            row.territory.district === districtFilter,
+            districtFilter === ALL || row.territory.district === districtFilter,
         )
         .map((row) => row.territory.region),
     ).map((region) => {
@@ -438,14 +455,39 @@ export default function DoctorsList({
     label: option.label,
   }));
 
+  const managerDistrictOptions = districtOptions;
+
+  const managerRegionOptions = useMemo<ControlOption[]>(
+    () =>
+      regionOptions.map((region) => {
+        const territoryCount = new Set(
+          rows
+            .filter((row) => row.territory.region === region.value)
+            .map((row) => row.territory.territory),
+        ).size;
+
+        return {
+          ...region,
+          helper: `${territoryCount} ${territoryCount === 1 ? "territory" : "territories"}`,
+        };
+      }),
+    [regionOptions, rows],
+  );
+
+  const managerTerritoryOptions = useMemo<ControlOption[]>(
+    () =>
+      territoryOptions.map((territory) => ({
+        ...territory,
+        label: getCompactTerritoryLabel(territory.label, true),
+      })),
+    [territoryOptions],
+  );
+
   const filteredRows = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = normalizeFilterValue(query);
 
     return rows.filter((row) => {
-      if (
-        districtFilter !== ALL &&
-        row.territory.district !== districtFilter
-      ) {
+      if (districtFilter !== ALL && row.territory.district !== districtFilter) {
         return false;
       }
       if (regionFilter !== ALL && row.territory.region !== regionFilter) {
@@ -457,10 +499,18 @@ export default function DoctorsList({
       ) {
         return false;
       }
-      if (specialtyFilter !== ALL && row.specialty !== specialtyFilter) {
+      if (
+        specialtyFilter !== ALL &&
+        normalizeFilterValue(row.specialty) !==
+          normalizeFilterValue(specialtyFilter)
+      ) {
         return false;
       }
-      if (facilityFilter !== ALL && row.accountName !== facilityFilter) {
+      if (
+        facilityFilter !== ALL &&
+        normalizeFilterValue(row.accountName) !==
+          normalizeFilterValue(facilityFilter)
+      ) {
         return false;
       }
       if (!term) return true;
@@ -477,6 +527,9 @@ export default function DoctorsList({
         row.territory.district,
         row.territory.region,
         row.territory.territory,
+        isManager
+          ? getCompactTerritoryLabel(row.territory.territory, true)
+          : "",
       ].some((value) => includesNormalized(value, term));
     });
   }, [
@@ -487,6 +540,7 @@ export default function DoctorsList({
     rows,
     specialtyFilter,
     territoryFilter,
+    isManager,
   ]);
 
   const sortedRows = useMemo(() => {
@@ -516,6 +570,26 @@ export default function DoctorsList({
     sortKey,
   });
   const hasActiveFilters = activeFilterCount > 0;
+  const coverageSummary = [
+    districtFilter !== ALL ? getCompactDistrictLabel(districtFilter) : "",
+    regionFilter !== ALL ? getCompactRegionLabel(regionFilter) : "",
+    territoryFilter !== ALL
+      ? getCompactTerritoryLabel(territoryFilter, true)
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" / ");
+  const directoryTotalCount = isManager ? sortedRows.length : totalCount;
+  const directoryTotalPages = Math.max(
+    1,
+    Math.ceil(directoryTotalCount / limit),
+  );
+  const directoryPage = isManager
+    ? Math.min(Math.max(page, 1), directoryTotalPages)
+    : page;
+  const visibleRows = isManager
+    ? sortedRows.slice((directoryPage - 1) * limit, directoryPage * limit)
+    : sortedRows;
 
   function pushSubRegionFilter(value: string) {
     const params = new URLSearchParams(searchParams.toString());
@@ -550,6 +624,37 @@ export default function DoctorsList({
     pushSubRegionFilter(value);
   }
 
+  function resetPageToFirst() {
+    if (!isManager || page <= 1) return;
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", "1");
+
+    startTransition(() => {
+      router.replace(`${pathname}?${params.toString()}`);
+    });
+  }
+
+  function updateQuery(value: string) {
+    setQuery(value);
+    resetPageToFirst();
+  }
+
+  function updateSpecialty(value: string) {
+    setSpecialtyFilter(value);
+    resetPageToFirst();
+  }
+
+  function updateFacility(value: string) {
+    setFacilityFilter(value);
+    resetPageToFirst();
+  }
+
+  function updateSort(value: string) {
+    setSortKey(value as SortKey);
+    resetPageToFirst();
+  }
+
   function resetFilters() {
     setQuery("");
     setDistrictFilter(ALL);
@@ -582,7 +687,9 @@ export default function DoctorsList({
               className="text-gp-text-muted mt-0.5 text-sm font-medium"
               aria-live="polite"
             >
-              {sortedRows.length} {sortedRows.length === 1 ? "doctor" : "doctors"} available
+              {sortedRows.length}{" "}
+              {sortedRows.length === 1 ? "doctor" : "doctors"} available
+              {isManager && coverageSummary && ` | ${coverageSummary}`}
               {isPending && " · Loading..."}
             </p>
           </div>
@@ -595,8 +702,8 @@ export default function DoctorsList({
             <Input
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              className="border-gp-border-default bg-white text-gp-navy-900 placeholder:text-gp-text-placeholder focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 h-11 w-full rounded-[12px] pr-10 pl-10 text-sm font-medium shadow-none transition-[border-color,box-shadow] duration-[150ms]"
+              onChange={(event) => updateQuery(event.target.value)}
+              className="border-gp-border-default text-gp-navy-900 placeholder:text-gp-text-placeholder focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/10 h-11 w-full rounded-[12px] bg-white pr-10 pl-10 text-sm font-medium shadow-none transition-[border-color,box-shadow] duration-[150ms]"
               placeholder="Search doctors, specialties or facilities..."
               aria-label="Search doctors, specialties, facilities, or territories"
               disabled={isPending}
@@ -604,7 +711,7 @@ export default function DoctorsList({
             {query && (
               <button
                 type="button"
-                onClick={() => setQuery("")}
+                onClick={() => updateQuery("")}
                 aria-label="Clear doctor search"
                 className="text-gp-text-muted hover:bg-gp-gold-50 hover:text-gp-gold-700 focus-visible:ring-gp-gold-500/25 absolute top-1/2 right-2.5 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-[8px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
@@ -612,7 +719,6 @@ export default function DoctorsList({
               </button>
             )}
           </div>
-
         </div>
 
         <div className="mt-4 flex justify-end md:hidden">
@@ -620,10 +726,10 @@ export default function DoctorsList({
             type="button"
             variant="outline"
             onClick={() => setFilterSheetOpen(true)}
-            className="border-gp-border-default bg-white text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover h-11 cursor-pointer rounded-[12px] px-3 text-sm font-semibold shadow-none"
+            className="border-gp-border-default text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover h-11 cursor-pointer rounded-[12px] bg-white px-3 text-sm font-semibold shadow-none"
           >
             <SlidersHorizontal
-              className="size-4 text-gp-gold-600"
+              className="text-gp-gold-600 size-4"
               aria-hidden="true"
             />
             Filters
@@ -636,53 +742,123 @@ export default function DoctorsList({
         </div>
 
         <div className="mt-4 hidden md:block">
-          <div className="mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-gp-navy-900 uppercase">
+          <div className="text-gp-navy-900 mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
             <SlidersHorizontal
-              className="size-3.5 text-gp-gold-600"
+              className="text-gp-gold-600 size-3.5"
               aria-hidden="true"
             />
             Filters
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex max-w-full flex-wrap items-center gap-2 rounded-[14px] border border-gp-border-subtle bg-gp-surface-subtle p-2">
-              <FilterSelect
-                value={districtFilter}
-                onValueChange={updateDistrict}
-                icon={Layers3}
-                label="District"
-                allLabel="All Districts"
-                displayValue={getCompactDistrictLabel(districtFilter)}
-                options={districtOptions}
-                className="md:w-[230px]"
-              />
-              <ChevronRight className="size-4 text-gp-gold-500/75" aria-hidden="true" />
-              <FilterSelect
-                value={regionFilter}
-                onValueChange={updateRegion}
-                icon={MapPinned}
-                label="Region"
-                allLabel="All Regions"
-                displayValue={getCompactRegionLabel(regionFilter)}
-                options={regionOptions}
-                className="md:w-[205px]"
-              />
-              <ChevronRight className="size-4 text-gp-gold-500/75" aria-hidden="true" />
-              <FilterSelect
-                value={territoryFilter}
-                onValueChange={updateTerritory}
-                icon={MapPin}
-                label="Territory"
-                allLabel="All Territories"
-                displayValue={getCompactTerritoryLabel(territoryFilter)}
-                options={territoryOptions}
-                className="md:w-[170px]"
-              />
-            </div>
+            {isManager ? (
+              <div className="border-gp-border-default w-full rounded-[14px] border bg-[#F9FAFB] p-3">
+                <div className="mb-3 flex items-start gap-2.5">
+                  <span className="bg-gp-gold-50 text-gp-gold-700 flex size-7 shrink-0 items-center justify-center rounded-[8px]">
+                    <MapPinned className="size-4" aria-hidden="true" />
+                  </span>
+                  <div>
+                    <p className="text-gp-navy-900 text-sm font-semibold">
+                      Territory coverage
+                    </p>
+                    <p className="text-gp-text-muted mt-0.5 text-xs font-medium">
+                      District / Region / Territory
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 items-center gap-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
+                  <FilterSelect
+                    value={districtFilter}
+                    onValueChange={updateDistrict}
+                    icon={Layers3}
+                    label="District"
+                    allLabel="All Districts"
+                    displayValue={getCompactDistrictLabel(districtFilter)}
+                    options={managerDistrictOptions}
+                  />
+                  <ChevronRight
+                    className="text-gp-gold-500/75 hidden size-4 xl:block"
+                    aria-hidden="true"
+                  />
+                  <FilterSelect
+                    value={regionFilter}
+                    onValueChange={updateRegion}
+                    icon={MapPinned}
+                    label="Region"
+                    allLabel="All Regions"
+                    displayValue={getCompactRegionLabel(regionFilter)}
+                    options={managerRegionOptions}
+                  />
+                  <ChevronRight
+                    className="text-gp-gold-500/75 hidden size-4 xl:block"
+                    aria-hidden="true"
+                  />
+                  <FilterSelect
+                    value={territoryFilter}
+                    onValueChange={updateTerritory}
+                    icon={MapPin}
+                    label="Territory"
+                    allLabel={
+                      regionFilter === ALL
+                        ? "Select a region first"
+                        : "All Territories"
+                    }
+                    displayValue={
+                      regionFilter === ALL
+                        ? "Select a region first"
+                        : getCompactTerritoryLabel(territoryFilter, true)
+                    }
+                    options={managerTerritoryOptions}
+                    disabled={regionFilter === ALL}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="border-gp-border-subtle bg-gp-surface-subtle flex max-w-full flex-wrap items-center gap-2 rounded-[14px] border p-2">
+                <FilterSelect
+                  value={districtFilter}
+                  onValueChange={updateDistrict}
+                  icon={Layers3}
+                  label="District"
+                  allLabel="All Districts"
+                  displayValue={getCompactDistrictLabel(districtFilter)}
+                  options={districtOptions}
+                  className="md:w-[230px]"
+                />
+                <ChevronRight
+                  className="text-gp-gold-500/75 size-4"
+                  aria-hidden="true"
+                />
+                <FilterSelect
+                  value={regionFilter}
+                  onValueChange={updateRegion}
+                  icon={MapPinned}
+                  label="Region"
+                  allLabel="All Regions"
+                  displayValue={getCompactRegionLabel(regionFilter)}
+                  options={regionOptions}
+                  className="md:w-[205px]"
+                />
+                <ChevronRight
+                  className="text-gp-gold-500/75 size-4"
+                  aria-hidden="true"
+                />
+                <FilterSelect
+                  value={territoryFilter}
+                  onValueChange={updateTerritory}
+                  icon={MapPin}
+                  label="Territory"
+                  allLabel="All Territories"
+                  displayValue={getCompactTerritoryLabel(territoryFilter)}
+                  options={territoryOptions}
+                  className="md:w-[170px]"
+                />
+              </div>
+            )}
 
             <FilterSelect
               value={specialtyFilter}
-              onValueChange={setSpecialtyFilter}
+              onValueChange={updateSpecialty}
               icon={Stethoscope}
               label="Specialty"
               allLabel="All Specialties"
@@ -695,11 +871,13 @@ export default function DoctorsList({
             />
             <FilterSelect
               value={facilityFilter}
-              onValueChange={setFacilityFilter}
+              onValueChange={updateFacility}
               icon={Building2}
               label="Facility"
               allLabel="All Facilities"
-              displayValue={facilityFilter === ALL ? "Facility" : facilityFilter}
+              displayValue={
+                facilityFilter === ALL ? "Facility" : facilityFilter
+              }
               options={facilityOptions}
               className="md:w-[230px]"
               secondary
@@ -710,7 +888,7 @@ export default function DoctorsList({
             />
             <FilterSelect
               value={sortKey}
-              onValueChange={(value) => setSortKey(value as SortKey)}
+              onValueChange={updateSort}
               icon={ArrowUpDown}
               label="Sort"
               allLabel="Recently Added"
@@ -728,8 +906,9 @@ export default function DoctorsList({
         {hasActiveFilters && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <span className="text-gp-text-muted mr-1 text-xs font-semibold">
-              {activeFilterCount}{" "}
-              {activeFilterCount === 1 ? "filter" : "filters"} active
+              {isManager
+                ? "Active coverage"
+                : `${activeFilterCount} ${activeFilterCount === 1 ? "filter" : "filters"} active`}
             </span>
             {districtFilter !== ALL && (
               <FilterChip
@@ -748,7 +927,7 @@ export default function DoctorsList({
             {territoryFilter !== ALL && (
               <FilterChip
                 prefix="Territory"
-                label={territoryFilter}
+                label={getCompactTerritoryLabel(territoryFilter, isManager)}
                 onClear={() => updateTerritory(ALL)}
               />
             )}
@@ -756,14 +935,14 @@ export default function DoctorsList({
               <FilterChip
                 prefix="Specialty"
                 label={specialtyFilter}
-                onClear={() => setSpecialtyFilter(ALL)}
+                onClear={() => updateSpecialty(ALL)}
               />
             )}
             {facilityFilter !== ALL && (
               <FilterChip
                 prefix="Facility"
                 label={facilityFilter}
-                onClear={() => setFacilityFilter(ALL)}
+                onClear={() => updateFacility(ALL)}
               />
             )}
             {sortKey !== "newest" && (
@@ -773,21 +952,21 @@ export default function DoctorsList({
                   sortOptions.find((option) => option.value === sortKey)
                     ?.label ?? "Recently Added"
                 }
-                onClear={() => setSortKey("newest")}
+                onClear={() => updateSort("newest")}
               />
             )}
             {query.trim() && (
               <FilterChip
                 prefix="Search"
                 label={query.trim()}
-                onClear={() => setQuery("")}
+                onClear={() => updateQuery("")}
               />
             )}
             <Button
               type="button"
               variant="outline"
               onClick={resetFilters}
-              className="border-gp-border-control bg-white text-gp-navy-900 hover:border-gp-danger-border hover:bg-gp-danger-soft hover:text-gp-danger h-8 cursor-pointer rounded-full px-3 text-xs font-semibold shadow-none"
+              className="border-gp-border-control text-gp-navy-900 hover:border-gp-danger-border hover:bg-gp-danger-soft hover:text-gp-danger h-8 cursor-pointer rounded-full bg-white px-3 text-xs font-semibold shadow-none"
             >
               <XCircle className="size-3.5" aria-hidden="true" />
               Clear all
@@ -798,10 +977,10 @@ export default function DoctorsList({
         <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
           <SheetContent
             side="right"
-            className="bg-gp-surface-page w-full gap-0 border-gp-border-default p-0 shadow-gp-dialog sm:max-w-[420px]"
+            className="bg-gp-surface-page border-gp-border-default shadow-gp-dialog w-full gap-0 p-0 sm:max-w-[420px]"
             overlayClassName="bg-gp-navy-900/35"
           >
-            <SheetHeader className="border-gp-border-subtle bg-white border-b px-5 py-5">
+            <SheetHeader className="border-gp-border-subtle border-b bg-white px-5 py-5">
               <SheetTitle className="text-gp-navy-900 text-lg font-semibold">
                 Filters
               </SheetTitle>
@@ -813,8 +992,8 @@ export default function DoctorsList({
             <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
               <div className="space-y-5">
                 <section>
-                  <p className="mb-2 text-[11px] font-semibold tracking-[0.08em] text-gp-navy-900 uppercase">
-                    Location
+                  <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+                    {isManager ? "Territory coverage" : "Location"}
                   </p>
                   <div className="space-y-2">
                     <FilterSelect
@@ -824,7 +1003,9 @@ export default function DoctorsList({
                       label="District"
                       allLabel="All Districts"
                       displayValue={getCompactDistrictLabel(districtFilter)}
-                      options={districtOptions}
+                      options={
+                        isManager ? managerDistrictOptions : districtOptions
+                      }
                     />
                     <FilterSelect
                       value={regionFilter}
@@ -833,28 +1014,39 @@ export default function DoctorsList({
                       label="Region"
                       allLabel="All Regions"
                       displayValue={getCompactRegionLabel(regionFilter)}
-                      options={regionOptions}
+                      options={isManager ? managerRegionOptions : regionOptions}
                     />
                     <FilterSelect
                       value={territoryFilter}
                       onValueChange={updateTerritory}
                       icon={MapPin}
                       label="Territory"
-                      allLabel="All Territories"
-                      displayValue={getCompactTerritoryLabel(territoryFilter)}
-                      options={territoryOptions}
+                      allLabel={
+                        isManager && regionFilter === ALL
+                          ? "Select a region first"
+                          : "All Territories"
+                      }
+                      displayValue={
+                        isManager && regionFilter === ALL
+                          ? "Select a region first"
+                          : getCompactTerritoryLabel(territoryFilter, isManager)
+                      }
+                      options={
+                        isManager ? managerTerritoryOptions : territoryOptions
+                      }
+                      disabled={isManager && regionFilter === ALL}
                     />
                   </div>
                 </section>
 
                 <section>
-                  <p className="mb-2 text-[11px] font-semibold tracking-[0.08em] text-gp-navy-900 uppercase">
+                  <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
                     Doctor
                   </p>
                   <div className="space-y-2">
                     <FilterSelect
                       value={specialtyFilter}
-                      onValueChange={setSpecialtyFilter}
+                      onValueChange={updateSpecialty}
                       icon={Stethoscope}
                       label="Specialty"
                       allLabel="All Specialties"
@@ -868,12 +1060,14 @@ export default function DoctorsList({
                     />
                     <FilterSelect
                       value={facilityFilter}
-                      onValueChange={setFacilityFilter}
+                      onValueChange={updateFacility}
                       icon={Building2}
                       label="Facility"
                       allLabel="All Facilities"
                       displayValue={
-                        facilityFilter === ALL ? "All Facilities" : facilityFilter
+                        facilityFilter === ALL
+                          ? "All Facilities"
+                          : facilityFilter
                       }
                       options={facilityOptions}
                       secondary
@@ -886,12 +1080,12 @@ export default function DoctorsList({
                 </section>
 
                 <section>
-                  <p className="mb-2 text-[11px] font-semibold tracking-[0.08em] text-gp-navy-900 uppercase">
+                  <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
                     Sort
                   </p>
                   <FilterSelect
                     value={sortKey}
-                    onValueChange={(value) => setSortKey(value as SortKey)}
+                    onValueChange={updateSort}
                     icon={ArrowUpDown}
                     label="Sort"
                     allLabel="Recently Added"
@@ -906,7 +1100,7 @@ export default function DoctorsList({
               </div>
             </div>
 
-            <SheetFooter className="border-gp-border-subtle bg-white grid grid-cols-2 gap-2 border-t p-4">
+            <SheetFooter className="border-gp-border-subtle grid grid-cols-2 gap-2 border-t bg-white p-4">
               <Button
                 type="button"
                 variant="outline"
@@ -921,7 +1115,7 @@ export default function DoctorsList({
                 className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white"
               >
                 <CheckCircle2
-                  className="size-4 text-gp-gold-500"
+                  className="text-gp-gold-500 size-4"
                   aria-hidden="true"
                 />
                 Apply Filters
@@ -932,9 +1126,9 @@ export default function DoctorsList({
       </header>
 
       <div className="bg-gp-surface-subtle/40 p-4 sm:p-5">
-        {sortedRows.length > 0 ? (
+        {visibleRows.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            {sortedRows.map((doctor, index) => (
+            {visibleRows.map((doctor, index) => (
               <DoctorCard key={doctor.id} data={doctor} index={index} />
             ))}
           </div>
@@ -964,9 +1158,9 @@ export default function DoctorsList({
       </div>
 
       <TablePaginationFooter
-        page={page}
+        page={directoryPage}
         limit={limit}
-        totalCount={totalCount}
+        totalCount={directoryTotalCount}
         itemLabel="doctors"
         ariaLabel="Doctors directory pagination"
         pageNavAriaLabel="Doctors pages"

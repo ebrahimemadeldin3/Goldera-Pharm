@@ -6,11 +6,8 @@ import { useRoleUI } from "@/core/ui/role-ui-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import {
-  UNASSIGNED_DISTRICT,
-  getTerritoryLookup,
-} from "@/features/plan/lib/territory";
 import type { PharmacyApiResponse } from "../lib/types";
+import { normalizePharmacyForDirectory } from "../lib/utils/directory";
 import { AddPharmacyDialog } from "./AddPharmacyDialog";
 
 interface PharmaciesHeaderProps {
@@ -93,28 +90,27 @@ export default function PharmaciesHeader({
   const [dialogOpen, setDialogOpen] = useState(false);
   const isRep = role === "MEDICAL_REP";
 
-
   const stats = useMemo(() => {
     let centralEastern = 0;
     let westernSouthern = 0;
     const territories = new Set<string>();
 
     pharmacies.forEach((pharmacy) => {
-      const lookup = getTerritoryLookup(pharmacy.subRegion);
+      const directoryPharmacy = normalizePharmacyForDirectory(pharmacy);
 
-      if (lookup.district === "Central & Eastern District") {
+      if (directoryPharmacy.district === "Central & Eastern District") {
         centralEastern += 1;
       }
 
-      if (lookup.district === "Western & Southern District") {
+      if (directoryPharmacy.district === "Western & Southern District") {
         westernSouthern += 1;
       }
 
       if (
-        lookup.district !== UNASSIGNED_DISTRICT &&
-        isClean(lookup.territory)
+        directoryPharmacy.territory.isKnown &&
+        isClean(directoryPharmacy.territoryName)
       ) {
-        territories.add(lookup.territory);
+        territories.add(directoryPharmacy.territoryName);
       }
     });
 

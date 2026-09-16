@@ -17,9 +17,7 @@ export default async function Page({
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
-  const subRegion: string | undefined = params?.subRegion || undefined;
-
-  const result = await getDoctorsAction(subRegion, page, limit);
+  const result = await getDoctorsAction(undefined, undefined, undefined, false);
 
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch doctors");
@@ -48,11 +46,7 @@ export default async function Page({
         : [];
   }
 
-  if (result.results !== undefined) {
-    totalCount = result.results;
-  } else {
-    totalCount = doctors.length;
-  }
+  totalCount = doctors.length;
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">

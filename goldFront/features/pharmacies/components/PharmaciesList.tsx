@@ -59,11 +59,13 @@ import { toast } from "@/lib/utils/toast";
 import {
   KSA_TERRITORY_STRUCTURE,
   UNASSIGNED_DISTRICT,
-  UNASSIGNED_REGION,
-  getTerritoryLookup,
-  type TerritoryLookup,
 } from "@/features/plan/lib/territory";
 import type { PharmacyApiResponse } from "../lib/types";
+import {
+  normalizePharmacyFilterValue,
+  normalizePharmacyForDirectory,
+  type PharmacyDirectoryData,
+} from "../lib/utils/directory";
 
 interface PharmaciesListProps {
   pharmacies?: PharmacyApiResponse[];
@@ -78,14 +80,7 @@ type ControlOption = {
   label: string;
   helper?: string;
 };
-type PharmacyDirectoryRow = PharmacyApiResponse & {
-  code: string;
-  displayName: string;
-  territory: TerritoryLookup;
-  displayRegion: string;
-  displayDistrict: string;
-  displayTerritory: string;
-};
+type PharmacyDirectoryRow = PharmacyDirectoryData;
 
 const ALL = "all";
 const sortOptions: Array<{ value: SortKey; label: string }> = [
@@ -110,15 +105,22 @@ function cleanText(value?: string | null, fallback = "Not provided") {
 }
 
 function includesNormalized(value: string | null | undefined, query: string) {
-  return String(value ?? "")
-    .toLowerCase()
-    .includes(query);
+  return normalizePharmacyFilterValue(value).includes(query);
 }
 
 function uniqueSorted(values: Array<string | null | undefined>) {
-  return Array.from(
-    new Set(values.filter(isClean).map((value) => value.trim())),
-  ).sort((a, b) => a.localeCompare(b));
+  const labelsByValue = new Map<string, string>();
+
+  values.filter(isClean).forEach((value) => {
+    const label = value.trim().replace(/\s+/g, " ");
+    const canonicalValue = normalizePharmacyFilterValue(label);
+
+    if (!labelsByValue.has(canonicalValue)) {
+      labelsByValue.set(canonicalValue, label);
+    }
+  });
+
+  return Array.from(labelsByValue.values()).sort((a, b) => a.localeCompare(b));
 }
 
 function dateValue(value?: string) {
@@ -134,23 +136,6 @@ function formatDate(value?: string) {
     : format(parsed, "MMM d, yyyy");
 }
 
-function parsePharmacyName(value?: string | null) {
-  const raw = cleanText(value, "Unnamed Pharmacy");
-  const match = raw.match(/^([A-Za-z]\d{3,}|[A-Za-z0-9]{4,})\s*[-:]\s*(.+)$/);
-
-  if (!match) {
-    return {
-      code: "No code",
-      displayName: raw,
-    };
-  }
-
-  return {
-    code: match[1],
-    displayName: cleanText(match[2], raw),
-  };
-}
-
 function getCompactDistrictLabel(value: string) {
   if (value === ALL) return "All Districts";
   return value.replace(" District", "");
@@ -161,9 +146,9 @@ function getCompactRegionLabel(value: string) {
   return value.replace(" Region", "");
 }
 
-function getCompactTerritoryLabel(value: string) {
+function getCompactTerritoryLabel(value: string, useManagerLabel = false) {
   if (value === ALL) return "All Territories";
-  return value;
+  return useManagerLabel && value === "Southern" ? "Southern Area" : value;
 }
 
 function getActiveFilterCount({
@@ -189,26 +174,6 @@ function getActiveFilterCount({
     cityFilter !== ALL,
     sortKey !== "newest",
   ].filter(Boolean).length;
-}
-
-function getRow(pharmacy: PharmacyApiResponse): PharmacyDirectoryRow {
-  const territory = getTerritoryLookup(pharmacy.subRegion);
-  const parsedName = parsePharmacyName(pharmacy.name);
-  const apiRegion = cleanText(pharmacy.region, "");
-
-  return {
-    ...pharmacy,
-    code: parsedName.code,
-    displayName: parsedName.displayName,
-    territory,
-    displayDistrict: territory.isKnown
-      ? territory.district
-      : UNASSIGNED_DISTRICT,
-    displayRegion: territory.isKnown
-      ? territory.region
-      : apiRegion || territory.region || UNASSIGNED_REGION,
-    displayTerritory: territory.territory,
-  };
 }
 
 function FilterChip({
@@ -442,11 +407,13 @@ function PharmacyMobileCard({
   index,
   onViewDetails,
   isRep = false,
+  isManager = false,
 }: {
   row: PharmacyDirectoryRow;
   index: number;
   onViewDetails: (row: PharmacyDirectoryRow) => void;
   isRep?: boolean;
+  isManager?: boolean;
 }) {
   return (
     <article
@@ -477,12 +444,12 @@ function PharmacyMobileCard({
           />
           <DetailTile
             label="Region"
-            value={cleanText(row.displayRegion, "Not assigned")}
+            value={cleanText(row.region, "Not assigned")}
             icon={MapPinned}
           />
           <DetailTile
             label="Territory"
-            value={cleanText(row.displayTerritory, "Not assigned")}
+            value={getCompactTerritoryLabel(row.territoryName, isManager)}
             icon={MapPin}
           />
         </div>
@@ -497,7 +464,7 @@ function PharmacyMobileCard({
             className={cn(
               "group h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white",
               isRep
-                ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                ? "bg-[#168557] shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-[#107349]"
                 : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_14px_rgba(16,29,54,0.16)]",
             )}
           >
@@ -520,11 +487,13 @@ function PharmacyDetailsSheet({
   open,
   onOpenChange,
   isRep = false,
+  isManager = false,
 }: {
   pharmacy: PharmacyDirectoryRow | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isRep?: boolean;
+  isManager?: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -582,11 +551,11 @@ function PharmacyDetailsSheet({
                   Territory
                 </p>
                 <p className="text-gp-navy-900 mt-2 text-sm font-semibold">
-                  {cleanText(pharmacy.displayDistrict, "Not assigned")}
+                  {cleanText(pharmacy.district, "Not assigned")}
                 </p>
                 <p className="text-gp-text-muted mt-1 text-sm font-medium">
-                  {cleanText(pharmacy.displayRegion, "Not assigned")} /{" "}
-                  {cleanText(pharmacy.displayTerritory, "Not assigned")}
+                  {cleanText(pharmacy.region, "Not assigned")} /{" "}
+                  {getCompactTerritoryLabel(pharmacy.territoryName, isManager)}
                 </p>
               </div>
 
@@ -630,11 +599,11 @@ function PharmacyDetailsSheet({
                     ],
                     [
                       "Stored region",
-                      cleanText(pharmacy.region, "Not assigned"),
+                      cleanText(pharmacy.sourceRegion, "Not assigned"),
                     ],
                     [
                       "Stored sub-region",
-                      cleanText(pharmacy.subRegion, "Not assigned"),
+                      cleanText(pharmacy.sourceTerritory, "Not assigned"),
                     ],
                     ["Record ID", pharmacy.id],
                   ].map(([label, value]) => (
@@ -664,7 +633,7 @@ function PharmacyDetailsSheet({
                 className={cn(
                   "h-10 cursor-pointer rounded-[10px] text-sm font-semibold text-white",
                   isRep
-                    ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                    ? "bg-[#168557] shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-[#107349]"
                     : "bg-gp-navy-900 hover:bg-gp-navy-900/95",
                 )}
               >
@@ -695,6 +664,7 @@ export default function PharmaciesList({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { role } = useRoleUI();
+  const isManager = role === "MANAGER" && pathname?.startsWith("/manager");
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [query, setQuery] = useState("");
   const [districtFilter, setDistrictFilter] = useState(ALL);
@@ -707,11 +677,13 @@ export default function PharmaciesList({
   const [selectedPharmacy, setSelectedPharmacy] =
     useState<PharmacyDirectoryRow | null>(null);
 
-
-  const rows = useMemo(() => pharmacies.map(getRow), [pharmacies]);
+  const rows = useMemo<PharmacyDirectoryData[]>(
+    () => pharmacies.map(normalizePharmacyForDirectory),
+    [pharmacies],
+  );
 
   const districtOptions = useMemo<ControlOption[]>(() => {
-    const available = new Set(rows.map((row) => row.displayDistrict));
+    const available = new Set(rows.map((row) => row.district));
 
     return [
       ...KSA_TERRITORY_STRUCTURE.filter((district) =>
@@ -738,14 +710,11 @@ export default function PharmaciesList({
     return uniqueSorted(
       rows
         .filter(
-          (row) =>
-            districtFilter === ALL || row.displayDistrict === districtFilter,
+          (row) => districtFilter === ALL || row.district === districtFilter,
         )
-        .map((row) => row.displayRegion),
+        .map((row) => row.region),
     ).map((region) => {
-      const district = rows.find(
-        (row) => row.displayRegion === region,
-      )?.displayDistrict;
+      const district = rows.find((row) => row.region === region)?.district;
 
       return {
         value: region,
@@ -759,36 +728,51 @@ export default function PharmaciesList({
     return uniqueSorted(
       rows
         .filter((row) => {
-          if (
-            districtFilter !== ALL &&
-            row.displayDistrict !== districtFilter
-          ) {
+          if (districtFilter !== ALL && row.district !== districtFilter) {
             return false;
           }
-          if (regionFilter !== ALL && row.displayRegion !== regionFilter) {
+          if (regionFilter !== ALL && row.region !== regionFilter) {
             return false;
           }
           return true;
         })
-        .map((row) => row.displayTerritory),
+        .map((row) => row.territoryName),
     ).map((territory) => {
-      const match = rows.find((row) => row.displayTerritory === territory);
+      const match = rows.find((row) => row.territoryName === territory);
 
       return {
         value: territory,
         label: territory,
-        helper: match?.displayRegion,
+        helper: match?.region,
       };
     });
   }, [districtFilter, regionFilter, rows]);
 
   const cityOptions = useMemo<ControlOption[]>(
     () =>
-      uniqueSorted(rows.map((row) => row.city)).map((city) => ({
+      uniqueSorted(
+        rows
+          .filter((row) => {
+            if (districtFilter !== ALL && row.district !== districtFilter) {
+              return false;
+            }
+            if (regionFilter !== ALL && row.region !== regionFilter) {
+              return false;
+            }
+            if (
+              territoryFilter !== ALL &&
+              row.territoryName !== territoryFilter
+            ) {
+              return false;
+            }
+            return true;
+          })
+          .map((row) => row.city),
+      ).map((city) => ({
         value: city,
         label: city,
       })),
-    [rows],
+    [districtFilter, regionFilter, rows, territoryFilter],
   );
 
   const sortControlOptions: ControlOption[] = sortOptions.map((option) => ({
@@ -796,20 +780,35 @@ export default function PharmaciesList({
     label: option.label,
   }));
 
+  const directoryTerritoryOptions = useMemo<ControlOption[]>(
+    () =>
+      isManager
+        ? territoryOptions.map((territory) => ({
+            ...territory,
+            label: getCompactTerritoryLabel(territory.label, true),
+          }))
+        : territoryOptions,
+    [isManager, territoryOptions],
+  );
+
   const filteredRows = useMemo(() => {
-    const term = query.trim().toLowerCase();
+    const term = normalizePharmacyFilterValue(query);
 
     return rows.filter((row) => {
-      if (districtFilter !== ALL && row.displayDistrict !== districtFilter) {
+      if (districtFilter !== ALL && row.district !== districtFilter) {
         return false;
       }
-      if (regionFilter !== ALL && row.displayRegion !== regionFilter) {
+      if (regionFilter !== ALL && row.region !== regionFilter) {
         return false;
       }
-      if (territoryFilter !== ALL && row.displayTerritory !== territoryFilter) {
+      if (territoryFilter !== ALL && row.territoryName !== territoryFilter) {
         return false;
       }
-      if (cityFilter !== ALL && cleanText(row.city, "") !== cityFilter) {
+      if (
+        cityFilter !== ALL &&
+        normalizePharmacyFilterValue(row.city) !==
+          normalizePharmacyFilterValue(cityFilter)
+      ) {
         return false;
       }
       if (!term) return true;
@@ -820,11 +819,11 @@ export default function PharmaciesList({
         row.code,
         row.city,
         row.country,
+        row.sourceRegion,
+        row.sourceTerritory,
+        row.district,
         row.region,
-        row.subRegion,
-        row.displayDistrict,
-        row.displayRegion,
-        row.displayTerritory,
+        row.territoryName,
       ].some((value) => includesNormalized(value, term));
     });
   }, [cityFilter, districtFilter, query, regionFilter, rows, territoryFilter]);
@@ -855,7 +854,18 @@ export default function PharmaciesList({
     sortKey,
   });
   const hasActiveFilters = activeFilterCount > 0;
-  const isPageSlice = totalCount !== pharmacies.length;
+  const directoryTotalCount = isManager ? sortedRows.length : totalCount;
+  const directoryTotalPages = Math.max(
+    1,
+    Math.ceil(directoryTotalCount / limit),
+  );
+  const directoryPage = isManager
+    ? Math.min(Math.max(page, 1), directoryTotalPages)
+    : page;
+  const visibleRows = isManager
+    ? sortedRows.slice((directoryPage - 1) * limit, directoryPage * limit)
+    : sortedRows;
+  const isPageSlice = !isManager && totalCount !== pharmacies.length;
   const emptyTitle = hasActiveFilters
     ? "No pharmacies match these filters"
     : "No pharmacies found";
@@ -876,21 +886,71 @@ export default function PharmaciesList({
     resetPageToFirst();
   }
 
+  function resetCityWhenInvalid(nextLocation: {
+    district: string;
+    region: string;
+    territory: string;
+  }) {
+    if (cityFilter === ALL) return;
+
+    const cityIsAvailable = rows.some((row) => {
+      if (
+        nextLocation.district !== ALL &&
+        row.district !== nextLocation.district
+      ) {
+        return false;
+      }
+      if (nextLocation.region !== ALL && row.region !== nextLocation.region) {
+        return false;
+      }
+      if (
+        nextLocation.territory !== ALL &&
+        row.territoryName !== nextLocation.territory
+      ) {
+        return false;
+      }
+
+      return (
+        normalizePharmacyFilterValue(row.city) ===
+        normalizePharmacyFilterValue(cityFilter)
+      );
+    });
+
+    if (!cityIsAvailable) {
+      setCityFilter(ALL);
+    }
+  }
+
   function updateDistrict(value: string) {
     setDistrictFilter(value);
     setRegionFilter(ALL);
     setTerritoryFilter(ALL);
+    resetCityWhenInvalid({
+      district: value,
+      region: ALL,
+      territory: ALL,
+    });
     resetPageToFirst();
   }
 
   function updateRegion(value: string) {
     setRegionFilter(value);
     setTerritoryFilter(ALL);
+    resetCityWhenInvalid({
+      district: districtFilter,
+      region: value,
+      territory: ALL,
+    });
     resetPageToFirst();
   }
 
   function updateTerritory(value: string) {
     setTerritoryFilter(value);
+    resetCityWhenInvalid({
+      district: districtFilter,
+      region: regionFilter,
+      territory: value,
+    });
     resetPageToFirst();
   }
 
@@ -972,7 +1032,6 @@ export default function PharmaciesList({
                 </button>
               )}
             </div>
-
           </div>
 
           <div className="mt-4 flex justify-end md:hidden">
@@ -981,7 +1040,6 @@ export default function PharmaciesList({
               variant="outline"
               onClick={() => setFilterSheetOpen(true)}
               className="border-gp-border-default text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-surface-hover h-11 cursor-pointer rounded-[12px] bg-white px-3 text-sm font-semibold shadow-none"
-
             >
               <SlidersHorizontal
                 className="text-gp-gold-600 size-4"
@@ -1041,8 +1099,11 @@ export default function PharmaciesList({
                   icon={MapPin}
                   label="Territory"
                   allLabel="All Territories"
-                  displayValue={getCompactTerritoryLabel(territoryFilter)}
-                  options={territoryOptions}
+                  displayValue={getCompactTerritoryLabel(
+                    territoryFilter,
+                    isManager,
+                  )}
+                  options={directoryTerritoryOptions}
                   className="md:w-[170px]"
                 />
               </div>
@@ -1188,8 +1249,11 @@ export default function PharmaciesList({
                         icon={MapPin}
                         label="Territory"
                         allLabel="All Territories"
-                        displayValue={getCompactTerritoryLabel(territoryFilter)}
-                        options={territoryOptions}
+                        displayValue={getCompactTerritoryLabel(
+                          territoryFilter,
+                          isManager,
+                        )}
+                        options={directoryTerritoryOptions}
                       />
                     </div>
                   </section>
@@ -1263,7 +1327,7 @@ export default function PharmaciesList({
         </header>
 
         <div className="bg-gp-surface-subtle/40 p-4 sm:p-5">
-          {sortedRows.length > 0 ? (
+          {visibleRows.length > 0 ? (
             <>
               <div className="border-gp-border-subtle hidden overflow-hidden rounded-[14px] border bg-white lg:block">
                 <div className="max-h-[calc(100vh-360px)] overflow-y-auto">
@@ -1284,7 +1348,7 @@ export default function PharmaciesList({
                       </tr>
                     </thead>
                     <tbody className="divide-gp-border-subtle divide-y bg-white">
-                      {sortedRows.map((row, index) => (
+                      {visibleRows.map((row, index) => (
                         <tr
                           key={row.id}
                           className={cn(
@@ -1295,7 +1359,7 @@ export default function PharmaciesList({
                           )}
                         >
                           <td className="text-gp-text-placeholder px-4 py-3.5 text-xs font-semibold">
-                            {(page - 1) * limit + index + 1}
+                            {(directoryPage - 1) * limit + index + 1}
                           </td>
                           <td className="px-4 py-3.5">
                             <PharmacyNameCell row={row} isRep={isRep} />
@@ -1308,13 +1372,13 @@ export default function PharmaciesList({
                           </td>
                           <td className="text-gp-text-muted px-4 py-3.5">
                             <DataQualityText
-                              value={row.displayDistrict}
+                              value={row.district}
                               fallback="Not assigned"
                             />
                           </td>
                           <td className="px-4 py-3.5">
                             <p className="text-gp-navy-900 text-sm font-semibold">
-                              {cleanText(row.displayRegion, "Not assigned")}
+                              {cleanText(row.region, "Not assigned")}
                             </p>
                           </td>
                           <td className="px-4 py-3.5">
@@ -1327,9 +1391,9 @@ export default function PharmaciesList({
                               )}
                             >
                               <span className="truncate">
-                                {cleanText(
-                                  row.displayTerritory,
-                                  "Not assigned",
+                                {getCompactTerritoryLabel(
+                                  row.territoryName,
+                                  isManager,
                                 )}
                               </span>
                             </span>
@@ -1351,7 +1415,7 @@ export default function PharmaciesList({
                                 className={cn(
                                   "group/details h-9 cursor-pointer rounded-[10px] px-3 text-xs font-semibold text-white transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px",
                                   isRep
-                                    ? "bg-[#168557] hover:bg-[#107349] shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                                    ? "bg-[#168557] shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-[#107349]"
                                     : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_14px_rgba(16,29,54,0.13)]",
                                 )}
                               >
@@ -1438,13 +1502,14 @@ export default function PharmaciesList({
               </div>
 
               <div className="grid grid-cols-1 gap-4 lg:hidden">
-                {sortedRows.map((row, index) => (
+                {visibleRows.map((row, index) => (
                   <PharmacyMobileCard
                     key={row.id}
                     row={row}
                     index={index}
                     onViewDetails={openDetails}
                     isRep={isRep}
+                    isManager={isManager}
                   />
                 ))}
               </div>
@@ -1487,9 +1552,9 @@ export default function PharmaciesList({
         </div>
 
         <TablePaginationFooter
-          page={page}
+          page={directoryPage}
           limit={limit}
-          totalCount={totalCount}
+          totalCount={directoryTotalCount}
           itemLabel="pharmacies"
           ariaLabel="Pharmacies directory pagination"
           pageNavAriaLabel="Pharmacies pages"
@@ -1504,6 +1569,7 @@ export default function PharmaciesList({
           if (!nextOpen) setSelectedPharmacy(null);
         }}
         isRep={isRep}
+        isManager={isManager}
       />
     </>
   );

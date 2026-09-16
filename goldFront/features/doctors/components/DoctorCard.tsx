@@ -18,17 +18,17 @@ import { cn, getInitials } from "@/lib/utils";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getDoctorsAction } from "@/features/doctors/api";
-import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
-import type { DoctorCardData } from "../lib/types";
 import { getTerritoryLookup } from "@/features/plan/lib/territory";
+import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
+import type { DoctorDirectoryData } from "../lib/utils/mappers";
 
 function isClean(value?: string | null): value is string {
   return Boolean(
     value &&
-      typeof value === "string" &&
-      value.trim() !== "" &&
-      !value.toLowerCase().includes("undefined") &&
-      !value.toLowerCase().includes("null"),
+    typeof value === "string" &&
+    value.trim() !== "" &&
+    !value.toLowerCase().includes("undefined") &&
+    !value.toLowerCase().includes("null"),
   );
 }
 
@@ -75,7 +75,7 @@ export default function DoctorCard({
   data,
   index = 0,
 }: {
-  data: DoctorCardData;
+  data: DoctorDirectoryData;
   index?: number;
 }) {
   const {
@@ -83,22 +83,25 @@ export default function DoctorCard({
     nameEN,
     nameAR,
     specialty,
-    subRegion,
     phone,
     email,
     grade,
     avgPatientsPerDay,
     accountName,
     area,
+    subRegion,
   } = data;
   const { features, role } = useRoleUI();
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
+
   const cleanNameAR = isClean(nameAR) ? nameAR.trim() : null;
   const cleanNameEN = isClean(nameEN) ? nameEN.trim() : null;
-  const cleanSpecialty = isClean(specialty) ? specialty.trim() : "General Doctor";
+  const cleanSpecialty = isClean(specialty)
+    ? specialty.trim()
+    : "General Doctor";
   const cleanEmail = isClean(email) ? email.trim() : null;
   const cleanPhone = isClean(phone) ? phone.trim() : null;
   const cleanGrade = isClean(grade) ? grade.trim() : null;
@@ -106,9 +109,9 @@ export default function DoctorCard({
   const cleanAccount = isClean(accountName) ? accountName.trim() : null;
   const cleanSubRegion = isClean(subRegion) ? subRegion.trim() : null;
   const territory = getTerritoryLookup(cleanSubRegion || cleanArea);
+
   const primaryName = cleanNameAR || cleanNameEN || "Unnamed Doctor";
-  const secondaryName =
-    cleanNameAR && cleanNameEN ? cleanNameEN : cleanNameAR ? null : cleanNameAR;
+  const secondaryName = cleanNameAR && cleanNameEN ? cleanNameEN : null;
   const initials = getInitials(cleanNameEN || cleanNameAR || "Doctor");
   const patientsPerDayText = avgPatientsPerDay
     ? `${avgPatientsPerDay} patients/day`
@@ -147,7 +150,7 @@ export default function DoctorCard({
     <>
       <Card
         className={cn(
-          "group/doctor border-gp-border-default bg-gp-surface-card shadow-gp-card relative flex min-h-[286px] flex-col justify-between gap-4 overflow-hidden rounded-[16px] border p-4 opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,29,54,0.09)] [animation:plans-card-in_350ms_ease-out_forwards] motion-reduce:transform-none motion-reduce:opacity-100 motion-reduce:transition-none motion-reduce:[animation:none]",
+          "group/doctor border-gp-border-default bg-gp-surface-card shadow-gp-card relative flex min-h-[286px] [animation:plans-card-in_350ms_ease-out_forwards] flex-col justify-between gap-4 overflow-hidden rounded-[16px] border p-4 opacity-0 transition-[border-color,box-shadow,transform] duration-[200ms] ease-out hover:-translate-y-0.5 hover:shadow-[0_10px_26px_rgba(16,29,54,0.09)] motion-reduce:transform-none motion-reduce:[animation:none] motion-reduce:opacity-100 motion-reduce:transition-none",
           isRep ? "hover:border-[#168557]/40" : "hover:border-gp-gold-300",
         )}
         style={{ animationDelay: `${Math.min(index, 9) * 45}ms` }}
@@ -195,7 +198,7 @@ export default function DoctorCard({
                     "rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color] duration-[180ms]",
                     isRep
                       ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] group-hover/doctor:border-[#A3E5C2] group-hover/doctor:bg-[#DCF5E8]"
-                      : "border-[#E8D7A8] bg-[#F8F4E9] text-[#8A681F] group-hover/doctor:border-gp-gold-400 group-hover/doctor:bg-gp-gold-50",
+                      : "group-hover/doctor:border-gp-gold-400 group-hover/doctor:bg-gp-gold-50 border-[#E8D7A8] bg-[#F8F4E9] text-[#8A681F]",
                   )}
                 >
                   {cleanSpecialty}
@@ -204,12 +207,12 @@ export default function DoctorCard({
                 <span className="group/territory border-gp-border-control bg-gp-surface-control text-gp-navy-900 relative rounded-full border px-2.5 py-1 text-[11px] font-semibold">
                   <span className="inline-flex max-w-[170px] items-center gap-1 truncate">
                     <MapPinned
-                      className="size-3 text-gp-gold-600"
+                      className="text-gp-gold-600 size-3"
                       aria-hidden="true"
                     />
                     <span className="truncate">{territory.territory}</span>
                   </span>
-                  <span className="plans-territory-tooltip pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-[232px] -translate-x-1/2 rounded-[12px] border border-gp-border-default bg-white p-3 text-left shadow-gp-popover group-hover/territory:block group-focus-within/territory:block">
+                  <span className="plans-territory-tooltip border-gp-border-default shadow-gp-popover pointer-events-none absolute bottom-full left-1/2 z-30 mb-2 hidden w-[232px] -translate-x-1/2 rounded-[12px] border bg-white p-3 text-left group-focus-within/territory:block group-hover/territory:block">
                     <span className="text-gp-navy-900 block text-xs font-bold tracking-[0.06em] uppercase">
                       Territory
                     </span>
@@ -226,7 +229,7 @@ export default function DoctorCard({
                 </span>
 
                 {cleanGrade && (
-                  <span className="border-gp-border-subtle bg-white text-gp-text-secondary rounded-full border px-2.5 py-1 text-[11px] font-semibold">
+                  <span className="border-gp-border-subtle text-gp-text-secondary rounded-full border bg-white px-2.5 py-1 text-[11px] font-semibold">
                     Grade {cleanGrade}
                   </span>
                 )}
@@ -308,8 +311,8 @@ export default function DoctorCard({
               className={cn(
                 "group/profile inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-[10px] px-3.5 text-xs font-semibold text-white transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 focus-visible:ring-3 focus-visible:outline-none motion-reduce:transform-none sm:w-auto",
                 isRep
-                  ? "bg-[#168557] hover:bg-[#126b46] shadow-[0_6px_16px_rgba(22,133,87,0.22)] focus-visible:ring-[#168557]/25"
-                  : "bg-gp-navy-900 hover:bg-gp-navy-900/95 shadow-[0_6px_16px_rgba(16,29,54,0.16)] hover:shadow-[0_10px_22px_rgba(16,29,54,0.2)] focus-visible:ring-gp-gold-500/25",
+                  ? "bg-[#168557] shadow-[0_6px_16px_rgba(22,133,87,0.22)] hover:bg-[#126b46] focus-visible:ring-[#168557]/25"
+                  : "bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 shadow-[0_6px_16px_rgba(16,29,54,0.16)] hover:shadow-[0_10px_22px_rgba(16,29,54,0.2)]",
               )}
             >
               View Profile

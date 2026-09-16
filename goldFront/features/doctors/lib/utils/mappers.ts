@@ -1,5 +1,24 @@
 import { DoctorApiResponse } from "../types/api";
 import { DoctorProfileData, DoctorCardData } from "../types";
+import {
+  getTerritoryLookup,
+  type TerritoryLookup,
+} from "@/features/plan/lib/territory";
+
+export type DoctorDirectoryData = DoctorCardData & {
+  createdAt?: string;
+  territory: TerritoryLookup;
+};
+
+function normalizeDirectoryText(value?: string | null) {
+  const normalized = String(value ?? "").trim();
+
+  return normalized &&
+    normalized.toLowerCase() !== "undefined" &&
+    normalized.toLowerCase() !== "null"
+    ? normalized
+    : "";
+}
 
 /**
  * Map DoctorApiResponse to DoctorProfileData
@@ -49,5 +68,28 @@ export function mapToDoctorCard(doctor: DoctorApiResponse): DoctorCardData {
     avgPatientsPerDay: doctor.avgPatientsPerDay,
     accountName: doctor.accountName,
     area: doctor.area,
+  };
+}
+
+export function normalizeDoctorForDirectory(
+  doctor: DoctorApiResponse,
+): DoctorDirectoryData {
+  const subRegion = normalizeDirectoryText(doctor.subRegion);
+  const area = normalizeDirectoryText(doctor.area);
+
+  return {
+    id: doctor.id,
+    nameAR: normalizeDirectoryText(doctor.nameAR),
+    nameEN: normalizeDirectoryText(doctor.nameEN),
+    specialty: normalizeDirectoryText(doctor.specialty),
+    subRegion,
+    phone: normalizeDirectoryText(doctor.phone),
+    email: normalizeDirectoryText(doctor.email) || null,
+    grade: normalizeDirectoryText(doctor.grade),
+    avgPatientsPerDay: doctor.avgPatientsPerDay,
+    accountName: normalizeDirectoryText(doctor.accountName),
+    area: area || null,
+    createdAt: doctor.createdAt,
+    territory: getTerritoryLookup(subRegion || area),
   };
 }
