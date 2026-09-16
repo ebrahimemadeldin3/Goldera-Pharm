@@ -471,11 +471,18 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                                   </p>
                                 )}
                               <div className="mt-2 flex flex-wrap gap-1.5">
-                                {preselectedDoctor.specialty && (
-                                  <span className="rounded-full border border-[#E8D7A8] bg-[#F8F4E9] px-2 py-0.5 text-[11px] font-semibold text-[#8A681F]">
-                                    {preselectedDoctor.specialty}
-                                  </span>
-                                )}
+                                  {preselectedDoctor.specialty && (
+                                    <span
+                                      className={cn(
+                                        "rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                                        isRep
+                                          ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                                          : "border-[#E8D7A8] bg-[#F8F4E9] text-[#8A681F]",
+                                      )}
+                                    >
+                                      {preselectedDoctor.specialty}
+                                    </span>
+                                  )}
                                 {preselectedDoctor.subRegion && (
                                   <span className="rounded-full border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[11px] font-semibold text-[#101D36]">
                                     {preselectedDoctor.subRegion}

@@ -9,7 +9,6 @@ import {
   TextSearch,
   UserRound,
   ListChecks,
-  Target,
   Route,
   LucideProps,
   PackageSearch,
@@ -203,13 +202,6 @@ export const roleSidebarMap: Record<UserRole, SidebarItem[]> = {
       label: "Requests",
       href: "/rep/requests",
       icon: UserSearch,
-    },
-    {
-      id: "target",
-      label: "Target",
-      href: "/rep/target",
-      icon: Target,
-      disabled: true,
     },
     {
       id: "coaching",

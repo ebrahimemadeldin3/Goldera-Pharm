@@ -367,7 +367,7 @@ export default function VisitsPlanner({
             <div
               role="tablist"
               aria-label="Visit calendar view"
-              className="visits-mode-switch relative grid h-11 grid-cols-2 items-center overflow-hidden rounded-[13px] border border-[#E7EAF0] bg-[#F5F7FA] p-1"
+              className="visits-mode-switch relative grid h-11 grid-cols-2 gap-1 items-center overflow-hidden rounded-[13px] border border-[#E7EAF0] bg-[#F5F7FA] p-1"
               style={
                 {
                   "--visits-mode-index": modeIndex,
@@ -398,6 +398,7 @@ export default function VisitsPlanner({
                     onKeyDown={handleModeKeyDown}
                     className={cn(
                       "visits-mode-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-[background-color,color,transform] duration-[160ms] ease-out outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                      isRep ? "visits-mode-tab-rep" : isManager ? "visits-mode-tab-manager" : undefined,
                       isActive
                         ? isRep
                           ? "font-bold text-[#168557]"
@@ -420,7 +421,12 @@ export default function VisitsPlanner({
               })}
             </div>
 
-            <div className="visits-search-field relative min-w-0">
+            <div
+              className={cn(
+                "visits-search-field group relative min-w-0",
+                isRep ? "visits-search-field-rep" : isManager ? "visits-search-field-manager" : undefined,
+              )}
+            >
               <Search
                 className={cn(
                   "visits-search-icon pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-[#98A2B3]",
@@ -435,6 +441,7 @@ export default function VisitsPlanner({
                 aria-label="Search visits"
                 className={cn(
                   "visits-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3]",
+                  isRep ? "visits-search-input-rep" : isManager ? "visits-search-input-manager" : undefined,
                   isRep
                     ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30 focus:ring-2 focus:ring-[#168557]/20"
                     : isManager

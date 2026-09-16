@@ -549,7 +549,14 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <span className="rounded-full border border-[#E8D7A8] bg-[#F8F4E9] px-2.5 py-1 text-[11px] font-semibold text-[#8A681F]">
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold",
+                    isRep
+                      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                      : "border-[#E8D7A8] bg-[#F8F4E9] text-[#8A681F]",
+                  )}
+                >
                   {valueOrFallback(doctor.specialty, "Specialty not assigned")}
                 </span>
                 <span className="border-gp-border-control bg-gp-surface-control text-gp-navy-900 rounded-full border px-2.5 py-1 text-[11px] font-semibold">

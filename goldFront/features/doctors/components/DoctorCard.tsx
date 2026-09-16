@@ -92,9 +92,10 @@ export default function DoctorCard({
     area,
   } = data;
   const { features, role } = useRoleUI();
+  const pathname = usePathname();
+  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
-
   const cleanNameAR = isClean(nameAR) ? nameAR.trim() : null;
   const cleanNameEN = isClean(nameEN) ? nameEN.trim() : null;
   const cleanSpecialty = isClean(specialty) ? specialty.trim() : "General Doctor";
@@ -141,9 +142,6 @@ export default function DoctorCard({
     }
     setScheduleDialogOpen(true);
   };
-
-  const pathname = usePathname();
-  const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
 
   return (
     <>
@@ -192,7 +190,14 @@ export default function DoctorCard({
               )}
 
               <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                <span className="rounded-full border border-[#E8D7A8] bg-[#F8F4E9] px-2.5 py-1 text-[11px] font-semibold text-[#8A681F] transition-[background-color,border-color] duration-[180ms] group-hover/doctor:border-gp-gold-400 group-hover/doctor:bg-gp-gold-50">
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color] duration-[180ms]",
+                    isRep
+                      ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] group-hover/doctor:border-[#A3E5C2] group-hover/doctor:bg-[#DCF5E8]"
+                      : "border-[#E8D7A8] bg-[#F8F4E9] text-[#8A681F] group-hover/doctor:border-gp-gold-400 group-hover/doctor:bg-gp-gold-50",
+                  )}
+                >
                   {cleanSpecialty}
                 </span>
 

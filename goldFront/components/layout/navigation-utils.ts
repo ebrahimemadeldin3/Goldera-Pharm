@@ -28,7 +28,7 @@ const navigationGroupDefinitions: NavigationGroupDefinition[] = [
   {
     id: "commercial",
     label: "Commercial",
-    itemIds: ["sales", "forecast", "products", "target"],
+    itemIds: ["sales", "forecast", "products"],
   },
   {
     id: "management",

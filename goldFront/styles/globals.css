@@ -5399,6 +5399,7 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
 .visits-mode-switch {
   --visits-mode-index: 0;
+  gap: 4px;
 }
 
 .visits-mode-switch-indicator {
@@ -5407,12 +5408,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
   bottom: 4px;
   left: 4px;
   z-index: 0;
-  width: calc((100% - 8px) / 2);
+  width: calc((100% - 12px) / 2);
   border: 1px solid rgba(233, 221, 184, 0.75);
   border-radius: 9px;
   background: #ffffff;
   box-shadow: 0 4px 12px rgba(16, 27, 51, 0.08);
-  transform: translateX(calc(var(--visits-mode-index) * 100%));
+  transform: translateX(calc(var(--visits-mode-index) * (100% + 4px)));
   transition: transform 250ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
@@ -5442,8 +5443,18 @@ input[type="password"]::-webkit-textfield-decoration-container {
   color: #b18732;
 }
 
+[data-role="MEDICAL_REP"] .visits-search-field:focus-within .visits-search-icon,
+.visits-search-field-rep:focus-within .visits-search-icon {
+  color: #168557;
+}
+
 .visits-search-input:focus {
   box-shadow: 0 0 0 2px rgba(201, 164, 76, 0.08);
+}
+
+[data-role="MEDICAL_REP"] .visits-search-input:focus,
+.visits-search-input-rep:focus {
+  box-shadow: 0 0 0 2px rgba(22, 133, 87, 0.12);
 }
 
 .visits-search-clear {
@@ -5824,7 +5835,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
   .visits-mode-tab[aria-selected="false"]:hover {
     color: #8a6515;
     background: rgba(201, 164, 76, 0.08);
-    transform: translateY(-1px);
+  }
+
+  [data-role="MEDICAL_REP"] .visits-mode-tab[aria-selected="false"]:hover,
+  .visits-mode-tab-rep[aria-selected="false"]:hover {
+    color: #168557;
+    background: rgba(22, 133, 87, 0.08);
   }
 
   .visits-calendar:not(.visits-calendar-rep) .rdp-button_previous:hover,
@@ -5864,6 +5880,12 @@ input[type="password"]::-webkit-textfield-decoration-container {
 
   .visits-record-card:hover {
     background: #fffdf7;
+  }
+
+  [data-role="MEDICAL_REP"] .visits-record-card:hover,
+  [data-role="MEDICAL_REP"] .visits-week-day:hover {
+    border-color: #cbefdd;
+    background: #fbfdfc;
   }
 }
 
