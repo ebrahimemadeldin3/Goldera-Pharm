@@ -105,6 +105,30 @@ function DetailGroup({ title, icon: Icon, children }: DetailGroupProps) {
   );
 }
 
+function TerritoryChips({ territories }: { territories: string[] }) {
+  if (territories.length === 0) {
+    return (
+      <span className="text-gp-text-placeholder text-sm font-semibold">
+        Not assigned
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex min-w-0 flex-wrap gap-1.5">
+      {territories.map((territory) => (
+        <span
+          key={territory}
+          className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex max-w-full rounded-full border px-2.5 py-1 text-xs font-semibold"
+          title={territory}
+        >
+          <span className="truncate">{territory}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function TeamCard({
   member,
   baseUrl = "/manager/team",
@@ -123,16 +147,19 @@ export default function TeamCard({
   const lastLogin = formatDate(member.lastLogin);
   const employeeId = member.employeeId || "";
   const iqama = member.iqama || "";
-  const territoryLabel = assignment.territory || "Not assigned";
   const reportsToLabel = reportsTo || "Not assigned";
   const hasIncompleteAssignment = !assignment.isComplete;
+  const hasMissingTerritory = !assignment.hasTerritory;
+  const hasMissingReporting = !assignment.hasReporting;
   const footerMessage = hasIncompleteAssignment
-    ? "Territory assignment incomplete"
+    ? hasMissingTerritory
+      ? "Territory assignment incomplete"
+      : "Reporting line incomplete"
     : "Territory assigned";
   const footerTitle = hasIncompleteAssignment
     ? [
-        !assignment.hasTerritory ? "Territory has not been assigned." : "",
-        !assignment.hasReporting
+        hasMissingTerritory ? "Territory has not been assigned." : "",
+        hasMissingReporting
           ? "Reporting manager or supervisor has not been assigned."
           : "",
       ]
@@ -223,7 +250,7 @@ export default function TeamCard({
             </div>
           </div>
 
-          <dl className="team-assignment-summary border-gp-border-subtle bg-gp-surface-subtle grid min-w-0 gap-2 rounded-[12px] border px-3.5 py-3 text-[13px] leading-5 lg:w-[260px] lg:shrink-0">
+          <dl className="team-assignment-summary border-gp-border-subtle bg-gp-surface-subtle grid min-w-0 gap-3 rounded-[12px] border px-3.5 py-3 text-[13px] leading-5 lg:w-[280px] lg:shrink-0">
             <div className="flex min-w-0 items-start gap-2">
               <MapPinned
                 className="text-gp-gold-600 mt-0.5 size-3.5 shrink-0"
@@ -231,18 +258,22 @@ export default function TeamCard({
               />
               <div className="min-w-0">
                 <dt className="text-gp-text-muted text-[11px] font-semibold tracking-[0.06em] uppercase">
-                  Territory
+                  Field Coverage
                 </dt>
-                <dd
-                  className={cn(
-                    "mt-0.5 font-semibold break-words",
-                    assignment.territory
-                      ? "text-gp-navy-900"
-                      : "text-gp-text-placeholder",
-                  )}
-                  title={territoryLabel}
-                >
-                  {territoryLabel}
+                <dd className="mt-1">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      assignment.region
+                        ? "text-gp-navy-900"
+                        : "text-gp-text-placeholder",
+                    )}
+                  >
+                    {assignment.region || "Not assigned"}
+                  </p>
+                  <div className="mt-2">
+                    <TerritoryChips territories={assignment.territories} />
+                  </div>
                 </dd>
               </div>
             </div>
@@ -284,15 +315,18 @@ export default function TeamCard({
 
           <DetailGroup icon={BriefcaseBusiness} title="Field Assignment">
             <DetailItem
-              label="District"
-              value={assignment.district}
-              fallback="Not assigned"
-            />
-            <DetailItem
               label="Region"
               value={assignment.region}
               fallback="Not assigned"
             />
+            <div className="team-detail-item grid min-w-0 grid-cols-[96px_minmax(0,1fr)] gap-3 text-[13px] leading-5">
+              <dt className="text-gp-text-muted whitespace-nowrap font-medium">
+                {assignment.territories.length > 1 ? "Territories" : "Territory"}
+              </dt>
+              <dd>
+                <TerritoryChips territories={assignment.territories} />
+              </dd>
+            </div>
             {isSupervisor && member.repsCount !== undefined && (
               <DetailItem
                 label="Team"

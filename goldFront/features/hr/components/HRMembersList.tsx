@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Search,
+  SlidersHorizontal,
   ShieldCheck,
   UserRoundCheck,
   UserSearch,
@@ -17,7 +18,12 @@ import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { cn } from "@/lib/utils";
 import type { HRMember } from "../lib/types";
 import { HRMemberCard } from "./HRMemberCard";
-import { getTerritory } from "../lib/utils";
+import { getHRMemberCoverage, getTerritory } from "../lib/utils";
+import {
+  ALL_TERRITORY_FILTERS,
+  TerritoryCoverageFilter,
+} from "@/features/geography/components/TerritoryCoverageFilter";
+import { getTerritoryLookup } from "@/features/plan/lib/territory";
 
 type HRMembersListProps = {
   members: HRMember[];
@@ -28,6 +34,7 @@ type HRMembersListProps = {
 };
 
 type HRRoleTab = "all" | "supervisors" | "reps";
+type HRMemberCoverage = ReturnType<typeof getHRMemberCoverage>;
 
 type RoleTabOption = {
   id: HRRoleTab;
@@ -36,8 +43,38 @@ type RoleTabOption = {
   icon: LucideIcon;
 };
 
+type EnrichedHRMember = {
+  member: HRMember;
+  coverage: HRMemberCoverage;
+  districts: string[];
+  regions: string[];
+  territories: string[];
+};
+
 function isRoleTab(value: string | null): value is HRRoleTab {
   return value === "all" || value === "supervisors" || value === "reps";
+}
+
+function uniqueValues(values: string[]) {
+  return Array.from(new Set(values.filter(Boolean)));
+}
+
+function enrichMember(member: HRMember): EnrichedHRMember {
+  const coverage = getHRMemberCoverage(member);
+  const districts = uniqueValues(
+    coverage.territories
+      .map(getTerritoryLookup)
+      .filter((lookup) => lookup.isKnown)
+      .map((lookup) => lookup.district),
+  );
+
+  return {
+    member,
+    coverage,
+    districts,
+    regions: uniqueValues([coverage.region]),
+    territories: coverage.territories,
+  };
 }
 
 export function HRMembersList({
@@ -54,20 +91,32 @@ export function HRMembersList({
     isRoleTab(initialRole) ? initialRole : "all",
   );
   const [query, setQuery] = useState(searchParams.get("hrQuery") || "");
+  const [districtFilter, setDistrictFilter] = useState(ALL_TERRITORY_FILTERS);
+  const [regionFilter, setRegionFilter] = useState(ALL_TERRITORY_FILTERS);
+  const [territoryFilter, setTerritoryFilter] = useState(
+    ALL_TERRITORY_FILTERS,
+  );
   const tabRefs = useRef<Record<HRRoleTab, HTMLButtonElement | null>>({
     all: null,
     supervisors: null,
     reps: null,
   });
+  const enrichedMembers = useMemo(
+    () => members.map(enrichMember),
+    [members],
+  );
 
   const counts = useMemo(
     () => ({
-      all: members.length,
-      supervisors: members.filter((member) => member.role === "SUPERVISOR")
-        .length,
-      reps: members.filter((member) => member.role === "MEDICAL_REP").length,
+      all: enrichedMembers.length,
+      supervisors: enrichedMembers.filter(
+        (entry) => entry.member.role === "SUPERVISOR",
+      ).length,
+      reps: enrichedMembers.filter(
+        (entry) => entry.member.role === "MEDICAL_REP",
+      ).length,
     }),
-    [members],
+    [enrichedMembers],
   );
 
   const roleOptions: RoleTabOption[] = [
@@ -89,9 +138,30 @@ export function HRMembersList({
   const filtered = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
 
-    return members.filter((member) => {
+    return enrichedMembers
+      .filter((entry) => {
+        const { member } = entry;
+
       if (tab === "supervisors" && member.role !== "SUPERVISOR") return false;
       if (tab === "reps" && member.role !== "MEDICAL_REP") return false;
+        if (
+          districtFilter !== ALL_TERRITORY_FILTERS &&
+          !entry.districts.includes(districtFilter)
+        ) {
+          return false;
+        }
+        if (
+          regionFilter !== ALL_TERRITORY_FILTERS &&
+          !entry.regions.includes(regionFilter)
+        ) {
+          return false;
+        }
+        if (
+          territoryFilter !== ALL_TERRITORY_FILTERS &&
+          !entry.territories.includes(territoryFilter)
+        ) {
+          return false;
+        }
       if (!term) return true;
 
       return [
@@ -103,10 +173,20 @@ export function HRMembersList({
         member.iqamaNumber,
         member.subRegion?.name,
         member.subRegion?.region?.name,
+          entry.coverage.region,
+          ...entry.coverage.territories,
         getTerritory(member),
       ].some((value) => value?.toLocaleLowerCase().includes(term));
-    });
-  }, [members, query, tab]);
+      })
+      .map((entry) => entry.member);
+  }, [
+    districtFilter,
+    enrichedMembers,
+    query,
+    regionFilter,
+    tab,
+    territoryFilter,
+  ]);
 
   function syncDirectoryUrl(nextTab: HRRoleTab, nextQuery: string) {
     const params = new URLSearchParams(Array.from(searchParams.entries()));
@@ -128,6 +208,25 @@ export function HRMembersList({
     if (shouldFocus) {
       window.requestAnimationFrame(() => tabRefs.current[nextTab]?.focus());
     }
+  }
+
+  function updateDistrict(value: string) {
+    setDistrictFilter(value);
+    setRegionFilter(ALL_TERRITORY_FILTERS);
+    setTerritoryFilter(ALL_TERRITORY_FILTERS);
+  }
+
+  function updateRegion(value: string) {
+    setRegionFilter(value);
+    setTerritoryFilter(ALL_TERRITORY_FILTERS);
+  }
+
+  function updateTerritory(value: string) {
+    setTerritoryFilter(value);
+  }
+
+  function clearGeographicFilters() {
+    updateDistrict(ALL_TERRITORY_FILTERS);
   }
 
   function handleTabKeyDown(
@@ -155,31 +254,44 @@ export function HRMembersList({
   }
 
   const trimmedQuery = query.trim();
-  const emptyState = trimmedQuery
+  const activeGeographicFilterCount = [
+    districtFilter !== ALL_TERRITORY_FILTERS,
+    regionFilter !== ALL_TERRITORY_FILTERS,
+    territoryFilter !== ALL_TERRITORY_FILTERS,
+  ].filter(Boolean).length;
+  const hasActiveGeographicFilters = activeGeographicFilterCount > 0;
+  const emptyState = hasActiveGeographicFilters
     ? {
         icon: UserSearch,
-        title: "No search results",
+        title: "No employees match this territory coverage",
         description:
-          "Try another name, email, Iqama number, department, or territory.",
+          "No employees match the selected territory coverage and current filters.",
       }
-    : tab === "supervisors"
+    : trimmedQuery
       ? {
-          icon: ShieldCheck,
-          title: "No supervisors found",
-          description: "No supervisors are available on this directory page.",
+          icon: UserSearch,
+          title: "No search results",
+          description:
+            "Try another name, email, Iqama number, department, or territory.",
         }
-      : tab === "reps"
+      : tab === "supervisors"
         ? {
-            icon: UserRoundCheck,
-            title: "No medical representatives found",
-            description:
-              "No medical representatives are available on this directory page.",
+            icon: ShieldCheck,
+            title: "No supervisors found",
+            description: "No supervisors are available on this directory page.",
           }
-        : {
-            icon: UsersRound,
-            title: "No employees found",
-            description: "Employee records will appear here when available.",
-          };
+        : tab === "reps"
+          ? {
+              icon: UserRoundCheck,
+              title: "No medical representatives found",
+              description:
+                "No medical representatives are available on this directory page.",
+            }
+          : {
+              icon: UsersRound,
+              title: "No employees found",
+              description: "Employee records will appear here when available.",
+            };
   const EmptyIcon = emptyState.icon;
   const paginationTotalCount = isCompleteDataset ? filtered.length : totalCount;
   const paginationPage = isCompleteDataset ? 1 : page;
@@ -198,7 +310,7 @@ export function HRMembersList({
               aria-live="polite"
             >
               {trimmedQuery
-                ? `${filtered.length} ${filtered.length === 1 ? "result" : "results"} on this page for “${trimmedQuery}”`
+                ? `${filtered.length} ${filtered.length === 1 ? "result" : "results"} on this page for "${trimmedQuery}"`
                 : `${filtered.length} ${filtered.length === 1 ? "employee" : "employees"} shown on this page`}
             </p>
           </div>
@@ -287,6 +399,28 @@ export function HRMembersList({
             )}
           </div>
         </div>
+        <div className="mt-4">
+          <div className="text-gp-navy-900 mb-2 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+            <SlidersHorizontal
+              className="text-gp-gold-600 size-3.5"
+              aria-hidden="true"
+            />
+            Filters
+            {hasActiveGeographicFilters && (
+              <span className="bg-gp-navy-900 text-gp-gold-500 inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5">
+                {activeGeographicFilterCount}
+              </span>
+            )}
+          </div>
+          <TerritoryCoverageFilter
+            district={districtFilter}
+            region={regionFilter}
+            territory={territoryFilter}
+            onDistrictChange={updateDistrict}
+            onRegionChange={updateRegion}
+            onTerritoryChange={updateTerritory}
+          />
+        </div>
       </header>
 
       <div
@@ -317,6 +451,15 @@ export function HRMembersList({
             <p className="text-gp-text-muted mx-auto mt-2 max-w-md text-sm leading-6 font-medium">
               {emptyState.description}
             </p>
+            {hasActiveGeographicFilters && (
+              <button
+                type="button"
+                onClick={clearGeographicFilters}
+                className="border-gp-gold-300 text-gp-gold-700 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/25 mx-auto mt-4 inline-flex h-9 cursor-pointer items-center justify-center gap-2 rounded-[10px] border bg-white px-3 text-xs font-semibold transition-[background-color,border-color,color] duration-[150ms] focus-visible:ring-2 focus-visible:outline-none"
+              >
+                Clear geographic filters
+              </button>
+            )}
           </div>
         )}
       </div>

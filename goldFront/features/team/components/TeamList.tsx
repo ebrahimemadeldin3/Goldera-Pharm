@@ -7,9 +7,6 @@ import { Input } from "@/components/ui/input";
 import {
   ArrowDownAZ,
   CheckCircle2,
-  Layers3,
-  MapPin,
-  MapPinned,
   RotateCcw,
   Search as SearchIcon,
   ShieldCheck,
@@ -32,10 +29,9 @@ import { useRoleUI } from "@/core/ui/role-ui-context";
 import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { cn } from "@/lib/utils";
 import {
-  KSA_TERRITORY_STRUCTURE,
-  getRegionOptionsForDistrict,
-  getTerritoryOptionsForRegion,
-} from "@/features/plan/lib/territory";
+  ALL_TERRITORY_FILTERS,
+  TerritoryCoverageFilter,
+} from "@/features/geography/components/TerritoryCoverageFilter";
 import { getTeamMemberAssignment } from "../lib/utils";
 
 type TeamSummary = {
@@ -83,6 +79,7 @@ type EnrichedMember = {
   district: string;
   region: string;
   territory: string;
+  territories: string[];
   territoryAssigned: boolean;
   joinedTime: number;
 };
@@ -122,6 +119,7 @@ function enrichMember(member: User): EnrichedMember {
     district: assignment.district,
     region: assignment.region,
     territory: assignment.territory,
+    territories: assignment.territories,
     territoryAssigned: assignment.hasTerritory,
     joinedTime: getJoinedTime(member),
   };
@@ -142,6 +140,7 @@ function matchesSearch(entry: EnrichedMember, search: string) {
     entry.district,
     entry.region,
     entry.territory,
+    ...entry.territories,
   ].some((value) => value?.toLowerCase().includes(search));
 }
 
@@ -177,9 +176,11 @@ export default function TeamList({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<TeamRoleTab>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [districtFilter, setDistrictFilter] = useState("all");
-  const [regionFilter, setRegionFilter] = useState("all");
-  const [territoryFilter, setTerritoryFilter] = useState("all");
+  const [districtFilter, setDistrictFilter] = useState(ALL_TERRITORY_FILTERS);
+  const [regionFilter, setRegionFilter] = useState(ALL_TERRITORY_FILTERS);
+  const [territoryFilter, setTerritoryFilter] = useState(
+    ALL_TERRITORY_FILTERS,
+  );
   const [sortFilter, setSortFilter] = useState<SortFilter>("name-asc");
   const [currentPage, setCurrentPage] = useState(Math.max(1, page));
   const [rowsPerPage, setRowsPerPage] = useState(
@@ -201,8 +202,6 @@ export default function TeamList({
     () => sourceMembers.map(enrichMember),
     [sourceMembers],
   );
-  const regionOptions = getRegionOptionsForDistrict(districtFilter);
-  const territoryOptions = getTerritoryOptionsForRegion(regionFilter);
   const trimmedSearchQuery = searchQuery.trim();
   const search = trimmedSearchQuery.toLowerCase();
 
@@ -212,17 +211,20 @@ export default function TeamList({
         if (statusFilter === "active" && !entry.member.isActive) return false;
         if (statusFilter === "inactive" && entry.member.isActive) return false;
         if (
-          districtFilter !== "all" &&
+          districtFilter !== ALL_TERRITORY_FILTERS &&
           entry.district !== districtFilter
         ) {
           return false;
         }
-        if (regionFilter !== "all" && entry.region !== regionFilter) {
+        if (
+          regionFilter !== ALL_TERRITORY_FILTERS &&
+          entry.region !== regionFilter
+        ) {
           return false;
         }
         if (
-          territoryFilter !== "all" &&
-          entry.territory !== territoryFilter
+          territoryFilter !== ALL_TERRITORY_FILTERS &&
+          !entry.territories.includes(territoryFilter)
         ) {
           return false;
         }
@@ -286,8 +288,8 @@ export default function TeamList({
         .length,
       coverageCount: new Set(
         scopedEntries
-          .filter((entry) => entry.territoryAssigned && entry.territory)
-          .map((entry) => entry.territory),
+          .filter((entry) => entry.territoryAssigned)
+          .flatMap((entry) => entry.territories),
       ).size,
     }),
     [scopedEntries],
@@ -375,14 +377,14 @@ export default function TeamList({
 
   function updateDistrict(value: string) {
     setDistrictFilter(value);
-    setRegionFilter("all");
-    setTerritoryFilter("all");
+    setRegionFilter(ALL_TERRITORY_FILTERS);
+    setTerritoryFilter(ALL_TERRITORY_FILTERS);
     setCurrentPage(1);
   }
 
   function updateRegion(value: string) {
     setRegionFilter(value);
-    setTerritoryFilter("all");
+    setTerritoryFilter(ALL_TERRITORY_FILTERS);
     setCurrentPage(1);
   }
 
@@ -410,9 +412,9 @@ export default function TeamList({
     setSearchQuery("");
     setActiveTab("all");
     setStatusFilter("all");
-    setDistrictFilter("all");
-    setRegionFilter("all");
-    setTerritoryFilter("all");
+    setDistrictFilter(ALL_TERRITORY_FILTERS);
+    setRegionFilter(ALL_TERRITORY_FILTERS);
+    setTerritoryFilter(ALL_TERRITORY_FILTERS);
     setSortFilter("name-asc");
     setCurrentPage(1);
   }
@@ -432,25 +434,25 @@ export default function TeamList({
           onClear: () => updateStatus("all"),
         }
       : null,
-    districtFilter !== "all"
+    districtFilter !== ALL_TERRITORY_FILTERS
       ? {
           id: "district",
           label: districtFilter,
-          onClear: () => updateDistrict("all"),
+          onClear: () => updateDistrict(ALL_TERRITORY_FILTERS),
         }
       : null,
-    regionFilter !== "all"
+    regionFilter !== ALL_TERRITORY_FILTERS
       ? {
           id: "region",
           label: regionFilter,
-          onClear: () => updateRegion("all"),
+          onClear: () => updateRegion(ALL_TERRITORY_FILTERS),
         }
       : null,
-    territoryFilter !== "all"
+    territoryFilter !== ALL_TERRITORY_FILTERS
       ? {
           id: "territory",
           label: territoryFilter,
-          onClear: () => updateTerritory("all"),
+          onClear: () => updateTerritory(ALL_TERRITORY_FILTERS),
         }
       : null,
   ].filter(Boolean) as Array<{ id: string; label: string; onClear: () => void }>;
@@ -606,132 +608,69 @@ export default function TeamList({
             </div>
           </div>
 
-          <div className="team-directory-controls grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-            <Select
-              value={statusFilter}
-              onValueChange={(value) => updateStatus(value as StatusFilter)}
-            >
-              <SelectTrigger className={selectTriggerClassName}>
-                <CheckCircle2 className="size-4" aria-hidden="true" />
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="all" className={selectItemClassName}>
-                  All Statuses
-                </SelectItem>
-                <SelectItem value="active" className={selectItemClassName}>
-                  Active
-                </SelectItem>
-                <SelectItem value="inactive" className={selectItemClassName}>
-                  Inactive
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={districtFilter} onValueChange={updateDistrict}>
-              <SelectTrigger className={selectTriggerClassName}>
-                <Layers3 className="size-4" aria-hidden="true" />
-                <SelectValue placeholder="District" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="all" className={selectItemClassName}>
-                  All Districts
-                </SelectItem>
-                {KSA_TERRITORY_STRUCTURE.map((district) => (
-                  <SelectItem
-                    key={district.name}
-                    value={district.name}
-                    className={selectItemClassName}
-                  >
-                    {district.name}
+          <div className="team-directory-controls space-y-3">
+            <div className="text-gp-navy-900 flex items-center gap-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
+              <SlidersHorizontal
+                className="text-gp-gold-600 size-3.5"
+                aria-hidden="true"
+              />
+              Filters
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(0,220px)_minmax(0,220px)]">
+              <Select
+                value={statusFilter}
+                onValueChange={(value) => updateStatus(value as StatusFilter)}
+              >
+                <SelectTrigger className={selectTriggerClassName}>
+                  <CheckCircle2 className="size-4" aria-hidden="true" />
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className={selectContentClassName}>
+                  <SelectItem value="all" className={selectItemClassName}>
+                    All Statuses
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={districtFilter === "all" ? undefined : regionFilter}
-              onValueChange={updateRegion}
-              disabled={districtFilter === "all"}
-            >
-              <SelectTrigger className={selectTriggerClassName}>
-                <MapPinned className="size-4" aria-hidden="true" />
-                <SelectValue
-                  placeholder={
-                    districtFilter === "all"
-                      ? "Select district first"
-                      : "Region"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="all" className={selectItemClassName}>
-                  All Regions
-                </SelectItem>
-                {regionOptions.map((regionOption) => (
-                  <SelectItem
-                    key={regionOption.name}
-                    value={regionOption.name}
-                    className={selectItemClassName}
-                  >
-                    {regionOption.name}
+                  <SelectItem value="active" className={selectItemClassName}>
+                    Active
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select
-              value={regionFilter === "all" ? undefined : territoryFilter}
-              onValueChange={updateTerritory}
-              disabled={regionFilter === "all"}
-            >
-              <SelectTrigger className={selectTriggerClassName}>
-                <MapPin className="size-4" aria-hidden="true" />
-                <SelectValue
-                  placeholder={
-                    regionFilter === "all" ? "Select region first" : "Territory"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="all" className={selectItemClassName}>
-                  All Territories
-                </SelectItem>
-                {territoryOptions.map((territoryOption) => (
-                  <SelectItem
-                    key={territoryOption.name}
-                    value={territoryOption.name}
-                    className={selectItemClassName}
-                  >
-                    {territoryOption.name}
+                  <SelectItem value="inactive" className={selectItemClassName}>
+                    Inactive
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                </SelectContent>
+              </Select>
 
-            <Select
-              value={sortFilter}
-              onValueChange={(value) => updateSort(value as SortFilter)}
-            >
-              <SelectTrigger className={selectTriggerClassName}>
-                <ArrowDownAZ className="size-4" aria-hidden="true" />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent className={selectContentClassName}>
-                <SelectItem value="name-asc" className={selectItemClassName}>
-                  Name A-Z
-                </SelectItem>
-                <SelectItem value="name-desc" className={selectItemClassName}>
-                  Name Z-A
-                </SelectItem>
-                <SelectItem value="newest" className={selectItemClassName}>
-                  Newest
-                </SelectItem>
-                <SelectItem value="oldest" className={selectItemClassName}>
-                  Oldest
-                </SelectItem>
-              </SelectContent>
-            </Select>
+              <Select
+                value={sortFilter}
+                onValueChange={(value) => updateSort(value as SortFilter)}
+              >
+                <SelectTrigger className={selectTriggerClassName}>
+                  <ArrowDownAZ className="size-4" aria-hidden="true" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent className={selectContentClassName}>
+                  <SelectItem value="name-asc" className={selectItemClassName}>
+                    Name A-Z
+                  </SelectItem>
+                  <SelectItem value="name-desc" className={selectItemClassName}>
+                    Name Z-A
+                  </SelectItem>
+                  <SelectItem value="newest" className={selectItemClassName}>
+                    Newest
+                  </SelectItem>
+                  <SelectItem value="oldest" className={selectItemClassName}>
+                    Oldest
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <TerritoryCoverageFilter
+              district={districtFilter}
+              region={regionFilter}
+              territory={territoryFilter}
+              onDistrictChange={updateDistrict}
+              onRegionChange={updateRegion}
+              onTerritoryChange={updateTerritory}
+            />
           </div>
         </div>
       </header>

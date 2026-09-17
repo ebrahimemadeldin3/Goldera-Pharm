@@ -13,6 +13,7 @@ import {
   IdCard,
   Info,
   Mail,
+  MapPinned,
   MoreHorizontal,
   Network,
   UserRound,
@@ -38,6 +39,7 @@ import {
   formatServiceDuration,
   getApprovedLeaveDays,
   getDocumentUrl,
+  getHRMemberCoverage,
   getReportsTo,
   getTerritory,
 } from "../lib/utils";
@@ -97,6 +99,30 @@ function InformationGroup({
   );
 }
 
+function TerritoryChips({ territories }: { territories: string[] }) {
+  if (territories.length === 0) {
+    return (
+      <span className="text-gp-text-placeholder text-sm font-semibold">
+        Not assigned
+      </span>
+    );
+  }
+
+  return (
+    <span className="flex min-w-0 flex-wrap gap-1.5">
+      {territories.map((territory) => (
+        <span
+          key={territory}
+          className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex max-w-full rounded-full border px-2.5 py-1 text-xs font-semibold"
+          title={territory}
+        >
+          <span className="truncate">{territory}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export function HRMemberCard({
   member,
   animationIndex = 0,
@@ -112,6 +138,7 @@ export function HRMemberCard({
   const lastLogin = formatHRDate(member.lastLogin, true);
   const reportsTo = getReportsTo(member);
   const territory = getTerritory(member);
+  const coverage = getHRMemberCoverage(member);
   const leaveDays = getApprovedLeaveDays(member.leaveDaysCountTotal);
   const leaveValue = `${leaveDays.toLocaleString()} ${leaveDays === 1 ? "day" : "days"}`;
   const hasAdditionalInformation = Boolean(
@@ -235,7 +262,7 @@ export function HRMemberCard({
           </dl>
         </div>
 
-        <div className="border-gp-border-subtle mt-4 grid grid-cols-1 gap-3 border-t pt-3.5 sm:grid-cols-2 xl:grid-cols-3 xl:gap-0">
+        <div className="border-gp-border-subtle mt-4 grid grid-cols-1 gap-3 border-t pt-3.5 sm:grid-cols-2 xl:grid-cols-4 xl:gap-0">
           <InformationGroup icon={IdCard} title="Employee Info">
             <InformationItem
               label="Iqama"
@@ -261,6 +288,22 @@ export function HRMemberCard({
               value={lastLogin}
               fallback="No activity yet"
             />
+          </InformationGroup>
+
+          <InformationGroup icon={MapPinned} title="Field Coverage">
+            <InformationItem
+              label="Region"
+              value={coverage.region}
+              fallback="Not assigned"
+            />
+            <div className="grid min-w-0 grid-cols-[92px_minmax(0,1fr)] gap-2 text-[13px] leading-5">
+              <dt className="text-gp-text-muted font-medium">
+                {coverage.territories.length > 1 ? "Territories" : "Territory"}
+              </dt>
+              <dd>
+                <TerritoryChips territories={coverage.territories} />
+              </dd>
+            </div>
           </InformationGroup>
 
           <InformationGroup icon={CalendarCheck2} title="Leave / Activity">

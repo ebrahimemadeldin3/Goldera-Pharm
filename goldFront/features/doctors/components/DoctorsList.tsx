@@ -76,6 +76,9 @@ const sortOptions: Array<{ value: SortKey; label: string }> = [
   { value: "nameDesc", label: "Name Z-A" },
   { value: "specialtyAsc", label: "Specialty A-Z" },
 ];
+const businessRegions = KSA_TERRITORY_STRUCTURE.flatMap(
+  (district) => district.regions,
+);
 
 function isClean(value?: string | null): value is string {
   return Boolean(
@@ -135,6 +138,43 @@ function getCompactRegionLabel(value: string) {
 function getCompactTerritoryLabel(value: string, useManagerLabel = false) {
   if (value === ALL) return "All Territories";
   return useManagerLabel && value === "Southern" ? "Southern Area" : value;
+}
+
+function getBusinessRegionOptions(rows: DoctorDirectoryData[]): ControlOption[] {
+  return businessRegions.map((region) => {
+    const matchingTerritoryCount = new Set(
+      rows
+        .filter((row) => row.territory.region === region.name)
+        .map((row) => row.territory.territory),
+    ).size;
+
+    return {
+      value: region.name,
+      label: region.name,
+      helper:
+        matchingTerritoryCount > 0
+          ? `${matchingTerritoryCount} ${
+              matchingTerritoryCount === 1 ? "territory" : "territories"
+            } loaded`
+          : `${region.territories.length} ${
+              region.territories.length === 1 ? "territory" : "territories"
+            }`,
+    };
+  });
+}
+
+function getBusinessTerritoryOptions(regionName: string): ControlOption[] {
+  if (regionName === ALL) return [];
+
+  const region = businessRegions.find((item) => item.name === regionName);
+
+  return (
+    region?.territories.map((territory) => ({
+      value: territory.name,
+      label: territory.name,
+      helper: region.name,
+    })) ?? []
+  );
 }
 
 function getActiveFilterCount({
@@ -339,11 +379,7 @@ export default function DoctorsList({
     initialSubRegion === ALL ? ALL : initialTerritoryLookup.territory;
 
   const [query, setQuery] = useState("");
-  const [districtFilter, setDistrictFilter] = useState(
-    isManager && initialSubRegion !== ALL
-      ? initialTerritoryLookup.district
-      : ALL,
-  );
+  const [districtFilter, setDistrictFilter] = useState(ALL);
   const [regionFilter, setRegionFilter] = useState(
     isManager && initialSubRegion !== ALL ? initialTerritoryLookup.region : ALL,
   );
@@ -455,32 +491,14 @@ export default function DoctorsList({
     label: option.label,
   }));
 
-  const managerDistrictOptions = districtOptions;
-
   const managerRegionOptions = useMemo<ControlOption[]>(
-    () =>
-      regionOptions.map((region) => {
-        const territoryCount = new Set(
-          rows
-            .filter((row) => row.territory.region === region.value)
-            .map((row) => row.territory.territory),
-        ).size;
-
-        return {
-          ...region,
-          helper: `${territoryCount} ${territoryCount === 1 ? "territory" : "territories"}`,
-        };
-      }),
-    [regionOptions, rows],
+    () => getBusinessRegionOptions(rows),
+    [rows],
   );
 
   const managerTerritoryOptions = useMemo<ControlOption[]>(
-    () =>
-      territoryOptions.map((territory) => ({
-        ...territory,
-        label: getCompactTerritoryLabel(territory.label, true),
-      })),
-    [territoryOptions],
+    () => getBusinessTerritoryOptions(regionFilter),
+    [regionFilter],
   );
 
   const filteredRows = useMemo(() => {
@@ -571,14 +589,13 @@ export default function DoctorsList({
   });
   const hasActiveFilters = activeFilterCount > 0;
   const coverageSummary = [
-    districtFilter !== ALL ? getCompactDistrictLabel(districtFilter) : "",
-    regionFilter !== ALL ? getCompactRegionLabel(regionFilter) : "",
+    regionFilter !== ALL ? regionFilter : "",
     territoryFilter !== ALL
       ? getCompactTerritoryLabel(territoryFilter, true)
       : "",
   ]
     .filter(Boolean)
-    .join(" / ");
+    .join(" -> ");
   const directoryTotalCount = isManager ? sortedRows.length : totalCount;
   const directoryTotalPages = Math.max(
     1,
@@ -668,7 +685,7 @@ export default function DoctorsList({
   }
 
   const emptyTitle = hasActiveFilters
-    ? "No doctors match these filters"
+    ? "No doctors match the selected filters."
     : "No doctors found";
   const emptyCopy = hasActiveFilters
     ? "Try changing your territory, specialty or search criteria."
@@ -759,34 +776,23 @@ export default function DoctorsList({
                   </span>
                   <div>
                     <p className="text-gp-navy-900 text-sm font-semibold">
-                      Territory coverage
+                      Territory Coverage
                     </p>
                     <p className="text-gp-text-muted mt-0.5 text-xs font-medium">
-                      District / Region / Territory
+                      Filter doctors by region and assigned territory
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 items-center gap-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto_minmax(0,1fr)]">
-                  <FilterSelect
-                    value={districtFilter}
-                    onValueChange={updateDistrict}
-                    icon={Layers3}
-                    label="District"
-                    allLabel="All Districts"
-                    displayValue={getCompactDistrictLabel(districtFilter)}
-                    options={managerDistrictOptions}
-                  />
-                  <ChevronRight
-                    className="text-gp-gold-500/75 hidden size-4 xl:block"
-                    aria-hidden="true"
-                  />
+                <div className="grid grid-cols-1 items-center gap-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
                   <FilterSelect
                     value={regionFilter}
                     onValueChange={updateRegion}
                     icon={MapPinned}
                     label="Region"
                     allLabel="All Regions"
-                    displayValue={getCompactRegionLabel(regionFilter)}
+                    displayValue={
+                      regionFilter === ALL ? "All Regions" : regionFilter
+                    }
                     options={managerRegionOptions}
                   />
                   <ChevronRight
@@ -920,7 +926,9 @@ export default function DoctorsList({
             {regionFilter !== ALL && (
               <FilterChip
                 prefix="Region"
-                label={getCompactRegionLabel(regionFilter)}
+                label={
+                  isManager ? regionFilter : getCompactRegionLabel(regionFilter)
+                }
                 onClear={() => updateRegion(ALL)}
               />
             )}
@@ -993,27 +1001,33 @@ export default function DoctorsList({
               <div className="space-y-5">
                 <section>
                   <p className="text-gp-navy-900 mb-2 text-[11px] font-semibold tracking-[0.08em] uppercase">
-                    {isManager ? "Territory coverage" : "Location"}
+                    {isManager ? "Territory Coverage" : "Location"}
                   </p>
                   <div className="space-y-2">
-                    <FilterSelect
-                      value={districtFilter}
-                      onValueChange={updateDistrict}
-                      icon={Layers3}
-                      label="District"
-                      allLabel="All Districts"
-                      displayValue={getCompactDistrictLabel(districtFilter)}
-                      options={
-                        isManager ? managerDistrictOptions : districtOptions
-                      }
-                    />
+                    {!isManager && (
+                      <FilterSelect
+                        value={districtFilter}
+                        onValueChange={updateDistrict}
+                        icon={Layers3}
+                        label="District"
+                        allLabel="All Districts"
+                        displayValue={getCompactDistrictLabel(districtFilter)}
+                        options={districtOptions}
+                      />
+                    )}
                     <FilterSelect
                       value={regionFilter}
                       onValueChange={updateRegion}
                       icon={MapPinned}
                       label="Region"
                       allLabel="All Regions"
-                      displayValue={getCompactRegionLabel(regionFilter)}
+                      displayValue={
+                        isManager
+                          ? regionFilter === ALL
+                            ? "All Regions"
+                            : regionFilter
+                          : getCompactRegionLabel(regionFilter)
+                      }
                       options={isManager ? managerRegionOptions : regionOptions}
                     />
                     <FilterSelect

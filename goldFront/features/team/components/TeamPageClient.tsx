@@ -76,7 +76,7 @@ export default function TeamPageClient({
     loadedMembers
       .map(getTeamMemberAssignment)
       .filter((assignment) => assignment.hasTerritory)
-      .map((assignment) => assignment.territory),
+      .flatMap((assignment) => assignment.territories),
   ).size;
   const [summary, setSummary] = useState<TeamSummary>({
     totalMembers: loadedMembers.length || totalMembers,

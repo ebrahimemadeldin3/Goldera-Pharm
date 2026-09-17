@@ -133,7 +133,7 @@ export function formatRoleLabel(role?: User["role"]) {
 export function getTerritoryLabel(data: Pick<User, "region" | "location">) {
   const assignment = getTeamMemberAssignment(data as User);
 
-  return [assignment.district, assignment.region, assignment.territory]
+  return [assignment.region, ...assignment.territories]
     .filter(Boolean)
     .join(" / ");
 }

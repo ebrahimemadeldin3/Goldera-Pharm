@@ -5,6 +5,9 @@ import { fetchAllVisits } from "@/features/visits/api";
 import { getManagerTeam } from "@/features/team/api";
 import { getAllCoachingReports } from "@/features/coaching/api";
 import { getAppraisals } from "@/features/appraisal/api";
+import { fetchDoctors } from "@/features/doctors/api";
+import { fetchPharmacies } from "@/features/pharmacies/api";
+import { fetchManagerTeamRequests } from "@/features/requests/api";
 import type { Dataset, DashboardData } from "./dashboard-types";
 
 type Page<T> = { data: T[]; results: number };
@@ -42,7 +45,16 @@ function settle<T>(result: PromiseSettledResult<T[]>): Dataset<T> {
 }
 
 export async function loadDashboardData(): Promise<DashboardData> {
-  const [sales, visits, team, coaching, appraisals] = await Promise.allSettled([
+  const [
+    sales,
+    visits,
+    team,
+    coaching,
+    appraisals,
+    doctors,
+    pharmacies,
+    requests,
+  ] = await Promise.allSettled([
     collectPages(async (page, limit) => {
       const response = await fetchSales({ page, limit });
       const data = extractSales(response);
@@ -57,6 +69,9 @@ export async function loadDashboardData(): Promise<DashboardData> {
     ]),
     collectPages((page, limit) => getAllCoachingReports(page, limit)),
     collectPages((page, limit) => getAppraisals(page, limit)),
+    collectPages((page, limit) => fetchDoctors(page, limit)),
+    collectPages((page, limit) => fetchPharmacies(page, limit)),
+    collectPages((page, limit) => fetchManagerTeamRequests(page, limit)),
   ]);
   return {
     sales: settle(sales),
@@ -64,6 +79,9 @@ export async function loadDashboardData(): Promise<DashboardData> {
     team: settle(team),
     coaching: settle(coaching),
     appraisals: settle(appraisals),
+    doctors: settle(doctors),
+    pharmacies: settle(pharmacies),
+    requests: settle(requests),
     asOf: new Date().toISOString(),
   };
 }

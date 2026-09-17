@@ -15,6 +15,10 @@ import {
   LocalError,
   StatusBadge,
 } from "./DashboardPrimitives";
+import {
+  getTeamMemberAssignment,
+  transformUserApiResponse,
+} from "@/features/team/lib/utils";
 import styles from "./manager-dashboard.module.css";
 
 export function DashboardTables({
@@ -33,14 +37,18 @@ export function DashboardTables({
   const members = new Map(
     data.team.data.map((member) => [member.id, member.name]),
   );
+  const assignments = new Map(
+    data.team.data.map((member) => {
+      const user = transformUserApiResponse(member);
+      return [member.id, getTeamMemberAssignment(user)];
+    }),
+  );
   const sales = summary.recentSales.map((sale) => {
     const amount = finiteNumber(sale.untaxedTotal);
-    const qty = finiteNumber(sale.qtyOrdered);
     return {
       id: sale.id,
       customer: sale.customer || "Customer unavailable",
-      product: sale.product?.name || sale.productId || "Product unavailable",
-      qty: qty === null ? "Not available" : qty.toLocaleString(),
+      rep: "Unavailable",
       amount: amount === null ? "Not available" : money(amount),
       date: displayDate(saleDate(sale)),
     };
@@ -53,6 +61,9 @@ export function DashboardTables({
       visit.doctor?.name ||
       "Doctor unavailable",
     rep: members.get(visit.medicalRepId || visit.userId) || "Rep unavailable",
+    territory:
+      assignments.get(visit.medicalRepId || visit.userId)?.territory ||
+      "Not assigned",
     date:
       dateKey(visit.date) === dateKey(data.asOf)
         ? "Today"
@@ -84,15 +95,14 @@ export function DashboardTables({
                   Recent sales, {periodLabel}, amounts in SAR excluding tax
                 </caption>
                 <colgroup>
+                  <col style={{ width: "32%" }} />
+                  <col style={{ width: "22%" }} />
                   <col style={{ width: "24%" }} />
-                  <col style={{ width: "23%" }} />
-                  <col style={{ width: "9%" }} />
-                  <col style={{ width: "24%" }} />
-                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "22%" }} />
                 </colgroup>
                 <thead>
                   <tr>
-                    {["Customer", "Product", "Qty", "Amount", "Date"].map(
+                    {["Customer", "Rep", "Amount", "Date"].map(
                       (label) => (
                         <th key={label} scope="col">
                           {label}
@@ -105,8 +115,7 @@ export function DashboardTables({
                   {sales.map((sale) => (
                     <tr key={sale.id}>
                       <td className="font-medium">{sale.customer}</td>
-                      <td>{sale.product}</td>
-                      <td className="tabular-nums">{sale.qty}</td>
+                      <td>{sale.rep}</td>
                       <td className="font-medium tabular-nums">
                         {sale.amount}
                       </td>
@@ -125,9 +134,8 @@ export function DashboardTables({
                     </p>
                     <p className="font-semibold tabular-nums">{sale.amount}</p>
                   </div>
-                  <p className="break-words text-[#667085]">{sale.product}</p>
+                  <p className="break-words text-[#667085]">{sale.rep}</p>
                   <div className="flex flex-wrap justify-between gap-2 text-xs text-[#667085]">
-                    <span>Qty: {sale.qty}</span>
                     <span>{sale.date}</span>
                   </div>
                 </li>
@@ -155,20 +163,25 @@ export function DashboardTables({
                   Current upcoming visits independent of the reporting period
                 </caption>
                 <colgroup>
-                  <col style={{ width: "26%" }} />
-                  <col style={{ width: "23%" }} />
-                  <col style={{ width: "27%" }} />
                   <col style={{ width: "24%" }} />
+                  <col style={{ width: "22%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "20%" }} />
+                  <col style={{ width: "14%" }} />
                 </colgroup>
                 <thead>
                   <tr>
-                    {["Doctor", "Representative", "Date / time", "Status"].map(
-                      (label) => (
+                    {[
+                      "Doctor",
+                      "Representative",
+                      "Territory",
+                      "Date / time",
+                      "Status",
+                    ].map((label) => (
                         <th key={label} scope="col">
                           {label}
                         </th>
-                      ),
-                    )}
+                      ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -176,6 +189,7 @@ export function DashboardTables({
                     <tr key={visit.id}>
                       <td className="font-medium">{visit.doctor}</td>
                       <td>{visit.rep}</td>
+                      <td>{visit.territory}</td>
                       <td>
                         <span className="block">{visit.date}</span>
                         <span className="text-xs text-[#667085]">
@@ -200,6 +214,7 @@ export function DashboardTables({
                     <StatusBadge status={visit.status} />
                   </div>
                   <p className="break-words text-[#667085]">{visit.rep}</p>
+                  <p className="text-xs text-[#667085]">{visit.territory}</p>
                   <p className="text-xs text-[#667085]">
                     {visit.date} / {visit.time}
                   </p>

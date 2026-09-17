@@ -12,6 +12,7 @@ import {
   FileBarChart,
   Plus,
   Star,
+  Stethoscope,
   TrendingUp,
   Upload,
   Users,
@@ -24,32 +25,51 @@ import {
   VisitStatusChart,
 } from "./DashboardCharts";
 import { DashboardTables } from "./DashboardTables";
-import { money, PERIODS, summarizeDashboard } from "./dashboard-utils";
-import type { DashboardData, Period } from "./dashboard-types";
+import { DashboardFilters } from "./DashboardFilters";
+import {
+  FieldCoveragePanel,
+  ManagementAttention,
+  OperationsSnapshot,
+  RecentActivityPanel,
+  RegionalCoveragePanel,
+  TeamPerformancePanel,
+  TerritoryPerformancePanel,
+} from "./DashboardInsights";
+import {
+  formatDateRangeLabel,
+  getDefaultDashboardFilters,
+  money,
+  summarizeDashboard,
+} from "./dashboard-utils";
+import type { DashboardData } from "./dashboard-types";
 import styles from "./manager-dashboard.module.css";
 
 const shortcuts = [
   { label: "Schedule Visit", href: "/manager/visits", icon: CalendarPlus },
+  { label: "Add Doctor", href: "/manager/doctors/add", icon: Stethoscope },
+  { label: "Add Pharmacy", href: "/manager/pharmacies", icon: Plus },
+  { label: "Create Appraisal", href: "/manager/appraisal", icon: Star },
   {
     label: "New Coaching Review",
     href: "/manager/coaching",
     icon: ClipboardCheck,
   },
   { label: "Upload Sales", href: "/manager/sales", icon: Upload },
-  { label: "Add Pharmacy", href: "/manager/pharmacies", icon: Plus },
   { label: "View Team", href: "/manager/team", icon: Users },
   { label: "Reports", href: "/manager/reports", icon: FileBarChart },
 ];
 
 export default function ManagerDashboard({ data }: { data: DashboardData }) {
-  const [period, setPeriod] = useState<Period>("month");
+  const [filters, setFilters] = useState(() =>
+    getDefaultDashboardFilters(data.asOf),
+  );
   const [pending, startTransition] = useTransition();
   const router = useRouter();
   const summary = useMemo(
-    () => summarizeDashboard(data, period),
-    [data, period],
+    () => summarizeDashboard(data, filters),
+    [data, filters],
   );
-  const label = PERIODS.find((option) => option.value === period)!.label;
+  const label = formatDateRangeLabel(filters, data.asOf);
   const retry = () => startTransition(() => router.refresh());
   const error = (name: string) => (
     <LocalError name={name} retry={retry} pending={pending} />
@@ -90,35 +110,22 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
             Dashboard
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#667085]">
-            Monitor field activity, commercial performance and team progress.
+            Executive overview of commercial performance and field operations.
           </p>
-        </div>
-        <div className="flex shrink-0 flex-col gap-1.5">
-          <label
-            htmlFor="manager-dashboard-period"
-            className="text-xs font-medium text-[#667085]"
-          >
-            Reporting period
-          </label>
-          <select
-            id="manager-dashboard-period"
-            value={period}
-            onChange={(event) => setPeriod(event.target.value as Period)}
-            className="h-10 min-w-44 rounded-lg border border-[#DDE3EE] bg-white px-3 text-sm font-medium"
-          >
-            {PERIODS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <span className="text-[11px] text-[#667085]">Saudi Arabia time</span>
         </div>
       </header>
 
+      <DashboardFilters
+        filters={filters}
+        asOf={data.asOf}
+        reps={data.team.data.filter((member) => member.role === "MEDICAL_REP")}
+        onChange={setFilters}
+        onReset={() => setFilters(getDefaultDashboardFilters(data.asOf))}
+      />
+
       <section
         aria-label="Key performance indicators"
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-4"
+        className="grid gap-4 md:grid-cols-2 xl:grid-cols-6"
       >
         <StatCard
           label={summary.missingAmounts ? "Sales with Amounts" : "Total Sales"}
@@ -156,9 +163,22 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
           error={data.visits.error ? error("visits") : undefined}
         />
         <StatCard
+          label="Visit Completion"
+          value={
+            summary.completionRate === null
+              ? "Not available"
+              : `${summary.completionRate.toFixed(1)}%`
+          }
+          helper={`${summary.completed} / ${summary.visits.length} eligible visits`}
+          icon={CalendarClock}
+          href="/manager/visits"
+          scope={label}
+          error={data.visits.error ? error("visits") : undefined}
+        />
+        <StatCard
           label="Active Team"
           value={summary.activeTeam.toLocaleString()}
-          helper={`${summary.activeTeam} of ${data.team.data.length} team members`}
+          helper={`${summary.activeTeam} active employees in scope`}
           icon={Users}
           href="/manager/team"
           scope="Current"
@@ -203,15 +223,26 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
               ? error("team quality")
               : !quality && data.visits.error
                 ? error("visits")
-                : undefined
+            : undefined
           }
+        />
+        <StatCard
+          label="Doctor Coverage"
+          value={summary.fieldCoverage.doctors.toLocaleString()}
+          helper={`${summary.fieldCoverage.territories} territories represented`}
+          icon={Stethoscope}
+          href="/manager/doctors"
+          scope="Directory"
+          error={data.doctors.error ? error("doctors") : undefined}
         />
       </section>
 
-      {period !== "all" && unavailableDates.length > 0 && (
+      {(unavailableDates.length > 0 || summary.unsupportedFilters.sales) && (
         <p className="text-xs leading-5 text-[#667085]">
-          Missing dates: {unavailableDates.join(", ")}. Included only in All
-          Time totals.
+          {unavailableDates.length > 0 &&
+            `Missing dates: ${unavailableDates.join(", ")}. `}
+          {summary.unsupportedFilters.sales &&
+            "Sales are date-scoped only because current sales records do not expose reliable representative or territory fields."}
         </p>
       )}
 
@@ -230,31 +261,7 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
         ))}
       </nav>
 
-      {((!data.visits.error && summary.pastScheduled > 0) ||
-        summary.lowRatings > 0) && (
-        <aside
-          aria-label="Needs attention"
-          className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-[#E5E8EF] py-3 text-xs"
-        >
-          <h2 className="font-semibold">Needs attention</h2>
-          {!data.visits.error && summary.pastScheduled > 0 && (
-            <Link
-              className="rounded-sm text-[#667085] underline decoration-[#DDE3EE] underline-offset-4"
-              href="/manager/visits"
-            >
-              {summary.pastScheduled} past-date scheduled visits / Current
-            </Link>
-          )}
-          {summary.lowRatings > 0 && (
-            <Link
-              className="rounded-sm text-[#667085] underline decoration-[#DDE3EE] underline-offset-4"
-              href="/manager/coaching"
-            >
-              {summary.lowRatings} coaching ratings below 3 / {label}
-            </Link>
-          )}
-        </aside>
-      )}
+      <ManagementAttention summary={summary} />
 
       <section
         aria-label="Performance analytics"
@@ -342,6 +349,16 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
           </ChartCard>
         ) : null}
       </section>
+
+      <section className="grid gap-6 xl:grid-cols-3">
+        <TeamPerformancePanel summary={summary} />
+        <TerritoryPerformancePanel summary={summary} />
+        <RegionalCoveragePanel summary={summary} />
+        <FieldCoveragePanel summary={summary} />
+      </section>
+
+      <OperationsSnapshot summary={summary} />
+
       <DashboardTables
         data={data}
         summary={summary}
@@ -349,6 +366,8 @@ export default function ManagerDashboard({ data }: { data: DashboardData }) {
         retry={retry}
         pending={pending}
       />
+
+      <RecentActivityPanel summary={summary} />
     </div>
   );
 }

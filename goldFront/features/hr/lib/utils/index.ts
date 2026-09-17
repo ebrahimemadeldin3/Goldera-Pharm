@@ -4,6 +4,7 @@ import {
   getSaudiDateParts,
   parseDateValue,
 } from "@/lib/utils";
+import { getMedicalRepCoverage } from "@/features/team/lib/coverage";
 import type { HRDocumentValue, HRMember } from "../types";
 
 export function formatHRDate(
@@ -21,7 +22,7 @@ export function formatHRDate(
       : formatSaudiDateDisplay(date);
 
     return includeTime
-      ? formatted.replace(/, (?=\d{1,2}:)/, " • ")
+      ? formatted.replace(/, (?=\d{1,2}:)/, " - ")
       : formatted;
   } catch {
     return "";
@@ -99,12 +100,37 @@ export function getReportsTo(member: HRMember) {
 }
 
 export function getTerritory(member: HRMember) {
+  const coverage = getHRMemberCoverage(member);
+
+  if (coverage.territories.length > 0) {
+    return `${coverage.region} / ${coverage.territories.join(", ")}`;
+  }
+
+  return member.location?.trim() || "";
+}
+
+export function getHRMemberCoverage(member: HRMember) {
   const regionName =
     member.subRegion?.region?.name?.trim() ||
     member.regions?.[0]?.name?.trim() ||
     "";
   const subRegionName = member.subRegion?.name?.trim() || "";
+  const coverage = getMedicalRepCoverage(
+    {
+      id: member.id,
+      name: member.name,
+      role: member.role,
+    },
+    {
+      region: regionName,
+      territories: subRegionName ? [subRegionName] : [],
+    },
+  );
 
-  if (regionName && subRegionName) return `${regionName} • ${subRegionName}`;
-  return subRegionName || regionName || member.location?.trim() || "";
+  return {
+    region: coverage?.region || regionName,
+    territories:
+      coverage?.territories ?? (subRegionName ? [subRegionName] : []),
+    source: coverage?.source ?? (regionName && subRegionName ? "api" : "none"),
+  };
 }

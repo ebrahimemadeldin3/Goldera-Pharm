@@ -2,6 +2,7 @@ import {
   UNASSIGNED_DISTRICT,
   UNASSIGNED_REGION,
   getTerritoryLookup,
+  normalizeRegionName,
   type TerritoryLookup,
 } from "@/features/plan/lib/territory";
 import type { PharmacyApiResponse } from "../types";
@@ -80,7 +81,8 @@ export function normalizePharmacyForDirectory(
     district: territory.isKnown ? territory.district : UNASSIGNED_DISTRICT,
     region: territory.isKnown
       ? territory.region
-      : sourceRegion || territory.region || UNASSIGNED_REGION,
+      : normalizeRegionName(sourceRegion || territory.region) ||
+        UNASSIGNED_REGION,
     territoryName: territory.territory,
   };
 }

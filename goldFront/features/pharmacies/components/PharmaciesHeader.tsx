@@ -174,7 +174,7 @@ export default function PharmaciesHeader({
         <PharmacyKpiCard
           label="Central / Eastern"
           value={stats.centralEastern}
-          helper={stats.isPageSlice ? "On this page" : "Loaded pharmacies"}
+          helper={stats.isPageSlice ? "On this page" : "Registered pharmacies"}
           icon={MapPinned}
           tone="gold"
           index={1}
@@ -182,7 +182,7 @@ export default function PharmaciesHeader({
         <PharmacyKpiCard
           label="Western / Southern"
           value={stats.westernSouthern}
-          helper={stats.isPageSlice ? "On this page" : "Loaded pharmacies"}
+          helper={stats.isPageSlice ? "On this page" : "Registered pharmacies"}
           icon={Layers3}
           tone="navy"
           index={2}

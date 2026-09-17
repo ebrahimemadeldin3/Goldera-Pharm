@@ -216,6 +216,26 @@ function FieldValue({
   );
 }
 
+function TerritoryChips({ territories }: { territories: string[] }) {
+  if (territories.length === 0) {
+    return <MissingValue>Not assigned</MissingValue>;
+  }
+
+  return (
+    <span className="flex min-w-0 flex-wrap gap-1.5">
+      {territories.map((territory) => (
+        <span
+          key={territory}
+          className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 inline-flex max-w-full rounded-full border px-2.5 py-1 text-xs font-semibold"
+          title={territory}
+        >
+          <span className="truncate">{territory}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function Details({
   data,
   isEditMode = false,
@@ -490,9 +510,17 @@ export default function Details({
                 </div>
               ) : (
                 <dl className="mt-4 grid gap-3">
-                  <FieldValue label="District" value={assignment.district} />
                   <FieldValue label="Region" value={assignment.region} />
-                  <FieldValue label="Territory" value={assignment.territory} />
+                  <div className="min-w-0">
+                    <dt className="text-gp-text-muted text-[11px] font-semibold tracking-[0.05em] uppercase">
+                      {assignment.territories.length > 1
+                        ? "Territories"
+                        : "Territory"}
+                    </dt>
+                    <dd className="mt-1">
+                      <TerritoryChips territories={assignment.territories} />
+                    </dd>
+                  </div>
                 </dl>
               )}
 

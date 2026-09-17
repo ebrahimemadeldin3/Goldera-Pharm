@@ -5,6 +5,7 @@ import {
   getTerritoryLookup,
   normalizeTerritoryName,
 } from "@/features/plan/lib/territory";
+import { getMedicalRepCoverage } from "../coverage";
 
 function documentDisplayValue(document: UserApiDocument) {
   if (typeof document === "string") return document.trim();
@@ -24,10 +25,12 @@ export type TeamMemberAssignment = {
   district: string;
   region: string;
   territory: string;
+  territories: string[];
   reportsTo: string;
   hasTerritory: boolean;
   hasReporting: boolean;
   isComplete: boolean;
+  source: "api" | "frontend-config" | "none";
 };
 
 function cleanText(value?: string | null) {
@@ -109,20 +112,40 @@ export function getTeamMemberAssignment(member: User): TeamMemberAssignment {
     : hasUnknownTerritory
       ? unknownTerritory
       : "";
+  const coverage = getMedicalRepCoverage(
+    {
+      id: member.id,
+      name: member.name,
+      role: member.role,
+    },
+    {
+      region,
+      territories: territory ? [territory] : [],
+    },
+  );
+  const coverageTerritories =
+    coverage?.territories ?? (territory ? [territory] : []);
+  const coverageRegion = coverage?.region || region;
+  const coverageLookup = getTerritoryLookup(coverageTerritories[0]);
+  const coverageDistrict = coverageLookup.isKnown
+    ? coverageLookup.district
+    : district;
   const reportsTo =
     cleanText(member.supervisor?.name) ||
     cleanText(member.manager?.name) ||
     cleanText(member.reportsTo);
-  const hasTerritory = Boolean(territory);
+  const hasTerritory = coverageTerritories.length > 0;
 
   return {
-    district,
-    region,
-    territory,
+    district: coverageDistrict,
+    region: coverageRegion,
+    territory: coverageTerritories[0] ?? "",
+    territories: coverageTerritories,
     reportsTo,
     hasTerritory,
     hasReporting: Boolean(reportsTo),
     isComplete: hasTerritory && Boolean(reportsTo),
+    source: coverage?.source ?? (hasTerritory ? "api" : "none"),
   };
 }
 

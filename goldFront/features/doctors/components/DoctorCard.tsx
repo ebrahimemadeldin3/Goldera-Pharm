@@ -18,7 +18,6 @@ import { cn, getInitials } from "@/lib/utils";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getDoctorsAction } from "@/features/doctors/api";
-import { getTerritoryLookup } from "@/features/plan/lib/territory";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { DoctorDirectoryData } from "../lib/utils/mappers";
 
@@ -89,7 +88,7 @@ export default function DoctorCard({
     avgPatientsPerDay,
     accountName,
     area,
-    subRegion,
+    territory,
   } = data;
   const { features, role } = useRoleUI();
   const pathname = usePathname();
@@ -107,8 +106,6 @@ export default function DoctorCard({
   const cleanGrade = isClean(grade) ? grade.trim() : null;
   const cleanArea = isClean(area) ? area.trim() : null;
   const cleanAccount = isClean(accountName) ? accountName.trim() : null;
-  const cleanSubRegion = isClean(subRegion) ? subRegion.trim() : null;
-  const territory = getTerritoryLookup(cleanSubRegion || cleanArea);
 
   const primaryName = cleanNameAR || cleanNameEN || "Unnamed Doctor";
   const secondaryName = cleanNameAR && cleanNameEN ? cleanNameEN : null;

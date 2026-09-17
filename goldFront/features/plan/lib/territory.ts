@@ -88,7 +88,7 @@ export const KSA_TERRITORY_STRUCTURE: DistrictNode[] = [
       },
       {
         name: "Southern Region",
-        territories: [{ name: "Southern" }],
+        territories: [{ name: "Southern Area" }],
       },
     ],
   },
@@ -121,9 +121,23 @@ const territoryAliases: Record<string, string> = {
   medinah: "Madinah",
   madina: "Madinah",
   "al madinah": "Madinah",
-  gizan: "Southern",
-  jizan: "Southern",
-  abha: "Southern",
+  southern: "Southern Area",
+  "southern area": "Southern Area",
+  "southern-area": "Southern Area",
+  gizan: "Southern Area",
+  jizan: "Southern Area",
+  abha: "Southern Area",
+};
+
+const regionAliases: Record<string, string> = {
+  central: "Central Region",
+  "central region": "Central Region",
+  eastern: "Eastern Region",
+  "eastern region": "Eastern Region",
+  western: "Western Region",
+  "western region": "Western Region",
+  southern: "Southern Region",
+  "southern region": "Southern Region",
 };
 
 function normalizeKey(value?: string | null) {
@@ -143,6 +157,14 @@ export function normalizeTerritoryName(value?: string | null) {
 
   const key = normalizeKey(trimmed);
   return territoryAliases[key] ?? trimmed;
+}
+
+export function normalizeRegionName(value?: string | null) {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return UNASSIGNED_REGION;
+
+  const key = normalizeKey(trimmed);
+  return regionAliases[key] ?? trimmed;
 }
 
 const territoryLookup = new Map<string, TerritoryLookup>();
