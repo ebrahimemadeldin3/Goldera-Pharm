@@ -8,55 +8,84 @@ import {
   useRef,
   useState,
   type ComponentPropsWithoutRef,
+  type KeyboardEvent,
 } from "react";
-import { MapPin, Search, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+  Building2,
+  Clock3,
+  Hospital,
+  Pill,
+  Search,
+  Stethoscope,
+  TriangleAlert,
+  X,
+  type LucideIcon,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useLocationHistory } from "@/features/coaching/hooks/use-location-history";
 import { needsLocationSpecificityHint } from "@/features/coaching/lib/visit-location/history";
-import { VisitLocationMapPicker } from "./VisitLocationMapPicker";
+import {
+  rankLocationSuggestions,
+  type LocationSuggestion,
+} from "@/features/coaching/lib/visit-location/suggestions";
+import type { User } from "@/features/team/lib/types";
 
 type VisitLocationFieldProps = Omit<
   ComponentPropsWithoutRef<"input">,
   "value" | "onChange"
 > & {
+  locationSuggestions?: LocationSuggestion[];
+  selectedDoctorId?: string;
+  selectedRep?: User;
+  suggestionsLoading?: boolean;
+  suggestionsUnavailable?: boolean;
   value: string;
   userId: string;
   onValueChange: (value: string) => void;
 };
 
-function useIsMobileViewport() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 767px)");
-    const update = () => setIsMobile(mediaQuery.matches);
-
-    update();
-    mediaQuery.addEventListener("change", update);
-
-    return () => mediaQuery.removeEventListener("change", update);
-  }, []);
-
-  return isMobile;
+function getSuggestionIcon(type: LocationSuggestion["type"]) {
+  if (type === "recent") return Clock3;
+  if (type === "pharmacy") return Pill;
+  if (type === "hospital") return Hospital;
+  if (type === "clinic") return Stethoscope;
+  return Building2;
 }
 
-function splitLocationSummary(value: string) {
-  const cleanValue = value.trim();
-  const separator = cleanValue.includes(" - ") ? " - " : ",";
-  const [primary, ...rest] = cleanValue.split(separator);
+function normalizeKey(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
 
+function recentEntryToSuggestion(value: string): LocationSuggestion {
   return {
-    primary: primary?.trim() || cleanValue,
-    secondary: rest.join(separator).trim(),
+    id: `recent-${normalizeKey(value)}`,
+    name: value,
+    type: "recent",
+    searchText: normalizeKey(value),
   };
+}
+
+function suggestionTypeLabel(type: LocationSuggestion["type"]) {
+  if (type === "recent") return "Recent";
+  if (type === "pharmacy") return "Pharmacy";
+  if (type === "hospital") return "Hospital";
+  if (type === "clinic") return "Clinic";
+  if (type === "facility") return "Facility";
+  return "Location";
+}
+
+function suggestionMeta(suggestion: LocationSuggestion) {
+  return [
+    suggestionTypeLabel(suggestion.type),
+    suggestion.city,
+    suggestion.territory,
+    suggestion.region,
+  ]
+    .map((part) => String(part ?? "").trim())
+    .filter(Boolean)
+    .filter((part, index, parts) => parts.indexOf(part) === index)
+    .join(" • ");
 }
 
 export const VisitLocationField = forwardRef<
@@ -67,6 +96,11 @@ export const VisitLocationField = forwardRef<
     id,
     value,
     userId,
+    locationSuggestions = [],
+    selectedDoctorId,
+    selectedRep,
+    suggestionsLoading = false,
+    suggestionsUnavailable = false,
     onValueChange,
     onBlur,
     className,
@@ -76,178 +110,299 @@ export const VisitLocationField = forwardRef<
   forwardedRef,
 ) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const listboxId = `${id ?? inputProps.name ?? "visit-location"}-suggestions`;
   const [isFocused, setIsFocused] = useState(false);
-  const [isConfirmed, setIsConfirmed] = useState(false);
-  const [mapOpen, setMapOpen] = useState(false);
-  const isMobile = useIsMobileViewport();
-  const { record, suggestions } = useLocationHistory(userId);
-  const locationSuggestions = suggestions("");
-  const showSuggestions =
-    isFocused &&
-    !isConfirmed &&
-    !value.trim() &&
-    locationSuggestions.length > 0;
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const {
+    record,
+    remove,
+    suggestions: recentSuggestions,
+  } = useLocationHistory(userId);
+  const recentEntries = recentSuggestions(value);
   const showSpecificityHint = needsLocationSpecificityHint(value);
-  const summary = useMemo(() => splitLocationSummary(value), [value]);
+  const availableSuggestions = useMemo(() => {
+    const suggestionsByName = new Map<string, LocationSuggestion>();
+
+    recentEntries.forEach((entry) => {
+      const cleanValue = entry.value.trim();
+      if (!cleanValue) return;
+      suggestionsByName.set(normalizeKey(cleanValue), recentEntryToSuggestion(cleanValue));
+    });
+    locationSuggestions.forEach((suggestion) => {
+      const key = normalizeKey(suggestion.name);
+      if (!suggestionsByName.has(key)) suggestionsByName.set(key, suggestion);
+    });
+
+    return Array.from(suggestionsByName.values());
+  }, [locationSuggestions, recentEntries]);
+  const suggestions = useMemo(
+    () =>
+      rankLocationSuggestions(availableSuggestions, value, {
+        selectedDoctorId,
+        selectedRep,
+      }),
+    [availableSuggestions, selectedDoctorId, selectedRep, value],
+  );
+  const hasTypedValue = value.trim().length > 0;
+  const showUseEntered = hasTypedValue;
+  const showDropdown =
+    dropdownOpen &&
+    (suggestions.length > 0 ||
+      suggestionsLoading ||
+      suggestionsUnavailable ||
+      showUseEntered);
 
   useImperativeHandle(forwardedRef, () => inputRef.current as HTMLInputElement);
 
-  function focusInputSoon() {
-    window.setTimeout(() => inputRef.current?.focus(), 0);
+  useEffect(() => {
+    if (!dropdownOpen) setActiveIndex(-1);
+    else setActiveIndex(suggestions.length ? 0 : -1);
+  }, [dropdownOpen, suggestions.length]);
+
+  function commitLocation(nextValue = value) {
+    const trimmed = nextValue.trim();
+    if (trimmed) record(trimmed);
   }
 
-  function handleCommit(nextValue = value) {
-    if (nextValue.trim()) record(nextValue);
-  }
-
-  function handleSelectValue(nextValue: string) {
+  function selectLocation(nextValue: string) {
     onValueChange(nextValue);
-    record(nextValue);
-    setIsConfirmed(true);
+    commitLocation(nextValue);
+    setDropdownOpen(false);
     setIsFocused(false);
+    window.requestAnimationFrame(() => inputRef.current?.focus());
   }
 
-  const mapPicker = (
-    <VisitLocationMapPicker
-      value={value}
-      onSelect={handleSelectValue}
-      onClose={() => setMapOpen(false)}
-    />
-  );
+  function removeRecentLocation(nextValue: string) {
+    remove(nextValue);
+    setDropdownOpen(true);
+    setIsFocused(true);
+    window.requestAnimationFrame(() => inputRef.current?.focus());
+  }
 
-  if (isConfirmed && value.trim()) {
-    return (
-      <div className="min-w-0" aria-live="polite">
-        <div
-          className={cn(
-            "border-gp-border-control flex min-w-0 items-start gap-3 rounded-[12px] border bg-white px-3.5 py-3",
-            className,
-          )}
-        >
-          <span className="text-gp-text-muted bg-gp-surface-subtle border-gp-border-subtle mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] border">
-            <MapPin className="size-4" aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-gp-navy-900 truncate text-sm leading-5 font-semibold">
-              {summary.primary}
-            </p>
-            {summary.secondary && (
-              <p className="text-gp-text-muted mt-0.5 truncate text-xs leading-4 font-medium">
-                {summary.secondary}
-              </p>
-            )}
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              setIsConfirmed(false);
-              focusInputSoon();
-            }}
-            className="text-gp-navy-900 hover:text-gp-gold-700 focus-visible:ring-gp-gold-500/25 rounded-[8px] px-1 text-xs leading-5 font-semibold underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
-          >
-            Change
-          </button>
-        </div>
-      </div>
-    );
+  function closeDropdownSoon() {
+    window.setTimeout(() => {
+      if (dropdownRef.current?.contains(document.activeElement)) return;
+      setDropdownOpen(false);
+      setIsFocused(false);
+    }, 120);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Escape") {
+      if (dropdownOpen) {
+        event.preventDefault();
+        setDropdownOpen(false);
+      }
+      inputProps.onKeyDown?.(event);
+      return;
+    }
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setDropdownOpen(true);
+      if (suggestions.length) {
+        setActiveIndex((index) => (index + 1) % suggestions.length);
+      }
+      inputProps.onKeyDown?.(event);
+      return;
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setDropdownOpen(true);
+      if (suggestions.length) {
+        setActiveIndex((index) =>
+          index <= 0 ? suggestions.length - 1 : index - 1,
+        );
+      }
+      inputProps.onKeyDown?.(event);
+      return;
+    }
+
+    if (event.key === "Enter" && dropdownOpen && activeIndex >= 0) {
+      event.preventDefault();
+      selectLocation(suggestions[activeIndex].name);
+      inputProps.onKeyDown?.(event);
+      return;
+    }
+
+    if (event.key === "Enter") {
+      commitLocation(event.currentTarget.value);
+    }
+
+    inputProps.onKeyDown?.(event);
   }
 
   return (
-    <div className="min-w-0">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative min-w-0 flex-1">
-          <Search
-            className="text-gp-text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
-            aria-hidden="true"
-          />
-          <Input
-            {...inputProps}
-            id={id}
-            ref={inputRef}
-            value={value}
-            disabled={disabled}
-            onChange={(event) => {
-              setIsConfirmed(false);
-              onValueChange(event.target.value);
-            }}
-            onFocus={(event) => {
-              setIsFocused(true);
-              inputProps.onFocus?.(event);
-            }}
-            onBlur={(event) => {
-              handleCommit(event.target.value);
-              window.setTimeout(() => setIsFocused(false), 120);
-              onBlur?.(event);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "Enter")
-                handleCommit(event.currentTarget.value);
-              inputProps.onKeyDown?.(event);
-            }}
-            placeholder="Search hospital, clinic, pharmacy, or type location..."
-            className={cn(
-              "coaching-control border-gp-border-control bg-gp-surface-control text-gp-navy-900 placeholder:text-gp-text-placeholder hover:border-gp-gold-300 focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/15 h-11 rounded-[10px] pr-3 pl-9 text-sm font-medium shadow-none",
-              className,
-            )}
-          />
-        </div>
-
-        {isMobile ? (
-          <Button
+    <div className="relative min-w-0">
+      <div className="relative min-w-0">
+        <Search
+          className="text-gp-text-muted pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2"
+          aria-hidden="true"
+        />
+        <Input
+          {...inputProps}
+          id={id}
+          ref={inputRef}
+          value={value}
+          disabled={disabled}
+          onChange={(event) => {
+            onValueChange(event.target.value);
+            setDropdownOpen(true);
+          }}
+          onFocus={(event) => {
+            setIsFocused(true);
+            setDropdownOpen(true);
+            inputProps.onFocus?.(event);
+          }}
+          onBlur={(event) => {
+            commitLocation(event.target.value);
+            closeDropdownSoon();
+            onBlur?.(event);
+          }}
+          onKeyDown={handleKeyDown}
+          placeholder="Search or type a visit location..."
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls={listboxId}
+          aria-expanded={showDropdown}
+          aria-activedescendant={
+            activeIndex >= 0 ? `${listboxId}-${activeIndex}` : undefined
+          }
+          className={cn(
+            "coaching-control border-gp-border-control bg-gp-surface-control text-gp-navy-900 placeholder:text-gp-text-placeholder hover:border-gp-gold-300 focus-visible:border-gp-gold-500 focus-visible:ring-gp-gold-500/15 h-12 rounded-[11px] pr-10 pl-9 text-sm font-medium shadow-none",
+            className,
+          )}
+        />
+        {value && !disabled && (
+          <button
             type="button"
-            variant="ghost"
-            disabled={disabled}
-            onClick={() => setMapOpen(true)}
-            className="text-gp-text-secondary hover:bg-gp-surface-hover hover:text-gp-navy-900 focus-visible:ring-gp-gold-500/20 h-9 self-end rounded-[9px] px-2 text-xs font-semibold sm:self-auto"
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              onValueChange("");
+              setDropdownOpen(true);
+              inputRef.current?.focus();
+            }}
+            className="text-gp-text-muted hover:bg-gp-surface-hover hover:text-gp-navy-900 focus-visible:ring-gp-gold-500/20 absolute top-1/2 right-2 flex size-7 -translate-y-1/2 items-center justify-center rounded-[8px] transition-colors focus-visible:ring-2 focus-visible:outline-none"
+            aria-label="Clear visit location"
           >
-            <MapPin className="size-3.5" aria-hidden="true" />
-            Find on map
-          </Button>
-        ) : (
-          <Popover open={mapOpen} onOpenChange={setMapOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                disabled={disabled}
-                className="text-gp-text-secondary hover:bg-gp-surface-hover hover:text-gp-navy-900 focus-visible:ring-gp-gold-500/20 h-9 rounded-[9px] px-2 text-xs font-semibold"
-              >
-                <MapPin className="size-3.5" aria-hidden="true" />
-                Find on map
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              sideOffset={8}
-              collisionPadding={16}
-              className="border-gp-border-default shadow-gp-popover max-h-[min(650px,calc(100dvh-32px))] w-[580px] max-w-[calc(100vw-32px)] overflow-y-auto rounded-[14px] bg-white p-4"
-            >
-              {mapPicker}
-            </PopoverContent>
-          </Popover>
+            <X className="size-3.5" aria-hidden="true" />
+          </button>
         )}
       </div>
 
-      {showSuggestions && (
+      {showDropdown && (
         <div
-          className="mt-2 flex flex-wrap gap-2"
-          aria-label="Suggested locations"
+          ref={dropdownRef}
+          id={listboxId}
+          role="listbox"
+          aria-label="Suggested visit locations"
+          className="border-gp-border-default shadow-gp-popover absolute top-full right-0 left-0 z-40 mt-2 max-h-[340px] overflow-y-auto rounded-[12px] border bg-white p-1.5"
         >
-          {locationSuggestions.map((entry) => (
+          <div className="text-gp-text-muted px-2.5 pt-1 pb-1.5 text-[10px] leading-4 font-bold tracking-[0.08em] uppercase">
+            Suggested locations
+          </div>
+
+          {suggestionsLoading && (
+            <p className="text-gp-text-muted px-2.5 py-3 text-xs leading-5">
+              Loading available places...
+            </p>
+          )}
+
+          {!suggestionsLoading && suggestionsUnavailable && (
+            <p className="text-gp-text-muted px-2.5 py-3 text-xs leading-5">
+              Suggestions unavailable - you can still enter a location manually.
+            </p>
+          )}
+
+          {!suggestionsLoading &&
+            !suggestionsUnavailable &&
+            suggestions.length === 0 &&
+            recentEntries.length === 0 && (
+              <p className="text-gp-text-muted px-2.5 py-3 text-xs leading-5">
+                No saved places match yet. Custom locations are allowed.
+              </p>
+            )}
+
+          {suggestions.map((suggestion, index) => {
+            const Icon: LucideIcon = getSuggestionIcon(suggestion.type);
+            const active = activeIndex === index;
+            const canRemove = suggestion.type === "recent";
+
+            return (
+              <div
+                key={suggestion.id}
+                id={`${listboxId}-${index}`}
+                role="option"
+                aria-selected={active}
+                onMouseEnter={() => setActiveIndex(index)}
+                className={cn(
+                  "flex min-h-14 w-full items-stretch rounded-[10px] transition-colors motion-safe:transition-[background-color,opacity,transform] motion-safe:duration-150",
+                  "hover:bg-[#F9FAFB]",
+                  active && "bg-gp-gold-50/70",
+                )}
+              >
+                <button
+                  type="button"
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => selectLocation(suggestion.name)}
+                  className="focus-visible:ring-gp-gold-500/20 flex min-w-0 flex-1 items-start gap-3 rounded-[10px] px-2.5 py-2.5 text-left focus-visible:ring-2 focus-visible:outline-none"
+                >
+                  <span className="border-gp-border-subtle bg-gp-surface-subtle text-gp-gold-700 mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-[9px] border">
+                    <Icon className="size-4" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="text-gp-navy-900 block truncate text-sm leading-5 font-semibold">
+                      {suggestion.name}
+                    </span>
+                    <span className="text-gp-text-muted mt-0.5 block truncate text-xs leading-4">
+                      {suggestionMeta(suggestion)}
+                    </span>
+                  </span>
+                </button>
+                {canRemove && (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${suggestion.name} from recent locations`}
+                    title="Remove from history"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      removeRecentLocation(suggestion.name);
+                    }}
+                    className="text-gp-text-muted hover:bg-red-50 hover:text-red-600 focus-visible:ring-gp-gold-500/20 mr-1.5 self-center rounded-[8px] p-1.5 transition-colors duration-150 focus-visible:ring-2 focus-visible:outline-none"
+                  >
+                    <X className="size-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {showUseEntered && (
             <button
-              key={entry.normalizedValue}
               type="button"
               onMouseDown={(event) => event.preventDefault()}
-              onClick={() => handleSelectValue(entry.value)}
-              className="border-gp-border-control bg-gp-surface-subtle text-gp-text-secondary hover:border-gp-gold-300 hover:text-gp-navy-900 focus-visible:ring-gp-gold-500/20 rounded-[9px] border px-2.5 py-1.5 text-xs leading-4 font-semibold transition-[background-color,border-color,color,box-shadow] duration-150 hover:bg-white focus-visible:ring-2 focus-visible:outline-none motion-reduce:transition-none"
+              onClick={() => {
+                commitLocation(value);
+                setDropdownOpen(false);
+              }}
+              className="border-gp-border-subtle text-gp-text-secondary hover:bg-gp-surface-hover mt-1 flex min-h-10 w-full items-center gap-2 border-t px-2.5 pt-2 text-left text-xs leading-5 font-semibold"
             >
-              {entry.value}
+              <span aria-hidden="true">↳</span>
+              Use &quot;{value.trim()}&quot; as entered
             </button>
-          ))}
+          )}
         </div>
       )}
 
-      {showSpecificityHint && (
+      {showSpecificityHint && isFocused && (
         <p className="text-gp-warning mt-2 flex items-start gap-1.5 text-xs leading-5 font-medium">
           <TriangleAlert
             className="mt-0.5 size-3.5 shrink-0"
@@ -257,16 +412,6 @@ export const VisitLocationField = forwardRef<
           location.
         </p>
       )}
-
-      <Sheet open={isMobile && mapOpen} onOpenChange={setMapOpen}>
-        <SheetContent
-          side="bottom"
-          hideCloseButton
-          className="border-gp-border-default max-h-[85dvh] rounded-t-[18px] bg-white p-0"
-        >
-          <div className="overflow-y-auto px-4 py-4">{mapPicker}</div>
-        </SheetContent>
-      </Sheet>
     </div>
   );
 });

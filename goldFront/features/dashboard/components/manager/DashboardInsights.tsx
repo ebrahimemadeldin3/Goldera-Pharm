@@ -12,7 +12,11 @@ import {
   UserRoundCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { money, type DashboardSummary } from "./dashboard-utils";
+import {
+  displayDate,
+  money,
+  type DashboardSummary,
+} from "./dashboard-utils";
 import { EmptyState } from "./DashboardPrimitives";
 import styles from "./manager-dashboard.module.css";
 
@@ -86,32 +90,77 @@ export function ManagementAttention({
 }: {
   summary: DashboardSummary;
 }) {
+  const cancelledVisits =
+    summary.statuses.find((status) => status.value === "CANCELLED")?.count ?? 0;
+  const unassignedTerritories = summary.regionalCoverage.reduce(
+    (count, region) =>
+      count +
+      region.territories.filter((territory) => !territory.assigned.length)
+        .length,
+    0,
+  );
   const items = [
+    cancelledVisits > 0
+      ? {
+          severity: "HIGH",
+          label: `${cancelledVisits} cancelled visits this month`,
+          href: "/manager/visits",
+        }
+      : null,
+    unassignedTerritories > 0
+      ? {
+          severity: "MEDIUM",
+          label: `${unassignedTerritories} territories currently have no assigned medical representative`,
+          href: "/manager/team",
+        }
+      : null,
+    summary.appraisalStats.needsAttention > 0
+      ? {
+          severity: "MEDIUM",
+          label: `${summary.appraisalStats.needsAttention} appraisal score is below 70`,
+          href: "/manager/appraisal",
+        }
+      : null,
+    summary.dataQuality.doctorsMissingEmail > 0
+      ? {
+          severity: "LOW",
+          label: `${summary.dataQuality.doctorsMissingEmail} doctor profiles are missing contact information`,
+          href: "/manager/doctors",
+        }
+      : null,
     summary.pastScheduled > 0
       ? {
+          severity: "MEDIUM",
           label: `${summary.pastScheduled} past-date scheduled visits`,
           href: "/manager/visits",
         }
       : null,
     summary.dataQuality.teamMissingTerritory > 0
       ? {
+          severity: "MEDIUM",
           label: `${summary.dataQuality.teamMissingTerritory} reps missing territory coverage`,
           href: "/manager/team",
         }
       : null,
     summary.requestStats.pending > 0
       ? {
+          severity: "MEDIUM",
           label: `${summary.requestStats.pending} pending requests`,
           href: "/manager/requests",
         }
       : null,
     summary.lowRatings > 0
       ? {
+          severity: "LOW",
           label: `${summary.lowRatings} low coaching ratings`,
           href: "/manager/coaching",
         }
       : null,
-  ].filter(Boolean) as Array<{ label: string; href: string }>;
+  ].filter(Boolean) as Array<{
+    severity: "HIGH" | "MEDIUM" | "LOW";
+    label: string;
+    href: string;
+  }>;
 
   return (
     <Panel title="Management Attention" subtitle="Operational items requiring follow-up">
@@ -133,6 +182,18 @@ export function ManagementAttention({
                     className="size-4 shrink-0 text-[#A37C27]"
                     aria-hidden="true"
                   />
+                  <span
+                    className={cn(
+                      "rounded-full px-2 py-0.5 text-[10px] font-bold tracking-[0.06em]",
+                      item.severity === "HIGH"
+                        ? "bg-[#FDECEC] text-[#9F3A3A]"
+                        : item.severity === "MEDIUM"
+                          ? "bg-[#FFF7E0] text-[#8A6518]"
+                          : "bg-[#F2F4F7] text-[#667085]",
+                    )}
+                  >
+                    {item.severity}
+                  </span>
                   <span className="truncate">{item.label}</span>
                 </span>
                 <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
@@ -251,6 +312,11 @@ export function TerritoryPerformancePanel({
                   {item.completedVisits} / {item.visits}
                 </p>
                 <p className="text-gp-text-muted">completed visits</p>
+                {item.sales !== null && (
+                  <p className="text-gp-navy-900 mt-1 font-semibold tabular-nums">
+                    {money(item.sales)}
+                  </p>
+                )}
               </div>
             </div>
           ))}
@@ -329,6 +395,18 @@ export function OperationsSnapshot({ summary }: { summary: DashboardSummary }) {
             <p className="text-gp-text-muted">
               {summary.quality.count} scored reviews
             </p>
+            <div className="grid grid-cols-2 gap-2">
+              <MetricTile
+                label="High performers"
+                value={summary.appraisalStats.highPerformers}
+                icon={BadgeCheck}
+              />
+              <MetricTile
+                label="Needs attention"
+                value={summary.appraisalStats.needsAttention}
+                icon={AlertTriangle}
+              />
+            </div>
           </div>
         ) : (
           <EmptyState>No appraisal scores in this scope.</EmptyState>
@@ -337,12 +415,29 @@ export function OperationsSnapshot({ summary }: { summary: DashboardSummary }) {
       <Panel title="Coaching Overview" subtitle="Joint visit coaching">
         <div className="space-y-3 text-sm">
           <p className="text-gp-navy-900 text-2xl font-semibold">
-            {summary.coaching.length.toLocaleString()}
+            {summary.coachingStats.total.toLocaleString()}
           </p>
           <p className="text-gp-text-muted">reviews in scope</p>
+          <div className="grid grid-cols-2 gap-2">
+            <MetricTile
+              label="Completed"
+              value={summary.coachingStats.completed}
+              icon={BadgeCheck}
+            />
+            <MetricTile
+              label="Follow-ups"
+              value={summary.coachingStats.followUps}
+              icon={ClipboardList}
+            />
+          </div>
           <p className="text-gp-text-muted">
-            {summary.lowRatings} low-rating follow-ups
+            {summary.coachingStats.lowRatingFollowUps} low-rating follow-ups
           </p>
+          {summary.coachingStats.latest && (
+            <p className="text-gp-text-muted">
+              Latest coaching: {displayDate(summary.coachingStats.latest)}
+            </p>
+          )}
         </div>
       </Panel>
       <Panel title="HR Snapshot" subtitle="Employee records">
@@ -382,17 +477,42 @@ export function OperationsSnapshot({ summary }: { summary: DashboardSummary }) {
       <Panel title="Data Quality" subtitle="Completeness checks" className="xl:col-span-2">
         <div className="grid gap-2 sm:grid-cols-2">
           {[
-            `${summary.dataQuality.repsWithTerritory} / ${summary.dataQuality.totalReps} reps have territory coverage`,
-            `${summary.dataQuality.doctorsMissingEmail} doctors missing email`,
-            `${summary.dataQuality.doctorsMissingPhone} doctors missing phone`,
-            `${summary.dataQuality.pharmaciesMissingCity} pharmacies missing city`,
+            {
+              label: `${summary.dataQuality.repsWithTerritory} / ${summary.dataQuality.totalReps} reps have territory coverage`,
+              complete:
+                summary.dataQuality.repsWithTerritory ===
+                summary.dataQuality.totalReps,
+            },
+            {
+              label: `${summary.dataQuality.doctorsMissingEmail} doctors missing email`,
+              complete: summary.dataQuality.doctorsMissingEmail === 0,
+            },
+            {
+              label: `${summary.dataQuality.doctorsMissingPhone} doctors missing phone`,
+              complete: summary.dataQuality.doctorsMissingPhone === 0,
+            },
+            {
+              label: `${summary.dataQuality.pharmaciesMissingCity} pharmacies missing city`,
+              complete: summary.dataQuality.pharmaciesMissingCity === 0,
+            },
+            {
+              label: `All active reps logged in during the last 7 days`,
+              complete:
+                summary.dataQuality.activeRepsRecentLogin ===
+                summary.dataQuality.totalReps,
+            },
           ].map((item) => (
             <div
-              key={item}
+              key={item.label}
               className="border-gp-border-subtle flex items-center gap-2 rounded-[10px] border px-3 py-2 text-sm font-medium"
             >
-              <span className="bg-gp-gold-500 size-1.5 rounded-full" />
-              {item}
+              <span
+                className={cn(
+                  "size-1.5 rounded-full",
+                  item.complete ? "bg-[#398567]" : "bg-[#C9A44C]",
+                )}
+              />
+              {item.label}
             </div>
           ))}
         </div>

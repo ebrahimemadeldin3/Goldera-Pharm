@@ -352,14 +352,17 @@ export function PharmacyForm({ onSuccess, onCancel }: PharmacyFormProps) {
       if (result.success) {
         form.reset();
         setDistrict("");
-        toast.success({ title: "Pharmacy added successfully" });
+        toast.success({
+          title: "Pharmacy added successfully",
+          description: `${values.name.trim()} is now available.`,
+        });
         onSuccess?.();
       } else {
         const message =
           result.error?.message ||
           "Unable to add pharmacy. Please check the entered information and try again.";
         setError(message);
-        toast.error({ title: "Unable to add pharmacy", description: message });
+        toast.error({ title: "Couldn't add pharmacy", description: message });
       }
     });
   }

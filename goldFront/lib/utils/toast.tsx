@@ -6,56 +6,48 @@ type ToastOptions = {
   description?: string;
 };
 
+const baseToastStyle = {
+  background: "#FFFFFF",
+  color: "#101D36",
+  border: "1px solid #E5E8EF",
+  borderRadius: "14px",
+  boxShadow: "0 16px 36px rgba(16, 29, 54, 0.12)",
+} as const;
+
 export const toast = {
   success: ({ title, description }: ToastOptions) => {
     sonnerToast(title, {
-      style: {
-        background: "#bbf7d0",
-        color: "black",
-        border: "1px solid #22c55e",
-      },
+      style: baseToastStyle,
       description,
-      icon: <CircleCheckBig size={20} className="text-green-900" />,
-      position: "top-center",
+      icon: <CircleCheckBig size={18} className="text-gp-success" />,
+      position: "top-right",
     });
   },
 
   error: ({ title, description }: ToastOptions) => {
     sonnerToast(title, {
-      style: {
-        background: "#fecaca",
-        color: "black",
-        border: "1px solid #ef4444",
-      },
+      style: baseToastStyle,
       description,
-      icon: <CircleX size={20} className="text-red-900" />,
-      position: "top-center",
+      icon: <CircleX size={18} className="text-gp-danger" />,
+      position: "top-right",
     });
   },
 
   warning: ({ title, description }: ToastOptions) => {
     sonnerToast(title, {
-      style: {
-        background: "#fef3c7",
-        color: "black",
-        border: "1px solid #f59e0b",
-      },
+      style: baseToastStyle,
       description,
-      icon: <AlertTriangle size={20} className="text-yellow-900" />,
-      position: "top-center",
+      icon: <AlertTriangle size={18} className="text-gp-warning" />,
+      position: "top-right",
     });
   },
 
   info: ({ title, description }: ToastOptions) => {
     sonnerToast(title, {
-      style: {
-        background: "#dbeafe",
-        color: "black",
-        border: "1px solid #3b82f6",
-      },
+      style: baseToastStyle,
       description,
-      icon: <Info size={20} className="text-blue-900" />,
-      position: "top-center",
+      icon: <Info size={18} className="text-[#527CA5]" />,
+      position: "top-right",
     });
   },
 };

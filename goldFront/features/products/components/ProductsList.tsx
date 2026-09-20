@@ -29,7 +29,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import {
   AlertDialog,
@@ -1241,7 +1241,10 @@ export default function ProductsList({
     const productRemoved = saveRemovedProductId(productToRemove.id);
 
     if (!productRemoved) {
-      toast.error("Failed to remove product in this browser");
+      toast.error({
+        title: "Couldn't remove product",
+        description: "Product changes could not be saved in this browser.",
+      });
       return;
     }
 
@@ -1257,7 +1260,10 @@ export default function ProductsList({
       setEditingProduct(null);
     }
     setProductPendingRemoval(null);
-    toast.success("Product removed successfully");
+    toast.success({
+      title: "Product removed successfully",
+      description: "The product was removed successfully.",
+    });
   }
 
   return (

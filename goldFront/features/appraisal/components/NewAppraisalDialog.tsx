@@ -256,7 +256,7 @@ export function NewAppraisalDialog() {
         router.refresh();
       } else {
         toast.error({
-          title: "Failed to create appraisal",
+          title: "Couldn't create appraisal",
           description: result.error?.message,
         });
       }

@@ -2,9 +2,9 @@
 
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
-import { buildPaginationQuery, formatDateOnly } from "@/lib/utils";
+import { buildPaginationQuery } from "@/lib/utils";
+import { cookies } from "next/headers";
 import {
-  AddMemberFormData,
   User,
   UserApiResponse,
   UserDetailResponse,
@@ -326,88 +326,41 @@ export async function getUserByIdAction(id: string) {
 }
 
 /**
- * Add a new team member (Manager)
+ * Add a new team member (Manager) using the existing multipart user endpoint.
  */
-export async function addTeamMember(data: AddMemberFormData): Promise<void> {
-  return apiFetch<void>("/api/managers/users", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+export async function addTeamMember(data: FormData): Promise<void> {
+  const token = (await cookies()).get("token")?.value;
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/managers/users`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: data,
+    },
+  );
+
+  if (!res.ok) {
+    let error: ApiError;
+    try {
+      error = await res.json();
+    } catch {
+      error = {
+        statusCode: res.status,
+        code: "ADD_MEMBER_ERROR",
+        message: "Failed to add team member",
+      };
+    }
+    throw error;
+  }
 }
 
 /**
  * Server action to add a team member
  */
-export async function addTeamMemberAction(
-  data: Omit<
-    AddMemberFormData,
-    "dateOfBirth" | "dateOfRecruitment" | "resume" | "certificates"
-  > & {
-    dateOfBirth?: Date;
-    dateOfRecruitment?: Date;
-    resume?: File;
-    certificates?: FileList;
-  },
-) {
+export async function addTeamMemberAction(data: FormData) {
   try {
-    // Helper function to convert File to base64 string
-    const fileToBase64 = (file: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-    };
-
-    // Convert resume file if present
-    let resumeData: string | undefined;
-    if (data.resume) {
-      resumeData = await fileToBase64(data.resume);
-    }
-
-    // Convert certificates files if present
-    let certificatesData: string | undefined;
-    if (data.certificates && data.certificates.length > 0) {
-      const certFiles = Array.from(data.certificates);
-      const certBase64Array = await Promise.all(
-        certFiles.map((file) => fileToBase64(file)),
-      );
-      // Join multiple certificates with a delimiter or send as JSON array
-      certificatesData = JSON.stringify(certBase64Array);
-    }
-
-    const apiData: AddMemberFormData = {
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      password: data.password,
-      dateOfBirth: data.dateOfBirth
-        ? formatDateOnly(data.dateOfBirth)
-        : formatDateOnly(new Date()),
-      role: data.role,
-      dateOfRecruitment: data.dateOfRecruitment
-        ? formatDateOnly(data.dateOfRecruitment)
-        : undefined,
-      department: data.department || undefined,
-      regionId: data.regionId || undefined,
-      subRegionId: data.subRegionId || undefined,
-      bio: data.bio || undefined,
-      educationBackground: data.educationBackground || undefined,
-      iqamaNumber: data.iqamaNumber || undefined,
-      passportNumber: data.passportNumber || undefined,
-      resume: resumeData || undefined,
-      certificates: certificatesData || undefined,
-      // supervisorId is required for MEDICAL_REP, send actual value or undefined
-      supervisorId:
-        data.role === "MEDICAL_REP" &&
-        data.supervisorId &&
-        data.supervisorId.length > 0
-          ? data.supervisorId
-          : undefined,
-    };
-
-    await addTeamMember(apiData);
+    await addTeamMember(data);
 
     return {
       success: true,

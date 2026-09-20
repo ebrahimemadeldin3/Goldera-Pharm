@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { createDoctorAction } from "../api";
 import { addDoctorSchema, type AddDoctorFormValues } from "../lib/schemas";
+import type { CreateDoctorDto } from "../lib/types/api";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import {
   Form,
@@ -43,10 +44,11 @@ import {
   KSA_TERRITORY_STRUCTURE,
   getTerritoryLookup,
 } from "@/features/plan/lib/territory";
+import { toast } from "@/lib/utils/toast";
 
 type AddDoctorFormProps = {
   isModal?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (doctorName: string) => void;
   onCancel?: () => void;
 };
 
@@ -60,6 +62,27 @@ const selectItemClassName =
 
 function RequiredMark() {
   return <span className="text-gp-danger">*</span>;
+}
+
+function buildCreateDoctorPayload(
+  values: AddDoctorFormValues,
+): CreateDoctorDto {
+  const avgPatients = values.avgPatients?.trim();
+  const license = values.license?.trim();
+  const email = values.email?.trim();
+
+  return {
+    nameEN: values.nameEN.trim(),
+    nameAR: values.nameAR.trim(),
+    email: email || undefined,
+    phone: values.phone.trim(),
+    grade: values.grade.trim(),
+    specialty: values.specialty.trim(),
+    LicenseNumber: license || undefined,
+    avgPatientsPerDay: avgPatients ? Number(avgPatients) : undefined,
+    accountName: values.accountName.trim(),
+    subRegion: values.subRegion.trim(),
+  };
 }
 
 function FormSection({
@@ -180,33 +203,39 @@ export default function AddDoctorForm({
   const onSubmit = (values: AddDoctorFormValues) => {
     setError("");
     startTransition(async () => {
+      const payload = buildCreateDoctorPayload(values);
       try {
-        const result = await createDoctorAction({
-          nameEN: values.nameEN.trim(),
-          nameAR: values.nameAR.trim(),
-          email: values.email?.trim() || undefined,
-          phone: values.phone.trim(),
-          grade: values.grade,
-          specialty: values.specialty.trim(),
-          LicenseNumber: values.license?.trim() || undefined,
-          avgPatientsPerDay: values.avgPatients
-            ? Number(values.avgPatients)
-            : undefined,
-          accountName: values.accountName.trim(),
-          subRegion: values.subRegion,
-        });
+        const result = await createDoctorAction(payload);
         if (result.success) {
           if (onSuccess) {
-            onSuccess();
+            onSuccess(payload.nameEN);
           } else {
+            toast.success({
+              title: "Doctor added successfully",
+              description: `${payload.nameEN} is now available.`,
+            });
             router.push(getBackHref());
             router.refresh();
           }
         } else if (result.error) {
-          setError(result.error.message);
+          const message =
+            result.error.message ||
+            "The doctor could not be created. Check the entered information and try again.";
+          setError(message);
+          toast.error({
+            title: "Couldn't add doctor",
+            description: message,
+          });
         }
       } catch (err) {
-        setError((err as Error)?.message || "An unexpected error occurred");
+        const message =
+          (err as Error)?.message ||
+          "The doctor could not be created. Check the entered information and try again.";
+        setError(message);
+        toast.error({
+          title: "Couldn't add doctor",
+          description: message,
+        });
       }
     });
   };

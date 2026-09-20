@@ -2,6 +2,7 @@
 
 import type { CSSProperties } from "react";
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -53,7 +54,6 @@ import {
   UserCog,
   UserPlus,
   UserRound,
-  UsersRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -62,7 +62,11 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-import { formatSaudiDateDisplay, getSaudiYear } from "@/lib/utils";
+import {
+  formatDateOnly,
+  formatSaudiDateDisplay,
+  getSaudiYear,
+} from "@/lib/utils";
 import { addMemberSchema, type AddMemberFormValues } from "../lib/schemas";
 import { addTeamMemberAction } from "../api";
 import { toast } from "@/lib/utils/toast";
@@ -116,10 +120,91 @@ function RequiredMark() {
   return <span className="text-gp-danger">*</span>;
 }
 
+function appendTextField(fd: FormData, key: string, value?: string) {
+  const trimmed = value?.trim();
+  if (trimmed) {
+    fd.append(key, trimmed);
+  }
+}
+
+function isBrowserFile(value: unknown): value is File {
+  return typeof File !== "undefined" && value instanceof File;
+}
+
+function getSafeTeamCreationError(message?: string) {
+  const fallback = "The member could not be created. Please try again.";
+  const normalized = message?.trim();
+
+  if (!normalized) return fallback;
+
+  const technicalPatterns = [
+    "filereader",
+    "referenceerror",
+    "typeerror",
+    "is not defined",
+    "stack",
+  ];
+
+  if (
+    technicalPatterns.some((pattern) =>
+      normalized.toLowerCase().includes(pattern),
+    )
+  ) {
+    return fallback;
+  }
+
+  return normalized;
+}
+
+function buildAddMemberFormData(values: AddMemberFormValues) {
+  const fd = new FormData();
+
+  appendTextField(fd, "name", values.name);
+  appendTextField(fd, "email", values.email);
+  appendTextField(fd, "phone", values.phone);
+  appendTextField(fd, "password", values.password);
+  appendTextField(fd, "role", values.role);
+
+  if (values.dateOfBirth) {
+    fd.append("dateOfBirth", formatDateOnly(values.dateOfBirth));
+  }
+
+  if (values.dateOfRecruitment) {
+    fd.append("dateOfRecruitment", formatDateOnly(values.dateOfRecruitment));
+  }
+
+  appendTextField(fd, "educationBackground", values.educationBackground);
+  appendTextField(fd, "iqamaNumber", values.iqamaNumber);
+  appendTextField(fd, "passportNumber", values.passportNumber);
+  appendTextField(fd, "department", values.department);
+  appendTextField(fd, "bio", values.bio);
+
+  if (values.role === "SUPERVISOR") {
+    appendTextField(fd, "regionIds", values.regionId);
+  }
+
+  if (values.role === "MEDICAL_REP") {
+    appendTextField(fd, "subRegionId", values.subRegionId);
+    appendTextField(fd, "supervisorId", values.supervisorId);
+  }
+
+  if (isBrowserFile(values.resume)) {
+    fd.append("resume", values.resume);
+  }
+
+  if (values.certificates?.length) {
+    Array.from(values.certificates)
+      .filter(isBrowserFile)
+      .forEach((file) => fd.append("certificates", file));
+  }
+
+  return fd;
+}
+
 export default function AddMemberDialog({
-  supervisors = [],
   regions = [],
 }: AddMemberDialogProps) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [isDraggingCV, setIsDraggingCV] = useState(false);
@@ -164,7 +249,6 @@ export default function AddMemberDialog({
     }
   };
 
-  const selectedRole = useWatch({ control: form.control, name: "role" });
   const selectedRegionId = useWatch({
     control: form.control,
     name: "regionId",
@@ -193,7 +277,8 @@ export default function AddMemberDialog({
   const onSubmit = (values: AddMemberFormValues) => {
     startTransition(async () => {
       try {
-        const result = await addTeamMemberAction(values);
+        const payload = buildAddMemberFormData(values);
+        const result = await addTeamMemberAction(payload);
 
         if (result.success) {
           form.reset();
@@ -202,20 +287,25 @@ export default function AddMemberDialog({
           setIsDraggingCerts(false);
           setShowPassword(false);
           setActiveSection("basic");
+          router.refresh();
           toast.success({
-            title: "Team member added successfully",
-            description: values.name,
+            title: "Team member added",
+            description: `${values.name} was added successfully.`,
           });
         } else {
+          const message = getSafeTeamCreationError(result.error?.message);
           toast.error({
-            title: "Failed to add team member",
-            description: result.error?.message || "Please try again",
+            title: "Couldn't add team member",
+            description: message,
           });
         }
-      } catch {
+      } catch (error) {
+        if (process.env.NODE_ENV !== "production") {
+          console.error("[TeamMemberCreationError]", error);
+        }
         toast.error({
-          title: "An unexpected error occurred",
-          description: "Please try again later",
+          title: "Couldn't add team member",
+          description: getSafeTeamCreationError(),
         });
       }
     });
@@ -745,7 +835,7 @@ export default function AddMemberDialog({
                           Role & Assignment
                         </h3>
                         <p className={sectionCopyClassName}>
-                          Team access, supervisor relationship, and territory.
+                          Team access and territory assignment.
                         </p>
                       </div>
                     </div>
@@ -760,12 +850,7 @@ export default function AddMemberDialog({
                               Role <RequiredMark />
                             </FormLabel>
                             <Select
-                              onValueChange={(value) => {
-                                field.onChange(value);
-                                if (value === "SUPERVISOR") {
-                                  form.setValue("supervisorId", "");
-                                }
-                              }}
+                              onValueChange={field.onChange}
                               value={field.value}
                             >
                               <FormControl>
@@ -796,54 +881,6 @@ export default function AddMemberDialog({
                           </FormItem>
                         )}
                       />
-
-                      {selectedRole === "MEDICAL_REP" && (
-                        <FormField
-                          control={form.control}
-                          name="supervisorId"
-                          render={({ field }) => (
-                            <FormItem className="space-y-2">
-                              <FormLabel className={fieldLabelClassName}>
-                                Supervisor <RequiredMark />
-                              </FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className={selectTriggerBase}>
-                                    <UsersRound
-                                      className={selectIconClassName}
-                                      aria-hidden="true"
-                                    />
-                                    <SelectValue placeholder="Select supervisor" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent
-                                  className={selectContentClassName}
-                                >
-                                  {supervisors.length > 0 ? (
-                                    supervisors.map((supervisor) => (
-                                      <SelectItem
-                                        key={supervisor.id}
-                                        value={supervisor.id}
-                                        className={selectItemClassName}
-                                      >
-                                        {supervisor.name}
-                                      </SelectItem>
-                                    ))
-                                  ) : (
-                                    <SelectItem value="no-supervisors" disabled>
-                                      No supervisors available
-                                    </SelectItem>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage className={fieldMessageClassName} />
-                            </FormItem>
-                          )}
-                        />
-                      )}
 
                       <FormField
                         control={form.control}
@@ -1160,7 +1197,7 @@ export default function AddMemberDialog({
                                 <input
                                   {...fieldProps}
                                   type="file"
-                                  accept=".pdf,.doc,.docx"
+                                  accept="application/pdf,.pdf"
                                   aria-label="Attach CV or resume"
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
@@ -1203,7 +1240,7 @@ export default function AddMemberDialog({
                                       Upload resume
                                     </p>
                                     <p className="text-gp-text-muted mt-1 text-xs font-medium">
-                                      PDF, DOC, DOCX - Max 5MB
+                                      PDF - Max 5MB
                                     </p>
                                   </div>
                                 )}
@@ -1251,7 +1288,7 @@ export default function AddMemberDialog({
                                 <input
                                   {...fieldProps}
                                   type="file"
-                                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                                  accept="application/pdf,.pdf"
                                   multiple
                                   aria-label="Attach certificates"
                                   onChange={(e) => {
@@ -1296,7 +1333,7 @@ export default function AddMemberDialog({
                                       Upload certificates
                                     </p>
                                     <p className="text-gp-text-muted mt-1 text-xs font-medium">
-                                      PDF, DOC, DOCX, JPG, PNG
+                                      PDF - Max 5MB each
                                     </p>
                                   </div>
                                 )}

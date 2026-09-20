@@ -49,7 +49,6 @@ export default function RequestsList({
   requestsData,
   page = 1,
   limit = 10,
-  totalCount = 0,
 }: RequestsListProps) {
   const [status, setStatus] = useState<StatusTabId>("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -122,6 +121,13 @@ export default function RequestsList({
 
   const emptyState = emptyStates[status];
   const EmptyIcon = emptyState.icon;
+  const totalFilteredRequests = filteredRequests.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredRequests / limit));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const visibleRequests = filteredRequests.slice(
+    (safePage - 1) * limit,
+    safePage * limit,
+  );
 
   function resetFilters() {
     setStatus("all");
@@ -165,9 +171,9 @@ export default function RequestsList({
           isPageTransitioning && "requests-results-exit",
         )}
       >
-        {filteredRequests.length > 0 ? (
+        {visibleRequests.length > 0 ? (
           <div className="flex flex-col gap-3.5">
-            {filteredRequests.map((request, index) => (
+            {visibleRequests.map((request, index) => (
               <RequestCard
                 key={request.id}
                 request={request}
@@ -191,9 +197,9 @@ export default function RequestsList({
       </div>
 
       <TablePaginationFooter
-        page={page}
+        page={safePage}
         limit={limit}
-        totalCount={totalCount}
+        totalCount={totalFilteredRequests}
         itemLabel="requests"
         ariaLabel="Requests pagination"
         pageNavAriaLabel="Requests pages"

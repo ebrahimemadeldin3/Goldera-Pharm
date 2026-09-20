@@ -17,9 +17,12 @@ export default function AddDoctorDialog({
 }: AddDoctorDialogProps) {
   const router = useRouter();
 
-  const handleSuccess = () => {
+  const handleSuccess = (doctorName: string) => {
     onOpenChange(false);
-    toast.success({ title: "Doctor added successfully" });
+    toast.success({
+      title: "Doctor added successfully",
+      description: `${doctorName} is now available.`,
+    });
     router.refresh();
   };
 

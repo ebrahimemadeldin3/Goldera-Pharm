@@ -6,6 +6,7 @@ import {
   getVisitLocationStorageKey,
   parseLocationHistory,
   recordLocation,
+  removeLocation,
   type VisitLocationHistoryEntry,
 } from "@/features/coaching/lib/visit-location/history";
 
@@ -58,6 +59,28 @@ export function useLocationHistory(userId: string) {
     [storageKey],
   );
 
+  const remove = useCallback(
+    (value: string) => {
+      setEntries((currentEntries) => {
+        const nextEntries = removeLocation(currentEntries, value);
+
+        if (typeof window !== "undefined") {
+          try {
+            window.localStorage.setItem(
+              storageKey,
+              JSON.stringify(nextEntries),
+            );
+          } catch {
+            // localStorage is an enhancement only.
+          }
+        }
+
+        return nextEntries;
+      });
+    },
+    [storageKey],
+  );
+
   const suggestions = useCallback(
     (currentValue = "") => getLocationSuggestions(entries, currentValue),
     [entries],
@@ -67,6 +90,7 @@ export function useLocationHistory(userId: string) {
     entries,
     persistEntries,
     record,
+    remove,
     suggestions,
     storageKey,
   };

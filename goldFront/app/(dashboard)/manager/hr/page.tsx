@@ -6,12 +6,69 @@ import { HRStatsCards } from "@/features/hr/components/HRStatsCards";
 
 export const dynamic = "force-dynamic";
 
+const HR_DIRECTORY_FETCH_LIMIT = 1000;
+
 type HRPageProps = {
   searchParams?: Promise<{
     page?: string;
     limit?: string;
   }>;
 };
+
+async function loadHRDirectory() {
+  const firstResult = await getHRMembersAction(1, HR_DIRECTORY_FETCH_LIMIT);
+
+  if (!firstResult.success || !firstResult.data) {
+    return firstResult;
+  }
+
+  const firstMembers = firstResult.data.members;
+  const apiTotalCount = firstResult.totalCount ?? firstMembers.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(apiTotalCount / HR_DIRECTORY_FETCH_LIMIT),
+  );
+  const remainingResults = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getHRMembersAction(index + 2, HR_DIRECTORY_FETCH_LIMIT),
+    ),
+  );
+  const allMembers = [
+    ...firstMembers,
+    ...remainingResults.flatMap((result) => {
+      if (!result.success || !result.data) return [];
+      return result.data.members;
+    }),
+  ];
+  const membersById = new Map(allMembers.map((member) => [member.id, member]));
+  const members = Array.from(membersById.values());
+  const totalMembers = members.length;
+  const supervisorsCount = members.filter(
+    (member) => member.role === "SUPERVISOR",
+  ).length;
+  const repsCount = members.filter(
+    (member) => member.role === "MEDICAL_REP",
+  ).length;
+  const leaveTotal = members.reduce(
+    (sum, member) => sum + member.leaveDaysCountTotal,
+    0,
+  );
+
+  return {
+    success: true,
+    data: {
+      members,
+      stats: {
+        totalMembers,
+        supervisorsCount,
+        repsCount,
+        avgVacationUsed:
+          totalMembers > 0 ? Math.round(leaveTotal / totalMembers) : 0,
+      },
+    },
+    totalCount: totalMembers,
+  };
+}
 
 function HRPageHeader() {
   return (
@@ -41,7 +98,7 @@ export default async function Page({ searchParams }: HRPageProps) {
   const params = await searchParams;
   const page = Math.max(1, Number.parseInt(params?.page || "1", 10) || 1);
   const limit = Math.max(1, Number.parseInt(params?.limit || "10", 10) || 10);
-  const result = await getHRMembersAction(page, limit);
+  const result = await loadHRDirectory();
 
   if (!result.success || !result.data) {
     return (
@@ -67,11 +124,6 @@ export default async function Page({ searchParams }: HRPageProps) {
   }
 
   const { members, stats } = result.data;
-  const apiTotalCount = result.totalCount ?? members.length;
-  const isCompleteDataset = page === 1 && apiTotalCount <= limit;
-  const directoryTotalCount = isCompleteDataset
-    ? members.length
-    : apiTotalCount;
 
   return (
     <PageContainer className="bg-gp-surface-page flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden">
@@ -81,8 +133,8 @@ export default async function Page({ searchParams }: HRPageProps) {
         members={members}
         page={page}
         limit={limit}
-        totalCount={directoryTotalCount}
-        isCompleteDataset={isCompleteDataset}
+        totalCount={members.length}
+        isCompleteDataset
       />
     </PageContainer>
   );

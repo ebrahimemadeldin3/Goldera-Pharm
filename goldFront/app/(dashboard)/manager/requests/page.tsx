@@ -7,6 +7,48 @@ import RequestsList from "@/features/requests/components/manager/RequestsList";
 
 export const dynamic = "force-dynamic";
 
+const REQUESTS_DIRECTORY_FETCH_LIMIT = 1000;
+
+async function loadManagerRequestsDirectory() {
+  const firstResult = await getManagerTeamRequestsAction(
+    1,
+    REQUESTS_DIRECTORY_FETCH_LIMIT,
+  );
+
+  if (!firstResult.success) {
+    return firstResult;
+  }
+
+  const firstRequests = firstResult.data ?? [];
+  const apiTotalCount = firstResult.totalCount ?? firstRequests.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(apiTotalCount / REQUESTS_DIRECTORY_FETCH_LIMIT),
+  );
+  const remainingResults = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getManagerTeamRequestsAction(index + 2, REQUESTS_DIRECTORY_FETCH_LIMIT),
+    ),
+  );
+  const requests = [
+    ...firstRequests,
+    ...remainingResults.flatMap((result) => {
+      if (!result.success) return [];
+      return result.data ?? [];
+    }),
+  ];
+  const requestsById = new Map(
+    requests.map((request) => [request.id, request]),
+  );
+  const data = Array.from(requestsById.values());
+
+  return {
+    success: true,
+    data,
+    totalCount: data.length,
+  };
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -17,7 +59,7 @@ export default async function Page({
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const result = await getManagerTeamRequestsAction(page, limit);
+  const result = await loadManagerRequestsDirectory();
 
   if (!result.success) {
     return (
@@ -36,9 +78,9 @@ export default async function Page({
   }
 
   const requests = result.data ?? [];
-  const totalCount = result.totalCount ?? requests.length;
+  const totalCount = requests.length;
 
-  // Calculate dynamic stats (current page slice — same as previous behavior)
+  // Calculate dynamic stats from the loaded manager request directory.
   const total = requests.length;
   const pending = requests.filter((r) => r.status === "PENDING").length;
   const approved = requests.filter((r) => r.status === "APPROVED").length;

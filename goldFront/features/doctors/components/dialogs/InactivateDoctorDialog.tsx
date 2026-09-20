@@ -43,7 +43,7 @@ export default function InactivateDoctorDialog({
 
         if (result.success) {
           toast.success({
-            title: `Doctor ${isActive ? "deactivated" : "activated"} successfully`,
+            title: "Doctor updated successfully",
             description: `${doctorName} is now ${isActive ? "inactive" : "active"}`,
           });
 
@@ -51,14 +51,14 @@ export default function InactivateDoctorDialog({
           setOpen(false);
         } else {
           toast.error({
-            title: `Failed to ${isActive ? "deactivate" : "activate"} doctor`,
+            title: "Couldn't update doctor",
             description: result.error?.message || "Please try again",
           });
           setOpen(false);
         }
       } catch {
         toast.error({
-          title: "An unexpected error occurred",
+          title: "Couldn't update doctor",
           description: "Please try again later",
         });
         setOpen(false);

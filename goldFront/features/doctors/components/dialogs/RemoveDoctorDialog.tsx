@@ -42,21 +42,21 @@ export default function RemoveDoctorDialog({
         if (result.success) {
           toast.success({
             title: "Doctor removed successfully",
-            description: `${doctorName} has been removed from the system`,
+            description: "The doctor was removed successfully.",
           });
 
           // Redirect to doctors page
           router.push("/manager/doctors");
         } else {
           toast.error({
-            title: "Failed to remove doctor",
+            title: "Couldn't remove doctor",
             description: result.error?.message || "Please try again",
           });
           setOpen(false);
         }
       } catch {
         toast.error({
-          title: "An unexpected error occurred",
+          title: "Couldn't remove doctor",
           description: "Please try again later",
         });
         setOpen(false);

@@ -13,7 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { uploadSalesAction } from "../api";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const acceptedExtensions = [".xlsx", ".xls", ".csv"];
 
@@ -40,7 +40,7 @@ export function UploadSalesDialog() {
     const file = e.target.files?.[0] || null;
 
     if (file && !isAcceptedFile(file)) {
-      toast.error("Please choose a supported spreadsheet file");
+      toast.error({ title: "Please choose a supported spreadsheet file" });
       e.target.value = "";
       setSelectedFile(null);
       return;
@@ -52,11 +52,11 @@ export function UploadSalesDialog() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!selectedFile) {
-      toast.error("Please select an Excel file");
+      toast.error({ title: "Please select an Excel file" });
       return;
     }
     if (!sheetName.trim()) {
-      toast.error("Please enter sheet name");
+      toast.error({ title: "Please enter sheet name" });
       return;
     }
 
@@ -67,14 +67,17 @@ export function UploadSalesDialog() {
 
       const result = await uploadSalesAction(formData);
       if (result.success) {
-        toast.success("Sales data uploaded successfully");
+        toast.success({ title: "Sales data uploaded successfully" });
         setOpen(false);
         setSelectedFile(null);
         setSheetName("");
         if (inputRef.current) inputRef.current.value = "";
         router.refresh();
       } else {
-        toast.error(result.error?.message || "Failed to upload sales data");
+        toast.error({
+          title: "Couldn't upload sales data",
+          description: result.error?.message || "Check the file and try again.",
+        });
       }
     });
   }

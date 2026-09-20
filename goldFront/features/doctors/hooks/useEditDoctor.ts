@@ -100,20 +100,20 @@ export function useEditDoctor(initialData: DoctorProfileData) {
 
         if (result.success) {
           toast.success({
-            title: "Profile updated successfully",
-            description: "Doctor information has been updated",
+            title: "Doctor updated successfully",
+            description: "Doctor information was updated successfully.",
           });
           setIsEditMode(false);
           router.refresh();
         } else {
           toast.error({
-            title: "Failed to update profile",
+            title: "Couldn't update doctor",
             description: result.error?.message || "Please try again",
           });
         }
       } catch {
         toast.error({
-          title: "An unexpected error occurred",
+          title: "Couldn't update doctor",
           description: "Please try again later",
         });
       }

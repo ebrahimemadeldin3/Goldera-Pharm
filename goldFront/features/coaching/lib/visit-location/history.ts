@@ -136,6 +136,18 @@ export function recordLocation(
   return rankLocations(nextEntries, now).slice(0, VISIT_LOCATION_HISTORY_LIMIT);
 }
 
+export function removeLocation(
+  entries: VisitLocationHistoryEntry[],
+  value: string,
+): VisitLocationHistoryEntry[] {
+  const normalizedValue = normalizeLocation(value);
+  if (!normalizedValue) return rankLocations(entries);
+
+  return rankLocations(
+    entries.filter((entry) => entry.normalizedValue !== normalizedValue),
+  );
+}
+
 export function getLocationSuggestions(
   entries: VisitLocationHistoryEntry[],
   currentValue = "",

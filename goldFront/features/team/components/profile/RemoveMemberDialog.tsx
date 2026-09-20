@@ -42,21 +42,21 @@ export default function RemoveMemberDialog({
         if (result.success) {
           toast.success({
             title: "Team member removed successfully",
-            description: `${memberName} has been removed from the team`,
+            description: "The team member was removed successfully.",
           });
 
           // Redirect to team page
           router.push("/manager/team");
         } else {
           toast.error({
-            title: "Failed to remove team member",
+            title: "Couldn't remove team member",
             description: result.error?.message || "Please try again",
           });
           onOpenChange(false);
         }
       } catch {
         toast.error({
-          title: "An unexpected error occurred",
+          title: "Couldn't remove team member",
           description: "Please try again later",
         });
         onOpenChange(false);

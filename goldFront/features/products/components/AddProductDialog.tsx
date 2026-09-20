@@ -46,7 +46,7 @@ import {
   saveStoredProductImage,
   saveStoredProductOverride,
 } from "../lib/utils";
-import { toast } from "sonner";
+import { toast } from "@/lib/utils/toast";
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -198,12 +198,12 @@ export function AddProductDialog({
 
   function handleImageFile(file: File) {
     if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast.error("Choose a JPG, PNG, or WEBP product image");
+      toast.error({ title: "Choose a JPG, PNG, or WEBP product image" });
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      toast.error("Product image must be smaller than 5MB");
+      toast.error({ title: "Product image must be smaller than 5MB" });
       return;
     }
 
@@ -249,7 +249,10 @@ export function AddProductDialog({
         const productSaved = saveStoredProductOverride(updatedProduct);
 
         if (!productSaved) {
-          toast.error("Failed to save product changes in this browser");
+          toast.error({
+            title: "Couldn't update product",
+            description: "Product changes could not be saved in this browser.",
+          });
           return;
         }
 
@@ -261,13 +264,15 @@ export function AddProductDialog({
           );
 
           if (!imageSaved) {
-            toast.warning(
-              "Product updated, but the image could not be saved in this browser",
-            );
+            toast.warning({
+              title: "Product updated",
+              description:
+                "The image could not be saved in this browser.",
+            });
           }
         }
 
-        toast.success("Product updated successfully");
+        toast.success({ title: "Product updated successfully" });
         onProductUpdated?.(updatedProduct);
         closeAfterSubmit();
         return;
@@ -283,13 +288,15 @@ export function AddProductDialog({
           );
 
           if (!imageSaved) {
-            toast.warning(
-              "Product added, but the image could not be saved in this browser",
-            );
+            toast.warning({
+              title: "Product added successfully",
+              description:
+                "The image could not be saved in this browser.",
+            });
           }
         }
 
-        toast.success("Product added successfully");
+        toast.success({ title: "Product added successfully" });
         closeAfterSubmit();
         form.reset();
         setImageFile(null);
@@ -297,7 +304,10 @@ export function AddProductDialog({
         setIsDragging(false);
         router.refresh();
       } else {
-        toast.error(result.error?.message || "Failed to add product");
+        toast.error({
+          title: "Couldn't add product",
+          description: result.error?.message || "Please try again.",
+        });
       }
     });
   }

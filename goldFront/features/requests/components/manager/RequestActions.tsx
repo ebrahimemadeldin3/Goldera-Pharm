@@ -58,7 +58,7 @@ export function RequestActions({ request }: RequestActionsProps) {
             description: request.title,
           });
         } else {
-          toast.error({
+          toast.success({
             title: "Request rejected successfully",
             description: request.title,
           });
@@ -67,7 +67,7 @@ export function RequestActions({ request }: RequestActionsProps) {
         router.refresh();
       } else {
         toast.error({
-          title: `Failed to ${actionType === "approve" ? "approve" : "reject"} request`,
+          title: `Couldn't ${actionType === "approve" ? "approve" : "reject"} request`,
           description: result.error?.message || "An error occurred",
         });
       }

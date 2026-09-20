@@ -96,10 +96,18 @@ export async function fetchDoctorById(id: string): Promise<{
 export async function createDoctor(
   data: CreateDoctorDto,
 ): Promise<DoctorApiResponse> {
-  return apiFetch<DoctorApiResponse>("/api/doctors", {
+  const response = await apiFetch<
+    DoctorApiResponse | { data?: DoctorApiResponse; status?: string }
+  >("/api/doctors", {
     method: "POST",
     body: JSON.stringify(data),
   });
+
+  if (response && "data" in response && response.data) {
+    return response.data;
+  }
+
+  return response as DoctorApiResponse;
 }
 
 /**

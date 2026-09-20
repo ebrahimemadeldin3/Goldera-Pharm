@@ -75,20 +75,20 @@ export function useEditMember(
 
         if (result.success) {
           toast.success({
-            title: "Profile updated successfully",
-            description: "Team member information has been updated",
+            title: "Team member updated successfully",
+            description: "Team member information was updated successfully.",
           });
           setIsEditMode(false);
           router.refresh();
         } else {
           toast.error({
-            title: "Failed to update profile",
+            title: "Couldn't update team member",
             description: result.error?.message || "Please try again",
           });
         }
       } catch {
         toast.error({
-          title: "An unexpected error occurred",
+          title: "Couldn't update team member",
           description: "Please try again later",
         });
       }

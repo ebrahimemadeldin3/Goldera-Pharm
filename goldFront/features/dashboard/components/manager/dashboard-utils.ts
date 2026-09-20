@@ -10,10 +10,7 @@ import type { AppraisalApiResponse } from "@/features/appraisal/lib/types";
 import type { RequestApiResponse } from "@/features/requests/lib/types";
 import { normalizeDoctorForDirectory } from "@/features/doctors/lib/utils/mappers";
 import { normalizePharmacyForDirectory } from "@/features/pharmacies/lib/utils/directory";
-import {
-  KSA_TERRITORY_STRUCTURE,
-  getTerritoryLookup,
-} from "@/features/plan/lib/territory";
+import { KSA_TERRITORY_STRUCTURE } from "@/features/plan/lib/territory";
 import {
   getTeamMemberAssignment,
   transformUserApiResponse,
@@ -125,7 +122,10 @@ export function periodBounds(
   ];
 }
 
-function filterBounds(filters: DashboardFilters, now: string) {
+function filterBounds(
+  filters: DashboardFilters,
+  now: string,
+): [string, string] | null {
   if (filters.period !== "custom") return periodBounds(filters.period, now);
   const from = dateKey(filters.customFrom);
   const to = dateKey(filters.customTo);
@@ -281,9 +281,6 @@ export function summarizeDashboard(
     if (!matchesRep(member.id, filters)) return false;
     return matchesAssignmentLocation(memberAssignments.get(member.id), filters);
   });
-  const sales = data.sales.data.filter((sale) =>
-    within(saleDate(sale), bounds),
-  );
   const visits = filterByRepScope(
     data.visits.data.filter((visit) => within(visit.date, bounds)),
     repIdFromVisit,
@@ -341,6 +338,9 @@ export function summarizeDashboard(
     repIdFromRequest,
     memberAssignments,
     filters,
+  );
+  const sales = data.sales.data.filter((sale) =>
+    within(saleDate(sale), bounds),
   );
   const ratings = coaching
     .map((report) => finiteNumber(report.performanceRating))
@@ -458,7 +458,15 @@ export function summarizeDashboard(
     }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
     .slice(0, 6);
-  const quality = ratings.length
+  const appraisalQuality = scores.length
+    ? {
+        kind: "appraisals" as const,
+        average: scores.reduce((a, b) => a + b, 0) / scores.length,
+        count: scores.length,
+        distribution: scoreDistribution(scores),
+      }
+    : null;
+  const coachingQuality = ratings.length
     ? {
         kind: "coaching" as const,
         average: ratings.reduce((a, b) => a + b, 0) / ratings.length,
@@ -470,14 +478,8 @@ export function summarizeDashboard(
           }),
         ),
       }
-    : scores.length
-      ? {
-          kind: "appraisals" as const,
-          average: scores.reduce((a, b) => a + b, 0) / scores.length,
-          count: scores.length,
-          distribution: scoreDistribution(scores),
-        }
-      : null;
+    : null;
+  const quality = coachingQuality || appraisalQuality;
   const today = dateKey(data.asOf)!;
   const upcoming = filterByRepScope(
     data.visits.data.filter((visit) => {
@@ -574,6 +576,25 @@ export function summarizeDashboard(
     approved: requests.filter((request) => request.status === "APPROVED").length,
     rejected: requests.filter((request) => request.status === "REJECTED").length,
   };
+  const latestCoachingDate = coaching
+    .map((report) => dateKey(report.visitDate))
+    .filter((key): key is string => key !== null)
+    .sort()
+    .at(-1);
+  const coachingStats = {
+    total: coaching.length,
+    completed: coaching.filter((report) => report.repAccepted).length,
+    followUps: coaching.filter((report) => !report.repAccepted).length,
+    lowRatingFollowUps: coaching.filter((report) => {
+      const rating = finiteNumber(report.performanceRating);
+      return rating !== null && rating <= 2;
+    }).length,
+    latest: latestCoachingDate,
+  };
+  const appraisalStats = {
+    highPerformers: scores.filter((score) => score >= 90).length,
+    needsAttention: scores.filter((score) => score < 70).length,
+  };
   const hrSnapshot = {
     totalEmployees: scopedTeam.length,
     activeEmployees: scopedTeam.filter((member) => member.isActive === true).length,
@@ -594,6 +615,15 @@ export function summarizeDashboard(
     doctorsMissingEmail: doctors.filter((doctor) => !doctor.email).length,
     doctorsMissingPhone: doctors.filter((doctor) => !doctor.phone).length,
     pharmaciesMissingCity: pharmacies.filter((pharmacy) => !pharmacy.city).length,
+    activeRepsRecentLogin: medicalReps.filter((rep) => {
+      if (!rep.isActive || !rep.lastLogin) return false;
+      const loginKey = dateKey(rep.lastLogin);
+      const todayKey = dateKey(data.asOf);
+      if (!loginKey || !todayKey) return false;
+      const ageMs =
+        parseDateValue(todayKey).getTime() - parseDateValue(loginKey).getTime();
+      return ageMs >= 0 && ageMs <= 7 * 86400000;
+    }).length,
     teamMissingTerritory: medicalReps.filter(
       (rep) => !memberAssignments.get(rep.id)?.hasTerritory,
     ).length,
@@ -619,6 +649,14 @@ export function summarizeDashboard(
       label: "Coaching review",
       detail: report.rep?.name || "Rep unavailable",
     })),
+    ...appraisals.slice(0, 8).map((review) => ({
+      id: `appraisal-${review.id}`,
+      date: review.period,
+      label: "Appraisal score recorded",
+      detail: `${members.find((member) => member.id === review.repId)?.name ?? "Rep unavailable"} / ${
+        appraisalScore(review)?.toFixed(1) ?? "Score unavailable"
+      } / 100`,
+    })),
   ]
     .filter((item) => dateKey(item.date))
     .sort((a, b) => dateKey(b.date)!.localeCompare(dateKey(a.date)!))
@@ -643,6 +681,8 @@ export function summarizeDashboard(
     territoryPerformance,
     regionalCoverage,
     requestStats,
+    coachingStats,
+    appraisalStats,
     hrSnapshot,
     dataQuality,
     recentActivity,

@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useId, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
@@ -65,11 +65,14 @@ import {
   getManagerTeamAction,
 } from "@/features/team/api";
 import { getDoctorsAction } from "@/features/doctors/api";
+import { getPharmaciesAction } from "@/features/pharmacies/api";
 import { toast } from "@/lib/utils/toast";
 import { cn } from "@/lib/utils";
 import type { User } from "@/features/team/lib/types";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
+import type { PharmacyApiResponse } from "@/features/pharmacies/lib/types";
 import { VisitLocationField } from "./VisitLocationField";
+import { buildLocationSuggestions } from "@/features/coaching/lib/visit-location/suggestions";
 
 type ReviewSectionId = "visit" | "performance" | "assessment" | "coaching";
 
@@ -486,6 +489,9 @@ const ReviewForm = ({
   const [isPending, startTransition] = useTransition();
   const [reps, setReps] = useState<User[]>([]);
   const [doctors, setDoctors] = useState<DoctorApiResponse[]>([]);
+  const [pharmacies, setPharmacies] = useState<PharmacyApiResponse[]>([]);
+  const [locationSuggestionsUnavailable, setLocationSuggestionsUnavailable] =
+    useState(false);
   const [loading, setLoading] = useState(true);
   const [saveSucceeded, setSaveSucceeded] = useState(false);
   const [composerResetKey, setComposerResetKey] = useState(0);
@@ -519,6 +525,27 @@ const ReviewForm = ({
   });
 
   const { isDirty } = form.formState;
+  const selectedDoctorId = useWatch({
+    control: form.control,
+    name: "doctorId",
+  });
+  const selectedRepId = useWatch({
+    control: form.control,
+    name: "repId",
+  });
+  const selectedRep = useMemo(
+    () => reps.find((rep) => rep.id === selectedRepId),
+    [reps, selectedRepId],
+  );
+  const locationSuggestions = useMemo(
+    () =>
+      buildLocationSuggestions({
+        doctors,
+        pharmacies,
+        recentLocations: [],
+      }),
+    [doctors, pharmacies],
+  );
 
   useEffect(() => {
     if (!saveSucceeded) return;
@@ -583,13 +610,29 @@ const ReviewForm = ({
         }
 
         // Fetch doctors
-        const doctorsResult = await getDoctorsAction();
+        const doctorsResult = await getDoctorsAction(
+          undefined,
+          undefined,
+          undefined,
+          false,
+        );
         if (doctorsResult.success && doctorsResult.data) {
           setDoctors(doctorsResult.data);
+        }
+
+        if (role === "MANAGER") {
+          const pharmaciesResult = await getPharmaciesAction(1, 200);
+          if (pharmaciesResult.success && pharmaciesResult.data) {
+            setPharmacies(pharmaciesResult.data);
+            setLocationSuggestionsUnavailable(false);
+          } else {
+            setLocationSuggestionsUnavailable(true);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
         toast.error({ title: "Failed to load reps and doctors" });
+        setLocationSuggestionsUnavailable(true);
       } finally {
         setLoading(false);
       }
@@ -605,18 +648,22 @@ const ReviewForm = ({
         const result = await createCoachingReportAction(values);
 
         if (result.success) {
-          toast.success({ title: "Joint visit review submitted successfully" });
+          toast.success({ title: "Coaching review created successfully" });
           setSaveSucceeded(true);
           resetReviewForm();
           router.refresh();
         } else {
           toast.error({
-            title: result.error?.message || "Failed to submit review",
+            title: "Couldn't create coaching review",
+            description: result.error?.message || "Please try again.",
           });
         }
       } catch (error) {
         console.error("Submit error:", error);
-        toast.error({ title: "An unexpected error occurred" });
+        toast.error({
+          title: "Couldn't create coaching review",
+          description: "Please try again later.",
+        });
       }
     });
   };
@@ -930,6 +977,13 @@ const ReviewForm = ({
                               name={field.name}
                               value={field.value}
                               userId={user.id}
+                              locationSuggestions={locationSuggestions}
+                              selectedDoctorId={selectedDoctorId}
+                              selectedRep={selectedRep}
+                              suggestionsLoading={loading}
+                              suggestionsUnavailable={
+                                locationSuggestionsUnavailable
+                              }
                               disabled={isPending}
                               onValueChange={field.onChange}
                               onBlur={field.onBlur}

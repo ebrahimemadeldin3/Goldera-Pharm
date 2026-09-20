@@ -294,7 +294,12 @@ export function HRMembersList({
             };
   const EmptyIcon = emptyState.icon;
   const paginationTotalCount = isCompleteDataset ? filtered.length : totalCount;
-  const paginationPage = isCompleteDataset ? 1 : page;
+  const totalPages = Math.max(1, Math.ceil(paginationTotalCount / limit));
+  const paginationPage = Math.min(Math.max(page, 1), totalPages);
+  const visibleMembers = isCompleteDataset
+    ? filtered.slice((paginationPage - 1) * limit, paginationPage * limit)
+    : filtered;
+  const visibleCount = visibleMembers.length;
 
   return (
     <section className="hr-directory hr-section-enter border-gp-border-default bg-gp-surface-card shadow-gp-card overflow-hidden rounded-[16px] border">
@@ -310,8 +315,8 @@ export function HRMembersList({
               aria-live="polite"
             >
               {trimmedQuery
-                ? `${filtered.length} ${filtered.length === 1 ? "result" : "results"} on this page for "${trimmedQuery}"`
-                : `${filtered.length} ${filtered.length === 1 ? "employee" : "employees"} shown on this page`}
+                ? `${visibleCount} shown of ${filtered.length} ${filtered.length === 1 ? "result" : "results"} for "${trimmedQuery}"`
+                : `${visibleCount} shown on this page of ${filtered.length} ${filtered.length === 1 ? "employee" : "employees"}`}
             </p>
           </div>
 
@@ -430,9 +435,9 @@ export function HRMembersList({
         aria-labelledby={`hr-role-tab-${tab}`}
         className="hr-results-transition p-4 sm:p-5"
       >
-        {filtered.length > 0 ? (
+        {visibleMembers.length > 0 ? (
           <div className="flex flex-col gap-3.5">
-            {filtered.map((member, index) => (
+            {visibleMembers.map((member, index) => (
               <HRMemberCard
                 key={member.id}
                 member={member}

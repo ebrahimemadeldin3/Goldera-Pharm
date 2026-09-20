@@ -45,5 +45,15 @@ export async function apiFetch<T>(
     }
     throw error;
   }
-  return res.json();
+
+  if (res.status === 204) {
+    return undefined as T;
+  }
+
+  const text = await res.text();
+  if (!text.trim()) {
+    return undefined as T;
+  }
+
+  return JSON.parse(text) as T;
 }
