@@ -6,6 +6,7 @@ import {
   VISIT_STATUS_LABELS,
   VISIT_DEFAULTS,
 } from "@/features/visits/lib/constants";
+import { normalizeVisitCompletionLocation } from "./completion-location";
 
 /**
  * Transform API visit response to UI Visit type
@@ -48,6 +49,9 @@ export function transformVisitApiResponse(apiVisit: VisitApiResponse): Visit {
     createdById: apiVisit.createdBy.id,
     createdAt: apiVisit.createdAt,
     updatedAt: apiVisit.updatedAt,
+    completionLocation: normalizeVisitCompletionLocation(
+      apiVisit.completionLocation,
+    ),
   };
 }
 

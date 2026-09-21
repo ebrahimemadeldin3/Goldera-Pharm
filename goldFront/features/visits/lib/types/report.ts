@@ -1,3 +1,5 @@
+import type { VisitCompletionLocation } from "./location";
+
 export type VisitReportData = {
   id: string;
   doctor: {
@@ -35,12 +37,14 @@ export type CreateVisitReportDto = {
   samplesProvided: string[];
 };
 
+export type VisitCompletionLocationRequestContract = {
+  completionLocation: VisitCompletionLocation;
+};
+
 export type CreateVisitReportResponse = {
   id?: string;
   message?: string;
 } | null;
 
 export type GetVisitReportsResponse =
-  | VisitReport[]
-  | { data: VisitReport[] }
-  | null;
+  VisitReport[] | { data: VisitReport[] } | null;

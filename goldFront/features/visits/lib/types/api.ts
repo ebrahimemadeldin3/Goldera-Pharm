@@ -1,5 +1,6 @@
 import { VisitStatus, VisitType } from "@/lib/types";
 import type { PaginatedApiResponse } from "@/lib/types";
+import type { VisitCompletionLocation } from "./location";
 
 /**
  * API response structure for a single visit
@@ -28,6 +29,7 @@ export type VisitApiResponse = {
   visitType?: VisitType | "ROUTINE" | string;
   supervisorId?: string;
   medicalRepId?: string;
+  completionLocation?: VisitCompletionLocation | null;
 };
 
 /**

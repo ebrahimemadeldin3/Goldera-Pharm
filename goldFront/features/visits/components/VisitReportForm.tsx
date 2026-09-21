@@ -9,6 +9,8 @@ import {
 } from "../lib/schemas/report";
 import { createVisitReportAction } from "../api/reports";
 import { toast } from "@/lib/utils/toast";
+import { useVisitCompletionLocation } from "../hooks/useVisitCompletionLocation";
+import { getVisitCompletionLocationErrorMessage } from "../lib/utils/completion-location";
 import { useRouter } from "next/navigation";
 import {
   Form,
@@ -40,6 +42,12 @@ export default function VisitReportForm({
 }: VisitReportFormProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const {
+    status: locationStatus,
+    location: capturedLocation,
+    errorCode: locationErrorCode,
+    captureLocation,
+  } = useVisitCompletionLocation();
 
   const form = useForm<VisitReportFormValues>({
     resolver: zodResolver(visitReportSchema),
@@ -52,6 +60,7 @@ export default function VisitReportForm({
       visitPurpose: "",
       notes: "",
       samplesProvided: [],
+      completionLocation: null,
     },
   });
 
@@ -70,7 +79,19 @@ export default function VisitReportForm({
 
   const onSubmit = (data: VisitReportFormValues) => {
     startTransition(async () => {
-      const result = await createVisitReportAction(data);
+      const { location, errorCode } = await captureLocation();
+
+      if (errorCode) {
+        toast.warning({
+          title: "Completion location not captured",
+          description: getVisitCompletionLocationErrorMessage(errorCode),
+        });
+      }
+
+      const result = await createVisitReportAction({
+        ...data,
+        completionLocation: location,
+      });
 
       if (result.success) {
         toast.success({
@@ -85,16 +106,28 @@ export default function VisitReportForm({
     });
   };
 
+  const isSubmitting = isPending || locationStatus === "requesting";
+  const locationStatusMessage =
+    locationStatus === "requesting"
+      ? "Requesting completion location..."
+      : locationStatus === "captured" && capturedLocation
+        ? "Location captured for completion. Backend integration pending."
+        : locationStatus === "error" && locationErrorCode
+          ? getVisitCompletionLocationErrorMessage(locationErrorCode)
+          : null;
+
   return (
     <div className="flex flex-col gap-6">
       {/* Info Cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 rounded-[16px] border border-[#E5E8EF] bg-white p-5">
+      <div className="grid grid-cols-1 gap-4 rounded-[16px] border border-[#E5E8EF] bg-white p-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="flex items-center gap-3">
           <div className="flex size-11 items-center justify-center rounded-[10px] bg-[#EDF4FF] text-[#3972D5]">
             <Stethoscope className="size-5" />
           </div>
           <div>
-            <span className="block text-xs font-medium text-[#667085]">Doctor</span>
+            <span className="block text-xs font-medium text-[#667085]">
+              Doctor
+            </span>
             <span className="text-sm font-semibold text-[#182033]">
               {visitData.doctor.name}
             </span>
@@ -143,6 +176,22 @@ export default function VisitReportForm({
           </div>
         </div>
       </div>
+
+      {locationStatusMessage && (
+        <div
+          className={`rounded-[12px] border px-4 py-3 text-sm font-medium ${
+            locationStatus === "captured"
+              ? "border-[#CBEFDD] bg-[#F7FCFA] text-[#168557]"
+              : locationStatus === "requesting"
+                ? "border-[#D7E5FF] bg-[#EDF4FF] text-[#3972D5]"
+                : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {locationStatusMessage}
+        </div>
+      )}
 
       {/* Form */}
       <Form {...form}>
@@ -367,11 +416,15 @@ export default function VisitReportForm({
           <div className="flex justify-end xl:col-span-2">
             <Button
               type="submit"
-              disabled={isPending}
-              className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white h-11 px-5 rounded-[10px] shadow-[0_4px_14px_rgba(22,133,87,0.22)] text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-2"
+              disabled={isSubmitting}
+              className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover inline-flex h-11 cursor-pointer items-center gap-2 rounded-[10px] px-5 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all"
             >
               <Save size={16} />
-              {isPending ? "Submitting..." : "Submit Report"}
+              {locationStatus === "requesting"
+                ? "Capturing Location..."
+                : isPending
+                  ? "Submitting..."
+                  : "Submit Report"}
             </Button>
           </div>
         </form>

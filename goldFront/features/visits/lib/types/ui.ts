@@ -1,4 +1,5 @@
 import { VisitStatus } from "@/lib/types";
+import type { VisitCompletionLocation } from "./location";
 
 /**
  * UI Visit type for displaying in components
@@ -31,6 +32,7 @@ export type Visit = {
   createdById: string;
   createdAt: string;
   updatedAt: string;
+  completionLocation?: VisitCompletionLocation | null;
 };
 
 /**
@@ -52,6 +54,7 @@ export type VisitDetails = {
   status: VisitStatus;
   createdAt: string;
   updatedAt: string;
+  completionLocation?: VisitCompletionLocation | null;
 };
 
 // Re-export API types for convenience
@@ -61,3 +64,8 @@ export type {
   CreateVisitDto,
   CreateVisitResponse,
 } from "./api";
+export type {
+  VisitCompletionLocation,
+  VisitCompletionLocationErrorCode,
+  VisitCompletionLocationStatus,
+} from "./location";
