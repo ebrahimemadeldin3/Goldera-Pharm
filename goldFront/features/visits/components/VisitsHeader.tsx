@@ -15,7 +15,7 @@ import { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import AddVisitDialog from "./AddVisitDialog";
-import { getDoctorsAction } from "@/features/doctors/api";
+import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { getManagerTeamAction } from "@/features/team/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
@@ -109,12 +109,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
   useEffect(() => {
     if (dialogOpen && doctors.length === 0) {
       const fetchData = async () => {
-        const doctorsRes = await getDoctorsAction(
-          undefined,
-          undefined,
-          undefined,
-          false,
-        );
+        const doctorsRes = await getSchedulableDoctorsAction();
         if (doctorsRes.success && doctorsRes.data) {
           setDoctors(doctorsRes.data);
         }

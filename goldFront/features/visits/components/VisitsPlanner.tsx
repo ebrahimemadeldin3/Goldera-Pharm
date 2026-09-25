@@ -27,8 +27,13 @@ import WeekVisitsPanel from "@/features/visits/components/panels/WeekVisitsPanel
 import { Visit } from "@/features/visits/lib/types/ui";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import type { VisitStatus } from "@/lib/types";
-import { cn, formatDateOnly } from "@/lib/utils";
-import { usePathname } from "next/navigation";
+import {
+  cn,
+  formatDateOnly,
+  getSaudiCalendarDate,
+  parseDateValue,
+} from "@/lib/utils";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   CalendarDays,
   ChevronLeft,
@@ -70,6 +75,15 @@ const statusLegend: Array<{ status: VisitStatus; label: string }> = [
   { status: "CANCELLED", label: "Cancelled" },
 ];
 
+function parsePlannerDateParam(value: string | null): Date | null {
+  if (!value) return null;
+
+  const parsed = parseDateValue(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return getSaudiCalendarDate(parsed);
+}
+
 function VisitCalendarDayButton({
   className,
   day,
@@ -85,9 +99,7 @@ function VisitCalendarDayButton({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dateKey = formatDateOnly(day.date);
   const rawStatusDots = statusDotsByDate.get(dateKey) ?? [];
-  const statusDots = isRep
-    ? rawStatusDots.filter((s) => s === "CANCELLED")
-    : rawStatusDots;
+  const statusDots = rawStatusDots;
 
   const todayStart = useMemo(() => {
     const now = new Date();
@@ -184,10 +196,19 @@ export default function VisitsPlanner({
   reportBasePath,
 }: VisitsPlannerProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedDateParam =
+    searchParams.get("date") || searchParams.get("visitDate");
+  const selectedDateFromUrl = useMemo(
+    () => parsePlannerDateParam(selectedDateParam),
+    [selectedDateParam],
+  );
   const [mode, setMode] = useState<VisitMode>("day");
-  const [selected, setSelected] = useState<Date>(new Date());
+  const [selected, setSelected] = useState<Date>(
+    () => selectedDateFromUrl ?? new Date(),
+  );
   const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
-    startOfMonth(new Date()),
+    startOfMonth(selectedDateFromUrl ?? new Date()),
   );
   const [monthMotion, setMonthMotion] = useState<MonthMotion>("next");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -580,13 +601,18 @@ export default function VisitsPlanner({
                   />
                   <span>Today</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span
-                    className="size-2 shrink-0 rounded-full bg-[#D92D20]"
-                    aria-hidden="true"
-                  />
-                  <span>Cancelled</span>
-                </div>
+                {statusLegend.map((item) => (
+                  <div key={item.status} className="flex items-center gap-1.5">
+                    <span
+                      className={cn(
+                        "size-2 shrink-0 rounded-full",
+                        visitStatusDotStyles[item.status],
+                      )}
+                      aria-hidden="true"
+                    />
+                    <span>{item.label}</span>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-[11px] font-medium text-[#667085]">

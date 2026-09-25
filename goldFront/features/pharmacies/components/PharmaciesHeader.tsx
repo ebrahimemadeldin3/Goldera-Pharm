@@ -1,12 +1,24 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Layers3, MapPinned, Plus, Store, type LucideIcon } from "lucide-react";
+import {
+  FileSpreadsheet,
+  Layers3,
+  MapPinned,
+  Plus,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BulkImportDialog } from "@/features/bulk-import/components/BulkImportDialog";
 import { cn } from "@/lib/utils";
 import type { PharmacyApiResponse } from "../lib/types";
+import {
+  pharmacyImportConfig,
+  type PharmacyImportPayload,
+} from "../lib/import-config";
 import { normalizePharmacyForDirectory } from "../lib/utils/directory";
 import { AddPharmacyDialog } from "./AddPharmacyDialog";
 
@@ -88,6 +100,7 @@ export default function PharmaciesHeader({
   const { role } = useRoleUI();
   const isManager = role === "MANAGER";
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const isRep = role === "MEDICAL_REP";
 
   const stats = useMemo(() => {
@@ -145,17 +158,31 @@ export default function PharmaciesHeader({
         </div>
 
         {isManager && (
-          <Button
-            type="button"
-            onClick={() => setDialogOpen(true)}
-            className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:outline-none motion-reduce:transform-none"
-          >
-            <Plus
-              className="text-gp-gold-500 size-4 transition-transform duration-[180ms] group-hover:rotate-90 motion-reduce:transition-none"
-              aria-hidden="true"
-            />
-            Add Pharmacy
-          </Button>
+          <div className="flex shrink-0 items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setImportDialogOpen(true)}
+              className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,transform] duration-[180ms] hover:-translate-y-0.5 motion-reduce:transform-none"
+            >
+              <FileSpreadsheet
+                className="text-gp-gold-600 size-4"
+                aria-hidden="true"
+              />
+              Import Excel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setDialogOpen(true)}
+              className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:outline-none motion-reduce:transform-none"
+            >
+              <Plus
+                className="text-gp-gold-500 size-4 transition-transform duration-[180ms] group-hover:rotate-90 motion-reduce:transition-none"
+                aria-hidden="true"
+              />
+              Add Pharmacy
+            </Button>
+          </div>
         )}
       </header>
 
@@ -200,6 +227,14 @@ export default function PharmaciesHeader({
       </section>
 
       <AddPharmacyDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      {isManager && (
+        <BulkImportDialog<PharmacyApiResponse, PharmacyImportPayload>
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          existingRecords={pharmacies}
+          config={pharmacyImportConfig}
+        />
+      )}
     </>
   );
 }

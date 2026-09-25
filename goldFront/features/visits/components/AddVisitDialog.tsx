@@ -3,13 +3,10 @@
 import { FormDrawer } from "@/components/shared/FormDrawer";
 import AddVisitForm from "./AddVisitForm";
 import { useRouter } from "next/navigation";
-import { toast } from "@/lib/utils/toast";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
 import { Building2, CalendarPlus, MapPinned, Stethoscope } from "lucide-react";
 import { getTerritoryLookup } from "@/features/plan/lib/territory";
-
-import { cn } from "@/lib/utils";
 
 type AddVisitDialogProps = {
   open: boolean;
@@ -34,9 +31,18 @@ export default function AddVisitDialog({
 }: AddVisitDialogProps) {
   const router = useRouter();
 
-  const handleSuccess = () => {
+  const handleSuccess = (scheduledDate?: string) => {
     onOpenChange(false);
-    toast.success({ title: "Visit scheduled successfully" });
+    const visitsPath =
+      role === "MANAGER"
+        ? "/manager/visits"
+        : role === "SUPERVISOR"
+          ? "/supervisor/visits"
+          : "/rep/visits";
+    const targetPath = scheduledDate
+      ? `${visitsPath}?date=${scheduledDate}`
+      : visitsPath;
+    router.push(targetPath);
     router.refresh();
   };
 

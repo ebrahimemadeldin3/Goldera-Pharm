@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn, getInitials } from "@/lib/utils";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
-import { getDoctorsAction } from "@/features/doctors/api";
+import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { DoctorDirectoryData } from "../lib/utils/mappers";
 
@@ -130,12 +130,7 @@ export default function DoctorCard({
 
   const handleOpenSchedule = async () => {
     if (doctorsList.length === 0) {
-      const doctorsRes = await getDoctorsAction(
-        undefined,
-        undefined,
-        undefined,
-        false,
-      );
+      const doctorsRes = await getSchedulableDoctorsAction();
       if (doctorsRes.success && doctorsRes.data) {
         setDoctorsList(doctorsRes.data);
       }

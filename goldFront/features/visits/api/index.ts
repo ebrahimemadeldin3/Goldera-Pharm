@@ -190,7 +190,7 @@ export async function createVisitAction(data: VisitFormValues) {
     // Transform form data to API DTO
     const dto: CreateVisitDto = {
       doctorId: data.doctorId,
-      products: data.products,
+      samples: data.products ? [data.products] : [],
       date: formatDateOnly(data.date),
       time: data.time,
       notes: data.notes,

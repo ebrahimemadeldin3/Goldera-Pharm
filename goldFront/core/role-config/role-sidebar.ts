@@ -9,6 +9,7 @@ import {
   TextSearch,
   UserRound,
   ListChecks,
+  ClipboardCheck,
   Route,
   LucideProps,
   PackageSearch,
@@ -208,6 +209,12 @@ export const roleSidebarMap: Record<UserRole, SidebarItem[]> = {
       label: "Coaching",
       href: "/rep/coaching",
       icon: ListChecks,
+    },
+    {
+      id: "appraisal",
+      label: "Appraisal",
+      href: "/rep/appraisal",
+      icon: ClipboardCheck,
     },
     { id: "plan", label: "Plan", href: "/rep/plan", icon: Route },
     {

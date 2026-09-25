@@ -2,14 +2,24 @@ export type VisitCompletionLocation = {
   latitude: number;
   longitude: number;
   accuracy: number | null;
-  capturedAt: string | null;
+  capturedAt: string;
 };
 
 export type VisitCompletionLocationErrorCode =
-  | "LOCATION_PERMISSION_DENIED"
-  | "LOCATION_UNAVAILABLE"
-  | "LOCATION_TIMEOUT"
-  | "LOCATION_UNSUPPORTED";
+  | "permission-denied"
+  | "unavailable"
+  | "timeout"
+  | "unsupported"
+  | "invalid"
+  | "stale";
 
 export type VisitCompletionLocationStatus =
-  "idle" | "requesting" | "captured" | "error";
+  | "idle"
+  | "requesting"
+  | "verified"
+  | "permission-denied"
+  | "unavailable"
+  | "timeout"
+  | "unsupported"
+  | "invalid"
+  | "stale";

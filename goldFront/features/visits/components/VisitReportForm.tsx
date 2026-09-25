@@ -1,8 +1,8 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import {
   visitReportSchema,
   VisitReportFormValues,
@@ -10,7 +10,11 @@ import {
 import { createVisitReportAction } from "../api/reports";
 import { toast } from "@/lib/utils/toast";
 import { useVisitCompletionLocation } from "../hooks/useVisitCompletionLocation";
-import { getVisitCompletionLocationErrorMessage } from "../lib/utils/completion-location";
+import {
+  isFreshVisitCompletionLocation,
+  normalizeVisitCompletionLocation,
+} from "../lib/utils/completion-location";
+import VisitLocationVerification from "./VisitLocationVerification";
 import { useRouter } from "next/navigation";
 import {
   Form,
@@ -41,12 +45,17 @@ export default function VisitReportForm({
   products,
 }: VisitReportFormProps) {
   const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const {
     status: locationStatus,
     location: capturedLocation,
-    errorCode: locationErrorCode,
+    error,
+    errorCode,
     captureLocation,
+    refreshLocation,
+    markStale,
+    isFresh: isLocationFresh,
   } = useVisitCompletionLocation();
 
   const form = useForm<VisitReportFormValues>({
@@ -64,7 +73,18 @@ export default function VisitReportForm({
     },
   });
 
-  const selectedSamples = form.watch("samplesProvided") || [];
+  const selectedSamples =
+    useWatch({ control: form.control, name: "samplesProvided" }) || [];
+
+  useEffect(() => {
+    if (locationStatus === "verified" && capturedLocation) {
+      form.setValue("completionLocation", capturedLocation, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      form.clearErrors("completionLocation");
+    }
+  }, [capturedLocation, form, locationStatus]);
 
   const toggleSample = (productName: string, checked: boolean) => {
     const nextValues = checked
@@ -78,43 +98,63 @@ export default function VisitReportForm({
   };
 
   const onSubmit = (data: VisitReportFormValues) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    const completionLocation = normalizeVisitCompletionLocation(capturedLocation);
+
+    if (!completionLocation || locationStatus !== "verified") {
+      form.setError("completionLocation", {
+        type: "manual",
+        message: "Verify your current location to complete this visit.",
+      });
+      return;
+    }
+
+    if (!isFreshVisitCompletionLocation(completionLocation)) {
+      markStale();
+      form.setError("completionLocation", {
+        type: "manual",
+        message:
+          "Your location was verified some time ago. Verify your current location again before completing this visit.",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     startTransition(async () => {
-      const { location, errorCode } = await captureLocation();
-
-      if (errorCode) {
-        toast.warning({
-          title: "Completion location not captured",
-          description: getVisitCompletionLocationErrorMessage(errorCode),
-        });
-      }
-
       const result = await createVisitReportAction({
         ...data,
-        completionLocation: location,
+        completionLocation,
       });
 
       if (result.success) {
         toast.success({
-          title: "Visit report submitted successfully",
+          title: "Visit completed",
+          description: `Your visit with ${visitData.doctor.name} was completed successfully.`,
         });
         router.push("/rep/visits");
       } else {
         toast.error({
-          title: result.error?.message || "Failed to submit visit report",
+          title: "Couldn't complete visit",
+          description:
+            result.error?.message ||
+            "The visit report could not be submitted. Your information has been preserved.",
         });
+        setIsSubmitting(false);
       }
     });
   };
 
-  const isSubmitting = isPending || locationStatus === "requesting";
-  const locationStatusMessage =
-    locationStatus === "requesting"
-      ? "Requesting completion location..."
-      : locationStatus === "captured" && capturedLocation
-        ? "Location captured for completion. Backend integration pending."
-        : locationStatus === "error" && locationErrorCode
-          ? getVisitCompletionLocationErrorMessage(locationErrorCode)
-          : null;
+  const submitDisabled =
+    isPending ||
+    isSubmitting ||
+    locationStatus === "requesting" ||
+    locationStatus !== "verified" ||
+    !isLocationFresh;
+  const locationFormError = form.formState.errors.completionLocation?.message;
 
   return (
     <div className="flex flex-col gap-6">
@@ -176,22 +216,6 @@ export default function VisitReportForm({
           </div>
         </div>
       </div>
-
-      {locationStatusMessage && (
-        <div
-          className={`rounded-[12px] border px-4 py-3 text-sm font-medium ${
-            locationStatus === "captured"
-              ? "border-[#CBEFDD] bg-[#F7FCFA] text-[#168557]"
-              : locationStatus === "requesting"
-                ? "border-[#D7E5FF] bg-[#EDF4FF] text-[#3972D5]"
-                : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]"
-          }`}
-          role="status"
-          aria-live="polite"
-        >
-          {locationStatusMessage}
-        </div>
-      )}
 
       {/* Form */}
       <Form {...form}>
@@ -412,17 +436,46 @@ export default function VisitReportForm({
             />
           </div>
 
+          <div className="xl:col-span-2">
+            <VisitLocationVerification
+              status={locationStatus}
+              location={capturedLocation}
+              error={error || errorCode}
+              isFresh={isLocationFresh}
+              disabled={isPending || isSubmitting}
+              onVerify={() => {
+                form.clearErrors("completionLocation");
+                void captureLocation();
+              }}
+              onRefresh={() => {
+                form.clearErrors("completionLocation");
+                void refreshLocation();
+              }}
+            />
+            {locationFormError && (
+              <p
+                className="mt-2 text-sm font-medium text-[#B42318]"
+                role="alert"
+              >
+                {locationFormError}
+              </p>
+            )}
+          </div>
+
           {/* Submit Button */}
-          <div className="flex justify-end xl:col-span-2">
+          <div className="flex flex-col items-stretch gap-2 sm:items-end xl:col-span-2">
+            {submitDisabled && locationStatus !== "verified" && (
+              <p className="text-sm font-medium text-[#667085]">
+                Verify your current location to complete this visit.
+              </p>
+            )}
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={submitDisabled}
               className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover inline-flex h-11 cursor-pointer items-center gap-2 rounded-[10px] px-5 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all"
             >
               <Save size={16} />
-              {locationStatus === "requesting"
-                ? "Capturing Location..."
-                : isPending
+              {isPending || isSubmitting
                   ? "Submitting..."
                   : "Submit Report"}
             </Button>

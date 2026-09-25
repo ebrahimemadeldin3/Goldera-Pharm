@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   Building2,
+  FileSpreadsheet,
   MapPinned,
   Plus,
   Stethoscope,
@@ -14,12 +15,17 @@ import { useRoleUI } from "@/core/ui/role-ui-context";
 import type { DoctorApiResponse } from "../lib/types/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BulkImportDialog } from "@/features/bulk-import/components/BulkImportDialog";
 import AddDoctorDialog from "./AddDoctorDialog";
 import { cn } from "@/lib/utils";
 import {
   UNASSIGNED_REGION,
   getTerritoryLookup,
 } from "@/features/plan/lib/territory";
+import {
+  doctorImportConfig,
+  type DoctorImportPayload,
+} from "../lib/import-config";
 
 function isClean(value?: string | null): value is string {
   return Boolean(
@@ -94,7 +100,9 @@ export default function DoctorsHeader({
 }) {
   const { features, role } = useRoleUI();
   const isRep = role === "MEDICAL_REP";
+  const isManager = role === "MANAGER";
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
   const addDoctorLink =
     role === "MANAGER"
       ? "/manager/doctors/add"
@@ -141,19 +149,36 @@ export default function DoctorsHeader({
           </p>
         </div>
 
-        {features.doctors.canAdd && (
+        {(features.doctors.canAdd || isManager) && (
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              type="button"
-              onClick={() => setDialogOpen(true)}
-              className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-gp-gold-500/25 focus-visible:outline-none motion-reduce:transform-none"
-            >
-              <Plus
-                className="size-4 text-gp-gold-500 transition-transform duration-[180ms] group-hover:rotate-90 motion-reduce:transition-none"
-                aria-hidden="true"
-              />
-              Add Doctor
-            </Button>
+            {isManager && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setImportDialogOpen(true)}
+                className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,transform] duration-[180ms] hover:-translate-y-0.5 motion-reduce:transform-none"
+              >
+                <FileSpreadsheet
+                  className="text-gp-gold-600 size-4"
+                  aria-hidden="true"
+                />
+                Import Excel
+              </Button>
+            )}
+
+            {features.doctors.canAdd && (
+              <Button
+                type="button"
+                onClick={() => setDialogOpen(true)}
+                className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-11 cursor-pointer rounded-[12px] px-4 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[180ms] hover:-translate-y-0.5 hover:shadow-[0_12px_28px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-gp-gold-500/25 focus-visible:outline-none motion-reduce:transform-none"
+              >
+                <Plus
+                  className="size-4 text-gp-gold-500 transition-transform duration-[180ms] group-hover:rotate-90 motion-reduce:transition-none"
+                  aria-hidden="true"
+                />
+                Add Doctor
+              </Button>
+            )}
 
             <Link href={addDoctorLink} className="sr-only" tabIndex={-1}>
               Add Doctor Page
@@ -201,6 +226,14 @@ export default function DoctorsHeader({
       </section>
 
       <AddDoctorDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      {isManager && (
+        <BulkImportDialog<DoctorApiResponse, DoctorImportPayload>
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          existingRecords={doctors}
+          config={doctorImportConfig}
+        />
+      )}
     </>
   );
 }

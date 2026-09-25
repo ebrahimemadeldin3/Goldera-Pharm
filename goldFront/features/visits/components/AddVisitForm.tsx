@@ -79,7 +79,7 @@ type RoleBasedAddVisitFormProps = (
     }
 ) & {
   isModal?: boolean;
-  onSuccess?: () => void;
+  onSuccess?: (scheduledDate?: string) => void;
   onCancel?: () => void;
   initialDoctorId?: string;
   initialDate?: Date;
@@ -144,6 +144,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   const { createVisit, isPending } = useCreateVisit();
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedHospital, setSelectedHospital] = useState<string>("all");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch products on mount
   useEffect(() => {
@@ -305,22 +306,50 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     : undefined;
   const selectedProductCount = selectedProducts ? 1 : 0;
 
-  async function onSubmit(values: VisitFormValues) {
-    const result = await createVisit(values);
+  const isScheduling = isPending || isSubmitting;
 
-    if (result.success) {
-      toast.success({ title: "Visit scheduled successfully" });
-      if (onSuccess) {
-        onSuccess();
+  async function onSubmit(values: VisitFormValues) {
+    if (isScheduling) return;
+
+    setIsSubmitting(true);
+
+    try {
+      const result = await createVisit(values);
+
+      if (result.success) {
+        const scheduledDate = result.data?.date
+          ? formatDateOnly(parseDateValue(result.data.date))
+          : formatDateOnly(values.date);
+        const doctor = doctors.find((item) => item.id === values.doctorId);
+        const doctorName =
+          doctor?.nameEN || doctor?.nameAR || doctor?.name || "the selected doctor";
+
+        toast.success({
+          title: "Visit scheduled",
+          description: `Your visit with ${doctorName} has been scheduled successfully.`,
+        });
+
+        if (onSuccess) {
+          onSuccess(scheduledDate);
+        } else {
+          router.push(`${redirectPath}?date=${scheduledDate}`);
+          router.refresh();
+        }
       } else {
-        router.push(redirectPath);
-        router.refresh();
+        toast.error({
+          title: "Couldn't schedule visit",
+          description:
+            result.error?.message ||
+            "The visit could not be scheduled. Please try again.",
+        });
       }
-    } else {
+    } catch {
       toast.error({
-        title: "Failed to schedule visit",
-        description: result.error?.message,
+        title: "Couldn't schedule visit",
+        description: "The visit could not be scheduled. Please try again.",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -932,7 +961,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
               type="button"
               variant="outline"
               onClick={onCancel}
-              disabled={isPending}
+              disabled={isScheduling}
               className="h-11 rounded-[10px] border-[#E5E8EF] px-5 text-sm font-semibold text-[#475467] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px hover:border-[#D8DEE8] hover:bg-[#F9FAFB] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
             >
               Cancel
@@ -940,7 +969,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           )}
           <Button
             type="submit"
-            disabled={isPending}
+            disabled={isScheduling}
             className={cn(
               "group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60",
               role === "MEDICAL_REP"
@@ -948,7 +977,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                 : "bg-[#101D36] hover:bg-[#101D36]/95 shadow-[0_8px_18px_rgba(16,29,54,0.18)] hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25"
             )}
           >
-            {isPending ? (
+            {isScheduling ? (
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
               <CalendarCheck2
@@ -956,7 +985,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                 aria-hidden="true"
               />
             )}
-            {isPending ? "Scheduling..." : "Schedule Visit"}
+            {isScheduling ? "Scheduling..." : "Schedule Visit"}
           </Button>
         </div>
       </form>

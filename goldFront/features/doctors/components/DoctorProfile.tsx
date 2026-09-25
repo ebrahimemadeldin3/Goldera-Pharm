@@ -29,7 +29,7 @@ import {
 import type { DoctorProfileData } from "../lib/types";
 import type { DoctorApiResponse } from "../lib/types/api";
 import type { VisitApiResponse } from "@/features/visits/lib/types/api";
-import { getDoctorsAction } from "@/features/doctors/api";
+import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { useRoleUI } from "@/core/ui/role-ui-context";
 import RemoveDoctorDialog from "./dialogs/RemoveDoctorDialog";
 import InactivateDoctorDialog from "./dialogs/InactivateDoctorDialog";
@@ -270,12 +270,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
 
   const openSchedule = async () => {
     if (doctorsList.length === 0) {
-      const doctorsRes = await getDoctorsAction(
-        undefined,
-        undefined,
-        undefined,
-        false,
-      );
+      const doctorsRes = await getSchedulableDoctorsAction();
       if (doctorsRes.success && doctorsRes.data) {
         setDoctorsList(doctorsRes.data);
       }

@@ -60,6 +60,7 @@ interface DoctorsListProps {
   limit?: number;
   totalCount?: number;
   selectedSubRegion?: string;
+  clientPaginate?: boolean;
 }
 
 type SortKey = "newest" | "nameAsc" | "nameDesc" | "specialtyAsc";
@@ -140,7 +141,9 @@ function getCompactTerritoryLabel(value: string, useManagerLabel = false) {
   return useManagerLabel && value === "Southern" ? "Southern Area" : value;
 }
 
-function getBusinessRegionOptions(rows: DoctorDirectoryData[]): ControlOption[] {
+function getBusinessRegionOptions(
+  rows: DoctorDirectoryData[],
+): ControlOption[] {
   return businessRegions.map((region) => {
     const matchingTerritoryCount = new Set(
       rows
@@ -364,6 +367,7 @@ export default function DoctorsList({
   limit = 10,
   totalCount = 0,
   selectedSubRegion = "",
+  clientPaginate = false,
 }: DoctorsListProps) {
   const { role } = useRoleUI();
   const router = useRouter();
@@ -371,9 +375,12 @@ export default function DoctorsList({
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const isManager = role === "MANAGER" && pathname?.startsWith("/manager");
+  const shouldClientPaginate = isManager || clientPaginate;
 
   const initialSubRegion =
-    searchParams.get("subRegion") || selectedSubRegion || ALL;
+    clientPaginate && !isManager
+      ? selectedSubRegion || ALL
+      : searchParams.get("subRegion") || selectedSubRegion || ALL;
   const initialTerritoryLookup = getTerritoryLookup(initialSubRegion);
   const initialTerritory =
     initialSubRegion === ALL ? ALL : initialTerritoryLookup.territory;
@@ -596,19 +603,23 @@ export default function DoctorsList({
   ]
     .filter(Boolean)
     .join(" -> ");
-  const directoryTotalCount = isManager ? sortedRows.length : totalCount;
+  const directoryTotalCount = shouldClientPaginate
+    ? sortedRows.length
+    : totalCount;
   const directoryTotalPages = Math.max(
     1,
     Math.ceil(directoryTotalCount / limit),
   );
-  const directoryPage = isManager
+  const directoryPage = shouldClientPaginate
     ? Math.min(Math.max(page, 1), directoryTotalPages)
     : page;
-  const visibleRows = isManager
+  const visibleRows = shouldClientPaginate
     ? sortedRows.slice((directoryPage - 1) * limit, directoryPage * limit)
     : sortedRows;
 
   function pushSubRegionFilter(value: string) {
+    if (clientPaginate && !isManager) return;
+
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");
 
@@ -642,7 +653,7 @@ export default function DoctorsList({
   }
 
   function resetPageToFirst() {
-    if (!isManager || page <= 1) return;
+    if (!shouldClientPaginate || page <= 1) return;
 
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", "1");

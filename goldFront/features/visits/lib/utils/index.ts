@@ -1,7 +1,11 @@
 import { VisitApiResponse } from "@/features/visits/lib/types/api";
 import { Visit } from "@/features/visits/lib/types/ui";
 import { VisitStatus } from "@/lib/types";
-import { isSameCalendarDate, parseDateValue } from "@/lib/utils";
+import {
+  getSaudiCalendarDate,
+  isSameCalendarDate,
+  parseDateValue,
+} from "@/lib/utils";
 import {
   VISIT_STATUS_LABELS,
   VISIT_DEFAULTS,
@@ -14,7 +18,7 @@ import { normalizeVisitCompletionLocation } from "./completion-location";
  * @returns Transformed visit for UI display
  */
 export function transformVisitApiResponse(apiVisit: VisitApiResponse): Visit {
-  const visitDate = parseDateValue(apiVisit.date);
+  const visitDate = getSaudiCalendarDate(parseDateValue(apiVisit.date));
   const doctorName =
     apiVisit.doctor.nameEN ||
     apiVisit.doctor.nameAR ||

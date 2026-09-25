@@ -8,7 +8,15 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function RepVisitsPage() {
+export default async function RepVisitsPage({
+  searchParams,
+}: {
+  searchParams?:
+    | Promise<{ date?: string; visitDate?: string }>
+    | { date?: string; visitDate?: string };
+}) {
+  const params = await searchParams;
+  const plannerDateKey = params?.date || params?.visitDate || "today";
   const visitsResponse = await getVisitsAction(undefined, undefined, false);
   const visits = visitsResponse.success && visitsResponse.visits ? visitsResponse.visits : [];
   const stats = calculateVisitStats(visits);
@@ -18,6 +26,7 @@ export default async function RepVisitsPage() {
       <VisitsHeader role="MEDICAL_REP" stats={stats} />
       <div className="mt-6">
         <VisitsPlanner
+          key={plannerDateKey}
           visits={visits || []}
           reportBasePath="/rep/visits/report"
           totalCount={visitsResponse.totalCount ?? visits.length}

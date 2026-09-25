@@ -42,7 +42,7 @@ export type FetchVisitsResponse = PaginatedApiResponse<VisitApiResponse[]>;
  */
 export type CreateVisitDto = {
   doctorId: string;
-  products?: string;
+  samples: string[];
   date: string; // ISO date string
   time: string;
   visitType?: VisitType;

@@ -72,6 +72,7 @@ interface PharmaciesListProps {
   page?: number;
   limit?: number;
   totalCount?: number;
+  clientPaginate?: boolean;
 }
 
 type SortKey = "newest" | "nameAsc" | "nameDesc" | "cityAsc";
@@ -154,7 +155,9 @@ function getCompactTerritoryLabel(value: string, useManagerLabel = false) {
   return useManagerLabel && value === "Southern" ? "Southern Area" : value;
 }
 
-function getBusinessRegionOptions(rows: PharmacyDirectoryData[]): ControlOption[] {
+function getBusinessRegionOptions(
+  rows: PharmacyDirectoryData[],
+): ControlOption[] {
   return businessRegions.map((region) => {
     const matchingTerritoryCount = new Set(
       rows
@@ -703,6 +706,7 @@ export default function PharmaciesList({
   page = 1,
   limit = 10,
   totalCount = 0,
+  clientPaginate = false,
 }: PharmaciesListProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -710,6 +714,7 @@ export default function PharmaciesList({
   const { role } = useRoleUI();
   const isManager = role === "MANAGER" && pathname?.startsWith("/manager");
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const shouldClientPaginate = isManager || clientPaginate;
   const [query, setQuery] = useState("");
   const [districtFilter, setDistrictFilter] = useState(ALL);
   const [regionFilter, setRegionFilter] = useState(ALL);
@@ -835,10 +840,7 @@ export default function PharmaciesList({
   );
 
   const directoryTerritoryOptions = useMemo<ControlOption[]>(
-    () =>
-      isManager
-        ? managerTerritoryOptions
-        : territoryOptions,
+    () => (isManager ? managerTerritoryOptions : territoryOptions),
     [isManager, managerTerritoryOptions, territoryOptions],
   );
 
@@ -905,15 +907,17 @@ export default function PharmaciesList({
     sortKey,
   });
   const hasActiveFilters = activeFilterCount > 0;
-  const directoryTotalCount = isManager ? sortedRows.length : totalCount;
+  const directoryTotalCount = shouldClientPaginate
+    ? sortedRows.length
+    : totalCount;
   const directoryTotalPages = Math.max(
     1,
     Math.ceil(directoryTotalCount / limit),
   );
-  const directoryPage = isManager
+  const directoryPage = shouldClientPaginate
     ? Math.min(Math.max(page, 1), directoryTotalPages)
     : page;
-  const visibleRows = isManager
+  const visibleRows = shouldClientPaginate
     ? sortedRows.slice((directoryPage - 1) * limit, directoryPage * limit)
     : sortedRows;
   const isPageSlice = !isManager && totalCount !== pharmacies.length;
@@ -1259,7 +1263,9 @@ export default function PharmaciesList({
                 <FilterChip
                   prefix="Region"
                   label={
-                    isManager ? regionFilter : getCompactRegionLabel(regionFilter)
+                    isManager
+                      ? regionFilter
+                      : getCompactRegionLabel(regionFilter)
                   }
                   onClear={() => updateRegion(ALL)}
                 />
@@ -1353,7 +1359,9 @@ export default function PharmaciesList({
                               : regionFilter
                             : getCompactRegionLabel(regionFilter)
                         }
-                        options={isManager ? managerRegionOptions : regionOptions}
+                        options={
+                          isManager ? managerRegionOptions : regionOptions
+                        }
                       />
                       <FilterSelect
                         value={territoryFilter}

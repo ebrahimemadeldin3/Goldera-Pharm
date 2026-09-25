@@ -8,7 +8,26 @@ The existing Medical Rep completion flow submits a visit report through:
 
 `POST /api/visits/visit-reports`
 
-When backend support is added, the frontend contract should send:
+Current frontend request body remains unchanged:
+
+```json
+{
+  "visitId": "visit-id",
+  "duration": "15 min",
+  "rating": "5",
+  "discussedTopics": ["Topic one"],
+  "doctorFeedback": "Doctor feedback",
+  "visitPurpose": "Visit purpose",
+  "notes": "Optional notes",
+  "samplesProvided": ["Product name"]
+}
+```
+
+The frontend now requires a verified, fresh device location before allowing
+this request, but it intentionally does not send GPS fields to the current
+backend endpoint.
+
+When backend support is added, the frontend contract should add:
 
 ```json
 {
@@ -28,7 +47,7 @@ Field rules:
 - `accuracy`: `null` or finite number greater than or equal to `0`
 - `capturedAt`: parseable ISO date-time string
 
-The frontend currently captures this value during explicit report submission, but intentionally does not send it to `POST /api/visits/visit-reports` because the current backend contract may reject unknown fields.
+The frontend currently captures this value during explicit location verification before report submission, but intentionally does not send it to `POST /api/visits/visit-reports` because the current backend contract may reject unknown fields.
 
 ## Manager Visit Response
 

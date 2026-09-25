@@ -32,6 +32,10 @@ export interface AppraisalApiResponse {
   attitude: number;
   timing: number;
   feedbackComments: string | null;
+  acknowledged?: boolean;
+  acknowledgedAt?: string | null;
+  repComment?: string | null;
+  employeeComment?: string | null;
   createdAt: string;
   updatedAt: string;
   rep?: {
@@ -95,6 +99,16 @@ export type GetAppraisalsResponse = PaginatedApiResponse<
  * API response for POST /api/appraisals
  */
 export interface CreateAppraisalResponse {
+  success: boolean;
+  data: AppraisalApiResponse;
+}
+
+export interface AcknowledgeAppraisalDto {
+  comment?: string;
+  accept: true;
+}
+
+export interface AcknowledgeAppraisalResponse {
   success: boolean;
   data: AppraisalApiResponse;
 }

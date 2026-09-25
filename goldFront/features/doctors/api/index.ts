@@ -3,6 +3,13 @@
 import { apiFetch } from "@/services/http";
 import type { PaginatedApiResponse } from "@/lib/types";
 import { ApiError } from "@/services/api-error";
+import { uniqueById } from "@/lib/utils/unique-by-id";
+import { fetchProfile } from "@/features/profile/api";
+import { getRegionsAction } from "@/lib/requests/regions";
+import {
+  resolveRepTerritoryScope,
+  scopeDoctorsToRepTerritory,
+} from "@/features/geography/lib/rep-territory-scope";
 import {
   DoctorApiResponse,
   CreateDoctorDto,
@@ -160,6 +167,48 @@ export async function getDoctorsAction(
     };
   } catch (error) {
     console.error("Doctors fetch error:", error);
+    const err = error as ApiError;
+
+    return {
+      success: false,
+      error: {
+        code: err.code || "FETCH_ERROR",
+        message: err.message || "Failed to fetch doctors",
+        statusCode: err.statusCode || 500,
+      },
+    };
+  }
+}
+
+/**
+ * Fetch doctors available for visit scheduling in the current user's scope.
+ */
+export async function getSchedulableDoctorsAction() {
+  try {
+    const [response, profile] = await Promise.all([
+      fetchDoctorsWithFilter(undefined, undefined, undefined, false),
+      fetchProfile().catch(() => null),
+    ]);
+
+    let doctors = uniqueById(response.data ?? []);
+
+    if (profile?.role === "MEDICAL_REP" && profile.subRegionId) {
+      const regionsResult = await getRegionsAction();
+      const scope = resolveRepTerritoryScope(
+        profile,
+        regionsResult.success ? regionsResult.regions : null,
+      );
+      doctors = scopeDoctorsToRepTerritory(doctors, scope);
+    }
+
+    return {
+      success: true,
+      data: doctors,
+      results: doctors.length,
+      pagination: null,
+    };
+  } catch (error) {
+    console.error("Schedulable doctors fetch error:", error);
     const err = error as ApiError;
 
     return {

@@ -16,6 +16,9 @@ export type Review = {
   repId: string;
   managerId: string;
   managerName: string;
+  acknowledged: boolean;
+  acknowledgedAt?: string | null;
+  repComment?: string | null;
 };
 
 // Export API types
