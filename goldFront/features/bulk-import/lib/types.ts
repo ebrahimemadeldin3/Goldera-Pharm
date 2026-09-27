@@ -4,8 +4,17 @@ export type BulkImportSeverity = "error" | "warning";
 
 export type BulkImportRowStatus = "ready" | "warning" | "invalid";
 
+export type SpreadsheetFileType =
+  | "xlsx"
+  | "xls"
+  | "csv"
+  | "tsv"
+  | "delimited-text"
+  | "unsupported";
+
 export type BulkImportIssue = {
   field: string;
+  value?: string;
   message: string;
   severity: BulkImportSeverity;
 };
@@ -17,6 +26,8 @@ export type BulkImportParsedRow = {
 
 export type BulkImportParsedSheet = {
   fileName: string;
+  detectedType: SpreadsheetFileType;
+  warnings: string[];
   headers: string[];
   rows: BulkImportParsedRow[];
 };
@@ -46,6 +57,7 @@ export type BulkImportDuplicateCheck<TExisting, TPayload> = {
   field: keyof TPayload & string;
   getExistingValue: (record: TExisting) => string | null | undefined;
   getPayloadValue: (payload: Partial<TPayload>) => string | null | undefined;
+  normalizeValue?: (value?: string | null) => string;
 };
 
 export type BulkImportConfig<TExisting, TPayload extends object> = {
@@ -55,6 +67,7 @@ export type BulkImportConfig<TExisting, TPayload extends object> = {
   templateFileName: string;
   columns: BulkImportColumn<TPayload>[];
   duplicateChecks: BulkImportDuplicateCheck<TExisting, TPayload>[];
+  validateRow?: (row: Partial<TPayload>) => BulkImportIssue[];
   buildPayload: (
     row: Partial<TPayload>,
     territory: TerritoryResolution | null,

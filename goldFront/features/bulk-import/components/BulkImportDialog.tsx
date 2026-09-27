@@ -7,6 +7,7 @@ import {
   Download,
   FileSpreadsheet,
   Info,
+  ListChecks,
   Search,
   Upload,
   XCircle,
@@ -23,16 +24,26 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { toast } from "@/lib/utils/toast";
-import { parseSpreadsheetFile } from "../lib/spreadsheet-parser";
+import { KSA_TERRITORY_STRUCTURE } from "@/features/plan/lib/territory";
+import {
+  BULK_IMPORT_MAX_FILE_SIZE_BYTES,
+  BULK_IMPORT_MAX_ROWS,
+  parseSpreadsheetFile,
+} from "../lib/spreadsheet-parser";
 import {
   downloadBulkImportErrorReport,
   downloadBulkImportTemplate,
+  downloadBulkImportValidatedBatch,
+  getBulkImportSelectableRows,
+  prepareBulkImportBatch,
 } from "../lib/export";
 import {
+  analyzeBulkImportHeaders,
   summarizeBulkImportRows,
   validateBulkImportSheet,
 } from "../lib/validation";
 import type {
+  BulkImportColumn,
   BulkImportConfig,
   BulkImportParsedSheet,
   BulkImportReviewRow,
@@ -40,7 +51,9 @@ import type {
 } from "../lib/types";
 
 const BACKEND_SUPPORT_MESSAGE =
-  "Bulk commit requires backend support — excluded from current frontend-only scope.";
+  "The frontend validation and import preparation are complete. Database persistence will become available when the bulk-import backend endpoint is connected.";
+const BACKEND_SCOPE_MESSAGE =
+  "Requires backend change - excluded from current frontend-only scope.";
 
 type FilterValue = "all" | BulkImportRowStatus;
 
@@ -75,6 +88,16 @@ const statusConfig: Record<
   },
 };
 
+const REVIEW_FILTERS: Array<{
+  value: FilterValue;
+  label: string;
+}> = [
+  { value: "all", label: "All" },
+  { value: "ready", label: "Ready" },
+  { value: "warning", label: "Warnings" },
+  { value: "invalid", label: "Needs Attention" },
+];
+
 function formatValue(value: unknown) {
   if (value === undefined || value === null || value === "") return "—";
   return String(value);
@@ -101,19 +124,31 @@ function StatPill({
   label,
   value,
   tone = "default",
+  active = false,
+  onClick,
 }: {
   label: string;
   value: number;
   tone?: "default" | "success" | "warning" | "danger";
+  active?: boolean;
+  onClick?: () => void;
 }) {
+  const interactive = Boolean(onClick);
+
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!interactive}
       className={cn(
-        "rounded-[10px] border px-3 py-2",
+        "rounded-[10px] border px-3 py-2 text-left transition-colors",
         tone === "success" && "border-gp-success/20 bg-gp-success/10",
         tone === "warning" && "border-gp-warning-border bg-gp-warning-soft",
         tone === "danger" && "border-gp-danger-border bg-gp-danger-soft",
         tone === "default" && "border-gp-border-subtle bg-white",
+        interactive &&
+          "cursor-pointer hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/30 focus-visible:ring-2 focus-visible:outline-none",
+        active && "border-gp-navy-900 ring-gp-navy-900/10 ring-2",
       )}
     >
       <p className="text-gp-text-muted text-[11px] font-semibold tracking-[0.08em] uppercase">
@@ -122,29 +157,27 @@ function StatPill({
       <p className="text-gp-navy-900 mt-1 text-lg leading-none font-semibold">
         {value.toLocaleString()}
       </p>
-    </div>
+    </button>
   );
 }
 
 function Stepper({
   hasFile,
   hasRows,
-  commitBlocked,
+  batchPrepared,
 }: {
   hasFile: boolean;
   hasRows: boolean;
-  commitBlocked: boolean;
+  batchPrepared: boolean;
 }) {
   const steps = [
     { label: "Upload", active: true, complete: hasFile },
-    { label: "Validate", active: hasFile, complete: hasRows },
-    { label: "Preview / Resolve", active: hasRows, complete: hasRows },
-    { label: "Confirm Import", active: hasRows, complete: commitBlocked },
-    { label: "Results", active: false, complete: false },
+    { label: "Review", active: hasRows, complete: hasRows },
+    { label: "Ready to Import", active: batchPrepared, complete: batchPrepared },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
       {steps.map((step, index) => (
         <div
           key={step.label}
@@ -167,6 +200,67 @@ function Stepper({
   );
 }
 
+function getEntityPlural(entity: "doctor" | "pharmacy", count: number) {
+  if (entity === "doctor") return count === 1 ? "doctor" : "doctors";
+  return count === 1 ? "pharmacy" : "pharmacies";
+}
+
+function getIssueLabel(field: string) {
+  if (field === "subRegion" || field === "territory") return "Territory";
+  return field
+    .replace(/([A-Z])/g, " $1")
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function getRawColumnValue<TPayload extends object>(
+  row: BulkImportReviewRow<TPayload>,
+  column: BulkImportColumn<TPayload>,
+) {
+  const draftValue = (row.draft as Record<string, unknown>)[column.key];
+
+  if (draftValue !== undefined && draftValue !== null) {
+    return String(draftValue);
+  }
+
+  const labels = [column.label, column.key, ...(column.aliases ?? [])];
+
+  for (const label of labels) {
+    const value = row.source[label];
+    if (value !== undefined) return value;
+  }
+
+  return "";
+}
+
+function rebuildSheetFromReviewRows<TExisting, TPayload extends object>({
+  rows,
+  sheet,
+  config,
+}: {
+  rows: BulkImportReviewRow<TPayload>[];
+  sheet: BulkImportParsedSheet | null;
+  config: BulkImportConfig<TExisting, TPayload>;
+}): BulkImportParsedSheet {
+  const headers = config.columns.map((column) => column.label);
+
+  return {
+    fileName: sheet?.fileName ?? "corrected-import",
+    detectedType: sheet?.detectedType ?? "delimited-text",
+    warnings: sheet?.warnings ?? [],
+    headers,
+    rows: rows.map((row) => ({
+      rowNumber: row.rowNumber,
+      values: config.columns.reduce<Record<string, string>>(
+        (values, column) => {
+          values[column.label] = getRawColumnValue(row, column);
+          return values;
+        },
+        {},
+      ),
+    })),
+  };
+}
+
 export function BulkImportDialog<
   TExisting,
   TPayload extends object,
@@ -182,10 +276,16 @@ export function BulkImportDialog<
   const [isParsing, setIsParsing] = useState(false);
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
-  const [commitBlocked, setCommitBlocked] = useState(false);
+  const [batchPrepared, setBatchPrepared] = useState(false);
   const [parseError, setParseError] = useState("");
+  const [headerWarnings, setHeaderWarnings] = useState<string[]>([]);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
 
   const summary = useMemo(() => summarizeBulkImportRows(rows), [rows]);
+  const selectedRows = useMemo(() => getBulkImportSelectableRows(rows), [rows]);
+  const issueCount = rows.reduce((total, row) => total + row.issues.length, 0);
+  const allRowsAreClean =
+    rows.length > 0 && summary.invalid === 0 && summary.warnings === 0;
 
   const visibleRows = useMemo(() => {
     const searchKey = search.trim().toLowerCase();
@@ -216,27 +316,250 @@ export function BulkImportDialog<
     eligibleVisibleRows.length > 0 &&
     eligibleVisibleRows.every((row) => row.selected);
 
+  function getRevalidatedRows(
+    nextRows: BulkImportReviewRow<TPayload>[],
+    previousReviewRows: BulkImportReviewRow<TPayload>[] = rows,
+  ) {
+    const previousRows = new Map(previousReviewRows.map((row) => [row.id, row]));
+    const correctedSheet = rebuildSheetFromReviewRows({
+      rows: nextRows,
+      sheet,
+      config,
+    });
+
+    return validateBulkImportSheet({
+      sheet: correctedSheet,
+      existingRecords,
+      config,
+    }).map((row) => {
+      const previous = previousRows.get(row.id);
+
+      return {
+        ...row,
+        selected:
+          row.status === "invalid"
+            ? false
+            : previous?.status === "invalid"
+              ? true
+              : (previous?.selected ?? true),
+      };
+    });
+  }
+
+  function updateRowDraft(
+    rowId: string,
+    updates: Record<string, string | number | undefined>,
+  ) {
+    setBatchPrepared(false);
+    setRows((currentRows) => {
+      const nextRows = currentRows.map((row) =>
+        row.id === rowId
+          ? {
+              ...row,
+              draft: {
+                ...row.draft,
+                ...updates,
+              },
+            }
+          : row,
+      );
+
+      return getRevalidatedRows(nextRows, currentRows);
+    });
+  }
+
+  function updateFilter(nextFilter: FilterValue) {
+    setFilter(nextFilter);
+    setReviewExpanded(true);
+  }
+
+  function getCorrectionControls(row: BulkImportReviewRow<TPayload>) {
+    const draft = row.draft as Record<string, unknown>;
+    const issueFields = new Set(row.issues.map((issue) => issue.field));
+    const hasGeographyIssue =
+      issueFields.has("district") ||
+      issueFields.has("region") ||
+      issueFields.has("territory") ||
+      issueFields.has("subRegion");
+    const hasGradeIssue = issueFields.has("grade");
+    const selectedDistrict = String(draft.district ?? "");
+    const selectedRegion = String(draft.region ?? "");
+    const regionOptions =
+      KSA_TERRITORY_STRUCTURE.find((district) => district.name === selectedDistrict)
+        ?.regions ?? [];
+    const territoryOptions =
+      regionOptions.find((region) => region.name === selectedRegion)
+        ?.territories ?? [];
+
+    if (!hasGeographyIssue && !hasGradeIssue) return null;
+
+    return (
+      <div className="mt-3 space-y-3 rounded-[12px] border border-gp-border-subtle bg-gp-surface-subtle p-3">
+        {hasGeographyIssue && (
+          <div className="grid gap-2 lg:grid-cols-3">
+            <label className="space-y-1">
+              <span className="text-gp-text-muted text-[11px] font-semibold uppercase">
+                District
+              </span>
+              <select
+                value={selectedDistrict}
+                onChange={(event) =>
+                  updateRowDraft(row.id, {
+                    district: event.target.value,
+                    region: "",
+                    subRegion: "",
+                  })
+                }
+                className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold"
+              >
+                <option value="">Select district</option>
+                {KSA_TERRITORY_STRUCTURE.map((district) => (
+                  <option key={district.name} value={district.name}>
+                    {district.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-gp-text-muted text-[11px] font-semibold uppercase">
+                Region
+              </span>
+              <select
+                value={selectedRegion}
+                disabled={!selectedDistrict}
+                onChange={(event) =>
+                  updateRowDraft(row.id, {
+                    region: event.target.value,
+                    subRegion: "",
+                  })
+                }
+                className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder"
+              >
+                <option value="">Select region</option>
+                {regionOptions.map((region) => (
+                  <option key={region.name} value={region.name}>
+                    {region.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1">
+              <span className="text-gp-text-muted text-[11px] font-semibold uppercase">
+                Territory
+              </span>
+              <select
+                value={String(draft.subRegion ?? draft.territory ?? "")}
+                disabled={!selectedRegion}
+                onChange={(event) =>
+                  updateRowDraft(row.id, {
+                    subRegion: event.target.value,
+                  })
+                }
+                className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder"
+              >
+                <option value="">Select territory</option>
+                {territoryOptions.map((territory) => (
+                  <option key={territory.name} value={territory.name}>
+                    {territory.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+
+        {hasGradeIssue && config.entity === "doctor" && (
+          <label className="block max-w-[220px] space-y-1">
+            <span className="text-gp-text-muted text-[11px] font-semibold uppercase">
+              Grade
+            </span>
+            <select
+              value={String(draft.grade ?? "")}
+              onChange={(event) =>
+                updateRowDraft(row.id, {
+                  grade: event.target.value,
+                })
+              }
+              className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold"
+            >
+              <option value="">Select grade</option>
+              {["A", "B", "C", "D"].map((grade) => (
+                <option key={grade} value={grade}>
+                  Grade {grade}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
+    );
+  }
+
   async function handleFile(file: File | undefined) {
     if (!file) return;
 
     setIsParsing(true);
     setParseError("");
-    setCommitBlocked(false);
+    setHeaderWarnings([]);
+    setBatchPrepared(false);
 
     try {
       const parsedSheet = await parseSpreadsheetFile(file);
 
-      if (parsedSheet.rows.length === 0 || parsedSheet.headers.length === 0) {
-        throw new Error("The uploaded file does not contain importable rows.");
+      if (parsedSheet.headers.length === 0) {
+        throw new Error("The uploaded file does not contain a header row.");
+      }
+
+      const headerAnalysis = analyzeBulkImportHeaders({
+        sheet: parsedSheet,
+        config,
+      });
+
+      if (headerAnalysis.missingRequiredHeaders.length > 0) {
+        console.info("Bulk import header diagnostics", {
+          entity: config.entity,
+          detectedHeaders: headerAnalysis.detectedHeaders,
+          recognizedHeaders: headerAnalysis.recognizedHeaders,
+          unknownHeaders: headerAnalysis.unknownHeaders,
+          missingRequiredHeaders: headerAnalysis.missingRequiredHeaders,
+        });
+
+        throw new Error(
+          `Missing required ${headerAnalysis.missingRequiredHeaders.length === 1 ? "column" : "columns"}: ${headerAnalysis.missingRequiredHeaders.join(", ")}.`,
+        );
+      }
+
+      if (headerAnalysis.unknownHeaders.length > 0) {
+        setHeaderWarnings([
+          ...parsedSheet.warnings,
+          ...headerAnalysis.unknownHeaders.map(
+            (header) =>
+              `Column "${header}" is not part of the ${config.entity} import template and will be ignored.`,
+          ),
+        ]);
+      } else {
+        setHeaderWarnings(parsedSheet.warnings);
+      }
+
+      if (parsedSheet.rows.length === 0) {
+        throw new Error(
+          "The uploaded file has headers but no data rows. Fill at least one row and upload it again.",
+        );
       }
 
       setSheet(parsedSheet);
-      setRows(
-        validateBulkImportSheet({
-          sheet: parsedSheet,
-          existingRecords,
-          config,
-        }),
+      const validatedRows = validateBulkImportSheet({
+        sheet: parsedSheet,
+        existingRecords,
+        config,
+      });
+
+      setRows(validatedRows);
+      setReviewExpanded(validatedRows.some((row) => row.status !== "ready"));
+      setFilter(
+        validatedRows.some((row) => row.status === "invalid")
+          ? "invalid"
+          : "all",
       );
       toast.success({
         title: "File validated",
@@ -248,6 +571,7 @@ export function BulkImportDialog<
         "Unable to parse this file. Use the downloaded template and try again.";
       setSheet(null);
       setRows([]);
+      setHeaderWarnings([]);
       setParseError(message);
       toast.error({ title: "Import validation failed", description: message });
     } finally {
@@ -259,7 +583,7 @@ export function BulkImportDialog<
   }
 
   function updateRowSelection(rowId: string, selected: boolean) {
-    setCommitBlocked(false);
+    setBatchPrepared(false);
     setRows((currentRows) =>
       currentRows.map((row) =>
         row.id === rowId && row.status !== "invalid"
@@ -270,7 +594,7 @@ export function BulkImportDialog<
   }
 
   function updateVisibleSelection(selected: boolean) {
-    setCommitBlocked(false);
+    setBatchPrepared(false);
     const visibleIds = new Set(eligibleVisibleRows.map((row) => row.id));
     setRows((currentRows) =>
       currentRows.map((row) =>
@@ -279,11 +603,25 @@ export function BulkImportDialog<
     );
   }
 
-  function handleConfirmImport() {
-    setCommitBlocked(true);
-    toast.warning({
-      title: "Backend support required",
-      description: BACKEND_SUPPORT_MESSAGE,
+  function handlePrepareBatch() {
+    if (batchPrepared || selectedRows.length === 0) return;
+
+    const revalidatedRows = getRevalidatedRows(rows, rows);
+    const preparedBatch = prepareBulkImportBatch(revalidatedRows);
+
+    if (preparedBatch.length === 0) {
+      toast.error({
+        title: "No valid records selected",
+        description: "Select at least one ready or warning row before preparing the batch.",
+      });
+      return;
+    }
+
+    setRows(revalidatedRows);
+    setBatchPrepared(true);
+    toast.success({
+      title: "Import file prepared",
+      description: `${preparedBatch.length.toLocaleString()} record(s) prepared. ${BACKEND_SUPPORT_MESSAGE}`,
     });
   }
 
@@ -293,12 +631,26 @@ export function BulkImportDialog<
     setSearch("");
     setFilter("all");
     setParseError("");
-    setCommitBlocked(false);
+    setHeaderWarnings([]);
+    setBatchPrepared(false);
+    setReviewExpanded(false);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      resetImport();
+    }
+
+    onOpenChange(nextOpen);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[92vh] overflow-hidden p-0 sm:max-w-[1120px]">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[90vh] overflow-hidden p-0 sm:max-w-[1120px]">
         <DialogHeader className="border-gp-border-subtle border-b px-5 py-4 pr-12">
           <div className="flex items-start gap-3">
             <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 flex size-10 shrink-0 items-center justify-center rounded-[10px] border">
@@ -315,12 +667,12 @@ export function BulkImportDialog<
           </div>
         </DialogHeader>
 
-        <div className="bg-gp-surface-page flex max-h-[calc(92vh-76px)] min-h-0 flex-col overflow-hidden">
+        <div className="bg-gp-surface-page flex max-h-[calc(90vh-76px)] min-h-0 flex-col overflow-hidden">
           <div className="space-y-4 px-5 py-4">
             <Stepper
               hasFile={Boolean(sheet)}
               hasRows={rows.length > 0}
-              commitBlocked={commitBlocked}
+              batchPrepared={batchPrepared}
             />
 
             <div className="border-gp-border-subtle grid gap-3 rounded-[14px] border bg-white p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
@@ -329,8 +681,11 @@ export function BulkImportDialog<
                   {sheet ? sheet.fileName : "Upload Excel file"}
                 </p>
                 <p className="text-gp-text-muted mt-1 text-xs font-medium">
-                  Supported files: .xlsx, .csv, .tsv. Templates download as CSV
-                  and open directly in Excel.
+                  Supported files: .xlsx, .csv, .tsv and delimited .txt. Legacy
+                  .xls is detected and reported if uploaded. Limit{" "}
+                  {(BULK_IMPORT_MAX_FILE_SIZE_BYTES / 1024 / 1024).toLocaleString()} MB
+                  and {BULK_IMPORT_MAX_ROWS.toLocaleString()} rows per batch.
+                  Templates download as blank Excel-friendly CSV.
                 </p>
                 {parseError && (
                   <p className="text-gp-danger mt-2 text-xs font-semibold">
@@ -361,7 +716,7 @@ export function BulkImportDialog<
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".xlsx,.csv,.tsv"
+                  accept=".xlsx,.xls,.csv,.tsv,.txt,text/csv,text/plain,text/tab-separated-values,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                   className="hidden"
                   onChange={(event) => handleFile(event.target.files?.[0])}
                 />
@@ -370,41 +725,142 @@ export function BulkImportDialog<
 
             {rows.length > 0 && (
               <>
+                {headerWarnings.length > 0 && (
+                  <div className="border-gp-warning-border bg-gp-warning-soft text-gp-gold-700 rounded-[12px] border px-3 py-2 text-xs font-semibold">
+                    {headerWarnings.map((warning) => (
+                      <p key={warning}>{warning}</p>
+                    ))}
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
-                  <StatPill label="Rows" value={summary.total} />
-                  <StatPill label="Ready" value={summary.ready} tone="success" />
+                  <StatPill
+                    label="Rows"
+                    value={summary.total}
+                    active={filter === "all"}
+                    onClick={() => updateFilter("all")}
+                  />
+                  <StatPill
+                    label="Ready"
+                    value={summary.ready}
+                    tone="success"
+                    active={filter === "ready"}
+                    onClick={() => updateFilter("ready")}
+                  />
                   <StatPill
                     label="Warnings"
                     value={summary.warnings}
                     tone="warning"
+                    active={filter === "warning"}
+                    onClick={() => updateFilter("warning")}
                   />
                   <StatPill
-                    label="Invalid"
+                    label="Needs Attention"
                     value={summary.invalid}
                     tone="danger"
+                    active={filter === "invalid"}
+                    onClick={() => updateFilter("invalid")}
                   />
                   <StatPill label="Selected" value={summary.selected} />
                 </div>
 
+                {batchPrepared && (
+                  <div className="border-gp-success/20 bg-gp-success/10 rounded-[14px] border p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                          <CheckCircle2
+                            className="text-gp-success size-4"
+                            aria-hidden="true"
+                          />
+                          Import file prepared
+                        </p>
+                        <p className="text-gp-text-muted mt-1 text-xs font-medium">
+                          {selectedRows.length.toLocaleString()}{" "}
+                          {config.entity}
+                          {selectedRows.length === 1 ? "" : "s"} passed
+                          validation and are ready for database import.
+                          Database import is awaiting backend integration.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={selectedRows.length === 0}
+                        onClick={() =>
+                          downloadBulkImportValidatedBatch(rows, config)
+                        }
+                        className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold"
+                      >
+                        <Download className="size-4" aria-hidden="true" />
+                        Download Validated File
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {allRowsAreClean && !batchPrepared && (
+                  <div className="border-gp-success/20 bg-gp-success/10 rounded-[14px] border p-4">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="min-w-0">
+                        <p className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
+                          <CheckCircle2
+                            className="text-gp-success size-4"
+                            aria-hidden="true"
+                          />
+                          {summary.ready.toLocaleString()}{" "}
+                          {getEntityPlural(config.entity, summary.ready)} ready
+                          to import
+                        </p>
+                        <p className="text-gp-text-muted mt-1 text-xs font-medium">
+                          All rows passed validation. You can review the rows or
+                          prepare the import file now.
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setReviewExpanded((current) => !current)}
+                          className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold"
+                        >
+                          <ListChecks className="size-4" aria-hidden="true" />
+                          {reviewExpanded ? "Hide Rows" : "Review Rows"}
+                        </Button>
+                        <Button
+                          type="button"
+                          disabled={summary.selected === 0 || batchPrepared}
+                          onClick={handlePrepareBatch}
+                          className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-60"
+                        >
+                          <CheckCircle2
+                            className="text-gp-gold-500 size-4"
+                            aria-hidden="true"
+                          />
+                          Prepare Import
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   <div className="border-gp-border-subtle flex flex-wrap gap-1 rounded-[12px] border bg-white p-1">
-                    {(["all", "ready", "warning", "invalid"] as FilterValue[]).map(
-                      (item) => (
-                        <button
-                          key={item}
-                          type="button"
-                          onClick={() => setFilter(item)}
-                          className={cn(
-                            "h-8 rounded-[8px] px-3 text-xs font-semibold transition-colors",
-                            filter === item
-                              ? "bg-gp-navy-900 text-white"
-                              : "text-gp-text-muted hover:bg-gp-gold-50 hover:text-gp-navy-900",
-                          )}
-                        >
-                          {item === "all" ? "All" : statusConfig[item].label}
-                        </button>
-                      ),
-                    )}
+                    {REVIEW_FILTERS.map((item) => (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => updateFilter(item.value)}
+                        className={cn(
+                          "h-8 rounded-[8px] px-3 text-xs font-semibold transition-colors",
+                          filter === item.value
+                            ? "bg-gp-navy-900 text-white"
+                            : "text-gp-text-muted hover:bg-gp-gold-50 hover:text-gp-navy-900",
+                        )}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
                   </div>
 
                   <div className="flex flex-col gap-2 sm:flex-row">
@@ -423,13 +879,23 @@ export function BulkImportDialog<
                     <Button
                       type="button"
                       variant="outline"
+                      disabled={issueCount === 0}
                       onClick={() =>
-                        downloadBulkImportErrorReport(rows, config.entity)
+                        downloadBulkImportErrorReport(rows, config)
                       }
-                      className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold"
+                      className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold disabled:pointer-events-none disabled:opacity-60"
                     >
                       <Download className="size-4" aria-hidden="true" />
                       Error Report
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setReviewExpanded((current) => !current)}
+                      className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold"
+                    >
+                      <ListChecks className="size-4" aria-hidden="true" />
+                      {reviewExpanded ? "Hide Rows" : "Review Rows"}
                     </Button>
                   </div>
                 </div>
@@ -437,7 +903,7 @@ export function BulkImportDialog<
             )}
           </div>
 
-          {rows.length > 0 && (
+          {rows.length > 0 && (reviewExpanded || !allRowsAreClean) && (
             <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
               <div className="border-gp-border-subtle overflow-hidden rounded-[14px] border bg-white">
                 <div className="border-gp-border-subtle flex flex-col gap-3 border-b bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -524,9 +990,13 @@ export function BulkImportDialog<
                                         : "text-gp-gold-700",
                                     )}
                                   >
+                                    <span className="font-semibold">
+                                      {getIssueLabel(issue.field)}:
+                                    </span>{" "}
                                     {issue.message}
                                   </p>
                                 ))}
+                                {getCorrectionControls(row)}
                               </div>
                             ) : (
                               <span className="text-gp-text-muted text-xs font-medium">
@@ -581,9 +1051,13 @@ export function BulkImportDialog<
                                   : "text-gp-gold-700",
                               )}
                             >
+                              <span className="font-semibold">
+                                {getIssueLabel(issue.field)}:
+                              </span>{" "}
                               {issue.message}
                             </p>
                           ))}
+                          {getCorrectionControls(row)}
                         </div>
                       )}
                     </article>
@@ -603,15 +1077,20 @@ export function BulkImportDialog<
 
           <div className="border-gp-border-subtle flex flex-col gap-3 border-t bg-white px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
-              {commitBlocked ? (
-                <div className="border-gp-warning-border bg-gp-warning-soft text-gp-gold-700 flex items-start gap-2 rounded-[12px] border px-3 py-2 text-sm font-semibold">
-                  <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                  <span>{BACKEND_SUPPORT_MESSAGE}</span>
+              {batchPrepared ? (
+                <div className="border-gp-border-subtle bg-gp-surface-subtle text-gp-text-muted flex items-start gap-2 rounded-[12px] border px-3 py-2 text-sm font-semibold">
+                  <Info
+                    className="mt-0.5 size-4 shrink-0 text-gp-gold-700"
+                    aria-hidden="true"
+                  />
+                  <span className="flex min-w-0 items-start gap-2">
+                    {BACKEND_SUPPORT_MESSAGE} {BACKEND_SCOPE_MESSAGE}
+                  </span>
                 </div>
               ) : (
                 <p className="text-gp-text-muted text-xs font-medium">
                   {rows.length > 0
-                    ? `${summary.selected.toLocaleString()} row(s) selected for the pending backend bulk endpoint.`
+                    ? `${summary.selected.toLocaleString()} row(s) selected. Database saving requires bulk-import backend support.`
                     : "Download the template or upload a file to begin validation."}
                 </p>
               )}
@@ -629,15 +1108,15 @@ export function BulkImportDialog<
               </Button>
               <Button
                 type="button"
-                disabled={summary.selected === 0}
-                onClick={handleConfirmImport}
+                disabled={summary.selected === 0 || batchPrepared}
+                onClick={handlePrepareBatch}
                 className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] px-4 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-60"
               >
                 <CheckCircle2
                   className="text-gp-gold-500 size-4"
                   aria-hidden="true"
                 />
-                Confirm Import
+                Prepare Import
               </Button>
             </div>
           </div>

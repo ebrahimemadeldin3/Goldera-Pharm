@@ -19,38 +19,72 @@ function optionalTrim(value: string) {
 
 function parseNumber(value: string) {
   const trimmed = value.trim();
-  return trimmed ? Number(trimmed) : undefined;
+  if (!trimmed) return undefined;
+
+  const numeric = Number(trimmed);
+  return Number.isFinite(numeric) ? numeric : trimmed;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function formatValue(value: unknown) {
+  return String(value ?? "").trim();
 }
 
 function validEmail(value: unknown) {
-  const text = String(value ?? "").trim();
+  const text = formatValue(value);
   if (!text) return null;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)
     ? null
-    : "Enter a valid email address.";
+    : `Email '${text}' is not a valid email address.`;
 }
 
 function validPhone(value: unknown) {
-  const text = String(value ?? "").trim();
+  const text = formatValue(value);
   if (!text) return null;
   return /^[+\d][\d\s().-]{6,}$/.test(text)
     ? null
-    : "Enter a valid phone number.";
+    : `Phone '${text}' is not a valid phone number.`;
 }
 
 function validGrade(value: unknown) {
-  const text = String(value ?? "").trim().toUpperCase();
+  const text = formatValue(value).toUpperCase().replace(/^GRADE\s+/, "");
   if (!text) return null;
   return ["A", "B", "C", "D"].includes(text)
     ? null
-    : "Grade must be A, B, C, or D.";
+    : `Grade '${formatValue(value)}' must be A, B, C, or D.`;
 }
 
 function validPositiveNumber(value: unknown) {
   if (value === undefined || value === "") return null;
-  return typeof value === "number" && Number.isFinite(value) && value >= 0
+  return isFiniteNumber(value) && value >= 0
     ? null
-    : "Average patients must be 0 or greater.";
+    : `Avg Patients Per Day '${formatValue(value)}' must be a number 0 or greater.`;
+}
+
+function validLatitude(value: unknown) {
+  if (value === undefined || value === "") return null;
+  return isFiniteNumber(value) && value >= -90 && value <= 90
+    ? null
+    : `Latitude '${formatValue(value)}' must be between -90 and 90.`;
+}
+
+function validLongitude(value: unknown) {
+  if (value === undefined || value === "") return null;
+  return isFiniteNumber(value) && value >= -180 && value <= 180
+    ? null
+    : `Longitude '${formatValue(value)}' must be between -180 and 180.`;
+}
+
+function normalizePhoneForDuplicate(value?: string | null) {
+  const text = String(value ?? "").trim();
+  if (!text) return "";
+
+  const hasPlus = text.startsWith("+");
+  const digits = text.replace(/\D/g, "");
+  return digits ? `${hasPlus ? "+" : ""}${digits}` : "";
 }
 
 export const doctorImportConfig: BulkImportConfig<
@@ -68,7 +102,7 @@ export const doctorImportConfig: BulkImportConfig<
       label: "English Name",
       aliases: ["Name EN", "Doctor Name", "Name"],
       required: true,
-      example: "Dr. Mohammed Al-Rashid",
+      example: "Dr. Abdullah Al-Salem",
       parse: trim,
     },
     {
@@ -76,7 +110,7 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Arabic Name",
       aliases: ["Name AR", "Arabic Doctor Name"],
       required: true,
-      example: "Dr. Mohammed Al-Rashid",
+      example: "د. عبدالله السالم",
       parse: trim,
     },
     {
@@ -84,7 +118,7 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Phone",
       aliases: ["Phone Number", "Mobile"],
       required: true,
-      example: "+966 50 123 4567",
+      example: "+966 50 341 2111",
       parse: trim,
       validate: validPhone,
     },
@@ -92,7 +126,7 @@ export const doctorImportConfig: BulkImportConfig<
       key: "email",
       label: "Email",
       aliases: ["Email Address"],
-      example: "doctor@hospital.sa",
+      example: "abdullah.salem.test@example.com",
       parse: optionalTrim,
       validate: validEmail,
     },
@@ -100,7 +134,7 @@ export const doctorImportConfig: BulkImportConfig<
       key: "specialty",
       label: "Specialty",
       required: true,
-      example: "Dermatology",
+      example: "Cardiology",
       parse: trim,
     },
     {
@@ -108,21 +142,26 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Grade",
       required: true,
       example: "A",
-      parse: (value) => value.trim().toUpperCase(),
+      parse: (value) => value.trim().replace(/^grade\s+/i, "").toUpperCase(),
       validate: validGrade,
     },
     {
       key: "LicenseNumber",
       label: "License Number",
       aliases: ["License", "SCFHS License"],
-      example: "LIC-10001",
+      example: "TEST-LIC-21001",
       parse: optionalTrim,
     },
     {
       key: "avgPatientsPerDay",
       label: "Avg Patients Per Day",
-      aliases: ["Average Patients", "Avg Patients"],
-      example: "45",
+      aliases: [
+        "Average Patients",
+        "Avg Patients",
+        "Avg. Patients Per Day",
+        "Average Patients Per Day",
+      ],
+      example: "50",
       parse: parseNumber,
       validate: validPositiveNumber,
     },
@@ -131,7 +170,7 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Account / Facility",
       aliases: ["Account Name", "Facility", "Hospital"],
       required: true,
-      example: "King Faisal Hospital",
+      example: "King Fahd Hospital of the University",
       parse: trim,
     },
     {
@@ -145,7 +184,7 @@ export const doctorImportConfig: BulkImportConfig<
       key: "region",
       label: "Region",
       required: true,
-      example: "Central Region",
+      example: "Eastern Region",
       parse: trim,
     },
     {
@@ -153,8 +192,24 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Territory",
       aliases: ["Sub Region", "SubRegion"],
       required: true,
-      example: "Riyadh 1",
+      example: "Eastern 1",
       parse: trim,
+    },
+    {
+      key: "latitude",
+      label: "Latitude",
+      aliases: ["Lat"],
+      example: "26.3032",
+      parse: parseNumber,
+      validate: validLatitude,
+    },
+    {
+      key: "longitude",
+      label: "Longitude",
+      aliases: ["Lng", "Long"],
+      example: "50.1832",
+      parse: parseNumber,
+      validate: validLongitude,
     },
   ],
   duplicateChecks: [
@@ -163,6 +218,7 @@ export const doctorImportConfig: BulkImportConfig<
       field: "phone",
       getExistingValue: (doctor) => doctor.phone,
       getPayloadValue: (payload) => payload.phone,
+      normalizeValue: normalizePhoneForDuplicate,
     },
     {
       label: "License number",
@@ -177,6 +233,34 @@ export const doctorImportConfig: BulkImportConfig<
       getPayloadValue: (payload) => payload.email,
     },
   ],
+  validateRow: (row) => {
+    const hasLatitude = row.latitude !== undefined;
+    const hasLongitude = row.longitude !== undefined;
+
+    if (hasLatitude && !hasLongitude) {
+      return [
+        {
+          field: "longitude",
+          value: "",
+          severity: "error",
+          message: "Longitude is required when latitude is provided.",
+        },
+      ];
+    }
+
+    if (!hasLatitude && hasLongitude) {
+      return [
+        {
+          field: "latitude",
+          value: "",
+          severity: "error",
+          message: "Latitude is required when longitude is provided.",
+        },
+      ];
+    }
+
+    return [];
+  },
   buildPayload: (
     row: Partial<DoctorImportPayload>,
     territory: TerritoryResolution | null,
@@ -209,6 +293,8 @@ export const doctorImportConfig: BulkImportConfig<
         : undefined,
       accountName: String(row.accountName).trim(),
       subRegion: territory.territory,
+      latitude: isFiniteNumber(row.latitude) ? row.latitude : undefined,
+      longitude: isFiniteNumber(row.longitude) ? row.longitude : undefined,
       district: territory.district,
       region: territory.region,
     };

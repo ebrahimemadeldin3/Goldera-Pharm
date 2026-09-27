@@ -1,6 +1,5 @@
 import {
   KSA_TERRITORY_STRUCTURE,
-  getTerritoryLookup,
   normalizeRegionName,
   normalizeTerritoryName,
 } from "@/features/plan/lib/territory";
@@ -36,6 +35,10 @@ function clean(value?: string | null) {
   return String(value ?? "").trim();
 }
 
+function matchesName(left: string, right: string) {
+  return normalizeKey(left) === normalizeKey(right);
+}
+
 function normalizeDistrictName(value?: string | null) {
   const trimmed = clean(value);
   if (!trimmed) return "";
@@ -43,26 +46,54 @@ function normalizeDistrictName(value?: string | null) {
   const key = normalizeKey(trimmed);
   return (
     districtAliases[key] ??
-    KSA_TERRITORY_STRUCTURE.find(
-      (district) => normalizeKey(district.name) === key,
-    )?.name ??
+    KSA_TERRITORY_STRUCTURE.find((district) => matchesName(district.name, trimmed))
+      ?.name ??
     trimmed
   );
 }
 
-function getRegionDistrict(regionName: string) {
-  return KSA_TERRITORY_STRUCTURE.find((district) =>
-    district.regions.some((region) => region.name === regionName),
-  )?.name;
+function findDistrictMatches(districtName: string) {
+  const canonical = normalizeDistrictName(districtName);
+  return KSA_TERRITORY_STRUCTURE.filter(
+    (district) =>
+      district.name === canonical || matchesName(district.name, districtName),
+  );
 }
 
-function findRegion(regionName: string) {
+function findRegionMatches(regionName: string) {
+  const canonical = normalizeRegionName(regionName);
+
   return KSA_TERRITORY_STRUCTURE.flatMap((district) =>
-    district.regions.map((region) => ({
-      district: district.name,
-      region: region.name,
-    })),
-  ).find((item) => item.region === regionName);
+    district.regions
+      .filter(
+        (region) =>
+          region.name === canonical || matchesName(region.name, regionName),
+      )
+      .map((region) => ({
+        district: district.name,
+        region,
+      })),
+  );
+}
+
+function findTerritoryMatches(territoryName: string) {
+  const canonical = normalizeTerritoryName(territoryName);
+
+  return KSA_TERRITORY_STRUCTURE.flatMap((district) =>
+    district.regions.flatMap((region) =>
+      region.territories
+        .filter(
+          (territory) =>
+            territory.name === canonical ||
+            matchesName(territory.name, territoryName),
+        )
+        .map((territory) => ({
+          district: district.name,
+          region: region.name,
+          territory,
+        })),
+    ),
+  );
 }
 
 export function resolveBulkImportTerritory({
@@ -75,81 +106,131 @@ export function resolveBulkImportTerritory({
   territory?: string | null;
 }): TerritoryResolveResult {
   const issues: BulkImportIssue[] = [];
-  const rawTerritory = clean(territory);
-  const rawRegion = clean(region);
   const rawDistrict = clean(district);
+  const rawRegion = clean(region);
+  const rawTerritory = clean(territory);
+
+  if (!rawDistrict) {
+    issues.push({
+      field: "district",
+      value: rawDistrict,
+      severity: "error",
+      message: "District is required.",
+    });
+  }
+
+  if (!rawRegion) {
+    issues.push({
+      field: "region",
+      value: rawRegion,
+      severity: "error",
+      message: "Region is required.",
+    });
+  }
 
   if (!rawTerritory) {
     issues.push({
       field: "territory",
+      value: rawTerritory,
       severity: "error",
       message: "Territory is required.",
     });
+  }
+
+  if (issues.length > 0) {
     return { territory: null, issues };
   }
 
-  const territoryLookup = getTerritoryLookup(normalizeTerritoryName(rawTerritory));
+  const districtMatches = findDistrictMatches(rawDistrict);
 
-  if (!territoryLookup.isKnown) {
+  if (districtMatches.length === 0) {
     issues.push({
-      field: "territory",
+      field: "district",
+      value: rawDistrict,
       severity: "error",
-      message: `Unknown territory "${rawTerritory}". Use an official territory from the template.`,
+      message: `District '${rawDistrict}' was not found.`,
     });
     return { territory: null, issues };
   }
 
-  const normalizedRegion = rawRegion ? normalizeRegionName(rawRegion) : "";
-  const normalizedDistrict = rawDistrict ? normalizeDistrictName(rawDistrict) : "";
-
-  if (normalizedRegion) {
-    const regionRecord = findRegion(normalizedRegion);
-
-    if (!regionRecord) {
-      issues.push({
-        field: "region",
-        severity: "error",
-        message: `Unknown region "${rawRegion}".`,
-      });
-    } else if (regionRecord.region !== territoryLookup.region) {
-      issues.push({
-        field: "region",
-        severity: "error",
-        message: `Region "${normalizedRegion}" does not match territory "${territoryLookup.territory}".`,
-      });
-    }
+  if (districtMatches.length > 1) {
+    issues.push({
+      field: "district",
+      value: rawDistrict,
+      severity: "error",
+      message: `District '${rawDistrict}' matches more than one official district.`,
+    });
+    return { territory: null, issues };
   }
 
-  if (normalizedDistrict) {
-    const districtExists = KSA_TERRITORY_STRUCTURE.some(
-      (item) => item.name === normalizedDistrict,
-    );
-    const regionDistrict = getRegionDistrict(territoryLookup.region);
+  const districtNode = districtMatches[0];
+  const regionMatchesInDistrict = districtNode.regions.filter(
+    (item) =>
+      item.name === normalizeRegionName(rawRegion) ||
+      matchesName(item.name, rawRegion),
+  );
+  const regionMatchesAnywhere = findRegionMatches(rawRegion);
 
-    if (!districtExists) {
-      issues.push({
-        field: "district",
-        severity: "error",
-        message: `Unknown district "${rawDistrict}".`,
-      });
-    } else if (regionDistrict && normalizedDistrict !== regionDistrict) {
-      issues.push({
-        field: "district",
-        severity: "error",
-        message: `District "${normalizedDistrict}" does not match territory "${territoryLookup.territory}".`,
-      });
-    }
+  if (regionMatchesInDistrict.length === 0) {
+    issues.push({
+      field: "region",
+      value: rawRegion,
+      severity: "error",
+      message:
+        regionMatchesAnywhere.length === 0
+          ? `Region '${rawRegion}' was not found.`
+          : `Region '${rawRegion}' does not belong to District '${districtNode.name}'.`,
+    });
+    return { territory: null, issues };
+  }
+
+  if (regionMatchesInDistrict.length > 1) {
+    issues.push({
+      field: "region",
+      value: rawRegion,
+      severity: "error",
+      message: `Region '${rawRegion}' is ambiguous in District '${districtNode.name}'.`,
+    });
+    return { territory: null, issues };
+  }
+
+  const regionNode = regionMatchesInDistrict[0];
+  const territoryMatchesInRegion = regionNode.territories.filter(
+    (item) =>
+      item.name === normalizeTerritoryName(rawTerritory) ||
+      matchesName(item.name, rawTerritory),
+  );
+  const territoryMatchesAnywhere = findTerritoryMatches(rawTerritory);
+
+  if (territoryMatchesInRegion.length === 0) {
+    issues.push({
+      field: "territory",
+      value: rawTerritory,
+      severity: "error",
+      message:
+        territoryMatchesAnywhere.length === 0
+          ? `Territory '${rawTerritory}' was not found in Region '${regionNode.name}'.`
+          : `Territory '${rawTerritory}' was not found in Region '${regionNode.name}'.`,
+    });
+    return { territory: null, issues };
+  }
+
+  if (territoryMatchesInRegion.length > 1) {
+    issues.push({
+      field: "territory",
+      value: rawTerritory,
+      severity: "error",
+      message: `Territory '${rawTerritory}' is ambiguous in Region '${regionNode.name}'.`,
+    });
+    return { territory: null, issues };
   }
 
   return {
-    territory:
-      issues.filter((issue) => issue.severity === "error").length > 0
-        ? null
-        : {
-            district: territoryLookup.district,
-            region: territoryLookup.region,
-            territory: territoryLookup.territory,
-          },
+    territory: {
+      district: districtNode.name,
+      region: regionNode.name,
+      territory: territoryMatchesInRegion[0].name,
+    },
     issues,
   };
 }
