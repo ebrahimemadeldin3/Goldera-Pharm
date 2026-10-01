@@ -25,11 +25,10 @@ import {
   DoctorApiResponse,
 } from "../lib/types";
 import { fetchProducts as fetchProductsFromStore } from "@/features/products/api";
-import { MOCK_DOCTORS, MOCK_FORECASTS } from "../lib/constants";
 import { CreateForecastFormValues } from "../lib/schemas";
 
-// NOTE: These functions currently use dummy data
-// When backend is ready, replace implementations with actual API calls using apiFetch
+const BACKEND_REQUIRED_MESSAGE =
+  "Requires backend change — excluded from current frontend-only scope.";
 
 /**
  * Map backend doctor to UI Doctor type
@@ -256,73 +255,26 @@ export async function fetchMyForecasts(
   };
 }
 
-/**
- * Fetch a single forecast by ID (using dummy data)
- */
 export async function fetchForecastById(
   id: string,
 ): Promise<{ data: Forecast }> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-
-  const forecast = MOCK_FORECASTS.find((f) => f.id === id);
-  if (!forecast) {
-    throw {
-      statusCode: 404,
-      code: "NOT_FOUND",
-      message: "Forecast not found",
-    } as ApiError;
-  }
-
-  return { data: forecast as Forecast };
+  void id;
+  throw {
+    statusCode: 501,
+    code: "BACKEND_REQUIRED",
+    message: BACKEND_REQUIRED_MESSAGE,
+  } as ApiError;
 }
 
-/**
- * Create a new forecast (draft) - using dummy data
- */
 export async function createForecast(
   data: CreateForecastDto,
 ): Promise<{ data: Forecast }> {
-  await new Promise((resolve) => setTimeout(resolve, 500));
-
-  // Simulate creating a forecast
-  const newForecast: Forecast = {
-    id: Math.random().toString(36).substr(2, 9),
-    periodType: data.periodType,
-    period: data.month
-      ? `${data.month.charAt(0).toUpperCase() + data.month.slice(1)} ${data.year}`
-      : `Q${data.quarter} ${data.year}`,
-    month: data.month,
-    quarter: data.quarter,
-    year: data.year,
-    status: "PENDING",
-    totalUnitsPlanned: data.distributions.reduce(
-      (sum, d) => sum + d.allocations.reduce((s, a) => s + a.units, 0),
-      0,
-    ),
-    doctorsCovered: data.distributions.length,
-    productsUsed: new Set(
-      data.distributions.flatMap((d) => d.allocations.map((a) => a.productId)),
-    ).size,
-    totalDistribution: data.distributions.reduce(
-      (sum, d) => sum + d.allocations.reduce((s, a) => s + a.units, 0),
-      0,
-    ),
-    products: [],
-    distributions: data.distributions.map((d) => {
-      const doctor = MOCK_DOCTORS.find((doc) => doc.id === d.doctorId);
-      return {
-        doctorId: d.doctorId,
-        doctorName: doctor?.name || "Unknown Doctor",
-        specialty: doctor?.specialty || "Internal Medicine",
-        hospital: doctor?.hospital || "Unknown Hospital",
-        allocations: d.allocations,
-      };
-    }),
-    notes: data.notes,
-    createdAt: new Date().toISOString(),
-  };
-
-  return { data: newForecast };
+  void data;
+  throw {
+    statusCode: 501,
+    code: "BACKEND_REQUIRED",
+    message: BACKEND_REQUIRED_MESSAGE,
+  } as ApiError;
 }
 
 /**
@@ -331,14 +283,10 @@ export async function createForecast(
 export async function submitForecast(
   data: CreateForecastApiDto,
 ): Promise<{ data: Forecast }> {
-  console.log("Submitting forecast to API:", data);
-
   const response = await apiFetch<CreateForecastApiResponse>("/api/forecasts", {
     method: "POST",
     body: JSON.stringify(data),
   });
-
-  console.log("API response:", response);
 
   if (!response.data) {
     throw {
@@ -348,10 +296,7 @@ export async function submitForecast(
     } as ApiError;
   }
 
-  console.log("Forecast data from API:", response.data);
-
   const forecast = mapApiForecastToForecast(response.data);
-  console.log("Mapped forecast:", forecast);
 
   return { data: forecast };
 }

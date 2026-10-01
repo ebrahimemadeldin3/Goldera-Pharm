@@ -21,11 +21,19 @@ export type VisitApiResponse = {
     name?: string;
     nameEN?: string;
     nameAR?: string;
+    accountName?: string;
+    specialty?: string;
+    subRegion?: string;
+    area?: string | null;
   };
   createdBy: {
     id: string;
     name: string;
   };
+  medicalRep?: {
+    id: string;
+    name: string;
+  } | null;
   visitType?: VisitType | "ROUTINE" | string;
   supervisorId?: string;
   medicalRepId?: string;

@@ -53,9 +53,9 @@ function VisitSummaryCard({
   return (
     <article
       className={cn(
-        "visits-kpi-card visits-page-enter group/kpi flex min-h-[96px] items-start justify-between gap-4 rounded-[14px] p-4 shadow-none transition-all sm:p-4.5",
+        "visits-kpi-card visits-page-enter group/kpi flex min-h-[92px] items-start justify-between gap-4 rounded-[12px] p-4 shadow-none transition-[border-color,box-shadow,transform] duration-[170ms] sm:p-4",
         cardBorder,
-        isPrimary && "shadow-[0_4px_16px_rgba(22,133,87,0.08)]",
+        isPrimary && "shadow-[0_4px_14px_rgba(22,133,87,0.08)]",
       )}
       style={
         {
@@ -74,16 +74,16 @@ function VisitSummaryCard({
             </span>
           )}
         </div>
-        <p className="mt-1.5 text-2xl font-bold tracking-tight text-[#182033]">
+        <p className="mt-1 text-[26px] leading-8 font-bold tracking-tight text-[#182033]">
           {value.toLocaleString()}
         </p>
-        <p className="mt-1 truncate text-xs font-medium text-[#667085]">
+        <p className="mt-0.5 truncate text-[11px] font-medium text-[#667085]">
           {helper}
         </p>
       </div>
       <span
         className={cn(
-          "flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover/kpi:scale-105",
+          "flex size-10 shrink-0 items-center justify-center rounded-[10px] transition-transform duration-200 group-hover/kpi:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100",
           iconBg,
         )}
       >

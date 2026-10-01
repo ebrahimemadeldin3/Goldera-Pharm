@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, CheckSquare } from "lucide-react";
+import { Plus, CheckSquare, CircleAlert, RefreshCw } from "lucide-react";
 import { getCurrentUser } from "@/features/auth/api";
 import { getRepDashboardAction } from "@/features/dashboard/api";
 import { PageContainer } from "@/components/layout/page-container";
@@ -23,6 +23,7 @@ export default async function RepDashboardPage() {
   // Fetch rep dashboard data
   const dashboardResult = await getRepDashboardAction();
   const dashboardData = dashboardResult.success ? dashboardResult.data : null;
+  const dashboardError = dashboardResult.success ? null : dashboardResult.error;
 
   const userName = user.data.name || "Representative";
   const location = dashboardData?.rep?.subRegion?.name || user.data.location || null;
@@ -32,6 +33,33 @@ export default async function RepDashboardPage() {
     <PageContainer className="min-h-[calc(100vh-80px)] space-y-6 pb-20 lg:pb-6">
       {/* 1. Personal Header */}
       <RepDashboardHeader userName={userName} location={location} />
+
+      {dashboardError && (
+        <div className="flex flex-col gap-3 rounded-[14px] border border-[#FECDCA] bg-[#FEF3F2] px-4 py-3.5 text-[#B42318] sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <CircleAlert
+              className="mt-0.5 size-4 shrink-0"
+              aria-hidden="true"
+            />
+            <div>
+              <p className="text-sm font-semibold">
+                Dashboard data could not be loaded
+              </p>
+              <p className="mt-0.5 text-sm text-[#B42318]/80">
+                {dashboardError.message ||
+                  "Some dashboard sections are unavailable. This is not an empty dashboard state."}
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/rep"
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-1.5 rounded-[10px] border border-[#B42318]/30 bg-white px-3 text-xs font-semibold text-[#B42318] transition-colors hover:bg-[#FFF1F0]"
+          >
+            <RefreshCw className="size-3.5" aria-hidden="true" />
+            Retry
+          </Link>
+        </div>
+      )}
 
       {/* 2. Top KPI Cards Row */}
       <RepKPICards

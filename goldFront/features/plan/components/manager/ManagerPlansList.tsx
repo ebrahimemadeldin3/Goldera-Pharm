@@ -1978,6 +1978,10 @@ export default function ManagerPlansList({
     typeFilter,
     sortKey,
   });
+  const paginationTotalCount = hasActiveFilters
+    ? filteredPlans.length
+    : totalCount || plans.length;
+  const paginationPage = hasActiveFilters ? 1 : page;
 
   function handleTabKeyDown(
     event: ReactKeyboardEvent<HTMLButtonElement>,
@@ -2129,8 +2133,8 @@ export default function ManagerPlansList({
                 aria-live="polite"
               >
                 {filteredPlans.length}{" "}
-                {filteredPlans.length === 1 ? "plan" : "plans"} shown on this
-                page
+                {filteredPlans.length === 1 ? "plan" : "plans"} shown from the
+                loaded page
               </p>
             </div>
 
@@ -2564,9 +2568,9 @@ export default function ManagerPlansList({
         </div>
 
         <TablePaginationFooter
-          page={page}
+          page={paginationPage}
           limit={limit}
-          totalCount={totalCount}
+          totalCount={paginationTotalCount}
           itemLabel="plans"
           ariaLabel="Manager plans directory pagination"
           pageNavAriaLabel="Manager plan pages"

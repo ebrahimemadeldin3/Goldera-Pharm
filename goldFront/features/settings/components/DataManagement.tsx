@@ -6,16 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 
 export default function DataManagement() {
-  function handleExport() {
-    // trigger export logic
-    console.log("Export data");
-  }
-
-  function handleDelete() {
-    // trigger delete logic (show confirm dialog ideally)
-    console.log("Delete account");
-  }
-
   return (
     <Card className="border-secondary-light w-full rounded-2xl border bg-white shadow-none">
       <CardHeader className="flex flex-row items-start gap-3">
@@ -50,8 +40,9 @@ export default function DataManagement() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleExport}
-                className="text-system-primary h-8 shrink-0 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
+                disabled
+                title="Requires backend change — excluded from current frontend-only scope."
+                className="text-system-primary h-8 shrink-0 gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Download className="h-4 w-4" />
                 Export
@@ -73,8 +64,9 @@ export default function DataManagement() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={handleDelete}
-                className="text-dashboard-red h-8 shrink-0 cursor-pointer gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white"
+                disabled
+                title="Requires backend change — excluded from current frontend-only scope."
+                className="text-dashboard-red h-8 shrink-0 gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Trash2 className="h-4 w-4" />
                 Delete

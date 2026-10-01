@@ -55,7 +55,6 @@ type RepAppraisalClientProps = {
     acknowledged: number;
   };
   backendIntegrationPending?: boolean;
-  previewMode?: boolean;
 };
 
 type MetricCardProps = {
@@ -262,13 +261,11 @@ function AppraisalDetailsDialog({
   open,
   onOpenChange,
   onAcknowledged,
-  previewMode = false,
 }: {
   review: Review | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAcknowledged: (review: Review) => void;
-  previewMode?: boolean;
 }) {
   const [comment, setComment] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -286,23 +283,6 @@ function AppraisalDetailsDialog({
     if (!review || !canAcknowledge || isPending) return;
 
     startTransition(async () => {
-      if (previewMode) {
-        // UI preview only - remove when Rep appraisal backend integration is ready.
-        onAcknowledged({
-          ...review,
-          acknowledged: true,
-          acknowledgedAt: new Date().toISOString(),
-          repComment: comment.trim() || null,
-        });
-        setConfirmOpen(false);
-        toast.success({
-          title: "Preview acknowledgement applied",
-          description:
-            "This visual state is temporary and will reset after refresh.",
-        });
-        return;
-      }
-
       const result = await acknowledgeAppraisalAction(review.id, comment);
 
       if (result.success && result.review) {
@@ -570,7 +550,6 @@ export function RepAppraisalClient({
   totalCount = 0,
   stats,
   backendIntegrationPending = false,
-  previewMode = false,
 }: RepAppraisalClientProps) {
   const [filter, setFilter] = useState<FilterKey>("all");
   const [reviews, setReviews] = useState(initialReviews);
@@ -772,7 +751,6 @@ export function RepAppraisalClient({
           if (!open) setSelectedReview(null);
         }}
         onAcknowledged={handleAcknowledged}
-        previewMode={previewMode}
       />
     </div>
   );

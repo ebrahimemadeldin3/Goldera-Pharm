@@ -1,7 +1,8 @@
 "use client";
 
-import { useMemo, useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useMemo, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { useForm, useWatch, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Building2,
@@ -88,10 +89,6 @@ type RoleBasedAddVisitFormProps = (
 const labelClassName = "text-xs font-semibold text-[#344054]";
 const fieldClassName =
   "h-11 w-full rounded-[11px] border border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[3px] focus-visible:ring-[#168557]/10 aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10";
-const fieldButtonClassName = cn(
-  fieldClassName,
-  "w-full justify-start text-left hover:bg-[#F0FDF4]/30 hover:text-[#182033]",
-);
 const selectContentClassName =
   "visits-add-select-content rounded-[12px] border border-[#E5E8EF] bg-white text-[#182033] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
 const selectItemClassName =
@@ -100,6 +97,8 @@ const comboboxDropdownClassName =
   "visits-add-combobox-dropdown rounded-[12px] border-[#E5E8EF] shadow-[0_16px_40px_rgba(16,27,51,0.14)]";
 const comboboxSelectedClassName = "bg-[#FFF8E5] text-[#182033]";
 const comboboxBadgeClassName = "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]";
+const ASSIGNEE_FIELDS = ["supervisorId", "medicalRepId"] as const;
+type AssigneeField = (typeof ASSIGNEE_FIELDS)[number];
 
 function formatTimeDisplay(value?: string) {
   if (!value) return "Not selected";
@@ -123,6 +122,68 @@ function RequiredMark() {
   return <span className="text-[#D92D20]">*</span>;
 }
 
+function getValidAssigneeFields(
+  role: RoleBasedAddVisitFormProps["role"],
+  visitType?: string,
+): Set<AssigneeField> {
+  if (role === "MANAGER" && visitType === "MANAGER") {
+    return new Set(["supervisorId"]);
+  }
+
+  if (
+    (role === "MANAGER" || role === "SUPERVISOR") &&
+    visitType === "COACHING"
+  ) {
+    return new Set(["medicalRepId"]);
+  }
+
+  return new Set();
+}
+
+function sanitizeVisitSubmitValues(
+  values: VisitFormValues,
+  role: RoleBasedAddVisitFormProps["role"],
+): VisitFormValues {
+  const visitType = "visitType" in values ? values.visitType : undefined;
+  const validAssigneeFields = getValidAssigneeFields(role, visitType);
+  const sanitized = { ...values } as VisitFormValues & {
+    supervisorId?: string;
+    medicalRepId?: string;
+  };
+
+  for (const field of ASSIGNEE_FIELDS) {
+    if (!validAssigneeFields.has(field)) {
+      sanitized[field] = "";
+    }
+  }
+
+  return sanitized;
+}
+
+function FormSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="rounded-[14px] border border-[#E5E8EF] bg-white p-4">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold tracking-[0.04em] text-[#101D36] uppercase">
+          {title}
+        </h3>
+        <p className="mt-1 text-xs leading-5 font-medium text-[#667085]">
+          {description}
+        </p>
+      </div>
+      {children}
+    </section>
+  );
+}
+
 export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   const {
     role,
@@ -143,7 +204,13 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     initialDoctorId || searchParams.get("doctorId") || "";
   const { createVisit, isPending } = useCreateVisit();
   const [products, setProducts] = useState<Product[]>([]);
-  const [selectedHospital, setSelectedHospital] = useState<string>("all");
+  const [selectedHospital, setSelectedHospital] = useState<string>(() => {
+    const selected = preselectedDoctorId
+      ? doctors.find((doctor) => doctor.id === preselectedDoctorId)
+      : undefined;
+
+    return selected?.accountName || "all";
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch products on mount
@@ -210,6 +277,12 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   const form = useForm<VisitFormValues>({
     resolver: zodResolver(schema),
     defaultValues,
+    shouldFocusError: true,
+  });
+  const defaultsSyncRef = useRef({
+    key: "",
+    doctorId: defaultValues.doctorId,
+    dateKey: initialDate ? formatDateOnly(initialDate) : "",
   });
 
   const hospitals = useMemo(() => {
@@ -224,9 +297,11 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     }
 
     return doctors.filter(
-      (doctor) => (doctor.accountName || "Unassigned") === selectedHospital,
+      (doctor) =>
+        (doctor.accountName || "Unassigned") === selectedHospital ||
+        doctor.id === defaultValues.doctorId,
     );
-  }, [doctors, selectedHospital]);
+  }, [defaultValues.doctorId, doctors, selectedHospital]);
 
   const hospitalOptions: ComboboxOption[] = useMemo(() => {
     return [
@@ -259,21 +334,62 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     }));
   }, [products]);
 
-  // Preselect date if initialDate prop is passed
   useEffect(() => {
-    if (initialDate) {
-      form.setValue("date", initialDate);
-    }
-  }, [initialDate, form]);
+    const nextDoctorId = defaultValues.doctorId;
+    const nextDateKey = initialDate ? formatDateOnly(initialDate) : "";
+    const nextKey = `${role}|${nextDoctorId}|${nextDateKey}`;
+    const previous = defaultsSyncRef.current;
 
-  useEffect(() => {
-    if (preselectedDoctorId) {
-      const selected = doctors.find((d) => d.id === preselectedDoctorId);
-      if (selected && selected.accountName) {
-        setSelectedHospital(selected.accountName);
+    if (previous.key === nextKey) {
+      return;
+    }
+
+    const current = form.getValues() as VisitFormValues & { date?: Date };
+
+    if (!form.formState.isDirty) {
+      form.reset({
+        ...defaultValues,
+        ...(initialDate ? { date: initialDate } : {}),
+      });
+    } else {
+      if (
+        nextDoctorId &&
+        (!current.doctorId || current.doctorId === previous.doctorId)
+      ) {
+        form.setValue("doctorId", nextDoctorId, {
+          shouldDirty: false,
+          shouldTouch: false,
+          shouldValidate: true,
+        });
+        form.clearErrors("doctorId");
+      }
+
+      const currentDateKey = current.date ? formatDateOnly(current.date) : "";
+      if (
+        initialDate &&
+        (!currentDateKey || currentDateKey === previous.dateKey)
+      ) {
+        form.setValue("date", initialDate, {
+          shouldDirty: false,
+          shouldTouch: false,
+          shouldValidate: true,
+        });
+        form.clearErrors("date");
       }
     }
-  }, [preselectedDoctorId, doctors]);
+
+    defaultsSyncRef.current = {
+      key: nextKey,
+      doctorId: nextDoctorId,
+      dateKey: nextDateKey,
+    };
+  }, [
+    defaultValues,
+    form,
+    form.formState.isDirty,
+    initialDate,
+    role,
+  ]);
 
   useEffect(() => {
     const selectedDoctorId = form.getValues("doctorId");
@@ -291,13 +407,21 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     }
   }, [filteredDoctors, form]);
 
-  const visitType = hasVisitType ? form.watch("visitType") : undefined;
-  const selectedDoctorId = form.watch("doctorId");
-  const selectedDate = form.watch("date");
-  const selectedTime = form.watch("time");
-  const selectedProducts = form.watch("products");
-  const selectedNotes = form.watch("notes");
-  const selectedDoctor = doctors.find((doctor) => doctor.id === selectedDoctorId);
+  const watchedValues = useWatch({ control: form.control }) as Partial<
+    VisitFormValues & {
+      visitType?: string;
+      supervisorId?: string;
+      medicalRepId?: string;
+    }
+  >;
+  const visitType = hasVisitType ? watchedValues.visitType : undefined;
+  const selectedDoctorId = watchedValues.doctorId;
+  const selectedDate = watchedValues.date;
+  const selectedTime = watchedValues.time;
+  const selectedProducts = watchedValues.products;
+  const selectedDoctor = doctors.find(
+    (doctor) => doctor.id === selectedDoctorId,
+  );
   const selectedTerritory = selectedDoctor
     ? getTerritoryLookup(selectedDoctor.subRegion || selectedDoctor.area)
     : null;
@@ -314,15 +438,21 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     setIsSubmitting(true);
 
     try {
-      const result = await createVisit(values);
+      const submitValues = sanitizeVisitSubmitValues(values, role);
+      const result = await createVisit(submitValues);
 
       if (result.success) {
         const scheduledDate = result.data?.date
           ? formatDateOnly(parseDateValue(result.data.date))
-          : formatDateOnly(values.date);
-        const doctor = doctors.find((item) => item.id === values.doctorId);
+          : formatDateOnly(submitValues.date);
+        const doctor = doctors.find(
+          (item) => item.id === submitValues.doctorId,
+        );
         const doctorName =
-          doctor?.nameEN || doctor?.nameAR || doctor?.name || "the selected doctor";
+          doctor?.nameEN ||
+          doctor?.nameAR ||
+          doctor?.name ||
+          "the selected doctor";
 
         toast.success({
           title: "Visit scheduled",
@@ -353,19 +483,77 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     }
   }
 
+  function onInvalid(errors: FieldErrors<VisitFormValues>) {
+    const fieldOrder = [
+      "doctorId",
+      "date",
+      "time",
+      "visitType",
+      "supervisorId",
+      "medicalRepId",
+      "products",
+      "notes",
+    ] as const;
+    const firstInvalidField = fieldOrder.find(
+      (fieldName) => fieldName in errors,
+    );
+
+    if (!firstInvalidField) return;
+
+    form.setFocus(firstInvalidField);
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-visit-field="${firstInvalidField}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }
+
   const showSupervisorField = role === "MANAGER" && visitType === "MANAGER";
   const showMedicalRepField =
     (role === "MANAGER" || role === "SUPERVISOR") && visitType === "COACHING";
 
+  useEffect(() => {
+    if (!hasVisitType) {
+      return;
+    }
+
+    const validAssigneeFields = getValidAssigneeFields(role, visitType);
+
+    for (const field of ASSIGNEE_FIELDS) {
+      if (validAssigneeFields.has(field)) {
+        continue;
+      }
+
+      form.setValue(field, "", {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+      form.clearErrors(field);
+      form.unregister(field);
+    }
+  }, [form, hasVisitType, role, visitType]);
+
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
+  const roleFieldClassName = cn(
+    fieldClassName,
+    isRep
+      ? "focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[#168557]/10"
+      : "focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[#C9A44C]/10",
+  );
+  const roleFieldButtonClassName = cn(
+    roleFieldClassName,
+    "w-full justify-start text-left",
+    isRep ? "hover:bg-[#F0FDF4]/30" : "hover:bg-[#FFFDF7]",
+  );
 
   const renderComboboxProps = {
     triggerClassName: cn(
       "visits-add-combobox-trigger h-11 rounded-[11px] border-[#E5E8EF] bg-white px-3.5 text-sm font-medium text-[#182033] shadow-none hover:border-[#D8DEE8] aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10",
       isRep
         ? "focus-visible:border-[#168557] focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
-        : "focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
+        : "focus-visible:border-[#C9A44C] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10",
     ),
     dropdownClassName: comboboxDropdownClassName,
     searchShellClassName: "bg-[#FBFCFE] border-[#EEF1F6]",
@@ -374,7 +562,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
       "rounded-[9px] px-3 py-2.5 text-sm",
       isRep
         ? "hover:bg-[#E9F8F1] hover:text-[#168557]"
-        : "hover:bg-[#FFFDF7] hover:text-[#8A6515]"
+        : "hover:bg-[#FFFDF7] hover:text-[#8A6515]",
     ),
     selectedOptionClassName: isRep
       ? "bg-[#E9F8F1] text-[#168557] font-semibold"
@@ -392,7 +580,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, onInvalid)}
         className={cn(
           isModal
             ? "flex min-h-0 flex-1 flex-col overflow-hidden"
@@ -406,100 +594,104 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
               : "",
           )}
         >
-          <section>
-            <div className="mb-5">
-              <h3 className="text-base font-semibold text-[#182033]">
-                Visit Information
-              </h3>
-              <p className="mt-1 text-xs leading-5 font-medium text-[#667085]">
-                All times are in Saudi Arabia timezone (Asia/Riyadh).
-              </p>
-            </div>
-
-            <div
-              className={cn(
-                "grid grid-cols-1 gap-4",
-                !isModal && "md:grid-cols-2",
-              )}
+          <div className="space-y-4">
+            <FormSection
+              title="Who & Where"
+              description="Select the doctor first. Facility can be used as a helper filter when available."
             >
-              <div className={cn(!isModal && "md:col-span-2")}>
-                <div className="flex items-center justify-between">
-                  <label className={cn("block", labelClassName)}>
-                    Facility / Hospital <span className="text-xs font-normal text-[#667085]">(optional helper filter)</span>
-                  </label>
-                  {selectedHospital && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedHospital("")}
-                      className={cn(
-                        "text-xs font-semibold hover:underline",
-                        isRep ? "text-[#168557]" : "text-[#B18732]"
-                      )}
-                    >
-                      Show All Facilities
-                    </button>
-                  )}
-                </div>
-                <div className="mt-2">
-                  <Combobox
-                    {...renderComboboxProps}
-                    options={hospitalOptions}
-                    value={selectedHospital}
-                    onChange={setSelectedHospital}
-                    placeholder="All facilities"
-                    searchPlaceholder="Type facility or hospital name..."
-                    emptyText="No facilities found"
-                    labelFormatter={(option) => (
-                      <span className="flex min-w-0 items-center gap-2">
-                        <Building2
-                          className={cn(
-                            "size-4 shrink-0",
-                            isRep ? "text-[#168557]" : "text-[#B18732]"
-                          )}
-                          aria-hidden="true"
-                        />
-                        <span className="truncate">{option.label}</span>
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-4",
+                  !isModal && "md:grid-cols-2",
+                )}
+              >
+                <div className={cn(!isModal && "md:col-span-2")}>
+                  <div className="flex items-center justify-between">
+                    <label className={cn("block", labelClassName)}>
+                      Facility / Hospital{" "}
+                      <span className="text-xs font-normal text-[#667085]">
+                        (optional helper filter)
                       </span>
+                    </label>
+                    {selectedHospital !== "all" && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHospital("all")}
+                        className={cn(
+                          "text-xs font-semibold hover:underline",
+                          isRep ? "text-[#168557]" : "text-[#B18732]",
+                        )}
+                      >
+                        Show All Facilities
+                      </button>
                     )}
-                  />
+                  </div>
+                  <div className="mt-2">
+                    <Combobox
+                      {...renderComboboxProps}
+                      options={hospitalOptions}
+                      value={selectedHospital}
+                      onChange={setSelectedHospital}
+                      placeholder="All facilities"
+                      searchPlaceholder="Type facility or hospital name..."
+                      emptyText="No facilities found"
+                      labelFormatter={(option) => (
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Building2
+                            className={cn(
+                              "size-4 shrink-0",
+                              isRep ? "text-[#168557]" : "text-[#B18732]",
+                            )}
+                            aria-hidden="true"
+                          />
+                          <span className="truncate">{option.label}</span>
+                        </span>
+                      )}
+                    />
+                  </div>
                 </div>
-              </div>
 
-              <FormField
-                control={form.control}
-                name="doctorId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className={labelClassName}>
-                      Doctor <RequiredMark />
-                    </FormLabel>
-                    <FormControl>
-                      {preselectedDoctor ? (
-                        <div className="rounded-[12px] border border-[#E5E8EF] bg-white p-3">
-                          <div className="flex min-w-0 items-start gap-3">
-                            <span
-                              className={cn(
-                                "flex size-10 shrink-0 items-center justify-center rounded-[10px] border",
-                                isRep
-                                  ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
-                                  : "border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]"
-                              )}
-                            >
-                              <Stethoscope className="size-4" aria-hidden="true" />
-                            </span>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold text-[#101D36]" dir="auto">
-                                {preselectedDoctor.nameAR ||
-                                  preselectedDoctor.nameEN ||
-                                  "Selected doctor"}
-                              </p>
-                              {preselectedDoctor.nameAR &&
-                                preselectedDoctor.nameEN && (
-                                  <p className="mt-0.5 truncate text-xs font-medium text-[#667085]">
-                                    {preselectedDoctor.nameEN}
-                                  </p>
+                <FormField
+                  control={form.control}
+                  name="doctorId"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="doctorId">
+                      <FormLabel className={labelClassName}>
+                        Doctor <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        {preselectedDoctor ? (
+                          <div className="rounded-[12px] border border-[#E5E8EF] bg-white p-3">
+                            <div className="flex min-w-0 items-start gap-3">
+                              <span
+                                className={cn(
+                                  "flex size-10 shrink-0 items-center justify-center rounded-[10px] border",
+                                  isRep
+                                    ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                                    : "border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]",
                                 )}
-                              <div className="mt-2 flex flex-wrap gap-1.5">
+                              >
+                                <Stethoscope
+                                  className="size-4"
+                                  aria-hidden="true"
+                                />
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className="truncate text-sm font-semibold text-[#101D36]"
+                                  dir="auto"
+                                >
+                                  {preselectedDoctor.nameAR ||
+                                    preselectedDoctor.nameEN ||
+                                    "Selected doctor"}
+                                </p>
+                                {preselectedDoctor.nameAR &&
+                                  preselectedDoctor.nameEN && (
+                                    <p className="mt-0.5 truncate text-xs font-medium text-[#667085]">
+                                      {preselectedDoctor.nameEN}
+                                    </p>
+                                  )}
+                                <div className="mt-2 flex flex-wrap gap-1.5">
                                   {preselectedDoctor.specialty && (
                                     <span
                                       className={cn(
@@ -512,31 +704,364 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                                       {preselectedDoctor.specialty}
                                     </span>
                                   )}
-                                {preselectedDoctor.subRegion && (
-                                  <span className="rounded-full border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[11px] font-semibold text-[#101D36]">
-                                    {preselectedDoctor.subRegion}
-                                  </span>
-                                )}
+                                  {preselectedDoctor.subRegion && (
+                                    <span className="rounded-full border border-[#E5E8EF] bg-[#F6F8FB] px-2 py-0.5 text-[11px] font-semibold text-[#101D36]">
+                                      {preselectedDoctor.subRegion}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ) : (
+                        ) : (
+                          <Combobox
+                            {...renderComboboxProps}
+                            options={doctorOptions}
+                            value={field.value}
+                            onChange={field.onChange}
+                            placeholder="Search doctor..."
+                            searchPlaceholder="Type doctor name or specialty..."
+                            emptyText="No doctors matching search"
+                            startTypingText="Start typing to search doctors..."
+                            labelFormatter={(option) => (
+                              <span className="flex min-w-0 items-center gap-2">
+                                <Stethoscope
+                                  className={cn(
+                                    "size-4 shrink-0",
+                                    isRep ? "text-[#168557]" : "text-[#B18732]",
+                                  )}
+                                  aria-hidden="true"
+                                />
+                                <span className="truncate">{option.label}</span>
+                              </span>
+                            )}
+                          />
+                        )}
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+
+                {(selectedDoctor?.accountName ||
+                  selectedDoctor?.subRegion ||
+                  selectedDoctor?.area ||
+                  selectedTerritory) && (
+                  <div
+                    className={cn(
+                      "rounded-[12px] border border-[#E5E8EF] bg-[#FBFCFE] p-3",
+                      !isModal && "md:col-span-2",
+                    )}
+                  >
+                    <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                      Doctor location context
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs font-semibold text-[#344054]">
+                      {selectedDoctor?.accountName && (
+                        <span className="rounded-full border border-[#E5E8EF] bg-white px-2.5 py-1">
+                          {selectedDoctor.accountName}
+                        </span>
+                      )}
+                      {(selectedDoctor?.subRegion || selectedDoctor?.area) && (
+                        <span className="rounded-full border border-[#E5E8EF] bg-white px-2.5 py-1">
+                          {selectedDoctor.subRegion || selectedDoctor.area}
+                        </span>
+                      )}
+                      {selectedTerritory && (
+                        <span
+                          className={cn(
+                            "rounded-full border px-2.5 py-1",
+                            isRep
+                              ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]"
+                              : "border-[#E9DDB8] bg-[#FFF8E5] text-[#8A6515]",
+                          )}
+                        >
+                          {selectedTerritory.region} -{" "}
+                          {selectedTerritory.territory}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </FormSection>
+
+            <FormSection
+              title="When"
+              description="Choose the scheduled date, time, and visit type. All times stay in Asia/Riyadh."
+            >
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-4",
+                  !isModal && "md:grid-cols-2",
+                )}
+              >
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="date">
+                      <FormLabel className={labelClassName}>
+                        Visit Date <RequiredMark />
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className={roleFieldButtonClassName}
+                            >
+                              <CalendarIcon
+                                className="mr-2 size-4 text-[#8A94A6]"
+                                aria-hidden="true"
+                              />
+                              <span className="truncate">
+                                {field.value
+                                  ? formatSaudiDateDisplay(field.value)
+                                  : "Select date"}
+                              </span>
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="start"
+                          sideOffset={8}
+                          className="visits-add-date-popover w-auto rounded-[16px] border border-[#E5E8EF] bg-white p-3 shadow-[0_18px_46px_rgba(16,27,51,0.14)]"
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) => {
+                              const todaySaudi = parseDateValue(
+                                formatDateOnly(new Date()),
+                              );
+                              const pickedSaudi = parseDateValue(
+                                formatDateOnly(date),
+                              );
+                              return pickedSaudi < todaySaudi;
+                            }}
+                            className="visits-add-calendar rounded-none bg-transparent p-0"
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+
+                {hasVisitType && (
+                  <FormField
+                    control={form.control}
+                    name="visitType"
+                    render={({ field }) => (
+                      <FormItem data-visit-field="visitType">
+                        <FormLabel className={labelClassName}>
+                          Visit Type <RequiredMark />
+                        </FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className={roleFieldClassName}>
+                              <UserCheck
+                                className="size-4 text-[#8A94A6]"
+                                aria-hidden="true"
+                              />
+                              <SelectValue placeholder="Select visit type" />
+                            </SelectTrigger>
+                            <SelectContent className={selectContentClassName}>
+                              <SelectItem
+                                value="CHECK"
+                                className={selectItemClassName}
+                              >
+                                Check visit
+                              </SelectItem>
+                              <SelectItem
+                                value="COACHING"
+                                className={selectItemClassName}
+                              >
+                                Coaching visit
+                              </SelectItem>
+                              {role === "MANAGER" && (
+                                <SelectItem
+                                  value="MANAGER"
+                                  className={selectItemClassName}
+                                >
+                                  Manager visit
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="time"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="time">
+                      <FormLabel className={labelClassName}>
+                        Visit Time <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <SelectTrigger className={roleFieldClassName}>
+                            <Clock3
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select time" />
+                          </SelectTrigger>
+                          <SelectContent
+                            className={cn(selectContentClassName, "max-h-72")}
+                          >
+                            {HOURS.map((h) => (
+                              <SelectItem
+                                key={h}
+                                value={h}
+                                className={selectItemClassName}
+                              >
+                                {h}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+
+                {showSupervisorField && (
+                  <FormField
+                    control={form.control}
+                    name="supervisorId"
+                    render={({ field }) => (
+                      <FormItem data-visit-field="supervisorId">
+                        <FormLabel className={labelClassName}>
+                          Supervisor <RequiredMark />
+                        </FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className={roleFieldClassName}>
+                              <Users
+                                className="size-4 text-[#8A94A6]"
+                                aria-hidden="true"
+                              />
+                              <SelectValue placeholder="Select supervisor" />
+                            </SelectTrigger>
+                            <SelectContent
+                              className={cn(selectContentClassName, "max-h-72")}
+                            >
+                              {supervisors.map((s) => (
+                                <SelectItem
+                                  key={s.id}
+                                  value={s.id}
+                                  className={selectItemClassName}
+                                >
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                      </FormItem>
+                    )}
+                  />
+                )}
+
+                {showMedicalRepField && (
+                  <FormField
+                    control={form.control}
+                    name="medicalRepId"
+                    render={({ field }) => (
+                      <FormItem data-visit-field="medicalRepId">
+                        <FormLabel className={labelClassName}>
+                          Medical Rep <RequiredMark />
+                        </FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className={roleFieldClassName}>
+                              <Users
+                                className="size-4 text-[#8A94A6]"
+                                aria-hidden="true"
+                              />
+                              <SelectValue placeholder="Select medical rep" />
+                            </SelectTrigger>
+                            <SelectContent
+                              className={cn(selectContentClassName, "max-h-72")}
+                            >
+                              {medicalReps.map((r) => (
+                                <SelectItem
+                                  key={r.id}
+                                  value={r.id}
+                                  className={selectItemClassName}
+                                >
+                                  {r.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
+            </FormSection>
+
+            <FormSection
+              title="Visit Details"
+              description="Optional products, samples, and objectives for the appointment."
+            >
+              <div
+                className={cn(
+                  "grid grid-cols-1 gap-4",
+                  !isModal && "md:grid-cols-2",
+                )}
+              >
+                <FormField
+                  control={form.control}
+                  name="products"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="products">
+                      <FormLabel className={labelClassName}>
+                        Products / Samples
+                      </FormLabel>
+                      <FormControl>
                         <Combobox
                           {...renderComboboxProps}
-                          options={doctorOptions}
+                          options={productOptions}
                           value={field.value}
                           onChange={field.onChange}
-                          placeholder="Search doctor..."
-                          searchPlaceholder="Type doctor name or specialty..."
-                          emptyText="No doctors matching search"
-                          startTypingText="Start typing to search doctors..."
+                          placeholder="Search product..."
+                          searchPlaceholder="Type product name or category..."
+                          emptyText="No products found"
+                          startTypingText="Start typing to search products..."
                           labelFormatter={(option) => (
                             <span className="flex min-w-0 items-center gap-2">
-                              <Stethoscope
+                              <PackageSearch
                                 className={cn(
                                   "size-4 shrink-0",
-                                  isRep ? "text-[#168557]" : "text-[#B18732]"
+                                  isRep ? "text-[#168557]" : "text-[#B18732]",
                                 )}
                                 aria-hidden="true"
                               />
@@ -544,409 +1069,151 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                             </span>
                           )}
                         />
-                      )}
-                    </FormControl>
-                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="products"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className={labelClassName}>
-                      Products / Samples
-                    </FormLabel>
-                    <FormControl>
-                      <Combobox
-                        {...renderComboboxProps}
-                        options={productOptions}
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Search product..."
-                        searchPlaceholder="Type product name or category..."
-                        emptyText="No products found"
-                        startTypingText="Start typing to search products..."
-                        labelFormatter={(option) => (
-                          <span className="flex min-w-0 items-center gap-2">
-                            <PackageSearch
-                              className={cn(
-                                "size-4 shrink-0",
-                                isRep ? "text-[#168557]" : "text-[#B18732]"
-                              )}
-                              aria-hidden="true"
-                            />
-                            <span className="truncate">{option.label}</span>
+                      </FormControl>
+                      {field.value && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span className="rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-2.5 py-1 text-[11px] font-semibold text-[#7D5A12]">
+                            {field.value}
                           </span>
-                        )}
-                      />
-                    </FormControl>
-                    {field.value && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
-                        <span className="rounded-full border border-[#E8D29B] bg-[#FFF9EA] px-2.5 py-1 text-[11px] font-semibold text-[#7D5A12]">
-                          {field.value}
-                        </span>
-                        <span className="text-xs font-medium text-[#667085]">
-                          Selected samples: 1
-                        </span>
-                      </div>
-                    )}
-                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                  </FormItem>
-                )}
-              />
+                          <span className="text-xs font-medium text-[#667085]">
+                            Selected samples: 1
+                          </span>
+                        </div>
+                      )}
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className={labelClassName}>
-                      Visit Date <RequiredMark />
-                    </FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
+                <FormField
+                  control={form.control}
+                  name="notes"
+                  render={({ field }) => (
+                    <FormItem
+                      data-visit-field="notes"
+                      className={cn(!isModal && "md:col-span-2")}
+                    >
+                      <FormLabel className={labelClassName}>
+                        Visit Notes / Objectives
+                      </FormLabel>
+                      <div className="relative">
+                        <CalendarCheck2
+                          className="pointer-events-none absolute top-3.5 left-3.5 size-4 text-[#8A94A6]"
+                          aria-hidden="true"
+                        />
                         <FormControl>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className={fieldButtonClassName}
-                          >
-                            <CalendarIcon
-                              className="mr-2 size-4 text-[#8A94A6]"
-                              aria-hidden="true"
-                            />
-                            <span className="truncate">
-                              {field.value
-                                ? formatSaudiDateDisplay(field.value)
-                                : "Select date"}
-                            </span>
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="start"
-                        sideOffset={8}
-                        className="visits-add-date-popover w-auto rounded-[16px] border border-[#E5E8EF] bg-white p-3 shadow-[0_18px_46px_rgba(16,27,51,0.14)]"
-                      >
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => {
-                            const todaySaudi = parseDateValue(
-                              formatDateOnly(new Date()),
-                            );
-                            const pickedSaudi = parseDateValue(
-                              formatDateOnly(date),
-                            );
-                            return pickedSaudi < todaySaudi;
-                          }}
-                          className="visits-add-calendar rounded-none bg-transparent p-0"
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                  </FormItem>
-                )}
-              />
-
-              {hasVisitType && (
-                <FormField
-                  control={form.control}
-                  name="visitType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelClassName}>
-                        Visit Type <RequiredMark />
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className={fieldClassName}>
-                            <UserCheck
-                              className="size-4 text-[#8A94A6]"
-                              aria-hidden="true"
-                            />
-                            <SelectValue placeholder="Select visit type" />
-                          </SelectTrigger>
-                          <SelectContent className={selectContentClassName}>
-                            <SelectItem
-                              value="CHECK"
-                              className={selectItemClassName}
-                            >
-                              Check visit
-                            </SelectItem>
-                            <SelectItem
-                              value="COACHING"
-                              className={selectItemClassName}
-                            >
-                              Coaching visit
-                            </SelectItem>
-                            {role === "MANAGER" && (
-                              <SelectItem
-                                value="MANAGER"
-                                className={selectItemClassName}
-                              >
-                                Manager visit
-                              </SelectItem>
+                          <Textarea
+                            placeholder="Enter any additional notes or objectives for this visit..."
+                            maxLength={500}
+                            {...field}
+                            className={cn(
+                              "min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10",
+                              isRep
+                                ? "focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
+                                : "focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10",
                             )}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <FormField
-                control={form.control}
-                name="time"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className={labelClassName}>
-                      Visit Time <RequiredMark />
-                    </FormLabel>
-                    <FormControl>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <SelectTrigger className={fieldClassName}>
-                          <Clock3
-                            className="size-4 text-[#8A94A6]"
-                            aria-hidden="true"
                           />
-                          <SelectValue placeholder="Select time" />
-                        </SelectTrigger>
-                        <SelectContent
-                          className={cn(selectContentClassName, "max-h-72")}
-                        >
-                          {HOURS.map((h) => (
-                            <SelectItem
-                              key={h}
-                              value={h}
-                              className={selectItemClassName}
-                            >
-                              {h}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                  </FormItem>
-                )}
-              />
-
-              {showSupervisorField && (
-                <FormField
-                  control={form.control}
-                  name="supervisorId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelClassName}>
-                        Supervisor <RequiredMark />
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className={fieldClassName}>
-                            <Users
-                              className="size-4 text-[#8A94A6]"
-                              aria-hidden="true"
-                            />
-                            <SelectValue placeholder="Select supervisor" />
-                          </SelectTrigger>
-                          <SelectContent
-                            className={cn(selectContentClassName, "max-h-72")}
-                          >
-                            {supervisors.map((s) => (
-                              <SelectItem
-                                key={s.id}
-                                value={s.id}
-                                className={selectItemClassName}
-                              >
-                                {s.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
+                        </FormControl>
+                      </div>
+                      <div className="text-right text-[11px] font-medium text-[#8A94A6]">
+                        {(field.value ?? "").length}/500
+                      </div>
                       <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
                     </FormItem>
                   )}
                 />
-              )}
+              </div>
+            </FormSection>
 
-              {showMedicalRepField && (
-                <FormField
-                  control={form.control}
-                  name="medicalRepId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className={labelClassName}>
-                        Medical Rep <RequiredMark />
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger className={fieldClassName}>
-                            <Users
-                              className="size-4 text-[#8A94A6]"
-                              aria-hidden="true"
-                            />
-                            <SelectValue placeholder="Select medical rep" />
-                          </SelectTrigger>
-                          <SelectContent
-                            className={cn(selectContentClassName, "max-h-72")}
-                          >
-                            {medicalReps.map((r) => (
-                              <SelectItem
-                                key={r.id}
-                                value={r.id}
-                                className={selectItemClassName}
-                              >
-                                {r.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                    </FormItem>
-                  )}
-                />
-              )}
+            <section className="rounded-[14px] border border-[#E5E8EF] bg-white p-4">
+              <div className="mb-3 flex items-center gap-2">
+                <span className="flex size-8 items-center justify-center rounded-[9px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
+                  <CalendarCheck2 className="size-4" aria-hidden="true" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold tracking-[0.06em] text-[#101D36] uppercase">
+                    Visit Summary
+                  </h3>
+                  <p className="text-xs font-medium text-[#667085]">
+                    Updates as appointment details change.
+                  </p>
+                </div>
+              </div>
 
-              <FormField
-                control={form.control}
-                name="notes"
-                render={({ field }) => (
-                  <FormItem className={cn(!isModal && "md:col-span-2")}>
-                    <FormLabel className={labelClassName}>
-                      Visit Notes / Objectives
-                    </FormLabel>
-                    <div className="relative">
-                      <CalendarCheck2
-                        className="pointer-events-none absolute top-3.5 left-3.5 size-4 text-[#8A94A6]"
-                        aria-hidden="true"
-                      />
-                      <FormControl>
-                        <Textarea
-                          placeholder="Enter any additional notes or objectives for this visit..."
-                          maxLength={500}
-                          {...field}
-                          className={cn(
-                            "min-h-[104px] resize-none rounded-[12px] border border-[#E5E8EF] bg-white px-3.5 py-3 pl-10 text-sm font-medium text-[#182033] shadow-none transition-[border-color,background-color,box-shadow] duration-[160ms] placeholder:text-[#98A2B3] aria-invalid:border-[#D92D20] aria-invalid:ring-[#D92D20]/10",
-                            isRep
-                              ? "focus-visible:border-[#168557] focus-visible:bg-[#F0FDF4]/30 focus-visible:ring-[3px] focus-visible:ring-[#168557]/10"
-                              : "focus-visible:border-[#C9A44C] focus-visible:bg-[#FFFDF7] focus-visible:ring-[3px] focus-visible:ring-[#C9A44C]/10"
-                          )}
-                        />
-                      </FormControl>
-                    </div>
-                    <div className="text-right text-[11px] font-medium text-[#8A94A6]">
-                      {(field.value ?? "").length}/500
-                    </div>
-                    <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </section>
-
-          <section className="mt-5 rounded-[14px] border border-[#E5E8EF] bg-white p-4">
-            <div className="mb-3 flex items-center gap-2">
-              <span className="flex size-8 items-center justify-center rounded-[9px] border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
-                <CalendarCheck2 className="size-4" aria-hidden="true" />
-              </span>
-              <div>
-                <h3 className="text-sm font-semibold tracking-[0.06em] text-[#101D36] uppercase">
-                  Visit Summary
-                </h3>
-                <p className="text-xs font-medium text-[#667085]">
-                  Updates as appointment details change.
-                </p>
+              <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Doctor
+                  </p>
+                  <p
+                    className="mt-1 truncate font-semibold text-[#101D36]"
+                    dir="auto"
+                  >
+                    {selectedDoctor?.nameAR ||
+                      selectedDoctor?.nameEN ||
+                      "Not selected"}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Facility
+                  </p>
+                  <p
+                    className="mt-1 truncate font-semibold text-[#101D36]"
+                    dir="auto"
+                  >
+                    {selectedDoctor?.accountName || "Not selected"}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Territory
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-[#101D36]">
+                    {selectedTerritory
+                      ? `${selectedTerritory.region} - ${selectedTerritory.territory}`
+                      : "Not selected"}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Date
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-[#101D36]">
+                    {selectedDate
+                      ? formatSaudiDateDisplay(selectedDate)
+                      : "Not selected"}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Time
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-[#101D36]">
+                    {formatTimeDisplay(selectedTime)}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Visit Type
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-[#101D36]">
+                    {formatVisitType(visitType)}
+                  </p>
+                </div>
+                <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
+                  <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
+                    Samples
+                  </p>
+                  <p className="mt-1 truncate font-semibold text-[#101D36]">
+                    {selectedProducts
+                      ? `${selectedProductCount} selected`
+                      : "Not selected"}
+                  </p>
+                </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Doctor
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]" dir="auto">
-                  {selectedDoctor?.nameAR ||
-                    selectedDoctor?.nameEN ||
-                    "Not selected"}
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Facility
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]" dir="auto">
-                  {selectedDoctor?.accountName || "Not selected"}
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Territory
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]">
-                  {selectedTerritory
-                    ? `${selectedTerritory.region} · ${selectedTerritory.territory}`
-                    : "Not selected"}
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Date & Time
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]">
-                  {selectedDate
-                    ? `${formatSaudiDateDisplay(selectedDate)} · ${formatTimeDisplay(
-                        selectedTime,
-                      )}`
-                    : `Not selected · ${formatTimeDisplay(selectedTime)}`}
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Visit Type
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]">
-                  {formatVisitType(visitType)}
-                </p>
-              </div>
-              <div className="rounded-[10px] bg-[#F6F8FB] px-3 py-2">
-                <p className="text-[11px] font-semibold tracking-[0.04em] text-[#667085] uppercase">
-                  Samples
-                </p>
-                <p className="mt-1 truncate font-semibold text-[#101D36]">
-                  {selectedProductCount} selected
-                </p>
-              </div>
-            </div>
-
-            {selectedNotes && (
-              <div className="mt-2 rounded-[10px] border border-[#E5E8EF] bg-[#FFFDF7] px-3 py-2">
-                <p className="line-clamp-2 text-xs font-medium text-[#667085]">
-                  {selectedNotes}
-                </p>
-              </div>
-            )}
-          </section>
+            </section>
+          </div>
         </div>
 
         <div
@@ -973,8 +1240,8 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
             className={cn(
               "group h-11 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60",
               role === "MEDICAL_REP"
-                ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
-                : "bg-[#101D36] hover:bg-[#101D36]/95 shadow-[0_8px_18px_rgba(16,29,54,0.18)] hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25"
+                ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover focus-visible:ring-gp-rep-primary/30 shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2"
+                : "bg-[#101D36] shadow-[0_8px_18px_rgba(16,29,54,0.18)] hover:bg-[#101D36]/95 hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25",
             )}
           >
             {isScheduling ? (

@@ -2,13 +2,6 @@ import { CircleAlert } from "lucide-react";
 import { PageContainer } from "@/components/layout/page-container";
 import { getRepAppraisalReviewsAction } from "@/features/appraisal/api/rep";
 import { RepAppraisalClient } from "@/features/appraisal/components/rep/RepAppraisalClient";
-import {
-  REP_APPRAISAL_PREVIEW_MODE,
-  getRepAppraisalPreviewData,
-} from "@/features/appraisal/mocks/rep-appraisal-preview";
-import { resolveRepTerritoryScope } from "@/features/geography/lib/rep-territory-scope";
-import { fetchProfile } from "@/features/profile/api";
-import { getRegionsAction } from "@/lib/requests/regions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,32 +14,6 @@ export default async function Page({
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
-
-  if (REP_APPRAISAL_PREVIEW_MODE) {
-    // UI preview only - remove when Rep appraisal backend integration is ready.
-    const profile = await fetchProfile().catch(() => null);
-    const regionsResult = profile?.subRegionId
-      ? await getRegionsAction()
-      : null;
-    const scope = resolveRepTerritoryScope(
-      profile,
-      regionsResult?.success ? regionsResult.regions : null,
-    );
-    const preview = getRepAppraisalPreviewData(profile, scope?.subRegionName);
-
-    return (
-      <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col gap-6 overflow-x-hidden bg-[#F6F8FB]">
-        <RepAppraisalClient
-          reviews={preview.reviews}
-          page={page}
-          limit={limit}
-          totalCount={preview.totalCount}
-          stats={preview.stats}
-          previewMode
-        />
-      </PageContainer>
-    );
-  }
 
   const result = await getRepAppraisalReviewsAction(page, limit);
 

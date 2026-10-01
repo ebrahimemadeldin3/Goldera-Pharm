@@ -2,11 +2,8 @@
 
 import {
   useEffect,
-  useRef,
   useState,
   useTransition,
-  type ChangeEvent,
-  type DragEvent,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -25,13 +22,10 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   BadgeDollarSign,
-  ImagePlus,
   Loader2,
   Package,
   Plus,
   ScanLine,
-  UploadCloud,
-  X,
 } from "lucide-react";
 import {
   createProductSchema,
@@ -39,17 +33,10 @@ import {
 } from "../lib/schemas";
 import { createProductAction } from "../api";
 import type { ProductApiResponse } from "../lib/types";
-import {
-  getProductImageInfo,
-  getStoredProductImageInfo,
-  readStoredProductImages,
-  saveStoredProductImage,
-  saveStoredProductOverride,
-} from "../lib/utils";
 import { toast } from "@/lib/utils/toast";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const BACKEND_REQUIRED_MESSAGE =
+  "Requires backend change — excluded from current frontend-only scope.";
 
 type AddProductDialogProps = {
   product?: ProductApiResponse | null;
@@ -58,12 +45,6 @@ type AddProductDialogProps = {
   onProductUpdated?: (product: ProductApiResponse) => void;
   trigger?: ReactNode;
 };
-
-function revokeImagePreview(src: string | null) {
-  if (src?.startsWith("blob:")) {
-    URL.revokeObjectURL(src);
-  }
-}
 
 function getProductFormDefaults(
   product?: ProductApiResponse | null,
@@ -79,70 +60,14 @@ function getProductFormDefaults(
   };
 }
 
-function getInitialImagePreview(product?: ProductApiResponse | null) {
-  if (!product) {
-    return null;
-  }
-
-  const imageInfo =
-    getStoredProductImageInfo(product, readStoredProductImages()) ||
-    getProductImageInfo(product);
-
-  return imageInfo?.src || null;
-}
-
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-async function createTableImageDataUrl(file: File): Promise<string> {
-  const rawDataUrl = await readFileAsDataUrl(file);
-
-  return new Promise((resolve) => {
-    const previewImage = new window.Image();
-
-    previewImage.onload = () => {
-      const maxSize = 900;
-      const scale = Math.min(
-        1,
-        maxSize / Math.max(previewImage.width, previewImage.height),
-      );
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(previewImage.width * scale));
-      canvas.height = Math.max(1, Math.round(previewImage.height * scale));
-
-      const context = canvas.getContext("2d");
-      if (!context) {
-        resolve(rawDataUrl);
-        return;
-      }
-
-      context.drawImage(previewImage, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/webp", 0.86));
-    };
-
-    previewImage.onerror = () => resolve(rawDataUrl);
-    previewImage.src = rawDataUrl;
-  });
-}
-
 export function AddProductDialog({
   product,
   open: controlledOpen,
   onOpenChange,
-  onProductUpdated,
   trigger,
 }: AddProductDialogProps = {}) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
   const isEditMode = Boolean(product);
   const open = controlledOpen ?? uncontrolledOpen;
@@ -152,31 +77,12 @@ export function AddProductDialog({
     defaultValues: getProductFormDefaults(product),
   });
 
-  const [imagePreview, setImagePreview] = useState<string | null>(() =>
-    getInitialImagePreview(product),
-  );
-
   useEffect(() => {
-    return () => {
-      revokeImagePreview(imagePreview);
-    };
-  }, [imagePreview]);
-
-  function clearImage() {
-    setImagePreview((current) => {
-      revokeImagePreview(current);
-      return null;
-    });
-    setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }
+    form.reset(getProductFormDefaults(product));
+  }, [form, product]);
 
   function resetDialog() {
-    form.reset();
-    clearImage();
-    setIsDragging(false);
+    form.reset(getProductFormDefaults(product));
   }
 
   function handleOpenChange(nextOpen: boolean) {
@@ -196,112 +102,27 @@ export function AddProductDialog({
     onOpenChange?.(false);
   }
 
-  function handleImageFile(file: File) {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast.error({ title: "Choose a JPG, PNG, or WEBP product image" });
-      return;
-    }
-
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast.error({ title: "Product image must be smaller than 5MB" });
-      return;
-    }
-
-    setImageFile(file);
-    setImagePreview((current) => {
-      revokeImagePreview(current);
-      return URL.createObjectURL(file);
-    });
-  }
-
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
-  }
-
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-    if (file) {
-      handleImageFile(file);
-    }
-  }
-
   function onSubmit(values: CreateProductFormValues) {
     const productPayload = {
       name: values.name.trim(),
       internalRef: values.internalRef.trim(),
       salesPrice: values.salesPrice,
     };
-    const selectedImage = imageFile;
 
     startTransition(async () => {
       if (product) {
-        const updatedProduct: ProductApiResponse = {
-          ...product,
-          ...productPayload,
-          updatedAt: new Date().toISOString(),
-        };
-        const productSaved = saveStoredProductOverride(updatedProduct);
-
-        if (!productSaved) {
-          toast.error({
-            title: "Couldn't update product",
-            description: "Product changes could not be saved in this browser.",
-          });
-          return;
-        }
-
-        if (selectedImage) {
-          const imageDataUrl = await createTableImageDataUrl(selectedImage);
-          const imageSaved = saveStoredProductImage(
-            productPayload,
-            imageDataUrl,
-          );
-
-          if (!imageSaved) {
-            toast.warning({
-              title: "Product updated",
-              description:
-                "The image could not be saved in this browser.",
-            });
-          }
-        }
-
-        toast.success({ title: "Product updated successfully" });
-        onProductUpdated?.(updatedProduct);
-        closeAfterSubmit();
+        toast.error({
+          title: "Product update unavailable",
+          description: BACKEND_REQUIRED_MESSAGE,
+        });
         return;
       }
 
       const result = await createProductAction(productPayload);
       if (result.success) {
-        if (selectedImage) {
-          const imageDataUrl = await createTableImageDataUrl(selectedImage);
-          const imageSaved = saveStoredProductImage(
-            productPayload,
-            imageDataUrl,
-          );
-
-          if (!imageSaved) {
-            toast.warning({
-              title: "Product added successfully",
-              description:
-                "The image could not be saved in this browser.",
-            });
-          }
-        }
-
         toast.success({ title: "Product added successfully" });
         closeAfterSubmit();
         form.reset();
-        setImageFile(null);
-        setImagePreview(null);
-        setIsDragging(false);
         router.refresh();
       } else {
         toast.error({
@@ -330,8 +151,8 @@ export function AddProductDialog({
       eyebrow={isEditMode ? "Catalog Update" : "New Product"}
       description={
         isEditMode
-          ? "Update catalog details and the product image used in the table."
-          : "Add catalog details and the product image used in the table."
+          ? "Product editing is unavailable until the backend supports updates."
+          : "Add catalog details. Product image upload is unavailable until the backend supports it."
       }
       icon={<Package className="size-5" aria-hidden="true" />}
       width="md"
@@ -347,94 +168,12 @@ export function AddProductDialog({
         >
           <div className="bg-gp-surface-page min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
             <section className="gp-form-section border-gp-border-subtle rounded-[14px] border bg-white p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#182033]">
-                  Product Image
-                </p>
-                {imageFile && (
-                  <span className="max-w-[220px] truncate text-xs font-medium text-[#667085]">
-                    {imageFile.name}
-                  </span>
-                )}
-              </div>
-
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                className={`relative min-h-[148px] cursor-pointer overflow-hidden rounded-[14px] border border-dashed p-4 transition-[border-color,background-color,box-shadow] duration-[180ms] ${
-                  isDragging
-                    ? "border-[#D4AF4F] bg-[#FFF8E5] shadow-[0_0_0_4px_rgba(212,175,79,0.14)]"
-                    : "border-[#D8DEE8] bg-[#F8FAFC] hover:border-[#D4AF4F]/70 hover:bg-[#FFFDF7]"
-                }`}
-              >
-                {imagePreview ? (
-                  <div className="flex min-h-[116px] items-center gap-4">
-                    <div
-                      className="size-[112px] shrink-0 rounded-[12px] border border-[#E5E8EF] bg-white bg-contain bg-center bg-no-repeat p-2 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
-                      style={{ backgroundImage: `url(${imagePreview})` }}
-                      aria-label="Selected product image preview"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[#182033]">
-                        Product image ready
-                      </p>
-                      <p className="mt-1 text-xs leading-5 text-[#667085]">
-                        This image will appear beside the product name in the
-                        catalog table.
-                      </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 h-8 rounded-[8px] border-[#E5E8EF] px-3 text-xs font-semibold text-[#667085]"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          clearImage();
-                        }}
-                      >
-                        <X className="size-3.5" aria-hidden="true" />
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex min-h-[116px] flex-col items-center justify-center text-center">
-                    <span className="flex size-12 items-center justify-center rounded-full border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
-                      <ImagePlus className="size-5" aria-hidden="true" />
-                    </span>
-                    <p className="mt-3 text-sm font-semibold text-[#182033]">
-                      Drop product image here
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-[#667085]">
-                      JPG, PNG, or WEBP up to 5MB
-                    </p>
-                    <span className="mt-3 inline-flex items-center gap-2 rounded-[8px] bg-white px-3 py-2 text-xs font-semibold text-[#B18732] shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
-                      <UploadCloud className="size-3.5" aria-hidden="true" />
-                      Browse image
-                    </span>
-                  </div>
-                )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
+              <p className="text-sm font-semibold text-[#182033]">
+                Product Image
+              </p>
+              <p className="mt-1 text-xs leading-5 text-[#667085]">
+                {BACKEND_REQUIRED_MESSAGE}
+              </p>
             </section>
 
             <FormField
@@ -540,7 +279,7 @@ export function AddProductDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={isPending || isEditMode}
                 className="gp-primary-action h-11 rounded-[10px] bg-[#101D36] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-all duration-[180ms] hover:-translate-y-px hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] disabled:translate-y-0"
               >
                 {isPending ? (

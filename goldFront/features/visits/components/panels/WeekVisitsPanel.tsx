@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { eachDayOfInterval, isSameDay, format } from "date-fns";
+import { eachDayOfInterval, isSameDay, isToday, format } from "date-fns";
 import VisitCard from "@/features/visits/components/shared/VisitCard";
 import { Visit } from "@/features/visits/lib/types/ui";
 import type { VisitStatus } from "@/lib/types";
@@ -36,6 +36,8 @@ export default function WeekVisitsPanel({
   reportBasePath,
   selectedDate,
   isSearching = false,
+  isFiltered = false,
+  onClearFilters,
   managerTheme = false,
 }: {
   range: { start: Date; end: Date };
@@ -43,6 +45,8 @@ export default function WeekVisitsPanel({
   reportBasePath?: string;
   selectedDate?: Date;
   isSearching?: boolean;
+  isFiltered?: boolean;
+  onClearFilters?: () => void;
   managerTheme?: boolean;
 }) {
   const pathname = usePathname();
@@ -75,8 +79,45 @@ export default function WeekVisitsPanel({
 
   const INITIAL_LIMIT = 2;
 
+  if (visits.length === 0 && (isSearching || isFiltered) && onClearFilters) {
+    return (
+      <div className="visits-empty-state flex min-h-[238px] flex-col items-center justify-center rounded-[14px] border border-dashed border-[#DDE3EE] bg-[#FBFCFE] px-5 py-8 text-center">
+        <span
+          className={cn(
+            "flex size-12 items-center justify-center rounded-full",
+            isRep
+              ? "bg-gp-rep-primary-soft text-gp-rep-primary"
+              : "border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]",
+          )}
+        >
+          <Calendar className="size-5" aria-hidden="true" />
+        </span>
+        <h4 className="mt-4 text-base font-semibold text-[#182033]">
+          {isSearching
+            ? "No visits match your search."
+            : "No visits match the current filters."}
+        </h4>
+        <p className="mt-2 max-w-[360px] text-sm leading-6 font-medium text-[#667085]">
+          Clear filters to return to the full weekly workspace.
+        </p>
+        <button
+          type="button"
+          onClick={onClearFilters}
+          className={cn(
+            "mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold transition-[background-color,border-color,color] duration-[170ms] focus-visible:outline-none",
+            isRep
+              ? "border-[#CBEFDD] bg-white text-[#168557] hover:bg-[#E9F8F1] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+              : "border-[#E9DDB8] bg-white text-[#101D36] hover:bg-[#FFF8E5] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
+          )}
+        >
+          Clear Filters
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-3">
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-7">
       {days.map((day) => {
         const dateKey = formatDateOnly(day);
         const dayVisits = visits.filter((v) => isSameDay(v.date, day));
@@ -84,6 +125,7 @@ export default function WeekVisitsPanel({
         const isSelectedDay = selectedDate
           ? isSameDay(day, selectedDate)
           : false;
+        const isTodayDate = isToday(day);
         const completedCount = dayVisits.filter(
           (v) => v.status === "COMPLETED",
         ).length;
@@ -97,7 +139,7 @@ export default function WeekVisitsPanel({
             }${completedCount > 0 ? ` - ${completedCount} completed` : ""}`
           : "0 visits";
 
-        const defaultCollapsed = isSearching ? !hasVisits : !isSelectedDay;
+        const defaultCollapsed = false;
         const isCollapsed = collapsedDays[dateKey] ?? defaultCollapsed;
         const isVisitsExpanded = expandedVisitsPerDay[dateKey] ?? false;
         const visibleVisits =
@@ -112,6 +154,11 @@ export default function WeekVisitsPanel({
             className={cn(
               "visits-week-day overflow-hidden rounded-[14px] border bg-white shadow-none transition-[background-color,border-color,box-shadow,transform] duration-[170ms]",
               hasVisits ? "border-[#E5E8EF]" : "border-[#E7EAF0] bg-[#FBFCFE]",
+              isTodayDate &&
+                !isSelectedDay &&
+                (isRep
+                  ? "border-[#CBEFDD] bg-[#F7FCFA]"
+                  : "border-[#E9DDB8] bg-[#FFFDF7]"),
               isSelectedDay &&
                 (isRep
                   ? "border-[#CBEFDD] bg-[#E9F8F1]/40"
@@ -149,11 +196,15 @@ export default function WeekVisitsPanel({
                       ? isRep
                         ? "bg-[#168557] text-white shadow-[0_4px_10px_rgba(22,133,87,0.22)]"
                         : "bg-[#101D36] text-white"
-                      : hasVisits
-                        ? isManager
-                          ? "border border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]"
-                          : "bg-[#EEF4FF] text-[#3972D5]"
-                        : "bg-[#F4F6FA] text-[#98A2B3]",
+                      : isTodayDate
+                        ? isRep
+                          ? "border border-[#168557] bg-white text-[#168557]"
+                          : "border border-[#C9A44C] bg-white text-[#101D36]"
+                        : hasVisits
+                          ? isManager
+                            ? "border border-[#E9DDB8] bg-[#FBF7EA] text-[#B18732]"
+                            : "bg-[#EEF4FF] text-[#3972D5]"
+                          : "bg-[#F4F6FA] text-[#98A2B3]",
                   )}
                 >
                   <Calendar className="size-4" aria-hidden="true" />
@@ -224,6 +275,7 @@ export default function WeekVisitsPanel({
                           reportBasePath={reportBasePath}
                           animationDelay={`${Math.min(index * 24, 120)}ms`}
                           managerTheme={isManager}
+                          density="compact"
                         />
                       ))}
                     </div>

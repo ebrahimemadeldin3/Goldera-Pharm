@@ -54,9 +54,13 @@ export async function createProduct(
  * Server action to get all products
  * NOTE: Also imported by features/forecast for product selection in forecasts and visits
  */
-export async function getProductsAction(page?: number, limit?: number) {
+export async function getProductsAction(
+  page?: number,
+  limit?: number,
+  paginate?: boolean,
+) {
   try {
-    const response = await fetchProducts(page, limit);
+    const response = await fetchProducts(page, limit, paginate);
     return {
       success: true,
       data: response.data,
