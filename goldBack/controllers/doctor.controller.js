@@ -1,5 +1,7 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import xlsx from "xlsx";
+import fs from "fs/promises";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Add new doctor
@@ -190,47 +192,65 @@ const deleteDoctor = async (req, res, next) => {
 // add doctor by CSV file
 const addDoctorByCSV = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return next(new ApiError("Please upload a file", 400));
+    const records = req.body?.records ?? req.body;
+    const normalizedRecords = Array.isArray(records) ? records : [];
+
+    if (req.file) {
+      const workbook = xlsx.readFile(req.file.path, { cellDates: true });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rawData = xlsx.utils.sheet_to_json(sheet);
+
+      rawData.forEach((row) => {
+        normalizedRecords.push({
+          nameAR: row["Name (Arabic)"],
+          nameEN: row["Name (English)"],
+          email: row["Email"],
+          phone: row["Phone"],
+          grade: row["Grade"],
+          avgPatientsPerDay: row["Avg Patients per Day"],
+          specialty: row["Specialty"],
+          LicenseNumber: row["License Number"],
+          subRegion: row["Sub Region"],
+          accountName: row["Account Name"],
+          area: row["Area"],
+        });
+      });
+
+      await fs.unlink(req.file.path).catch((err) => {
+        console.error("Failed to delete file:", err);
+      });
     }
 
-    const workbook = xlsx.readFile(req.file.path, { cellDates: true });
+    if (!normalizedRecords.length) {
+      return next(new ApiError("No doctor records provided", 400));
+    }
 
-    // Get first sheet
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-
-    // Convert to JSON
-    const rawData = xlsx.utils.sheet_to_json(sheet);
-
-    // Optional: normalize keys
-    const data = rawData.map((row) => ({
-      nameAR: row["Name (Arabic)"],
-      nameEN: row["Name (English)"],
-      email: row["Email"],
-      phone: row["Phone"],
-      grade: row["Grade"],
-      avgPatientsPerDay: row["Avg Patients per Day"],
-      specialty: row["Specialty"],
-      licenseNumber: row["License Number"],
-      subRegion: row["Sub Region"],
-      accountName: row["Account Name"],
-      area: row["Area"],
-    }));
-
-    const doctor = await prisma.doctor.createMany({
-      data,
-    });
-
-    // Optional: delete the uploaded file after processing
-    await fs.unlink(req.file.path).catch((err) => {
-      console.error("Failed to delete file:", err);
+    const created = await prisma.doctor.createMany({
+      data: normalizedRecords.map((record) => ({
+        nameAR: record.nameAR ?? null,
+        nameEN: record.nameEN ?? null,
+        email: record.email ?? null,
+        phone: record.phone ?? null,
+        grade: record.grade ?? null,
+        avgPatientsPerDay: Number(record.avgPatientsPerDay ?? 0) || null,
+        specialty: record.specialty ?? null,
+        LicenseNumber: record.LicenseNumber ?? record.licenseNumber ?? null,
+        subRegion: record.subRegion ?? null,
+        accountName: record.accountName ?? null,
+        area: record.area ?? null,
+        latitude: record.latitude ?? null,
+        longitude: record.longitude ?? null,
+      })),
     });
 
     res.status(201).json({
       status: "success",
-      message: "Data created successfully",
-      data: doctor,
+      total: normalizedRecords.length,
+      imported: created.count,
+      skipped: Math.max(normalizedRecords.length - created.count, 0),
+      failed: 0,
+      errors: [],
     });
   } catch (error) {
     console.error(error);

@@ -68,7 +68,7 @@ const addAppraisal = async (req, res, next) => {
     });
 
     res.status(201).json({
-      success: true,
+      status: "success",
       message: "Appraisal added successfully",
       data: appraisal,
     });
@@ -77,6 +77,7 @@ const addAppraisal = async (req, res, next) => {
     next(new ApiError("Failed to add appraisal", 500));
   }
 };
+
 const getAppraisals = async (req, res, next) => {
   try {
     const apiFeatures = new ApiFeatures(req.query);
@@ -112,7 +113,7 @@ const getAppraisals = async (req, res, next) => {
     const paginationData = paginationResults(pagination, totalDocuments);
 
     res.status(200).json({
-      success: true,
+      status: "success",
       results: totalDocuments,
       pagination: paginationData,
       data: appraisals,
@@ -123,4 +124,66 @@ const getAppraisals = async (req, res, next) => {
   }
 };
 
-export { addAppraisal, getAppraisals };
+const getRepAppraisals = async (req, res, next) => {
+  try {
+    const appraisals = await prisma.appraisal.findMany({
+      where: { repId: req.user.id },
+      include: {
+        rep: {
+          select: { id: true, name: true, email: true },
+        },
+        manager: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: appraisals.length,
+      data: appraisals,
+    });
+  } catch (error) {
+    next(new ApiError("Failed to fetch rep appraisals", 500));
+  }
+};
+
+const acknowledgeAppraisal = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { accept, comment } = req.body || {};
+
+    const appraisal = await prisma.appraisal.findUnique({ where: { id } });
+    if (!appraisal) {
+      return next(new ApiError("Appraisal not found", 404));
+    }
+
+    if (appraisal.repId !== req.user.id) {
+      return next(new ApiError("You are not allowed to update this appraisal", 403));
+    }
+
+    const updatedAppraisal = await prisma.appraisal.update({
+      where: { id },
+      data: {
+        acknowledged: Boolean(accept),
+        acknowledgedAt: accept ? new Date() : null,
+        acknowledgementComment: comment ?? null,
+      },
+      include: {
+        rep: { select: { id: true, name: true, email: true } },
+        manager: { select: { id: true, name: true, email: true } },
+      },
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Appraisal acknowledgement updated successfully",
+      data: updatedAppraisal,
+    });
+  } catch (error) {
+    next(new ApiError("Failed to update appraisal acknowledgement", 500));
+  }
+};
+
+export { addAppraisal, getAppraisals, getRepAppraisals, acknowledgeAppraisal };

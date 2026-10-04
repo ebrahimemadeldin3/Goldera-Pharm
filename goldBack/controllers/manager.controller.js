@@ -23,27 +23,32 @@ const createUser = async (req, res, next) => {
     passportNumber,
   } = req.body;
 
+  if (!name || !email || !password) {
+    return next(new ApiError("Name, email, and password are required", 400));
+  }
+
+  const normalizedEmail = String(email).trim().toLowerCase();
+  const normalizedRole = String(role).toUpperCase();
+
   // find the user by email
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: { email: normalizedEmail },
   });
   if (user) {
-    return next(new ApiError(`User with email: ${email} already exists`, 400));
+    return next(
+      new ApiError(`User with email: ${normalizedEmail} already exists`, 400),
+    );
   }
 
   // validate role
-  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(role);
+  const isRoleValid = ["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(
+    normalizedRole,
+  );
   if (!isRoleValid) {
     return next(new ApiError("Invalid role", 400));
   }
 
-  // validate supervisorId
-  // if (role === "MEDICAL_REP" && !supervisorId) {
-  //   return next(new ApiError("Supervisor ID is required", 400));
-  // }
-
-  // validate that supervisorId is not provided for supervisors
-  if (["MANAGER", "SUPERVISOR"].includes(role) && supervisorId) {
+  if (["MANAGER", "SUPERVISOR"].includes(normalizedRole) && supervisorId) {
     return next(
       new ApiError(
         "Supervisor ID is not allowed for supervisors and managers",
@@ -52,13 +57,13 @@ const createUser = async (req, res, next) => {
     );
   }
 
-  if (role === "SUPERVISOR") {
+  if (normalizedRole === "SUPERVISOR") {
     regionIds = Array.isArray(regionIds) ? regionIds : [regionIds];
   } else {
     regionIds = undefined;
   }
 
-  if (role === "MEDICAL_REP") {
+  if (normalizedRole === "MEDICAL_REP") {
     subRegionId = Array.isArray(subRegionId) ? subRegionId[0] : subRegionId;
   } else {
     subRegionId = undefined;
@@ -67,7 +72,7 @@ const createUser = async (req, res, next) => {
   let resumeFiles = [];
   let certificatesFiles = [];
 
-  if (req.files.length > 0) {
+  if (req.files && req.files.length > 0) {
     resumeFiles = await validateAndDetectFiles(req.files?.resume);
     certificatesFiles = await validateAndDetectFiles(req.files?.certificates);
   }
@@ -79,7 +84,6 @@ const createUser = async (req, res, next) => {
     if (resumeFiles.length > 0) {
       const resumeFile = resumeFiles[0];
 
-      // upload resume
       const result = await uploadDocumentToCloudinary(resumeFile.buffer, {
         public_id: `file_${resumeFile.originalname}_${Date.now()}`,
         folder: `folder-files/resumes`,
@@ -92,7 +96,6 @@ const createUser = async (req, res, next) => {
     }
 
     if (certificatesFiles.length > 0) {
-      // upload certificates
       for (const file of certificatesFiles) {
         const result2 = await uploadDocumentToCloudinary(file.buffer, {
           public_id: `file_${file.originalname}_${Date.now()}`,
@@ -109,53 +112,71 @@ const createUser = async (req, res, next) => {
     console.error("Error uploading files to Cloudinary:", error);
   }
 
-  // hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // create new user
-  const newUser = await prisma.user.createMany({
+  const newUser = await prisma.user.create({
     data: {
-      name,
-      email,
+      name: String(name).trim(),
+      email: normalizedEmail,
       password: hashedPassword,
       phone,
-      role,
-
+      role: normalizedRole,
       managerId: req.user?.id,
       supervisorId: supervisorId || null,
-
       dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
       dateOfRecruitment: dateOfRecruitment ? new Date(dateOfRecruitment) : null,
-
       educationBackground,
       iqamaNumber,
       passportNumber,
-
-      regions: regionIds?.length
-        ? {
-            connect: regionIds.map((id) => ({ id })),
-          }
-        : undefined,
-
-      subRegion: {
-        connect: subRegionId,
-      },
-
-      resume,
-      certificates: certificates?.length ? { set: certificates } : [],
+      ...(regionIds?.length
+        ? { regions: { connect: regionIds.map((id) => ({ id })) } }
+        : {}),
+      ...(subRegionId ? { subRegion: { connect: { id: subRegionId } } } : {}),
+      ...(Object.keys(resume).length ? { resume } : {}),
+      ...(certificates.length ? { certificates: { set: certificates } } : {}),
     },
   });
+
+  const { password: _password, ...safeUser } = newUser;
 
   res.status(201).json({
     status: "success",
     message: "User created successfully",
-    data: newUser,
+    data: safeUser,
   });
 };
 
 // Get all users
 const getAllUsers = async (req, res, next) => {
   try {
+    if (req.query?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: req.query.id },
+        include: {
+          supervisor: { select: { id: true, name: true } },
+          manager: { select: { id: true, name: true } },
+          subRegion: {
+            select: {
+              id: true,
+              name: true,
+              region: { select: { id: true, name: true } },
+            },
+          },
+          appraisalsForRep: { select: { id: true } },
+        },
+      });
+
+      if (!user) {
+        return next(new ApiError("User not found", 404));
+      }
+
+      return res.status(200).json({
+        status: "success",
+        message: "User fetched successfully",
+        data: [user],
+      });
+    }
+
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = { ...queryObj.where };
@@ -226,7 +247,11 @@ const getAllUsers = async (req, res, next) => {
 // Get user details
 const getUserDetails = async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const id = req.params?.id || req.query?.id;
+
+    if (!id) {
+      return next(new ApiError("User ID is required", 400));
+    }
 
     // 1. Fetch User with all necessary relations in one go
     const user = await prisma.user.findUnique({
@@ -455,6 +480,7 @@ const getTeamRequests = async (req, res, next) => {
       where: whereClause,
       include: {
         user: { select: { id: true, name: true } },
+        doctors: true,
       },
       orderBy: queryObj?.orderBy || { createdAt: "desc" },
       take: queryObj?.take,

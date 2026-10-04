@@ -20,6 +20,12 @@ export interface VisitReportApiResponse {
       nameAR: string;
       nameEN: string;
     };
+    createdBy?: {
+      id: string;
+      name: string;
+      email?: string;
+      role?: string;
+    };
   };
 }
 
@@ -32,6 +38,10 @@ export type VisitReportsResponse = PaginatedApiResponse<
 export interface VisitReport {
   id: string;
   visitId: string;
+  doctorNameAR?: string;
+  doctorNameEN?: string;
+  representativeName?: string;
+  representativeId?: string;
   visitDate: string;
   duration: string;
   rating: string;

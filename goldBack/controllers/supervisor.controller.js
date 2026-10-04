@@ -87,6 +87,7 @@ const getTeamRequests = async (req, res, next) => {
       where: whereClause,
       include: {
         user: { select: { id: true, name: true } },
+        doctors: true,
       },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take,

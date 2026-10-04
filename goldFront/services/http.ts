@@ -35,7 +35,12 @@ export async function apiFetch<T>(
     let error: ApiError;
 
     try {
-      error = await res.json();
+      const data = await res.json();
+      error = {
+        statusCode: data.statusCode || data.err?.statusCode || res.status,
+        code: data.code || data.status || "API_ERROR",
+        message: data.message || "Something went wrong",
+      };
     } catch {
       error = {
         statusCode: res.status,

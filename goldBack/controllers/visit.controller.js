@@ -3,25 +3,58 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 
 // Visits and Visit Reports Controllers
-const scheduleVisit = async (req, res) => {
-  const { samples, date, time, doctorId, notes } = req.body;
-  const userId = req.user.id;
-
-  const data = await prisma.visit.create({
-    data: {
+const scheduleVisit = async (req, res, next) => {
+  try {
+    const {
       samples,
-      date: new Date(date),
+      date,
       time,
       doctorId,
       notes,
-      userId,
-    },
-  });
-  res.status(201).json({
-    status: "success",
-    message: "Data created successfully",
-    data: data,
-  });
+      visitType,
+      medicalRepId,
+      supervisorId,
+    } = req.body;
+
+    const targetUserId =
+      req.user.role === "MANAGER" && medicalRepId ? medicalRepId : req.user.id;
+
+    if (req.user.role === "MANAGER" && medicalRepId) {
+      const rep = await prisma.user.findUnique({
+        where: { id: medicalRepId },
+        select: { id: true, managerId: true, supervisorId: true },
+      });
+
+      if (!rep || rep.managerId !== req.user.id) {
+        return next(new ApiError("Selected rep is not under your management", 400));
+      }
+
+      if (supervisorId && rep.supervisorId !== supervisorId) {
+        return next(new ApiError("Selected supervisor does not match the rep", 400));
+      }
+    }
+
+    const data = await prisma.visit.create({
+      data: {
+        samples: Array.isArray(samples) ? samples : [],
+        date: new Date(date),
+        time,
+        doctorId,
+        notes,
+        userId: targetUserId,
+        visitType: visitType ? String(visitType).toUpperCase() : "ROUTINE",
+      },
+    });
+
+    res.status(201).json({
+      status: "success",
+      message: "Data created successfully",
+      data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(new ApiError("Failed to schedule visit", 500));
+  }
 };
 
 const getVisits = async (req, res, next) => {
@@ -210,40 +243,96 @@ const getAllVisits = async (req, res, next) => {
   }
 };
 
-const addVisitReports = async (req, res) => {
-  const {
-    visitId,
-    duration,
-    rating,
-    doctorFeedback,
-    visitPurpose,
-    notes,
-    samplesProvided,
-  } = req.body;
-
-  const data = await prisma.visitReport.create({
-    data: {
+const addVisitReports = async (req, res, next) => {
+  try {
+    const {
       visitId,
-      userId: req.user.id,
       duration,
       rating,
       doctorFeedback,
       visitPurpose,
       notes,
       samplesProvided,
-    },
-  });
+      discussedTopics,
+    } = req.body;
 
-  await prisma.visit.update({
-    where: { id: visitId },
-    data: { status: "COMPLETED" },
-  });
+    if (!visitId) {
+      return next(new ApiError("visitId is required", 400));
+    }
 
-  res.status(200).json({
-    status: "success",
-    message: "Data created successfully",
-    data: data,
-  });
+    const visit = await prisma.visit.findUnique({
+      where: { id: visitId },
+      include: { reports: true },
+    });
+
+    if (!visit) {
+      return next(new ApiError("Visit not found", 404));
+    }
+
+    // Reps can only report on their own visits
+    if (req.user.role === "MEDICAL_REP" && visit.userId !== req.user.id) {
+      return next(
+        new ApiError(
+          "Unauthorized: You can only submit reports for your own visits",
+          403,
+        ),
+      );
+    }
+
+    // Do not allow reporting on cancelled visits
+    if (visit.status === "CANCELLED") {
+      return next(
+        new ApiError("Cannot submit report for a cancelled visit", 400),
+      );
+    }
+
+    // Idempotency / duplicate check
+    if (
+      visit.status === "COMPLETED" ||
+      (visit.reports && visit.reports.length > 0)
+    ) {
+      return next(
+        new ApiError(
+          "A report has already been submitted for this visit",
+          400,
+        ),
+      );
+    }
+
+    // Atomic transaction for report creation + visit status update
+    const [report] = await prisma.$transaction([
+      prisma.visitReport.create({
+        data: {
+          visitId,
+          userId: req.user.id,
+          duration: duration ? String(duration) : null,
+          rating: typeof rating === "number" ? rating : Number(rating) || null,
+          doctorFeedback: doctorFeedback || null,
+          visitPurpose: visitPurpose || null,
+          notes: notes || null,
+          samplesProvided: Array.isArray(samplesProvided)
+            ? samplesProvided
+            : [],
+          discussedTopics: Array.isArray(discussedTopics)
+            ? discussedTopics
+            : [],
+        },
+      }),
+      prisma.visit.update({
+        where: { id: visitId },
+        data: { status: "COMPLETED" },
+      }),
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      message: "Data created successfully",
+      data: report,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 };
 
 const getMyVisitReports = async (req, res, next) => {
@@ -332,12 +421,23 @@ const getMyVisitReports = async (req, res, next) => {
   }
 };
 
-const getAllVisitReports = async (req, res) => {
+const getAllVisitReports = async (req, res, next) => {
   try {
     let { paginate } = req.query;
 
+    const baseWhere = {};
+    if (req.user.role === "SUPERVISOR") {
+      const supervisedReps = await prisma.user.findMany({
+        where: { supervisorId: req.user.id },
+        select: { id: true },
+      });
+      const repIds = supervisedReps.map((r) => r.id);
+      baseWhere.userId = { in: repIds };
+    }
+
     if (paginate === "false") {
       const data = await prisma.visitReport.findMany({
+        where: baseWhere,
         include: {
           visit: {
             select: {
@@ -371,6 +471,7 @@ const getAllVisitReports = async (req, res) => {
     const apiFeatures = new ApiFeatures(req.query);
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = {
+      ...baseWhere,
       ...queryObj.where,
     };
 
@@ -426,18 +527,63 @@ const getAllVisitReports = async (req, res) => {
 };
 
 const updateVisit = async (req, res, next) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
-  const data = await prisma.visit.update({
-    where: { id },
-    data: req.body,
-  });
+    const visit = await prisma.visit.findUnique({
+      where: { id },
+    });
 
-  res.status(200).json({
-    status: "success",
-    message: "Data updated successfully",
-    data: data,
-  });
+    if (!visit) {
+      return next(new ApiError("Visit not found", 404));
+    }
+
+    // Authorization check
+    if (req.user.role === "MEDICAL_REP" && visit.userId !== req.user.id) {
+      return next(
+        new ApiError("Unauthorized: You can only update your own visits", 403),
+      );
+    }
+
+    // Allowed fields for update - do NOT allow changing userId, doctorId, or id
+    const allowedFields = [
+      "date",
+      "place",
+      "facility",
+      "visitType",
+      "timeLabel",
+      "notes",
+      "status",
+    ];
+    const updateData = {};
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        updateData[key] = req.body[key];
+      }
+    }
+
+    // Legal status transitions check
+    if (updateData.status) {
+      const validStatuses = ["SCHEDULED", "COMPLETED", "CANCELLED"];
+      if (!validStatuses.includes(updateData.status)) {
+        return next(new ApiError("Invalid visit status", 400));
+      }
+    }
+
+    const data = await prisma.visit.update({
+      where: { id },
+      data: updateData,
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Data updated successfully",
+      data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 };
 
 export {

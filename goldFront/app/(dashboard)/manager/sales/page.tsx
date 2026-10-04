@@ -11,7 +11,7 @@ import { getManagerTeamAction } from "@/features/team/api";
 import { PageContainer } from "@/components/layout/page-container";
 
 type PageProps = {
-  searchParams: {
+  searchParams: Promise<{
     repId?: string;
     date?: string;
     dateFrom?: string;
@@ -21,7 +21,7 @@ type PageProps = {
     q?: string;
     page?: string;
     limit?: string;
-  };
+  }>;
 };
 
 export const dynamic = "force-dynamic";

@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 const REQUESTS_DIRECTORY_FETCH_LIMIT = 1000;
 
 type PageProps = {
-  searchParams?: { page?: string; limit?: string };
+  searchParams?: Promise<{ page?: string; limit?: string }>;
 };
 
 async function loadRepRequestsDirectory() {

@@ -1,0 +1,160 @@
+.next-audit-build/dev/types/app/(dashboard)/manager/reports/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/appraisal/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/coaching/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/doctors/[id]/page.ts(36,29): error TS2344: Type '{ params: { id: string; }; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/doctors/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/forecast/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/pharmacies/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/plan/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/products/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/reports/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/requests/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/sales/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/manager/sales/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ repId?: string | undefined; date?: string | undefined; dateFrom?: string | undefined; dateTo?: string | undefined; sheetName?: string | undefined; timeFilter?: string | undefined; q?: string | undefined; page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/team/[id]/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/manager/team/[id]/page").PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/manager/team/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/manager/team/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; openDialog?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; openDialog?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/appraisal/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/coaching/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/doctors/[id]/page.ts(36,29): error TS2344: Type '{ params: { id: string; }; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/doctors/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/forecast/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/pharmacies/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/plan/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/products/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/reports/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/requests/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/rep/requests/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/sales/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/rep/sales/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ date?: string | undefined; dateFrom?: string | undefined; dateTo?: string | undefined; sheetName?: string | undefined; timeFilter?: string | undefined; q?: string | undefined; page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/rep/visits/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ date?: string | undefined; visitDate?: string | undefined; }> | { date?: string | undefined; visitDate?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ date?: string | undefined; visitDate?: string | undefined; }> | { date?: string | undefined; visitDate?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ date?: string | undefined; visitDate?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/coaching/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/doctors/[id]/page.ts(36,29): error TS2344: Type '{ params: { id: string; }; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/doctors/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; subRegion?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/forecast/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/pharmacies/page.ts(36,29): error TS2344: Type '{ searchParams?: Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type 'Promise<{ page?: string | undefined; limit?: string | undefined; }> | { page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/plan/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/products/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/reports/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/requests/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/sales/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/supervisor/sales/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ repId?: string | undefined; date?: string | undefined; dateFrom?: string | undefined; dateTo?: string | undefined; sheetName?: string | undefined; timeFilter?: string | undefined; q?: string | undefined; page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/team/[id]/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next-audit-build/types/app/(dashboard)/supervisor/team/[id]/page").PageProps'.
+  Types of property 'params' are incompatible.
+    Type '{ id: string; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/team/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next-audit-build/types/app/(dashboard)/supervisor/visits/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/dev/types/app/(dashboard)/manager/reports/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/dev/types/app/(dashboard)/manager/requests/page.ts(36,29): error TS2344: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+.next/dev/types/app/(dashboard)/rep/requests/page.ts(36,29): error TS2344: Type 'PageProps' does not satisfy the constraint 'import("/private/tmp/goldera-audit-frontend/.next/dev/types/app/(dashboard)/rep/requests/page").PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]

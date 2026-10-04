@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { page?: string; limit?: string };
+  searchParams?: Promise<{ page?: string; limit?: string }>;
 }) {
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
-  const limit = searchParams?.limit ? Number(searchParams.limit) : 10;
+  const params = await searchParams;
+  const page = params?.page ? Number(params.page) : 1;
+  const limit = params?.limit ? Number(params.limit) : 10;
 
   const result = await getProductsAction(page, limit);
 

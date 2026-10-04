@@ -43,6 +43,7 @@ import {
   Edit3,
   Trash2,
   Paperclip,
+  Plus,
   X,
   Stethoscope,
 } from "lucide-react";
@@ -122,7 +123,7 @@ export default function CreateRequestWizard({
     Array<{ productId: string; productName: string; amount: number }>
   >([]);
   const [selectedDoctorIds, setSelectedDoctorIds] = useState<string[]>([]);
-  const [expenseItems] = useState<
+  const [expenseItems, setExpenseItems] = useState<
     Array<{ name: string; amount: number }>
   >([{ name: "Travel / Per Diem", amount: 100 }]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -735,6 +736,7 @@ export default function CreateRequestWizard({
                           <FormControl>
                             <Input
                               type="number"
+                              min={1}
                               {...field}
                               onChange={(e) => field.onChange(Number(e.target.value))}
                               className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white"
@@ -744,6 +746,92 @@ export default function CreateRequestWizard({
                         </FormItem>
                       )}
                     />
+                  </div>
+
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#182033]">
+                        Expense Breakdown *
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpenseItems([
+                            ...expenseItems,
+                            { name: "", amount: 0 },
+                          ]);
+                          setExpenseItemError("");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#168557] hover:underline"
+                      >
+                        <Plus className="size-3.5" />
+                        <span>Add Item</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {expenseItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 rounded-lg border border-[#E5E8EF] bg-white p-2.5"
+                        >
+                          <Input
+                            placeholder="Expense description (e.g. Hotel, Taxi)"
+                            value={item.name}
+                            onChange={(e) => {
+                              const updated = [...expenseItems];
+                              updated[idx].name = e.target.value;
+                              setExpenseItems(updated);
+                            }}
+                            className="h-9 flex-1 text-xs"
+                          />
+                          <div className="flex items-center gap-1.5 w-32 shrink-0">
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Amount"
+                              value={item.amount || ""}
+                              onChange={(e) => {
+                                const updated = [...expenseItems];
+                                updated[idx].amount = Number(e.target.value) || 0;
+                                setExpenseItems(updated);
+                              }}
+                              className="h-9 text-xs"
+                            />
+                            <span className="text-[11px] font-medium text-[#667085]">
+                              EGP
+                            </span>
+                          </div>
+                          {expenseItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExpenseItems(
+                                  expenseItems.filter((_, i) => i !== idx),
+                                );
+                              }}
+                              className="p-1 text-[#98A2B3] hover:text-[#D92D20]"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <span className="text-xs font-bold text-[#182033]">
+                        Total:{" "}
+                        <span className="text-[#168557]">
+                          {expenseItems.reduce(
+                            (s, i) => s + (i.amount || 0),
+                            0,
+                          )}{" "}
+                          EGP
+                        </span>
+                      </span>
+                    </div>
                   </div>
 
                   {expenseItemError && (

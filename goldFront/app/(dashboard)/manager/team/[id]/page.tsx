@@ -4,9 +4,9 @@ import ProfileClient from "@/features/team/components/profile/ProfileClient";
 import { MemberProfileError } from "@/features/team/components/profile/MemberProfileStates";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 export default async function Page({ params }: PageProps) {

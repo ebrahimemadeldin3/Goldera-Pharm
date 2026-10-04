@@ -1,5 +1,6 @@
 import SalesHeader from "@/features/sales/components/SalesHeader";
 import SalesTable from "@/features/sales/components/SalesTable";
+import { SalesErrorState } from "@/features/sales/components/SalesErrorState";
 import { getRepSalesAction } from "@/features/sales/api";
 import {
   extractSales,
@@ -9,7 +10,7 @@ import {
 import { PageContainer } from "@/components/layout/page-container";
 
 type PageProps = {
-  searchParams: {
+  searchParams: Promise<{
     date?: string;
     dateFrom?: string;
     dateTo?: string;
@@ -18,7 +19,7 @@ type PageProps = {
     q?: string;
     page?: string;
     limit?: string;
-  };
+  }>;
 };
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,12 @@ export default async function Page({ searchParams }: PageProps) {
   });
 
   if (!result.success) {
-    throw new Error(result.error?.message || "Failed to fetch sales");
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
+        <SalesHeader sales={[]} />
+        <SalesErrorState message={result.error?.message} />
+      </PageContainer>
+    );
   }
 
   let sales = extractSales(result.data);
@@ -56,8 +62,11 @@ export default async function Page({ searchParams }: PageProps) {
     });
 
     if (!allSalesResult.success) {
-      throw new Error(
-        allSalesResult.error?.message || "Failed to fetch all sales",
+      return (
+        <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
+          <SalesHeader sales={[]} />
+          <SalesErrorState message={allSalesResult.error?.message} />
+        </PageContainer>
       );
     }
 

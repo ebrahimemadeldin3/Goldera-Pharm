@@ -23,6 +23,9 @@ export function buildCreateRequestPayload(
   }
 
   if (payload.type === "SAMPLE") {
+    payload.doctorIds = (data.doctorIds ?? []).filter(
+      (doctorId): doctorId is string => Boolean(doctorId),
+    );
     payload.sampleData = (data.sampleData ?? []).map((item) => ({
       productId: item.productId,
       productName: item.productName,

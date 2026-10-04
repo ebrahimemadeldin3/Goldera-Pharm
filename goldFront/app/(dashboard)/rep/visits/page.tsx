@@ -12,9 +12,7 @@ export const dynamic = "force-dynamic";
 export default async function RepVisitsPage({
   searchParams,
 }: {
-  searchParams?:
-    | Promise<{ date?: string; visitDate?: string }>
-    | { date?: string; visitDate?: string };
+  searchParams?: Promise<{ date?: string; visitDate?: string }>;
 }) {
   const params = await searchParams;
   const plannerDateKey = params?.date || params?.visitDate || "today";

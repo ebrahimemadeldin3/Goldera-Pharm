@@ -6,6 +6,7 @@ A backend REST API for managing pharmaceutical sales representatives, built with
 
 ## 📋 Table of Contents
 
+- [Frontend Integration Guide](FRONTEND_INTEGRATION_GUIDE.md)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)

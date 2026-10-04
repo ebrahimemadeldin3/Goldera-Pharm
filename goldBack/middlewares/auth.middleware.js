@@ -41,11 +41,16 @@ const guard = async (req, res, next) => {
         dateOfBirth: true,
         dateOfRecruitment: true,
         lastLogin: true,
+        isActive: true,
       },
     });
 
     if (!loggedUser) {
       return next(new ApiError("User not found", 404));
+    }
+
+    if (loggedUser.isActive === false) {
+      return next(new ApiError("Account is deactivated", 403));
     }
 
     // 5) Attach the user to the request object for future middleware or routes

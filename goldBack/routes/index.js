@@ -16,7 +16,7 @@ import productRoutes from "./product.route.js";
 import pharmacyRoutes from "./pharmacy.route.js";
 import saleRoutes from "./sale.route.js";
 import dashboardRoutes from "./dashboard.route.js";
-// import accountRoutes from "./account.route.js";
+import accountRoutes from "./account.route.js";
 
 export default (app) => {
   app.use("/api/auth", authRoutes);
@@ -37,5 +37,5 @@ export default (app) => {
   app.use("/api/pharmacies", pharmacyRoutes);
   app.use("/api/sales", saleRoutes);
   app.use("/api/dashboard", dashboardRoutes);
-  // app.use("/api/accounts", accountRoutes);
+  app.use("/api/accounts", accountRoutes);
 };
