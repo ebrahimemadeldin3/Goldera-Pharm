@@ -19,7 +19,7 @@ export const pharmacyImportConfig: BulkImportConfig<
   entity: "pharmacy",
   title: "Import Pharmacies",
   description:
-    "Upload an Excel file, validate pharmacy accounts against the territory hierarchy, then prepare the bulk import batch.",
+    "Upload an Excel file, validate pharmacy accounts against the territory hierarchy, then import the selected records.",
   templateFileName: "golderapharm-pharmacies-import-template.csv",
   columns: [
     {

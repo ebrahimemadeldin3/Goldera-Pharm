@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  useTransition,
-  type ReactNode,
-} from "react";
+import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,12 +26,9 @@ import {
   createProductSchema,
   type CreateProductFormValues,
 } from "../lib/schemas";
-import { createProductAction } from "../api";
+import { createProductAction, updateProductAction } from "../api";
 import type { ProductApiResponse } from "../lib/types";
 import { toast } from "@/lib/utils/toast";
-
-const BACKEND_REQUIRED_MESSAGE =
-  "Requires backend change — excluded from current frontend-only scope.";
 
 type AddProductDialogProps = {
   product?: ProductApiResponse | null;
@@ -110,23 +102,21 @@ export function AddProductDialog({
     };
 
     startTransition(async () => {
-      if (product) {
-        toast.error({
-          title: "Product update unavailable",
-          description: BACKEND_REQUIRED_MESSAGE,
-        });
-        return;
-      }
-
-      const result = await createProductAction(productPayload);
+      const result = product
+        ? await updateProductAction(product.id, productPayload)
+        : await createProductAction(productPayload);
       if (result.success) {
-        toast.success({ title: "Product added successfully" });
+        toast.success({
+          title: product
+            ? "Product updated successfully"
+            : "Product added successfully",
+        });
         closeAfterSubmit();
         form.reset();
         router.refresh();
       } else {
         toast.error({
-          title: "Couldn't add product",
+          title: product ? "Couldn't update product" : "Couldn't add product",
           description: result.error?.message || "Please try again.",
         });
       }
@@ -151,8 +141,8 @@ export function AddProductDialog({
       eyebrow={isEditMode ? "Catalog Update" : "New Product"}
       description={
         isEditMode
-          ? "Product editing is unavailable until the backend supports updates."
-          : "Add catalog details. Product image upload is unavailable until the backend supports it."
+          ? "Update the product name, internal reference and sales price."
+          : "Add a product name, internal reference and sales price."
       }
       icon={<Package className="size-5" aria-hidden="true" />}
       width="md"
@@ -167,15 +157,6 @@ export function AddProductDialog({
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="bg-gp-surface-page min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-            <section className="gp-form-section border-gp-border-subtle rounded-[14px] border bg-white p-4">
-              <p className="text-sm font-semibold text-[#182033]">
-                Product Image
-              </p>
-              <p className="mt-1 text-xs leading-5 text-[#667085]">
-                {BACKEND_REQUIRED_MESSAGE}
-              </p>
-            </section>
-
             <FormField
               control={form.control}
               name="name"
@@ -279,7 +260,7 @@ export function AddProductDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isPending || isEditMode}
+                disabled={isPending}
                 className="gp-primary-action h-11 rounded-[10px] bg-[#101D36] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-all duration-[180ms] hover:-translate-y-px hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] disabled:translate-y-0"
               >
                 {isPending ? (

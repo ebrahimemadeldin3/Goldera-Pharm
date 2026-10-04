@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { userScope } from "../utils/validation.js";
 
 // Get Reps Dashboard
 const getRepsDashboard = async (req, res, next) => {
@@ -25,7 +26,7 @@ const getRepsDashboard = async (req, res, next) => {
 
     if (!rep) return res.status(404).json({ message: "Rep not found" });
 
-    const userSubRegion = rep.subRegion?.name;
+    const userSubRegion = rep.subRegion?.name || "__NO_ASSIGNED_TERRITORY__";
 
     // 2. Run EVERYTHING in parallel, including the optimized Sales query
     const [
@@ -78,6 +79,7 @@ const getRepsDashboard = async (req, res, next) => {
       _sum: { untaxedTotal: true },
       where: {
         customer: { in: namesArray },
+        orderDate: { gte: startOfMonth, lt: endOfMonth },
       },
     });
 
@@ -130,6 +132,24 @@ const getManagersDashboard = async (req, res, next) => {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const teamScope = userScope(req.user);
+    let salesScope = {};
+    if (req.user.role === "SUPERVISOR") {
+      const team = await prisma.user.findMany({
+        where: teamScope,
+        include: { subRegion: true },
+      });
+      const territories = team
+        .map((member) => member.subRegion?.name)
+        .filter(Boolean);
+      const pharmacies = await prisma.pharmacy.findMany({
+        where: { subRegion: { in: territories } },
+        select: { name: true },
+      });
+      salesScope = {
+        customer: { in: pharmacies.map((pharmacy) => pharmacy.name) },
+      };
+    }
 
     // Run independent queries in parallel
     const [
@@ -143,10 +163,14 @@ const getManagersDashboard = async (req, res, next) => {
       plans,
     ] = await Promise.all([
       // Total untaxed sales (Directly from DB)
-      prisma.sales.aggregate({ _sum: { untaxedTotal: true } }),
+      prisma.sales.aggregate({
+        where: salesScope,
+        _sum: { untaxedTotal: true },
+      }),
 
       // Product performance (Total qty sold per product)
       prisma.sales.groupBy({
+        where: salesScope,
         by: ["productId"],
         _sum: { qtyOrdered: true, untaxedTotal: true },
       }),
@@ -161,17 +185,25 @@ const getManagersDashboard = async (req, res, next) => {
 
       // Customer Mapping
       prisma.sales.groupBy({
+        where: salesScope,
         by: ["customer"],
         _sum: { untaxedTotal: true },
       }),
 
       // Requests (Limit this if you don't need literally every single one)
-      prisma.request.findMany({ orderBy: { createdAt: "desc" }, take: 50 }),
-      prisma.request.count({ where: { status: "PENDING" } }),
+      prisma.request.findMany({
+        where: { user: teamScope },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+      }),
+      prisma.request.count({ where: { status: "PENDING", user: teamScope } }),
 
       // Monthly Plans
       prisma.plan.findMany({
-        where: { startDate: { gte: startOfMonth, lte: endOfMonth } },
+        where: {
+          createdBy: teamScope,
+          startDate: { gte: startOfMonth, lte: endOfMonth },
+        },
       }),
     ]);
 
@@ -188,7 +220,8 @@ const getManagersDashboard = async (req, res, next) => {
     // 2. Format Product Performance
     const productPerformance = Object.fromEntries(
       productSales.map((p) => [
-        productNames.find((n) => n.id === p.productId).name,
+        productNames.find((n) => n.id === p.productId)?.name ||
+          "Unknown product",
         p._sum.untaxedTotal,
       ]),
     );

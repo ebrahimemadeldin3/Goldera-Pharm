@@ -1,19 +1,35 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { date, number, userScope, canManageUser } from "../utils/validation.js";
 
 const createForecast = async (req, res, next) => {
   const { periodType, periodDate, productForecasts, notes, status } = req.body;
 
   try {
+    if (status && !["DRAFT", "PENDING"].includes(String(status).toUpperCase()))
+      return next(
+        new ApiError("Forecasts must be submitted for approval", 400),
+      );
+    if (!Array.isArray(productForecasts) || !productForecasts.length)
+      return next(new ApiError("Add at least one product forecast", 400));
+    for (const item of productForecasts)
+      number(item.productUnits ?? item.quantity, "Forecast units", {
+        min: 1,
+        integer: true,
+      });
     const forecast = await prisma.forecast.create({
       data: {
         periodType,
-        periodDate: new Date(periodDate),
-        productForecasts,
+        periodDate: date(periodDate, "Forecast period"),
+        productForecasts: productForecasts.map((item) => ({
+          ...item,
+          productUnits: Number(item.productUnits ?? item.quantity),
+          doctorName: item.doctorName || "Unassigned doctor",
+        })),
         notes,
         status: status ? String(status).toUpperCase() : "DRAFT",
-        isApproved: status === "APPROVED",
+        isApproved: false,
         repId: req.user.id,
       },
     });
@@ -25,13 +41,13 @@ const createForecast = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return next(new ApiError(`Create Forecast Error: ${err}`));
+    return next(err);
   }
 };
 
 const getForecasts = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "forecast");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -60,7 +76,7 @@ const getForecasts = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return next(new ApiError(`Get Forecasts Error: ${err}`));
+    return next(err);
   }
 };
 
@@ -68,7 +84,7 @@ const getForecastById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const forecast = await prisma.forecast.findUnique({
-      where: { id },
+      where: { id, rep: userScope(req.user) },
       include: { rep: { select: { id: true, name: true, email: true } } },
     });
 
@@ -81,15 +97,15 @@ const getForecastById = async (req, res, next) => {
       data: forecast,
     });
   } catch (error) {
-    next(new ApiError("Failed to fetch forecast", 500));
+    next(error);
   }
 };
 
 const getAllForecasts = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "forecast");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    const whereClause = { ...queryObj.where };
+    const whereClause = { ...queryObj.where, rep: userScope(req.user) };
 
     const totalDocuments = await prisma.forecast.count({ where: whereClause });
 
@@ -118,16 +134,47 @@ const getAllForecasts = async (req, res, next) => {
 
 const updateForecast = async (req, res, next) => {
   const { id } = req.params;
-  const { isApproved, status, supervisorFeedback, notes, periodDate, productForecasts } = req.body;
+  const {
+    isApproved,
+    status,
+    supervisorFeedback,
+    notes,
+    periodDate,
+    productForecasts,
+  } = req.body;
   try {
+    const existing = await prisma.forecast.findUnique({
+      where: { id },
+      include: { rep: true },
+    });
+    if (!existing) return next(new ApiError("Forecast not found", 404));
+    if (
+      !canManageUser(req.user, existing.rep) ||
+      existing.repId === req.user.id
+    )
+      return next(
+        new ApiError("You can only review forecasts from your team", 403),
+      );
+    const nextStatus =
+      status !== undefined
+        ? String(status).toUpperCase()
+        : isApproved === true
+          ? "APPROVED"
+          : isApproved === false
+            ? "REJECTED"
+            : existing.status;
+    if (!["APPROVED", "REJECTED", "PENDING", "DRAFT"].includes(nextStatus))
+      return next(new ApiError("Invalid forecast status", 400));
     const forecast = await prisma.forecast.update({
       where: { id },
       data: {
-        ...(status !== undefined ? { status: String(status).toUpperCase() } : {}),
-        ...(isApproved !== undefined ? { isApproved } : {}),
+        status: nextStatus,
+        isApproved: nextStatus === "APPROVED",
         ...(supervisorFeedback !== undefined ? { supervisorFeedback } : {}),
         ...(notes !== undefined ? { notes } : {}),
-        ...(periodDate !== undefined ? { periodDate: new Date(periodDate) } : {}),
+        ...(periodDate !== undefined
+          ? { periodDate: new Date(periodDate) }
+          : {}),
         ...(productForecasts !== undefined ? { productForecasts } : {}),
       },
     });
@@ -142,4 +189,10 @@ const updateForecast = async (req, res, next) => {
   }
 };
 
-export { createForecast, getForecasts, getForecastById, updateForecast, getAllForecasts };
+export {
+  createForecast,
+  getForecasts,
+  getForecastById,
+  updateForecast,
+  getAllForecasts,
+};

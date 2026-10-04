@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, FileText, Save } from "lucide-react";
 import {
@@ -91,7 +91,7 @@ export default function ReportConfiguration() {
     console.log("Save Template", form.getValues());
   }
 
-  const fromDate = form.watch("fromDate");
+  const fromDate = useWatch({ control: form.control, name: "fromDate" });
   // const toDate = form.watch("toDate");
 
   return (

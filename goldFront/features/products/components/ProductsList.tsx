@@ -17,7 +17,6 @@ import {
   ChevronDown,
   Check,
   Leaf,
-  MoreHorizontal,
   Package,
   PackageOpen,
   Search,
@@ -28,6 +27,9 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
+import { RecordActions } from "@/components/shared/RecordActions";
+import { AddProductDialog } from "./AddProductDialog";
+import { deleteProductAction } from "../api";
 import {
   Popover,
   PopoverContent,
@@ -380,7 +382,6 @@ const FilterTriggerButton = forwardRef<
         <span className="truncate">Filters</span>
         {activeFilterCount > 0 && (
           <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-[#C9A44C]/50 bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-[#101D36]">
-
             {activeFilterCount}
           </span>
         )}
@@ -492,14 +493,12 @@ function ActiveFilterChip({
 }) {
   return (
     <span className="products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFFDF7] px-3 text-xs font-semibold text-[#182033]">
-
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
         className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[#344054] transition-[background-color,color] duration-[150ms] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
-
       >
         <X className="size-3" aria-hidden="true" />
       </button>
@@ -580,7 +579,9 @@ function ProductFilterPanel({
             <span
               className={cn(
                 "products-filter-title-icon inline-flex size-8 shrink-0 items-center justify-center rounded-[10px]",
-                isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-[#FBF7EA] text-[#B18732]"
+                isRep
+                  ? "bg-[#E9F8F1] text-[#168557]"
+                  : "bg-[#FBF7EA] text-[#B18732]",
               )}
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
@@ -605,7 +606,7 @@ function ProductFilterPanel({
                 ? isRep
                   ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349]"
                   : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033]"
-                : "cursor-not-allowed text-[#B7BFCC] opacity-70"
+                : "cursor-not-allowed text-[#B7BFCC] opacity-70",
             )}
           >
             Reset
@@ -617,7 +618,9 @@ function ProductFilterPanel({
               aria-label="Close product filters"
               className={cn(
                 "inline-flex size-8 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:outline-none",
-                isRep ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15" : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+                isRep
+                  ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+                  : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
               )}
             >
               <X className="size-4" aria-hidden="true" />
@@ -673,7 +676,7 @@ function ProductFilterPanel({
                       "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
                       isRep
                         ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
-                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]",
                     )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
@@ -698,7 +701,7 @@ function ProductFilterPanel({
                       "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
                       isRep
                         ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
-                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]",
                     )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
@@ -723,7 +726,7 @@ function ProductFilterPanel({
               }
               className={cn(
                 "products-catalog-price-slider mt-1 py-3",
-                isRep && "products-catalog-price-slider-rep"
+                isRep && "products-catalog-price-slider-rep",
               )}
             />
             <div className="flex items-center justify-between text-[11px] font-semibold text-[#98A2B3]">
@@ -736,7 +739,10 @@ function ProductFilterPanel({
         <section className="products-filter-panel-section products-filter-panel-stagger products-filter-panel-stagger-date grid gap-3">
           <div className="flex items-center gap-2">
             <CalendarDays
-              className={cn("size-4", isRep ? "text-[#168557]" : "text-[#B18732]")}
+              className={cn(
+                "size-4",
+                isRep ? "text-[#168557]" : "text-[#B18732]",
+              )}
               aria-hidden="true"
             />
             <h3 className="text-[11px] font-bold tracking-[0.1em] text-[#344054] uppercase">
@@ -762,7 +768,9 @@ function ProductFilterPanel({
           key={resultCount}
           className="products-filter-result-count products-filter-panel-stagger products-filter-panel-stagger-results text-sm font-bold text-[#182033]"
         >
-          <span className={cn(isRep ? "text-[#168557]" : "text-[#B18732]")}>{resultCount}</span>{" "}
+          <span className={cn(isRep ? "text-[#168557]" : "text-[#B18732]")}>
+            {resultCount}
+          </span>{" "}
           {resultCount === 1 ? "product" : "products"} found
         </p>
         <div className="products-filter-panel-stagger products-filter-panel-stagger-actions grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2.5">
@@ -779,7 +787,7 @@ function ProductFilterPanel({
                 ? isRep
                   ? "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#168557] hover:bg-[#F0FDF4] hover:text-[#182033]"
                   : "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#182033]"
-                : "cursor-not-allowed border-[#E5E8EF] bg-white text-[#B7BFCC] opacity-70"
+                : "cursor-not-allowed border-[#E5E8EF] bg-white text-[#B7BFCC] opacity-70",
             )}
           >
             Clear
@@ -788,7 +796,6 @@ function ProductFilterPanel({
             type="button"
             onClick={onApply}
             className="products-filter-show-button h-12 rounded-[12px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,29,54,0.18)] transition-[box-shadow,background-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:translate-y-0"
-
           >
             Show {resultCount} Products
           </button>
@@ -854,22 +861,22 @@ function ProductActionsButton({
   product: ProductApiResponse;
   canManageProducts: boolean;
 }) {
-  const buttonClassName =
-    "inline-flex size-9 items-center justify-center rounded-[9px] border border-[#E5E8EF] bg-white text-[#667085] transition-[background-color,border-color,color] duration-[180ms]";
-  const title = canManageProducts
-    ? "Product edit, remove, and image updates require backend support"
-    : "No product actions configured";
-
+  const [editing, setEditing] = useState(false);
+  if (!canManageProducts) return null;
   return (
-    <button
-      type="button"
-      disabled
-      title={title}
-      aria-label={`${title} for ${product.name}`}
-      className={`${buttonClassName} disabled:cursor-not-allowed disabled:opacity-70`}
-    >
-      <MoreHorizontal className="size-4" aria-hidden="true" />
-    </button>
+    <>
+      <RecordActions
+        name={product.name}
+        kind="Product"
+        onEdit={() => setEditing(true)}
+        remove={() => deleteProductAction(product.id)}
+      />
+      <AddProductDialog
+        product={product}
+        open={editing}
+        onOpenChange={setEditing}
+      />
+    </>
   );
 }
 
@@ -1018,7 +1025,10 @@ export default function ProductsList({
   ]);
 
   const displayedTotalCount = filtered.length;
-  const displayedTotalPages = Math.max(1, Math.ceil(displayedTotalCount / limit));
+  const displayedTotalPages = Math.max(
+    1,
+    Math.ceil(displayedTotalCount / limit),
+  );
   const displayedPage = Math.min(Math.max(page, 1), displayedTotalPages);
   const pagedProducts = useMemo(() => {
     const startIndex = (displayedPage - 1) * limit;
@@ -1137,7 +1147,7 @@ export default function ProductsList({
                   "size-1.5 rounded-full",
                   isRep
                     ? "bg-[#168557] shadow-[0_0_0_3px_rgba(22,133,87,0.15)]"
-                    : "bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
+                    : "bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]",
                 )}
                 aria-hidden="true"
               />
@@ -1175,7 +1185,6 @@ export default function ProductsList({
                 onChange={(event) => setQ(event.target.value)}
                 placeholder="Search by name or reference..."
                 className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-white focus:ring-0"
-
               />
               {hasSearchQuery && (
                 <button
@@ -1313,7 +1322,7 @@ export default function ProductsList({
                   "w-fit rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
                   isRep
                     ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349] focus-visible:ring-3 focus-visible:ring-[#168557]/15"
-                    : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+                    : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
                 )}
               >
                 Clear all
@@ -1425,9 +1434,7 @@ export default function ProductsList({
                     }
                   >
                     <div className="flex min-w-0 items-start gap-3">
-                      <ProductThumbnail
-                        product={product}
-                      />
+                      <ProductThumbnail product={product} />
                       <div className="min-w-0 flex-1">
                         <ProductName product={product} />
                         <p className="mt-2 text-xs font-medium text-[#98A2B3]">

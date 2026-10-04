@@ -12,6 +12,8 @@ import {
   Upload,
   XCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { importRecordsAction } from "../api";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -51,16 +53,11 @@ import type {
 } from "../lib/types";
 
 const BACKEND_SUPPORT_MESSAGE =
-  "The frontend validation and import preparation are complete. Database persistence will become available when the bulk-import backend endpoint is connected.";
-const BACKEND_SCOPE_MESSAGE =
-  "Requires backend change - excluded from current frontend-only scope.";
+  "The selected records have been saved. You can close this window to view the updated directory.";
 
 type FilterValue = "all" | BulkImportRowStatus;
 
-type BulkImportDialogProps<
-  TExisting,
-  TPayload extends object,
-> = {
+type BulkImportDialogProps<TExisting, TPayload extends object> = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   existingRecords: TExisting[];
@@ -147,7 +144,7 @@ function StatPill({
         tone === "danger" && "border-gp-danger-border bg-gp-danger-soft",
         tone === "default" && "border-gp-border-subtle bg-white",
         interactive &&
-          "cursor-pointer hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/30 focus-visible:ring-2 focus-visible:outline-none",
+          "hover:border-gp-gold-300 hover:bg-gp-gold-50 focus-visible:ring-gp-gold-500/30 cursor-pointer focus-visible:ring-2 focus-visible:outline-none",
         active && "border-gp-navy-900 ring-gp-navy-900/10 ring-2",
       )}
     >
@@ -173,7 +170,7 @@ function Stepper({
   const steps = [
     { label: "Upload", active: true, complete: hasFile },
     { label: "Review", active: hasRows, complete: hasRows },
-    { label: "Ready to Import", active: batchPrepared, complete: batchPrepared },
+    { label: "Imported", active: batchPrepared, complete: batchPrepared },
   ];
 
   return (
@@ -186,7 +183,7 @@ function Stepper({
             step.complete
               ? "border-gp-gold-300 bg-gp-gold-50 text-gp-navy-900"
               : step.active
-                ? "border-gp-border-control bg-white text-gp-navy-900"
+                ? "border-gp-border-control text-gp-navy-900 bg-white"
                 : "border-gp-border-subtle bg-gp-surface-subtle text-gp-text-placeholder",
           )}
         >
@@ -261,10 +258,7 @@ function rebuildSheetFromReviewRows<TExisting, TPayload extends object>({
   };
 }
 
-export function BulkImportDialog<
-  TExisting,
-  TPayload extends object,
->({
+export function BulkImportDialog<TExisting, TPayload extends object>({
   open,
   onOpenChange,
   existingRecords,
@@ -277,6 +271,9 @@ export function BulkImportDialog<
   const [filter, setFilter] = useState<FilterValue>("all");
   const [search, setSearch] = useState("");
   const [batchPrepared, setBatchPrepared] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState("");
+  const router = useRouter();
   const [parseError, setParseError] = useState("");
   const [headerWarnings, setHeaderWarnings] = useState<string[]>([]);
   const [reviewExpanded, setReviewExpanded] = useState(false);
@@ -320,7 +317,9 @@ export function BulkImportDialog<
     nextRows: BulkImportReviewRow<TPayload>[],
     previousReviewRows: BulkImportReviewRow<TPayload>[] = rows,
   ) {
-    const previousRows = new Map(previousReviewRows.map((row) => [row.id, row]));
+    const previousRows = new Map(
+      previousReviewRows.map((row) => [row.id, row]),
+    );
     const correctedSheet = rebuildSheetFromReviewRows({
       rows: nextRows,
       sheet,
@@ -385,8 +384,9 @@ export function BulkImportDialog<
     const selectedDistrict = String(draft.district ?? "");
     const selectedRegion = String(draft.region ?? "");
     const regionOptions =
-      KSA_TERRITORY_STRUCTURE.find((district) => district.name === selectedDistrict)
-        ?.regions ?? [];
+      KSA_TERRITORY_STRUCTURE.find(
+        (district) => district.name === selectedDistrict,
+      )?.regions ?? [];
     const territoryOptions =
       regionOptions.find((region) => region.name === selectedRegion)
         ?.territories ?? [];
@@ -394,7 +394,7 @@ export function BulkImportDialog<
     if (!hasGeographyIssue && !hasGradeIssue) return null;
 
     return (
-      <div className="mt-3 space-y-3 rounded-[12px] border border-gp-border-subtle bg-gp-surface-subtle p-3">
+      <div className="border-gp-border-subtle bg-gp-surface-subtle mt-3 space-y-3 rounded-[12px] border p-3">
         {hasGeographyIssue && (
           <div className="grid gap-2 lg:grid-cols-3">
             <label className="space-y-1">
@@ -433,7 +433,7 @@ export function BulkImportDialog<
                     subRegion: "",
                   })
                 }
-                className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder"
+                className="border-gp-border-control text-gp-navy-900 disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold"
               >
                 <option value="">Select region</option>
                 {regionOptions.map((region) => (
@@ -455,7 +455,7 @@ export function BulkImportDialog<
                     subRegion: event.target.value,
                   })
                 }
-                className="border-gp-border-control text-gp-navy-900 h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder"
+                className="border-gp-border-control text-gp-navy-900 disabled:bg-gp-surface-subtle disabled:text-gp-text-placeholder h-9 w-full rounded-[8px] border bg-white px-2 text-xs font-semibold"
               >
                 <option value="">Select territory</option>
                 {territoryOptions.map((territory) => (
@@ -603,8 +603,8 @@ export function BulkImportDialog<
     );
   }
 
-  function handlePrepareBatch() {
-    if (batchPrepared || selectedRows.length === 0) return;
+  async function handlePrepareBatch() {
+    if (importing || batchPrepared || selectedRows.length === 0) return;
 
     const revalidatedRows = getRevalidatedRows(rows, rows);
     const preparedBatch = prepareBulkImportBatch(revalidatedRows);
@@ -612,20 +612,40 @@ export function BulkImportDialog<
     if (preparedBatch.length === 0) {
       toast.error({
         title: "No valid records selected",
-        description: "Select at least one ready or warning row before preparing the batch.",
+        description:
+          "Select at least one ready or warning row before importing.",
       });
       return;
     }
 
     setRows(revalidatedRows);
-    setBatchPrepared(true);
-    toast.success({
-      title: "Import file prepared",
-      description: `${preparedBatch.length.toLocaleString()} record(s) prepared. ${BACKEND_SUPPORT_MESSAGE}`,
-    });
+    setImportError("");
+    setImporting(true);
+    try {
+      const result = await importRecordsAction(
+        config.entity,
+        preparedBatch.map((row) => row.payload),
+      );
+      if (!result.success) {
+        const message = result.error || "Could not import records.";
+        setImportError(message);
+        toast.error({ title: "Import failed", description: message });
+        return;
+      }
+      setBatchPrepared(true);
+      toast.success({
+        title: "Import completed",
+        description: `${result.imported} records saved successfully.`,
+      });
+      router.refresh();
+    } finally {
+      setImporting(false);
+    }
   }
 
   function resetImport() {
+    if (importing) return;
+    setImportError("");
     setSheet(null);
     setRows([]);
     setSearch("");
@@ -641,6 +661,7 @@ export function BulkImportDialog<
   }
 
   function handleOpenChange(nextOpen: boolean) {
+    if (importing) return;
     if (!nextOpen) {
       resetImport();
     }
@@ -683,8 +704,12 @@ export function BulkImportDialog<
                 <p className="text-gp-text-muted mt-1 text-xs font-medium">
                   Supported files: .xlsx, .csv, .tsv and delimited .txt. Legacy
                   .xls is detected and reported if uploaded. Limit{" "}
-                  {(BULK_IMPORT_MAX_FILE_SIZE_BYTES / 1024 / 1024).toLocaleString()} MB
-                  and {BULK_IMPORT_MAX_ROWS.toLocaleString()} rows per batch.
+                  {(
+                    BULK_IMPORT_MAX_FILE_SIZE_BYTES /
+                    1024 /
+                    1024
+                  ).toLocaleString()}{" "}
+                  MB and {BULK_IMPORT_MAX_ROWS.toLocaleString()} rows per batch.
                   Templates download as blank Excel-friendly CSV.
                 </p>
                 {parseError && (
@@ -710,7 +735,10 @@ export function BulkImportDialog<
                   disabled={isParsing}
                   className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] text-sm font-semibold text-white"
                 >
-                  <Upload className="text-gp-gold-500 size-4" aria-hidden="true" />
+                  <Upload
+                    className="text-gp-gold-500 size-4"
+                    aria-hidden="true"
+                  />
                   {isParsing ? "Validating..." : "Upload File"}
                 </Button>
                 <input
@@ -773,14 +801,12 @@ export function BulkImportDialog<
                             className="text-gp-success size-4"
                             aria-hidden="true"
                           />
-                          Import file prepared
+                          Import completed
                         </p>
                         <p className="text-gp-text-muted mt-1 text-xs font-medium">
-                          {selectedRows.length.toLocaleString()}{" "}
-                          {config.entity}
-                          {selectedRows.length === 1 ? "" : "s"} passed
-                          validation and are ready for database import.
-                          Database import is awaiting backend integration.
+                          {selectedRows.length.toLocaleString()} {config.entity}
+                          {selectedRows.length === 1 ? "" : "s"} saved
+                          successfully.
                         </p>
                       </div>
                       <Button
@@ -814,14 +840,16 @@ export function BulkImportDialog<
                         </p>
                         <p className="text-gp-text-muted mt-1 text-xs font-medium">
                           All rows passed validation. You can review the rows or
-                          prepare the import file now.
+                          import the selected records now.
                         </p>
                       </div>
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setReviewExpanded((current) => !current)}
+                          onClick={() =>
+                            setReviewExpanded((current) => !current)
+                          }
                           className="border-gp-border-control text-gp-navy-900 hover:border-gp-gold-300 hover:bg-gp-gold-50 h-10 rounded-[10px] text-sm font-semibold"
                         >
                           <ListChecks className="size-4" aria-hidden="true" />
@@ -829,7 +857,9 @@ export function BulkImportDialog<
                         </Button>
                         <Button
                           type="button"
-                          disabled={summary.selected === 0 || batchPrepared}
+                          disabled={
+                            summary.selected === 0 || batchPrepared || importing
+                          }
                           onClick={handlePrepareBatch}
                           className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-60"
                         >
@@ -837,7 +867,7 @@ export function BulkImportDialog<
                             className="text-gp-gold-500 size-4"
                             aria-hidden="true"
                           />
-                          Prepare Import
+                          {importing ? "Importing…" : "Import selected records"}
                         </Button>
                       </div>
                     </div>
@@ -907,7 +937,7 @@ export function BulkImportDialog<
             <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-4">
               <div className="border-gp-border-subtle overflow-hidden rounded-[14px] border bg-white">
                 <div className="border-gp-border-subtle flex flex-col gap-3 border-b bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                  <label className="flex items-center gap-2 text-sm font-semibold text-gp-navy-900">
+                  <label className="text-gp-navy-900 flex items-center gap-2 text-sm font-semibold">
                     <Checkbox
                       checked={allEligibleVisibleSelected}
                       disabled={eligibleVisibleRows.length === 0}
@@ -1077,20 +1107,25 @@ export function BulkImportDialog<
 
           <div className="border-gp-border-subtle flex flex-col gap-3 border-t bg-white px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="min-w-0">
+              {importError && (
+                <p role="alert" className="text-gp-danger mb-2 text-sm">
+                  {importError}
+                </p>
+              )}
               {batchPrepared ? (
                 <div className="border-gp-border-subtle bg-gp-surface-subtle text-gp-text-muted flex items-start gap-2 rounded-[12px] border px-3 py-2 text-sm font-semibold">
                   <Info
-                    className="mt-0.5 size-4 shrink-0 text-gp-gold-700"
+                    className="text-gp-gold-700 mt-0.5 size-4 shrink-0"
                     aria-hidden="true"
                   />
                   <span className="flex min-w-0 items-start gap-2">
-                    {BACKEND_SUPPORT_MESSAGE} {BACKEND_SCOPE_MESSAGE}
+                    {BACKEND_SUPPORT_MESSAGE}
                   </span>
                 </div>
               ) : (
                 <p className="text-gp-text-muted text-xs font-medium">
                   {rows.length > 0
-                    ? `${summary.selected.toLocaleString()} row(s) selected. Database saving requires bulk-import backend support.`
+                    ? `${summary.selected.toLocaleString()} row(s) selected. Import saves the selected records to your directory.`
                     : "Download the template or upload a file to begin validation."}
                 </p>
               )}
@@ -1108,7 +1143,7 @@ export function BulkImportDialog<
               </Button>
               <Button
                 type="button"
-                disabled={summary.selected === 0 || batchPrepared}
+                disabled={summary.selected === 0 || batchPrepared || importing}
                 onClick={handlePrepareBatch}
                 className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] px-4 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-60"
               >
@@ -1116,7 +1151,7 @@ export function BulkImportDialog<
                   className="text-gp-gold-500 size-4"
                   aria-hidden="true"
                 />
-                Prepare Import
+                {importing ? "Importing…" : "Import selected records"}
               </Button>
             </div>
           </div>

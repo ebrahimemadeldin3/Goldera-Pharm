@@ -5,11 +5,13 @@ import {
   removeDocumentFromCloudinary,
 } from "../utils/cloudinary.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { text, number, date } from "../utils/validation.js";
+import { validateAndDetectFiles } from "../utils/fileValidator.js";
 
 // Requests Controllers
 const getMyRequests = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Request");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -41,13 +43,22 @@ const getMyRequests = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch requests", 500));
+    next(error);
   }
 };
 
 const createRequest = async (req, res, next) => {
   let pdfs = [];
   try {
+    for (const key of ["doctorIds", "sampleData", "totalExpenseData"]) {
+      if (typeof req.body[key] === "string") {
+        try {
+          req.body[key] = JSON.parse(req.body[key]);
+        } catch {
+          throw new ApiError(`Invalid ${key} format`, 400);
+        }
+      }
+    }
     const {
       title,
       subject,
@@ -75,6 +86,25 @@ const createRequest = async (req, res, next) => {
     let resolvedDoctorIds = [];
     let resolvedExpenseData = [];
 
+    text(title, "Title");
+    text(subject, "Subject");
+    text(description, "Description");
+    text(urgency, "Urgency");
+    if (req.files?.pdfs) await validateAndDetectFiles(req.files.pdfs);
+    if (
+      doctorIds &&
+      (!Array.isArray(doctorIds) ||
+        doctorIds.some((id) => typeof id !== "string"))
+    )
+      throw new ApiError("Invalid doctor selection", 400);
+    if (Array.isArray(doctorIds) && doctorIds.length) {
+      const count = await prisma.doctor.count({
+        where: { id: { in: [...new Set(doctorIds)] } },
+      });
+      if (count !== new Set(doctorIds).size)
+        throw new ApiError("One or more selected doctors no longer exist", 400);
+    }
+
     if (type === "LEAVE") {
       if (
         !req.files ||
@@ -93,8 +123,8 @@ const createRequest = async (req, res, next) => {
         );
       }
 
-      const start = new Date(leaveStartDate);
-      const end = new Date(leaveEndDate);
+      const start = date(leaveStartDate, "Leave start date");
+      const end = date(leaveEndDate, "Leave end date");
 
       if (start > end) {
         return next(
@@ -103,19 +133,6 @@ const createRequest = async (req, res, next) => {
       }
 
       leaveDaysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-      // upload leave pdf to cloudinary
-      const leavePdf = req.files.pdfs[0];
-      const result = await uploadDocumentToCloudinary(leavePdf.buffer, {
-        public_id: `${type}_pdf_${req.user.id}_${Date.now()}`,
-        folder: "folder-files/pdfs",
-      });
-
-      pdfs.push({
-        name: `${type} pdf`,
-        public_id: result.public_id,
-        url: result.secure_url,
-      });
     } else if (type === "EXPENSE" || type === "MARKETING") {
       if (
         !req.files ||
@@ -136,19 +153,7 @@ const createRequest = async (req, res, next) => {
         );
       }
       resolvedDoctorIds = [...new Set(doctorIds)];
-
-      // upload pdf to cloudinary
-      const invoicePdf = req.files.pdfs[0];
-      const result = await uploadDocumentToCloudinary(invoicePdf.buffer, {
-        public_id: `${type}_pdf_${req.user.id}_${Date.now()}`,
-        folder: "folder-files/pdfs",
-      });
-
-      pdfs.push({
-        name: `${type} pdf`,
-        public_id: result.public_id,
-        url: result.secure_url,
-      });
+      number(budget, "Budget", { min: 0.01 });
     } else if (type === "SAMPLE") {
       if (
         !sampleData ||
@@ -160,6 +165,22 @@ const createRequest = async (req, res, next) => {
       if (Array.isArray(doctorIds) && doctorIds.length > 0) {
         resolvedDoctorIds = [...new Set(doctorIds)];
       }
+      for (const item of sampleData) {
+        text(item.productId, "Product");
+        number(item.amount, "Sample quantity", { min: 1, integer: true });
+      }
+      const productsCount = await prisma.products.count({
+        where: {
+          id: { in: [...new Set(sampleData.map((item) => item.productId))] },
+        },
+      });
+      if (
+        productsCount !== new Set(sampleData.map((item) => item.productId)).size
+      )
+        throw new ApiError(
+          "One or more selected products no longer exist",
+          400,
+        );
     } else if (type === "PERSONAL_EXPENSE") {
       if (
         !req.files ||
@@ -190,30 +211,26 @@ const createRequest = async (req, res, next) => {
       }
 
       resolvedExpenseData = parsedExpenseData.map((item) => ({
-        name: String(item.name || "").trim(),
-        amount: Number(item.amount) || 0,
+        name: text(item.name, "Expense name"),
+        amount: number(item.amount, "Expense amount", { min: 0.01 }),
       }));
-
-      // upload pdf to cloudinary
-      const results = await Promise.all(
-        req.files.pdfs.map(async (pdf, index) => {
-          const result = await uploadDocumentToCloudinary(pdf.buffer, {
-            public_id: `${type}_pdf_${req.user.id}_${Date.now()}_${index}`, // ✅ Add index
-            folder: "folder-files/pdfs",
-          });
-          return {
-            name: `${type} pdf`,
-            public_id: result.public_id,
-            url: result.secure_url,
-          };
-        }),
-      );
-
-      pdfs = [...pdfs, ...results];
+      number(visitDaysCount, "Visit days", { min: 1, integer: true });
     } else {
       return next(new ApiError(`Invalid request type: ${type}`, 400));
     }
 
+    // Validate every field first, then track each upload for reliable failure cleanup.
+    for (const [index, file] of (req.files?.pdfs || []).entries()) {
+      const result = await uploadDocumentToCloudinary(file.buffer, {
+        public_id: `${type}_pdf_${req.user.id}_${Date.now()}_${index}`,
+        folder: "folder-files/pdfs",
+      });
+      pdfs.push({
+        name: file.originalname,
+        public_id: result.public_id,
+        url: result.secure_url,
+      });
+    }
     const data = await prisma.request.create({
       data: {
         title,
@@ -234,7 +251,12 @@ const createRequest = async (req, res, next) => {
           type === "PERSONAL_EXPENSE" ? Number(visitDaysCount) : null,
         visitedCity: type === "PERSONAL_EXPENSE" ? visitedCity : null,
         totalExpenseAmount:
-          type === "PERSONAL_EXPENSE" ? Number(totalExpenseAmount) : null,
+          type === "PERSONAL_EXPENSE"
+            ? resolvedExpenseData.reduce(
+                (total, item) => total + item.amount,
+                0,
+              )
+            : null,
         pdfs: pdfs?.length ? { set: pdfs } : [],
         totalExpenseData:
           type === "PERSONAL_EXPENSE" ? resolvedExpenseData : [],
@@ -249,11 +271,13 @@ const createRequest = async (req, res, next) => {
   } catch (error) {
     if (pdfs && pdfs.length > 0) {
       await Promise.allSettled(
-        pdfs.map((p) => p.public_id && removeDocumentFromCloudinary(p.public_id)),
+        pdfs.map(
+          (p) => p.public_id && removeDocumentFromCloudinary(p.public_id),
+        ),
       );
     }
     console.error(error);
-    next(new ApiError("Failed to create request", 500));
+    next(error);
   }
 };
 
@@ -293,16 +317,19 @@ const updateRequest = async (req, res, next) => {
     if (req.user.role === "SUPERVISOR") {
       if (existingRequest.user?.supervisorId !== req.user.id) {
         return next(
-          new ApiError("Unauthorized to review requests outside your team", 403),
+          new ApiError(
+            "Unauthorized to review requests outside your team",
+            403,
+          ),
         );
       }
     } else if (req.user.role === "MANAGER") {
-      if (
-        existingRequest.user?.managerId &&
-        existingRequest.user.managerId !== req.user.id
-      ) {
+      if (existingRequest.user?.managerId !== req.user.id) {
         return next(
-          new ApiError("Unauthorized to review requests outside your team", 403),
+          new ApiError(
+            "Unauthorized to review requests outside your team",
+            403,
+          ),
         );
       }
     }
@@ -320,6 +347,12 @@ const updateRequest = async (req, res, next) => {
     const responseDate = new Date();
 
     const [updatedRequest] = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.request.updateMany({
+        where: { id, status: "PENDING" },
+        data: { status },
+      });
+      if (claimed.count !== 1)
+        throw new ApiError("This request has already been reviewed", 409);
       const updated = await tx.request.update({
         where: { id },
         data: {
@@ -354,7 +387,7 @@ const updateRequest = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to update request", 500));
+    next(error);
   }
 };
 

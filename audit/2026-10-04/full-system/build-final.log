@@ -1,0 +1,93 @@
+
+> golderapharm@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.1.0 (webpack)
+- Environments: .env
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+/*! 🌼 daisyUI 5.7.19 */
+✓ Compiled successfully in 5.0s
+  Running TypeScript ...
+  Collecting page data using 9 workers ...
+  Generating static pages using 9 workers (0/15) ...
+  Generating static pages using 9 workers (3/15) 
+  Generating static pages using 9 workers (7/15) 
+  Generating static pages using 9 workers (11/15) 
+✓ Generating static pages using 9 workers (15/15) in 124.3ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ○ /_not-found
+├ ƒ /manager
+├ ƒ /manager/[...catch]
+├ ƒ /manager/appraisal
+├ ƒ /manager/coaching
+├ ƒ /manager/doctors
+├ ƒ /manager/doctors/[id]
+├ ƒ /manager/doctors/add
+├ ƒ /manager/forecast
+├ ƒ /manager/hr
+├ ƒ /manager/pharmacies
+├ ƒ /manager/plan
+├ ƒ /manager/products
+├ ƒ /manager/profile
+├ ƒ /manager/reports
+├ ƒ /manager/requests
+├ ƒ /manager/sales
+├ ƒ /manager/settings
+├ ƒ /manager/team
+├ ƒ /manager/team/[id]
+├ ƒ /manager/visits
+├ ƒ /manager/visits/add
+├ ƒ /rep
+├ ƒ /rep/[...catch]
+├ ƒ /rep/appraisal
+├ ƒ /rep/coaching
+├ ƒ /rep/doctors
+├ ƒ /rep/doctors/[id]
+├ ƒ /rep/forecast
+├ ƒ /rep/forecast/new
+├ ƒ /rep/pharmacies
+├ ƒ /rep/plan
+├ ƒ /rep/products
+├ ƒ /rep/profile
+├ ƒ /rep/reports
+├ ƒ /rep/requests
+├ ƒ /rep/requests/new
+├ ƒ /rep/sales
+├ ƒ /rep/settings
+├ ƒ /rep/target
+├ ƒ /rep/visits
+├ ƒ /rep/visits/add
+├ ƒ /rep/visits/report
+├ ƒ /supervisor
+├ ƒ /supervisor/[...catch]
+├ ƒ /supervisor/coaching
+├ ƒ /supervisor/doctors
+├ ƒ /supervisor/doctors/[id]
+├ ƒ /supervisor/forecast
+├ ƒ /supervisor/pharmacies
+├ ƒ /supervisor/plan
+├ ƒ /supervisor/products
+├ ƒ /supervisor/profile
+├ ƒ /supervisor/reports
+├ ƒ /supervisor/requests
+├ ƒ /supervisor/requests/submit
+├ ƒ /supervisor/sales
+├ ƒ /supervisor/settings
+├ ƒ /supervisor/team
+├ ƒ /supervisor/team/[id]
+├ ƒ /supervisor/visits
+└ ƒ /supervisor/visits/add
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

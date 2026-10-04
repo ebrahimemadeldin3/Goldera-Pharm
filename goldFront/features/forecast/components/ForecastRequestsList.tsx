@@ -38,7 +38,7 @@ export default function ForecastRequestsList({
   limit?: number;
   totalCount?: number;
 }) {
-    const router = useRouter();
+  const router = useRouter();
   const [expandedForecasts, setExpandedForecasts] = useState<Set<string>>(
     new Set(),
   );
@@ -153,7 +153,7 @@ export default function ForecastRequestsList({
       </span>
     );
   };
- 
+
   if (forecasts.length === 0) {
     return (
       <div className="border-secondary-light flex flex-col items-center justify-center rounded-[14px] border-[0.8px] bg-white p-12 text-center">
@@ -171,18 +171,14 @@ export default function ForecastRequestsList({
   return (
     <>
       <div className="space-y-6">
-
-
         {forecasts.map((forecast) => (
           <div
             key={forecast.id}
             className="border-secondary-light rounded-[14px] border-[0.8px] bg-white p-6"
           >
-
-            
-                  <div className="mt-6">
-        <Pagination page={page} limit={limit} totalCount={totalCount} />
-      </div>
+            <div className="mt-6">
+              <Pagination page={page} limit={limit} totalCount={totalCount} />
+            </div>
 
             <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -275,7 +271,13 @@ export default function ForecastRequestsList({
                         </div>
                         <div className="text-right">
                           <p className="text-sm/5 font-semibold text-black">
-                            {pf.productUnits.toLocaleString()} units
+                            {Number(
+                              pf.productUnits ??
+                                (pf as unknown as { quantity?: number })
+                                  .quantity ??
+                                0,
+                            ).toLocaleString()}{" "}
+                            units
                           </p>
                         </div>
                       </div>
@@ -328,8 +330,6 @@ export default function ForecastRequestsList({
           </div>
         ))}
       </div>
-
-
 
       <Dialog open={dialogState.open} onOpenChange={closeDialog}>
         <DialogContent>

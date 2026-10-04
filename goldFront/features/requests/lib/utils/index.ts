@@ -85,8 +85,13 @@ export function mapRequestApiResponseToTRequest(
     leaveEndDate: apiResponse.leaveEndDate,
     leaveDaysCount: apiResponse.leaveDaysCount,
     // EXPENSE / MARKETING fields
-    doctorIds: apiResponse.doctorIds,
-    doctorName: apiResponse.doctorName,
+    doctorIds: apiResponse.doctorIds ?? doctors.map((doctor) => doctor.id),
+    doctorName:
+      apiResponse.doctorName ||
+      doctors
+        .map((doctor) => doctor.nameEN || doctor.nameAR)
+        .filter(Boolean)
+        .join(", "),
     budget: apiResponse.budget,
     // PERSONAL_EXPENSE fields
     visitedCity: apiResponse.visitedCity ?? apiResponse.visitCity,

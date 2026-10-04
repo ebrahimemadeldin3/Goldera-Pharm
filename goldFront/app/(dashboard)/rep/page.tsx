@@ -6,10 +6,8 @@ import { getRepDashboardAction } from "@/features/dashboard/api";
 import { PageContainer } from "@/components/layout/page-container";
 import { RepDashboardHeader } from "@/features/dashboard/components/rep/RepDashboardHeader";
 import { RepKPICards } from "@/features/dashboard/components/rep/RepKPICards";
-import { NextVisitCard } from "@/features/dashboard/components/rep/NextVisitCard";
 import { TodayAgenda } from "@/features/dashboard/components/rep/TodayAgenda";
 import { RepQuickActions } from "@/features/dashboard/components/rep/RepQuickActions";
-import { RepMonthlySummary } from "@/features/dashboard/components/rep/RepMonthlySummary";
 import RepPendingRequests from "@/features/dashboard/components/rep/RepPendingRequests";
 
 export const dynamic = "force-dynamic";
@@ -69,33 +67,23 @@ export default async function RepDashboardPage() {
           <RepKPICards
             targetAchievement={dashboardData?.metrics?.targetAchievement}
             coverage={dashboardData?.metrics?.coverage}
+            totalSales={dashboardData?.metrics?.totalSales}
             pendingRequestsCount={dashboardData?.metrics?.pendingRequestsCount}
           />
 
-          {/* 3. Next Visit Highlight Banner */}
-          <NextVisitCard visits={todayVisits} />
+          {/* 3. Quick actions strip */}
+          <RepQuickActions />
 
-          {/* 4. Main Workspace Layout (Left: Agenda | Right: Quick Actions & Metrics) */}
+          {/* 4. Today's agenda + pending requests, equal height */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-            {/* Left Column: Today's Agenda */}
-            <div className="lg:col-span-8 space-y-6 min-w-0">
+            <div className="flex min-w-0 flex-col lg:col-span-8 [&>*]:flex-1">
               <TodayAgenda visits={todayVisits} />
             </div>
-
-            {/* Right Sidebar Column */}
-            <aside className="lg:col-span-4 space-y-6 min-w-0">
-              <RepQuickActions />
-
-              <RepMonthlySummary
-                targetAchievement={dashboardData?.metrics?.targetAchievement}
-                coverage={dashboardData?.metrics?.coverage}
-                totalSales={dashboardData?.metrics?.totalSales}
-              />
-
+            <div className="flex min-w-0 flex-col lg:col-span-4 [&>*]:flex-1">
               <RepPendingRequests
                 requests={dashboardData?.metrics?.pendingRequests}
               />
-            </aside>
+            </div>
           </div>
 
           {/* 5. Mobile Field Sticky Action Bar (390px Viewports) */}

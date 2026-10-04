@@ -1,6 +1,7 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { text } from "../utils/validation.js";
 
 const addPharmacy = async (req, res, next) => {
   try {
@@ -17,11 +18,11 @@ const addPharmacy = async (req, res, next) => {
 
     const pharmacy = await prisma.pharmacy.create({
       data: {
-        name: String(name).trim(),
-        city: String(city).trim(),
-        country: String(country).trim(),
-        region: String(region).trim(),
-        subRegion: String(subRegion).trim(),
+        name: text(name, "Name"),
+        city: text(city, "City"),
+        country: text(country, "Country"),
+        region: text(region, "Region"),
+        subRegion: text(subRegion, "Sub-region"),
       },
     });
 
@@ -32,13 +33,13 @@ const addPharmacy = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create pharmacy", 500));
+    next(error);
   }
 };
 
 const getAllPharmacies = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Pharmacy");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = { ...queryObj.where };
 
@@ -62,7 +63,7 @@ const getAllPharmacies = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch pharmacies", 500));
+    next(error);
   }
 };
 
@@ -80,7 +81,7 @@ const getPharmacyById = async (req, res, next) => {
       data: pharmacy,
     });
   } catch (error) {
-    next(new ApiError("Failed to fetch pharmacy", 500));
+    next(error);
   }
 };
 
@@ -97,19 +98,19 @@ const updatePharmacy = async (req, res, next) => {
       where: { id },
       data: {
         ...(req.body.name !== undefined
-          ? { name: String(req.body.name).trim() }
+          ? { name: text(req.body.name, "name") }
           : {}),
         ...(req.body.city !== undefined
-          ? { city: String(req.body.city).trim() }
+          ? { city: text(req.body.city, "city") }
           : {}),
         ...(req.body.country !== undefined
-          ? { country: String(req.body.country).trim() }
+          ? { country: text(req.body.country, "country") }
           : {}),
         ...(req.body.region !== undefined
-          ? { region: String(req.body.region).trim() }
+          ? { region: text(req.body.region, "region") }
           : {}),
         ...(req.body.subRegion !== undefined
-          ? { subRegion: String(req.body.subRegion).trim() }
+          ? { subRegion: text(req.body.subRegion, "subRegion") }
           : {}),
       },
     });
@@ -120,7 +121,7 @@ const updatePharmacy = async (req, res, next) => {
       data: pharmacy,
     });
   } catch (error) {
-    next(new ApiError("Failed to update pharmacy", 500));
+    next(error);
   }
 };
 
@@ -133,6 +134,13 @@ const deletePharmacy = async (req, res, next) => {
       return next(new ApiError("Pharmacy not found", 404));
     }
 
+    if (await prisma.sales.count({ where: { customer: existing.name } }))
+      return next(
+        new ApiError(
+          "This pharmacy is used in sales records and cannot be deleted",
+          409,
+        ),
+      );
     await prisma.pharmacy.delete({ where: { id } });
 
     res.status(200).json({
@@ -140,7 +148,7 @@ const deletePharmacy = async (req, res, next) => {
       message: "Pharmacy deleted successfully",
     });
   } catch (error) {
-    next(new ApiError("Failed to delete pharmacy", 500));
+    next(error);
   }
 };
 
@@ -148,6 +156,8 @@ const bulkImportPharmacies = async (req, res, next) => {
   try {
     const records = req.body?.records ?? req.body;
     const data = Array.isArray(records) ? records : [];
+    if (data.length > 1000)
+      return next(new ApiError("Import up to 1000 pharmacies per batch", 400));
 
     if (!data.length) {
       return next(new ApiError("No pharmacy records provided", 400));
@@ -155,11 +165,11 @@ const bulkImportPharmacies = async (req, res, next) => {
 
     const created = await prisma.pharmacy.createMany({
       data: data.map((record) => ({
-        name: String(record.name || "").trim(),
-        city: String(record.city || "").trim(),
-        country: String(record.country || "").trim(),
-        region: String(record.region || "").trim(),
-        subRegion: String(record.subRegion || "").trim(),
+        name: text(record.name, "Name"),
+        city: text(record.city, "City"),
+        country: text(record.country, "Country"),
+        region: text(record.region, "Region"),
+        subRegion: text(record.subRegion, "Sub-region"),
       })),
     });
 
@@ -172,7 +182,7 @@ const bulkImportPharmacies = async (req, res, next) => {
       errors: [],
     });
   } catch (error) {
-    next(new ApiError("Failed to import pharmacies", 500));
+    next(error);
   }
 };
 

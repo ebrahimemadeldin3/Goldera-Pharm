@@ -3,6 +3,7 @@
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
 import { buildPaginationQuery } from "@/lib/utils";
+import { revalidatePath } from "next/cache";
 import type {
   GetPharmaciesResponse,
   PharmacyApiResponse,
@@ -71,6 +72,8 @@ export async function getPharmaciesAction(
 export async function createPharmacyAction(data: CreatePharmacyDto) {
   try {
     const response = await createPharmacy(data);
+    for (const role of ["manager", "supervisor", "rep"])
+      revalidatePath(`/${role}/pharmacies`);
     return {
       success: true,
       data: response,
@@ -84,6 +87,44 @@ export async function createPharmacyAction(data: CreatePharmacyDto) {
         code: err.code || "CREATE_ERROR",
         message: err.message || "Failed to create pharmacy",
         statusCode: err.statusCode || 500,
+      },
+    };
+  }
+}
+
+export async function updatePharmacyAction(
+  id: string,
+  data: CreatePharmacyDto,
+) {
+  try {
+    await apiFetch(`/api/pharmacies/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+    for (const role of ["manager", "supervisor", "rep"])
+      revalidatePath(`/${role}/pharmacies`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: (error as ApiError).message || "Could not update pharmacy",
+      },
+    };
+  }
+}
+
+export async function deletePharmacyAction(id: string) {
+  try {
+    await apiFetch(`/api/pharmacies/${id}`, { method: "DELETE" });
+    for (const role of ["manager", "supervisor", "rep"])
+      revalidatePath(`/${role}/pharmacies`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: (error as ApiError).message || "Could not delete pharmacy",
       },
     };
   }

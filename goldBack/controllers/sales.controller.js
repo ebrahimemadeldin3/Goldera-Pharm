@@ -3,16 +3,24 @@ import { ApiError } from "../utils/apiError.js";
 import xlsx from "xlsx";
 import fs from "fs/promises";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import {
+  text,
+  number,
+  date,
+  userScope,
+  canManageUser,
+} from "../utils/validation.js";
 
 const addSale = async (req, res, next) => {
   try {
     if (!req.file) {
       return next(new ApiError("Please upload a file", 400));
     }
+    const importName = text(req.body.sheetName, "Import name");
 
     const existingSales = await prisma.sales.findFirst({
       where: {
-        sheetName: `${req.body.sheetName}`.trim(),
+        sheetName: importName,
       },
     });
 
@@ -47,23 +55,41 @@ const addSale = async (req, res, next) => {
       select: { id: true, name: true, internalRef: true },
     });
 
-    let dataWithProductIds = data.map((sale) => {
-      const product = products.find(
-        (p) =>
-          `[${p.internalRef}] ${p.name}`.trim() === sale.productVariant?.trim(),
-      );
-      return {
-        sheetName: sale.sheetName,
-        customer: sale.customer,
-        order: sale.order,
-        orderDate: sale.orderDate,
-        qtyOrdered: sale.qtyOrdered,
-        untaxedTotal: sale.untaxedTotal,
-        productId: product ? product.id : null,
-      };
-    });
+    const dataWithProductIds = data
+      .filter((sale) => {
+        const label = String(sale.customer || sale.order || "").trim();
+        return (
+          !/^(grand\s+)?total$/i.test(label) &&
+          Boolean(sale.customer || sale.productVariant)
+        );
+      })
+      .map((sale, index) => {
+        const product = products.find(
+          (p) =>
+            `[${p.internalRef}] ${p.name}`.trim() ===
+            sale.productVariant?.trim(),
+        );
+        if (!product)
+          throw new ApiError(
+            `Row ${index + 2}: product is not in the catalog`,
+            400,
+          );
+        return {
+          sheetName: importName,
+          customer: text(sale.customer, `Row ${index + 2} customer`),
+          order: text(String(sale.order || ""), `Row ${index + 2} order`),
+          orderDate: date(sale.orderDate, `Row ${index + 2} order date`),
+          qtyOrdered: number(sale.qtyOrdered, `Row ${index + 2} quantity`, {
+            min: 1,
+            integer: true,
+          }),
+          untaxedTotal: number(sale.untaxedTotal, `Row ${index + 2} amount`),
+          productId: product.id,
+        };
+      });
 
-    dataWithProductIds.pop();
+    if (!dataWithProductIds.length)
+      throw new ApiError("The spreadsheet has no valid sales rows", 400);
 
     const sale = await prisma.sales.createMany({
       data: dataWithProductIds,
@@ -81,7 +107,9 @@ const addSale = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create sale", 500));
+    next(error);
+  } finally {
+    if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
   }
 };
 
@@ -89,10 +117,26 @@ const getAllSales = async (req, res, next) => {
   try {
     const { date, sheetName } = req.query;
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Sales");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     let whereClause = { ...queryObj.where };
+    if (req.user.role === "SUPERVISOR") {
+      const team = await prisma.user.findMany({
+        where: userScope(req.user),
+        include: { subRegion: true },
+      });
+      const territories = team
+        .map((member) => member.subRegion?.name)
+        .filter(Boolean);
+      const pharmacies = await prisma.pharmacy.findMany({
+        where: { subRegion: { in: territories } },
+        select: { name: true },
+      });
+      whereClause.customer = {
+        in: pharmacies.map((pharmacy) => pharmacy.name),
+      };
+    }
 
     if (sheetName) {
       whereClause.sheetName = sheetName;
@@ -139,7 +183,7 @@ const getAllSales = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Sales Fetch Error:", error);
-    next(new ApiError("Error fetching sales data", 500));
+    next(error);
   }
 };
 
@@ -147,7 +191,7 @@ const getRepsSales = async (req, res, next) => {
   try {
     const { date, sheetName } = req.query;
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Sales");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     let whereClause = { ...queryObj.where };
@@ -184,7 +228,7 @@ const getRepsSales = async (req, res, next) => {
 
     if (!rep) return res.status(404).json({ message: "Rep not found" });
 
-    const userSubRegion = rep.subRegion?.name;
+    const userSubRegion = rep.subRegion?.name || "__NO_ASSIGNED_TERRITORY__";
 
     const pharmacyNames = await prisma.pharmacy.findMany({
       where: { subRegion: userSubRegion },
@@ -217,7 +261,7 @@ const getRepsSales = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Error fetching sales dashboard data", 500));
+    next(error);
   }
 };
 
@@ -226,7 +270,7 @@ const getRepsSalesByRepId = async (req, res, next) => {
     const { repId } = req.params;
     const { date, sheetName } = req.query;
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Sales");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     let whereClause = { ...queryObj.where };
@@ -262,8 +306,10 @@ const getRepsSalesByRepId = async (req, res, next) => {
     });
 
     if (!rep) return res.status(404).json({ message: "Rep not found" });
+    if (!canManageUser(req.user, rep))
+      return next(new ApiError("Select a representative from your team", 403));
 
-    const userSubRegion = rep.subRegion?.name;
+    const userSubRegion = rep.subRegion?.name || "__NO_ASSIGNED_TERRITORY__";
 
     const pharmacyNames = await prisma.pharmacy.findMany({
       where: { subRegion: userSubRegion },
@@ -296,7 +342,7 @@ const getRepsSalesByRepId = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Error fetching sales dashboard data", 500));
+    next(error);
   }
 };
 

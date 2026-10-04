@@ -65,13 +65,20 @@ const load = createLoader({
   "next/navigation": { useRouter: () => ({ refresh() {} }) },
 });
 const {
-  summarizeDashboard,
+  summarizeDashboard: summarizeWithFilters,
+  getDefaultDashboardFilters,
   dateKey,
   periodBounds,
   finiteNumber,
   saleDate,
   money,
 } = load(path.join(manager, "dashboard-utils.ts"));
+function summarizeDashboard(data, period) {
+  const filters = getDefaultDashboardFilters(data.asOf);
+  if (period === "all") Object.assign(filters, { period: "custom", customFrom: "", customTo: "" });
+  else filters.period = period;
+  return summarizeWithFilters(data, filters);
+}
 const Dashboard = load(path.join(manager, "ManagerDashboard.tsx")).default;
 const { DashboardSkeleton } = load(
   path.join(manager, "DashboardPrimitives.tsx"),
@@ -82,6 +89,9 @@ const empty = () => ({
   team: { data: [], error: false },
   coaching: { data: [], error: false },
   appraisals: { data: [], error: false },
+  doctors: { data: [], error: false },
+  pharmacies: { data: [], error: false },
+  requests: { data: [], error: false },
   asOf: "2026-09-15T09:00:00Z",
 });
 const visit = (id, status, rest = {}) => ({
@@ -115,7 +125,7 @@ test("Saudi day boundaries, Sunday weeks and leap months are independent of mach
     "2026-01-01",
     "2026-12-31",
   ]);
-  assert.equal(periodBounds("all", "2026-09-15"), null);
+  assert.equal(periodBounds("custom", "2026-09-15"), null);
 });
 
 test("empty datasets never produce invalid percentages or quality scores", () => {
@@ -149,7 +159,7 @@ test("sales use transaction dates, preserve negative amounts and disclose missin
   assert.equal(saleDate(data.sales.data[2]), undefined);
 });
 
-test("all-time buckets include the first observed month and chronological recent records", () => {
+test("unbounded custom-range buckets include the first observed day and chronological recent records", () => {
   const data = empty();
   data.sales.data = [
     { id: "z", orderDate: "2026-09-15T09:00:00Z", untaxedTotal: 10 },
@@ -158,7 +168,7 @@ test("all-time buckets include the first observed month and chronological recent
     { id: "unknown", untaxedTotal: 2 },
   ];
   const summary = summarizeDashboard(data, "all");
-  assert.equal(summary.trend[0].key, "2026-01");
+  assert.equal(summary.trend[0].key, "2026-01-25");
   assert.deepEqual(
     summary.recentSales.map((item) => item.id),
     ["z", "a", "old", "unknown"],
@@ -184,7 +194,7 @@ test("rep ranking uses assignments, never the creator or inferred customer locat
       createdBy: { id: "rep-a" },
     }),
     visit("b", "COMPLETED"),
-    visit("c", "COMPLETED", { userId: "supervisor" }),
+    visit("c", "COMPLETED", { userId: "unknown-assignee" }),
     visit("d", "CANCELLED"),
   ];
   const summary = summarizeDashboard(data, "month");

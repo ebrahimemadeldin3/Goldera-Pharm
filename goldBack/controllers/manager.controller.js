@@ -2,8 +2,12 @@ import bcrypt from "bcrypt";
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { validateAndDetectFiles } from "../utils/fileValidator.js";
-import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadDocumentToCloudinary,
+  removeDocumentFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { date, text, canManageUser, userScope } from "../utils/validation.js";
 
 // Create user
 const createUser = async (req, res, next) => {
@@ -29,6 +33,12 @@ const createUser = async (req, res, next) => {
 
   const normalizedEmail = String(email).trim().toLowerCase();
   const normalizedRole = String(role).toUpperCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
+    return next(new ApiError("Enter a valid email address", 400));
+  if (typeof password !== "string" || password.length < 6)
+    return next(
+      new ApiError("Password must contain at least 6 characters", 400),
+    );
 
   // find the user by email
   const user = await prisma.user.findUnique({
@@ -58,7 +68,9 @@ const createUser = async (req, res, next) => {
   }
 
   if (normalizedRole === "SUPERVISOR") {
-    regionIds = Array.isArray(regionIds) ? regionIds : [regionIds];
+    regionIds = (Array.isArray(regionIds) ? regionIds : [regionIds]).filter(
+      Boolean,
+    );
   } else {
     regionIds = undefined;
   }
@@ -69,12 +81,45 @@ const createUser = async (req, res, next) => {
     subRegionId = undefined;
   }
 
+  name = text(name, "Name");
+  dateOfBirth = date(dateOfBirth, "Date of birth");
+  if (dateOfRecruitment)
+    dateOfRecruitment = date(dateOfRecruitment, "Date of recruitment");
+  if (supervisorId) {
+    const supervisor = await prisma.user.findUnique({
+      where: { id: supervisorId },
+    });
+    if (
+      supervisor?.role !== "SUPERVISOR" ||
+      supervisor.managerId !== req.user.id
+    )
+      return next(new ApiError("Select a supervisor from your team", 400));
+  }
+  if (
+    subRegionId &&
+    !(await prisma.subRegion.findUnique({ where: { id: subRegionId } }))
+  )
+    return next(new ApiError("Select a valid territory", 400));
+  if (
+    regionIds?.length &&
+    (await prisma.region.count({ where: { id: { in: regionIds } } })) !==
+      new Set(regionIds).size
+  )
+    return next(new ApiError("Select valid regions", 400));
+  const uploadedAssets = [];
+  const cleanup = async () => {
+    await Promise.allSettled(
+      uploadedAssets.map((id) => removeDocumentFromCloudinary(id)),
+    );
+  };
   let resumeFiles = [];
   let certificatesFiles = [];
 
-  if (req.files && req.files.length > 0) {
-    resumeFiles = await validateAndDetectFiles(req.files?.resume);
-    certificatesFiles = await validateAndDetectFiles(req.files?.certificates);
+  if (req.files) {
+    resumeFiles = await validateAndDetectFiles(req.files.resume || []);
+    certificatesFiles = await validateAndDetectFiles(
+      req.files.certificates || [],
+    );
   }
 
   let resume = {};
@@ -89,6 +134,7 @@ const createUser = async (req, res, next) => {
         folder: `folder-files/resumes`,
       });
 
+      uploadedAssets.push(result.public_id);
       resume = {
         public_id: result.public_id,
         url: result.secure_url,
@@ -102,6 +148,7 @@ const createUser = async (req, res, next) => {
           folder: `folder-files/certificates`,
         });
 
+        uploadedAssets.push(result2.public_id);
         certificates.push({
           public_id: result2.public_id,
           url: result2.secure_url,
@@ -109,34 +156,58 @@ const createUser = async (req, res, next) => {
       }
     }
   } catch (error) {
-    console.error("Error uploading files to Cloudinary:", error);
+    await cleanup();
+    return next(
+      new ApiError("Could not upload documents. Please try again.", 502),
+    );
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  const newUser = await prisma.user.create({
-    data: {
-      name: String(name).trim(),
-      email: normalizedEmail,
-      password: hashedPassword,
-      phone,
-      role: normalizedRole,
-      managerId: req.user?.id,
-      supervisorId: supervisorId || null,
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
-      dateOfRecruitment: dateOfRecruitment ? new Date(dateOfRecruitment) : null,
-      educationBackground,
-      iqamaNumber,
-      passportNumber,
-      ...(regionIds?.length
-        ? { regions: { connect: regionIds.map((id) => ({ id })) } }
-        : {}),
-      ...(subRegionId ? { subRegion: { connect: { id: subRegionId } } } : {}),
-      ...(Object.keys(resume).length ? { resume } : {}),
-      ...(certificates.length ? { certificates: { set: certificates } } : {}),
-    },
-  });
+  if (supervisorId) {
+    const supervisor = await prisma.user.findUnique({
+      where: { id: supervisorId },
+    });
+    if (
+      supervisor?.role !== "SUPERVISOR" ||
+      supervisor.managerId !== req.user.id
+    ) {
+      return next(new ApiError("Select a supervisor from your team", 400));
+    }
+  }
 
+  let newUser;
+  try {
+    newUser = await prisma.user.create({
+      data: {
+        name: text(name, "Name"),
+        email: normalizedEmail,
+        password: hashedPassword,
+        phone,
+        role: normalizedRole,
+        manager: { connect: { id: req.user.id } },
+        ...(supervisorId
+          ? { supervisor: { connect: { id: supervisorId } } }
+          : {}),
+        dateOfBirth: date(dateOfBirth, "Date of birth"),
+        dateOfRecruitment: dateOfRecruitment
+          ? date(dateOfRecruitment, "Date of recruitment")
+          : new Date(),
+        educationBackground,
+        iqamaNumber,
+        passportNumber,
+        ...(regionIds?.length
+          ? { regions: { connect: regionIds.map((id) => ({ id })) } }
+          : {}),
+        ...(subRegionId ? { subRegion: { connect: { id: subRegionId } } } : {}),
+        ...(Object.keys(resume).length ? { resume } : {}),
+        ...(certificates.length ? { certificates: { set: certificates } } : {}),
+      },
+    });
+  } catch (error) {
+    await cleanup();
+    return next(error);
+  }
   const { password: _password, ...safeUser } = newUser;
 
   res.status(201).json({
@@ -151,7 +222,7 @@ const getAllUsers = async (req, res, next) => {
   try {
     if (req.query?.id) {
       const user = await prisma.user.findUnique({
-        where: { id: req.query.id },
+        where: { id: req.query.id, AND: userScope(req.user) },
         include: {
           supervisor: { select: { id: true, name: true } },
           manager: { select: { id: true, name: true } },
@@ -177,9 +248,9 @@ const getAllUsers = async (req, res, next) => {
       });
     }
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "User");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    const whereClause = { ...queryObj.where };
+    const whereClause = { ...queryObj.where, AND: userScope(req.user) };
 
     const totalDocuments = await prisma.user.count({ where: whereClause });
 
@@ -240,7 +311,7 @@ const getAllUsers = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch users", 500));
+    next(error);
   }
 };
 
@@ -255,7 +326,7 @@ const getUserDetails = async (req, res, next) => {
 
     // 1. Fetch User with all necessary relations in one go
     const user = await prisma.user.findUnique({
-      where: { id },
+      where: { id, AND: userScope(req.user) },
       include: {
         supervisor: { select: { id: true, name: true } },
         manager: { select: { id: true, name: true } },
@@ -338,6 +409,64 @@ const updateOneUserById = async (req, res, next) => {
       return next(new ApiError("User not found", 404));
     }
 
+    if (!canManageUser(req.user, exists))
+      return next(new ApiError("You can only edit your team", 403));
+    const allowedFields = [
+      "name",
+      "email",
+      "phone",
+      "role",
+      "isActive",
+      "supervisorId",
+      "subRegionId",
+      "dateOfBirth",
+      "dateOfRecruitment",
+      "department",
+      "location",
+      "bio",
+      "educationBackground",
+      "iqamaNumber",
+      "passportNumber",
+      "newPassword",
+    ];
+    if (Object.keys(req.body).some((key) => !allowedFields.includes(key)))
+      return next(new ApiError("Unsupported member field", 400));
+    if (
+      req.body.role !== undefined &&
+      !["MEDICAL_REP", "SUPERVISOR", "MANAGER"].includes(req.body.role)
+    )
+      return next(new ApiError("Invalid role", 400));
+    if (
+      req.body.isActive !== undefined &&
+      typeof req.body.isActive !== "boolean"
+    )
+      return next(new ApiError("isActive must be a boolean", 400));
+    if (
+      id === req.user.id &&
+      (req.body.isActive === false ||
+        (req.body.role && req.body.role !== "MANAGER"))
+    )
+      return next(
+        new ApiError("You cannot disable or demote your own account", 400),
+      );
+    for (const field of ["name", "email"])
+      if (req.body[field] !== undefined)
+        req.body[field] = text(req.body[field], field);
+    if (req.body.email) req.body.email = req.body.email.toLowerCase();
+    for (const field of ["dateOfBirth", "dateOfRecruitment"])
+      if (req.body[field] !== undefined)
+        req.body[field] = date(req.body[field], field);
+    if (req.body.supervisorId) {
+      const supervisor = await prisma.user.findUnique({
+        where: { id: req.body.supervisorId },
+      });
+      if (
+        supervisor?.role !== "SUPERVISOR" ||
+        supervisor.managerId !== req.user.id
+      )
+        return next(new ApiError("Select a supervisor from your team", 400));
+    }
+
     if (req.body?.newPassword) {
       if (await bcrypt.compare(req?.body?.newPassword, exists?.password)) {
         return next(
@@ -373,8 +502,14 @@ const updateOneUserById = async (req, res, next) => {
 };
 
 // Delete one user by id
-const deleteOneUserById = async (req, res) => {
+const deleteOneUserById = async (req, res, next) => {
   const { id } = req.params;
+  if (id === req.user.id)
+    return next(new ApiError("You cannot delete your own account", 400));
+  const user = await prisma.user.findUnique({ where: { id } });
+  if (!user) return next(new ApiError("User not found", 404));
+  if (!canManageUser(req.user, user))
+    return next(new ApiError("You can only delete your team members", 403));
 
   await prisma.user.delete({
     where: { id },
@@ -388,7 +523,7 @@ const deleteOneUserById = async (req, res) => {
 const getManagerTeam = async (req, res, next) => {
   let filter = { isActive: true };
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "User");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     if (
@@ -408,6 +543,12 @@ const getManagerTeam = async (req, res, next) => {
 
     const team = await prisma.user.findMany({
       where: whereClause,
+      include: {
+        subRegion: { include: { region: true } },
+        regions: true,
+        supervisor: { select: { id: true, name: true } },
+        manager: { select: { id: true, name: true } },
+      },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take,
       skip: queryObj.skip,
@@ -436,7 +577,7 @@ const getManagerTeam = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return next(new ApiError(`Get Manager Team Error: ${err}`));
+    return next(err);
   }
 };
 
@@ -451,7 +592,10 @@ const getTeamRequests = async (req, res, next) => {
       role = req?.query?.role;
     }
 
-    const apiFeatures = new ApiFeatures(req?.query);
+    const apiFeatures = new ApiFeatures(
+      { ...req.query, role: undefined },
+      "Request",
+    );
     const { queryObj, pagination } = apiFeatures.applyFeatures(req?.query);
 
     const users = await prisma.user.findMany({
@@ -498,7 +642,7 @@ const getTeamRequests = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch requests", 500));
+    next(error);
   }
 };
 

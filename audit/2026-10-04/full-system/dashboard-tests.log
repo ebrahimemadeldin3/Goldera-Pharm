@@ -1,0 +1,21 @@
+/api/doctors?page=1&limit=200
+✔ Saudi day boundaries, Sunday weeks and leap months are independent of machine timezone (8.51775ms)
+✔ empty datasets never produce invalid percentages or quality scores (0.545459ms)
+✔ sales use transaction dates, preserve negative amounts and disclose missing data (4.638458ms)
+✔ unbounded custom-range buckets include the first observed day and chronological recent records (10.245958ms)
+✔ rep ranking uses assignments, never the creator or inferred customer location (1.125792ms)
+✔ coaching ratings are real, dated, validated and take precedence over appraisal (1.324125ms)
+✔ appraisal fallback requires every criterion and filters by appraisal period (0.455291ms)
+✔ upcoming activity is current, excludes cancelled visits and caps rows at six (1.53225ms)
+✔ non-numeric business values are unavailable, not silently converted to zero (0.098917ms)
+✔ server render handles empty, partial error, populated and loading states (50.807417ms)
+✔ pagination honors server page caps and rejects repeated or incomplete pages (0.306ms)
+✔ a failed sales request does not discard successful visit data (0.741917ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 621.034625

@@ -1,5 +1,6 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
+import { text } from "../utils/validation.js";
 
 const addAccount = async (req, res, next) => {
   try {
@@ -11,7 +12,7 @@ const addAccount = async (req, res, next) => {
 
     const account = await prisma.accounts.create({
       data: {
-        name,
+        name: text(name, "Name"),
         subRegionId: subRegionId || null,
       },
       include: {
@@ -37,7 +38,7 @@ const addAccount = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create account", 500));
+    next(error);
   }
 };
 
@@ -79,8 +80,42 @@ const getAllAccounts = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch accounts", 500));
+    next(error);
   }
 };
 
 export { addAccount, getAllAccounts };
+
+export async function updateReference(req, res, next) {
+  const data = {};
+  const allowed = ["name", "subRegionId"];
+  if (Object.keys(req.body).some((key) => !allowed.includes(key)))
+    return next(new ApiError("Unsupported field", 400));
+  for (const key of allowed)
+    if (req.body[key] !== undefined)
+      data[key] =
+        key === "subRegionId" && !req.body[key]
+          ? null
+          : text(req.body[key], key);
+  const record = await prisma.accounts.update({
+    where: { id: req.params.id },
+    data,
+  });
+  res.json({
+    status: "success",
+    data: record,
+    message: "Record updated successfully",
+  });
+}
+
+export async function deleteReference(req, res, next) {
+  if (await prisma.doctor.count({ where: { accountsId: req.params.id } }))
+    return next(
+      new ApiError(
+        "This facility has assigned doctors. Reassign them first.",
+        409,
+      ),
+    );
+  await prisma.accounts.delete({ where: { id: req.params.id } });
+  res.json({ status: "success", message: "Record deleted successfully" });
+}

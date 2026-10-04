@@ -24,7 +24,7 @@ const getRepDetails = async (req, res, next) => {
 
 const getSupervisorTeam = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "User");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -36,6 +36,11 @@ const getSupervisorTeam = async (req, res, next) => {
 
     const team = await prisma.user.findMany({
       where: whereClause,
+      include: {
+        subRegion: { include: { region: true } },
+        supervisor: { select: { id: true, name: true } },
+        manager: { select: { id: true, name: true } },
+      },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take,
       skip: queryObj.skip,
@@ -58,7 +63,7 @@ const getSupervisorTeam = async (req, res, next) => {
 
 const getTeamRequests = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Request");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const reps = await prisma.user.findMany({
@@ -105,7 +110,7 @@ const getTeamRequests = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch requests", 500));
+    next(error);
   }
 };
 

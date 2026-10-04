@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { FormDrawer } from "@/components/shared/FormDrawer";
@@ -35,7 +35,10 @@ import {
 } from "../../lib/schemas";
 import { createSupervisorPlanAction } from "@/features/plan/api/create";
 import { getDoctorsAction } from "@/features/doctors/api";
-import { getSupervisorTeamAction } from "@/features/team/api";
+import {
+  getSupervisorTeamAction,
+  getManagerTeamAction,
+} from "@/features/team/api";
 import type { User } from "@/features/team/lib/types";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import { toast } from "@/lib/utils/toast";
@@ -91,8 +94,13 @@ export default function CreatePlanDialogSupervisor({
 
     // Fetch reps
     if (reps.length === 0) {
-      setIsLoadingReps(true);
-      getSupervisorTeamAction()
+      (userRole === "MANAGER"
+        ? getManagerTeamAction("MEDICAL_REP", 1, 1000).then((result) => ({
+            ...result,
+            members: result.medicalReps,
+          }))
+        : getSupervisorTeamAction(1, 1000)
+      )
         .then((result) => {
           if (result.success && result.members) setReps(result.members);
         })
@@ -191,9 +199,12 @@ export default function CreatePlanDialogSupervisor({
     });
   };
 
-  const doctorsWithDates = form.watch("doctorsWithDates");
-  const startDate = form.watch("startDate");
-  const endDate = form.watch("endDate");
+  const doctorsWithDates = useWatch({
+    control: form.control,
+    name: "doctorsWithDates",
+  });
+  const startDate = useWatch({ control: form.control, name: "startDate" });
+  const endDate = useWatch({ control: form.control, name: "endDate" });
 
   const addDoctor = (doctorId: string, visitDate: Date) => {
     const current = form.getValues("doctorsWithDates");
@@ -219,7 +230,10 @@ export default function CreatePlanDialogSupervisor({
   return (
     <FormDrawer
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(next) => {
+        if (next && reps.length === 0) setIsLoadingReps(true);
+        setOpen(next);
+      }}
       trigger={
         <Button className="bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 cursor-pointer rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[box-shadow,transform,background-color] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-[3px] focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0">
           <Plus className="text-gp-gold-500 size-4" />

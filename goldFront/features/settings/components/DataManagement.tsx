@@ -34,14 +34,14 @@ export default function DataManagement() {
                   Export Data
                 </p>
                 <p className="text-secondary-very-light mt-1 text-base/[21px] font-normal">
-                  Download a copy of your account data
+                  Account data export is not available yet
                 </p>
               </div>
               <Button
                 type="button"
                 variant="secondary"
                 disabled
-                title="Requires backend change — excluded from current frontend-only scope."
+                title="Not available yet"
                 className="text-system-primary h-8 shrink-0 gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Download className="h-4 w-4" />
@@ -58,14 +58,14 @@ export default function DataManagement() {
                   Delete Account
                 </p>
                 <p className="text-secondary-very-light mt-1 text-base/[21px] font-normal">
-                  Permanently delete your account and all data
+                  Contact your manager to deactivate your account
                 </p>
               </div>
               <Button
                 type="button"
                 variant="secondary"
                 disabled
-                title="Requires backend change — excluded from current frontend-only scope."
+                title="Not available yet"
                 className="text-dashboard-red h-8 shrink-0 gap-2 rounded-md bg-white text-sm/5 font-medium hover:bg-white disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Trash2 className="h-4 w-4" />

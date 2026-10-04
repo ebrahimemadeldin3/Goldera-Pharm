@@ -1,6 +1,7 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { date, number, canManageUser, userScope } from "../utils/validation.js";
 
 const addAppraisal = async (req, res, next) => {
   const {
@@ -33,6 +34,43 @@ const addAppraisal = async (req, res, next) => {
   } = req.body;
 
   try {
+    const rep = await prisma.user.findUnique({ where: { id: repId } });
+    if (!rep || !canManageUser(req.user, rep) || rep.id === req.user.id)
+      return next(new ApiError("Select an employee from your team", 403));
+    date(period, "Appraisal period");
+    const scoreFields = [
+      "salesPerformance",
+      "customerRelationships",
+      "productKnowledge",
+      "complianceAndRegulations",
+      "teamworkAndCollaboration",
+      "presentationSkills",
+      "sellingSkills",
+      "reporting",
+      "productInformation",
+      "competitorsInformation",
+      "organizationalValueAwareness",
+      "properUtilizationOfResources",
+      "reliabilityAndCredibility",
+      "independenceAndJudgment",
+      "teamSpirit",
+      "personalDrive",
+      "creativityAndInitiative",
+      "broadProspective",
+      "communicationSkills",
+      "planningAndOrganizing",
+      "appearance",
+      "attitude",
+      "timing",
+    ];
+    for (const key of scoreFields)
+      if (req.body[key] !== undefined) {
+        const score = number(req.body[key], key);
+        if (score > 100)
+          return next(
+            new ApiError("Appraisal scores must be between 0 and 100", 400),
+          );
+      }
     const appraisal = await prisma.appraisal.create({
       data: {
         repId,
@@ -74,15 +112,15 @@ const addAppraisal = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to add appraisal", 500));
+    next(error);
   }
 };
 
 const getAppraisals = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Appraisal");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    const whereClause = { ...queryObj.where };
+    const whereClause = { ...queryObj.where, rep: userScope(req.user) };
 
     const totalDocuments = await prisma.appraisal.count({ where: whereClause });
 
@@ -120,7 +158,7 @@ const getAppraisals = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch appraisals", 500));
+    next(error);
   }
 };
 
@@ -145,7 +183,7 @@ const getRepAppraisals = async (req, res, next) => {
       data: appraisals,
     });
   } catch (error) {
-    next(new ApiError("Failed to fetch rep appraisals", 500));
+    next(error);
   }
 };
 
@@ -153,6 +191,8 @@ const acknowledgeAppraisal = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { accept, comment } = req.body || {};
+    if (typeof accept !== "boolean")
+      return next(new ApiError("Acknowledgement must be true or false", 400));
 
     const appraisal = await prisma.appraisal.findUnique({ where: { id } });
     if (!appraisal) {
@@ -160,7 +200,9 @@ const acknowledgeAppraisal = async (req, res, next) => {
     }
 
     if (appraisal.repId !== req.user.id) {
-      return next(new ApiError("You are not allowed to update this appraisal", 403));
+      return next(
+        new ApiError("You are not allowed to update this appraisal", 403),
+      );
     }
 
     const updatedAppraisal = await prisma.appraisal.update({
@@ -182,7 +224,7 @@ const acknowledgeAppraisal = async (req, res, next) => {
       data: updatedAppraisal,
     });
   } catch (error) {
-    next(new ApiError("Failed to update appraisal acknowledgement", 500));
+    next(error);
   }
 };
 

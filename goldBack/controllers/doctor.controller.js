@@ -3,6 +3,7 @@ import { ApiError } from "../utils/apiError.js";
 import xlsx from "xlsx";
 import fs from "fs/promises";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { text, number } from "../utils/validation.js";
 
 // Add new doctor
 const addNewDoctor = async (req, res, next) => {
@@ -35,6 +36,36 @@ const addNewDoctor = async (req, res, next) => {
   if (!req.body) {
     return next(new ApiError("Please provide doctor data", 400));
   }
+
+  if (!req.body.nameAR?.trim() && !req.body.nameEN?.trim())
+    return next(new ApiError("A doctor name is required", 400));
+  const permitted = [
+    "nameAR",
+    "nameEN",
+    "email",
+    "accountName",
+    "phone",
+    "grade",
+    "avgPatientsPerDay",
+    "specialty",
+    "LicenseNumber",
+    "subRegion",
+    "area",
+    "latitude",
+    "longitude",
+    "accountsId",
+    "isActive",
+  ];
+  if (Object.keys(req.body).some((key) => !permitted.includes(key)))
+    return next(new ApiError("Unsupported doctor field", 400));
+  for (const key of ["nameAR", "nameEN"])
+    if (req.body[key]) req.body[key] = text(req.body[key], key);
+  if (req.body.avgPatientsPerDay !== undefined)
+    req.body.avgPatientsPerDay = number(
+      req.body.avgPatientsPerDay,
+      "Patients per day",
+      { integer: true },
+    );
 
   let {
     nameAR,
@@ -92,7 +123,7 @@ const getAllDoctors = async (req, res, next) => {
       });
     }
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Doctor");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = { ...queryObj.where };
@@ -118,7 +149,7 @@ const getAllDoctors = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch doctors", 500));
+    next(error);
   }
 };
 
@@ -159,6 +190,37 @@ const updateDoctor = async (req, res, next) => {
     return next(new ApiError("Doctor not found", 404));
   }
 
+  if (req.body.nameAR !== undefined || req.body.nameEN !== undefined) {
+    const nameAR = req.body.nameAR ?? exists.nameAR;
+    const nameEN = req.body.nameEN ?? exists.nameEN;
+    if (!nameAR?.trim() && !nameEN?.trim())
+      return next(new ApiError("A doctor name is required", 400));
+  }
+  const permitted = [
+    "nameAR",
+    "nameEN",
+    "email",
+    "accountName",
+    "phone",
+    "grade",
+    "avgPatientsPerDay",
+    "specialty",
+    "LicenseNumber",
+    "subRegion",
+    "area",
+    "latitude",
+    "longitude",
+    "accountsId",
+    "isActive",
+  ];
+  if (Object.keys(req.body).some((key) => !permitted.includes(key)))
+    return next(new ApiError("Unsupported doctor field", 400));
+  if (req.body.avgPatientsPerDay !== undefined)
+    req.body.avgPatientsPerDay = number(
+      req.body.avgPatientsPerDay,
+      "Patients per day",
+      { integer: true },
+    );
   const doctor = await prisma.doctor.update({
     where: { id },
     data: req.body,
@@ -194,6 +256,8 @@ const addDoctorByCSV = async (req, res, next) => {
   try {
     const records = req.body?.records ?? req.body;
     const normalizedRecords = Array.isArray(records) ? records : [];
+    if (normalizedRecords.length > 1000)
+      return next(new ApiError("Import up to 1000 doctors per batch", 400));
 
     if (req.file) {
       const workbook = xlsx.readFile(req.file.path, { cellDates: true });
@@ -225,6 +289,29 @@ const addDoctorByCSV = async (req, res, next) => {
     if (!normalizedRecords.length) {
       return next(new ApiError("No doctor records provided", 400));
     }
+    if (normalizedRecords.length > 1000)
+      return next(new ApiError("Import up to 1000 doctors per batch", 400));
+
+    for (const [index, record] of normalizedRecords.entries()) {
+      if (
+        !record ||
+        (!String(record.nameAR ?? "").trim() &&
+          !String(record.nameEN ?? "").trim())
+      ) {
+        return next(
+          new ApiError(`Row ${index + 1}: a doctor name is required`, 400),
+        );
+      }
+      if (
+        record.avgPatientsPerDay !== undefined &&
+        record.avgPatientsPerDay !== null &&
+        record.avgPatientsPerDay !== ""
+      ) {
+        number(record.avgPatientsPerDay, `Row ${index + 1}: patients per day`, {
+          integer: true,
+        });
+      }
+    }
 
     const created = await prisma.doctor.createMany({
       data: normalizedRecords.map((record) => ({
@@ -254,7 +341,9 @@ const addDoctorByCSV = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create doctor", 500));
+    next(error);
+  } finally {
+    if (req.file?.path) await fs.unlink(req.file.path).catch(() => {});
   }
 };
 

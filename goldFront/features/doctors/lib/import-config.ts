@@ -50,7 +50,9 @@ function validPhone(value: unknown) {
 }
 
 function validGrade(value: unknown) {
-  const text = formatValue(value).toUpperCase().replace(/^GRADE\s+/, "");
+  const text = formatValue(value)
+    .toUpperCase()
+    .replace(/^GRADE\s+/, "");
   if (!text) return null;
   return ["A", "B", "C", "D"].includes(text)
     ? null
@@ -142,7 +144,11 @@ export const doctorImportConfig: BulkImportConfig<
       label: "Grade",
       required: true,
       example: "A",
-      parse: (value) => value.trim().replace(/^grade\s+/i, "").toUpperCase(),
+      parse: (value) =>
+        value
+          .trim()
+          .replace(/^grade\s+/i, "")
+          .toUpperCase(),
       validate: validGrade,
     },
     {

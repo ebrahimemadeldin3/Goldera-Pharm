@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Shield } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -14,10 +13,6 @@ import {
 } from "@/components/ui/select";
 
 export default function SecurityPrivacy() {
-  const [twoFA, setTwoFA] = useState(false);
-  const [timeout, setTimeoutVal] = useState("30");
-  const [analytics, setAnalytics] = useState(false);
-
   return (
     <Card className="border-secondary-light w-full rounded-2xl border bg-white shadow-none">
       <CardHeader className="flex flex-row items-start gap-3">
@@ -29,7 +24,7 @@ export default function SecurityPrivacy() {
             Security & Privacy
           </CardTitle>
           <p className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-            Manage your account security
+            Review available account security options.
           </p>
         </div>
       </CardHeader>
@@ -45,13 +40,14 @@ export default function SecurityPrivacy() {
                 Two-Factor Authentication
               </div>
               <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-                Add an extra layer of security
+                Not available yet
               </div>
             </div>
             <Switch
-              checked={twoFA}
-              onCheckedChange={setTwoFA}
-              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
+              checked={false}
+              disabled
+              aria-label="Two-factor authentication — not available yet"
+              className="data-[state=checked]:bg-system-primary shrink-0 cursor-pointer"
             />
           </div>
 
@@ -62,10 +58,10 @@ export default function SecurityPrivacy() {
                 Session Timeout
               </div>
               <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-                Auto-logout after inactivity
+                Sessions expire one hour after sign-in.
               </div>
             </div>
-            <Select value={timeout} onValueChange={setTimeoutVal}>
+            <Select value="60" disabled>
               <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select timeout" />
               </SelectTrigger>
@@ -84,13 +80,14 @@ export default function SecurityPrivacy() {
                 Analytics & Data Sharing
               </div>
               <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-                Help improve the app by sharing usage data
+                Usage-data sharing is not available.
               </div>
             </div>
             <Switch
-              checked={analytics}
-              onCheckedChange={setAnalytics}
-              className="data-[state=checked]:bg-system-primary cursor-pointer shrink-0"
+              checked={false}
+              disabled
+              aria-label="Analytics sharing — not available yet"
+              className="data-[state=checked]:bg-system-primary shrink-0 cursor-pointer"
             />
           </div>
         </div>

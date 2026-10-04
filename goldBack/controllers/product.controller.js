@@ -1,6 +1,7 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { text, number } from "../utils/validation.js";
 
 const addProduct = async (req, res, next) => {
   try {
@@ -14,9 +15,9 @@ const addProduct = async (req, res, next) => {
 
     const product = await prisma.products.create({
       data: {
-        name: String(name).trim(),
-        internalRef: String(internalRef).trim(),
-        salesPrice: Number(salesPrice),
+        name: text(name, "Name"),
+        internalRef: text(internalRef, "Internal reference"),
+        salesPrice: number(salesPrice, "Sales price", { min: 0.01 }),
         image: image ?? imageUrl ?? null,
       },
     });
@@ -28,7 +29,7 @@ const addProduct = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create product", 500));
+    next(error);
   }
 };
 
@@ -50,7 +51,7 @@ const getAllProducts = async (req, res, next) => {
       });
     }
 
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Products");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = { ...queryObj.where };
 
@@ -74,7 +75,7 @@ const getAllProducts = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch products", 500));
+    next(error);
   }
 };
 
@@ -91,7 +92,7 @@ const getProductById = async (req, res, next) => {
       data: product,
     });
   } catch (error) {
-    next(new ApiError("Failed to fetch product", 500));
+    next(error);
   }
 };
 
@@ -107,9 +108,11 @@ const updateProduct = async (req, res, next) => {
     const { name, internalRef, salesPrice, image, imageUrl } = req.body;
     const payload = {};
 
-    if (name !== undefined) payload.name = String(name).trim();
-    if (internalRef !== undefined) payload.internalRef = String(internalRef).trim();
-    if (salesPrice !== undefined) payload.salesPrice = Number(salesPrice);
+    if (name !== undefined) payload.name = text(name, "Name");
+    if (internalRef !== undefined)
+      payload.internalRef = text(internalRef, "Internal reference");
+    if (salesPrice !== undefined)
+      payload.salesPrice = number(salesPrice, "Sales price", { min: 0.01 });
     if (image !== undefined || imageUrl !== undefined) {
       payload.image = image ?? imageUrl ?? null;
     }
@@ -126,7 +129,7 @@ const updateProduct = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to update product", 500));
+    next(error);
   }
 };
 
@@ -139,6 +142,39 @@ const deleteProduct = async (req, res, next) => {
       return next(new ApiError("Product not found", 404));
     }
 
+    if (
+      (await prisma.sales.count({ where: { productId: id } })) ||
+      (await prisma.request.count({ where: { productsId: id } }))
+    )
+      return next(
+        new ApiError(
+          "This product is used in sales or requests and cannot be deleted",
+          409,
+        ),
+      );
+    const [requests, forecasts] = await Promise.all([
+      prisma.request.findMany({
+        where: { type: "SAMPLE" },
+        select: { sampleData: true },
+      }),
+      prisma.forecast.findMany({ select: { productForecasts: true } }),
+    ]);
+    if (
+      requests.some((r) =>
+        r.sampleData.some((item) => item.productId === id),
+      ) ||
+      forecasts.some((f) =>
+        f.productForecasts.some(
+          (item) => item.productId === id || item.productName === existing.name,
+        ),
+      )
+    )
+      return next(
+        new ApiError(
+          "This product is referenced by samples or forecasts and cannot be deleted",
+          409,
+        ),
+      );
     await prisma.products.delete({ where: { id } });
 
     res.status(200).json({
@@ -146,8 +182,14 @@ const deleteProduct = async (req, res, next) => {
       message: "Product deleted successfully",
     });
   } catch (error) {
-    next(new ApiError("Failed to delete product", 500));
+    next(error);
   }
 };
 
-export { addProduct, getAllProducts, getProductById, updateProduct, deleteProduct };
+export {
+  addProduct,
+  getAllProducts,
+  getProductById,
+  updateProduct,
+  deleteProduct,
+};

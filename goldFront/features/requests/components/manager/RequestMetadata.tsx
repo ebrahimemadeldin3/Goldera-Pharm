@@ -127,7 +127,7 @@ export function RequestMetadata({ request }: RequestMetadataProps) {
                   />
                 </span>
               </InformationItem>
-              <InformationItem label="Handled by">
+              <InformationItem label="Assigned supervisor">
                 {handledBy ? (
                   handledBy
                 ) : (

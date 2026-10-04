@@ -109,3 +109,38 @@ export async function createProductAction(data: CreateProductDto) {
     };
   }
 }
+
+export async function updateProductAction(id: string, data: CreateProductDto) {
+  try {
+    const response = await apiFetch<{ data: ProductApiResponse }>(
+      `/api/products/${id}`,
+      { method: "PATCH", body: JSON.stringify(data) },
+    );
+    for (const role of ["manager", "supervisor", "rep"])
+      revalidatePath(`/${role}/products`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: (error as ApiError).message || "Could not update product",
+      },
+    };
+  }
+}
+
+export async function deleteProductAction(id: string) {
+  try {
+    await apiFetch(`/api/products/${id}`, { method: "DELETE" });
+    for (const role of ["manager", "supervisor", "rep"])
+      revalidatePath(`/${role}/products`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        message: (error as ApiError).message || "Could not delete product",
+      },
+    };
+  }
+}

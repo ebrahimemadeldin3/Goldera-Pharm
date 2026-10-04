@@ -61,6 +61,7 @@ import {
   UNASSIGNED_DISTRICT,
 } from "@/features/plan/lib/territory";
 import type { PharmacyApiResponse } from "../lib/types";
+import { PharmacyRecordActions } from "./PharmacyRecordActions";
 import {
   normalizePharmacyFilterValue,
   normalizePharmacyForDirectory,
@@ -674,6 +675,21 @@ function PharmacyDetailsSheet({
             </div>
 
             <SheetFooter className="border-gp-border-subtle border-t bg-white p-4">
+              {isManager && (
+                <PharmacyRecordActions
+                  pharmacy={{
+                    id: pharmacy.id,
+                    name: pharmacy.name,
+                    city: pharmacy.city,
+                    country: pharmacy.country,
+                    region: pharmacy.sourceRegion,
+                    subRegion: pharmacy.sourceTerritory,
+                    createdAt: pharmacy.createdAt,
+                    updatedAt: pharmacy.updatedAt,
+                  }}
+                  onDeleted={() => onOpenChange(false)}
+                />
+              )}
               <Button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -1690,7 +1706,10 @@ export default function PharmaciesList({
       </section>
 
       <PharmacyDetailsSheet
-        pharmacy={selectedPharmacy}
+        pharmacy={
+          rows.find((row) => row.id === selectedPharmacy?.id) ||
+          selectedPharmacy
+        }
         open={Boolean(selectedPharmacy)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setSelectedPharmacy(null);

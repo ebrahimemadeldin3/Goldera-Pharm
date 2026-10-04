@@ -1,0 +1,32 @@
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+const root='/Users/marwan/Documents/Golderapharm';
+const require=createRequire(`${root}/goldBack/package.json`);
+require('dotenv').config({path:`${root}/goldBack/.env`,quiet:true});
+const state=JSON.parse(fs.readFileSync('/private/tmp/goldera-full-qa.json','utf8'));
+if (!/^goldera_qa_20261004_[a-f0-9]{10}$/.test(state.schema) || new URL(state.databaseUrl).searchParams.get('schema')!==state.schema) throw Error('Refusing non-QA schema');
+process.env.DATABASE_URL=state.databaseUrl;
+const {prisma}=await import(`${root}/goldBack/config/db.js`);
+await import(`${root}/goldBack/utils/cloudinary.js`);
+const cloudinary=require('cloudinary').v2;
+const requests=await prisma.request.findMany({select:{pdfs:true}});
+const users=await prisma.user.findMany({select:{resume:true,certificates:true}});
+const assets=[...new Set([...requests.flatMap(r=>r.pdfs),...users.flatMap(u=>[u.resume,...u.certificates])].map(v=>v?.public_id).filter(Boolean))];
+let removed=0,alreadyRemoved=0;
+for (const id of assets) {
+  const r=await cloudinary.uploader.destroy(id,{resource_type:'raw'});
+  if(r.result==='ok')removed++;
+  else if(r.result==='not found')alreadyRemoved++;
+  else throw Error(`Unable to remove disposable asset: ${r.result}`);
+}
+const counts={users:await prisma.user.count(),requests:await prisma.request.count(),visits:await prisma.visit.count(),products:await prisma.products.count(),pharmacies:await prisma.pharmacy.count(),doctors:await prisma.doctor.count()};
+await prisma.$disconnect();
+const client=new (require('pg').Client)({connectionString:state.databaseUrl});await client.connect();
+await client.query(`DROP SCHEMA "${state.schema}" CASCADE`);
+const exists=await client.query('SELECT schema_name FROM information_schema.schemata WHERE schema_name=$1',[state.schema]);
+if(exists.rowCount)throw Error('QA schema still exists');await client.end();
+const result={schema:state.schema,schemaRemoved:true,productionDataModified:false,disposableCounts:counts,syntheticAssets:assets.length,removedNow:removed,alreadyRemoved};
+fs.writeFileSync(`${root}/audit/2026-10-04/full-system/cleanup.json`,JSON.stringify(result,null,2));
+fs.unlinkSync('/private/tmp/goldera-full-qa.json');
+for(const p of ['/private/tmp/goldera-qa-invoice.pdf','/private/tmp/goldera-qa-pharmacies.csv','/private/tmp/goldera-qa-invoice-generator.cjs'])if(fs.existsSync(p))fs.unlinkSync(p);
+console.log(JSON.stringify(result,null,2));

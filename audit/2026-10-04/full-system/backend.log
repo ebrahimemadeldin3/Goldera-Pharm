@@ -1,0 +1,1109 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+Mode: development
+Server is running on port 5051
+[0mGET /api/profiles [33m401[0m 7.668 ms - -[0m
+[0mPOST /api/auth/login [32m200[0m 786.984 ms - 906[0m
+[0mGET /api/profiles [32m200[0m 224.425 ms - 700[0m
+[0mGET /api/profiles [32m200[0m 158.432 ms - 700[0m
+[0mGET /api/profiles [32m200[0m 624.715 ms - 700[0m
+[0mGET /api/sales?page=1&limit=200 [32m200[0m 328.751 ms - 127[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    paginate: "true",
+    ~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `paginate`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?page=1&limit=200&paginate=true [31m500[0m 93.727 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    paginate: "true",
+    ~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `paginate`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?page=1&limit=200&paginate=true [31m500[0m 544.910 ms - -[0m
+[0mGET /api/managers/team?page=1&limit=200&role=MEDICAL_REP [32m200[0m 418.661 ms - 984[0m
+[0mGET /api/managers/team?page=1&limit=200&role=SUPERVISOR [32m200[0m 438.957 ms - 929[0m
+[0mGET /api/pharmacies?page=1&limit=200 [32m200[0m 773.338 ms - 389[0m
+[0mGET /api/doctors?page=1&limit=200 [32m200[0m 791.379 ms - 659[0m
+[0mGET /api/managers/team?page=1&limit=200&role=MEDICAL_REP [32m200[0m 808.858 ms - 984[0m
+[0mGET /api/managers/team?page=1&limit=200&role=SUPERVISOR [32m200[0m 810.361 ms - 929[0m
+[0mGET /api/doctors?page=1&limit=200 [32m200[0m 507.659 ms - 659[0m
+[0mGET /api/pharmacies?page=1&limit=200 [32m200[0m 506.284 ms - 389[0m
+[0mGET /api/sales?page=1&limit=200 [32m200[0m 539.566 ms - 127[0m
+[0mGET /api/coaching-reports/all?page=1&limit=200 [32m200[0m 881.007 ms - 165[0m
+[0mGET /api/coaching-reports/all?page=1&limit=200 [32m200[0m 571.221 ms - 165[0m
+[0mGET /api/managers/team/requests?page=1&limit=200 [32m200[0m 966.957 ms - 165[0m
+[0mGET /api/managers/team/requests?page=1&limit=200 [32m200[0m 702.713 ms - 165[0m
+[0mGET /api/appraisals?page=1&limit=200 [32m200[0m 728.661 ms - 127[0m
+[0mGET /api/appraisals?page=1&limit=200 [32m200[0m 1072.035 ms - 127[0m
+[0mGET /api/profiles [32m200[0m 704.199 ms - 700[0m
+[0mGET /api/products?paginate=false [32m200[0m 735.515 ms - 298[0m
+[0mPOST /api/auth/login [32m200[0m 722.066 ms - 928[0m
+[0mPOST /api/auth/login [32m200[0m 220.104 ms - 953[0m
+[0mPOST /api/auth/login [32m200[0m 227.383 ms - 1009[0m
+[0mPOST /api/auth/login [32m200[0m 247.366 ms - 943[0m
+[0mPOST /api/auth/login [32m200[0m 228.731 ms - 908[0m
+[0mPOST /api/auth/login [33m401[0m 150.196 ms - 245[0m
+[0mGET /api/products [33m401[0m 0.229 ms - -[0m
+[0mPOST /api/auth/signup [33m403[0m 0.309 ms - -[0m
+[0mGET /api/products [32m200[0m 239.752 ms - 360[0m
+[0mGET /api/doctors [32m200[0m 395.025 ms - 658[0m
+[0mGET /api/pharmacies [32m200[0m 277.737 ms - 388[0m
+[0mGET /api/regions [32m200[0m 810.562 ms - 523[0m
+[0mGET /api/sub-regions [32m200[0m 408.716 ms - 517[0m
+[0mGET /api/accounts [32m200[0m 305.340 ms - 603[0m
+[0mGET /api/managers/users [32m200[0m 957.485 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 254.445 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.request.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    role: "MEDICAL_REP",
+    ~~~~
+    userId: {
+      in: [
+        "90419777-fe0c-48ca-b4ed-bea923104f7b"
+      ]
+    },
+?   AND?: RequestWhereInput | RequestWhereInput[],
+?   OR?: RequestWhereInput[],
+?   NOT?: RequestWhereInput | RequestWhereInput[],
+?   id?: StringFilter | String,
+?   title?: StringFilter | String,
+?   type?: EnumRequestTypeFilter | RequestType,
+?   status?: EnumRequestStatusFilter | RequestStatus,
+?   urgency?: StringFilter | String,
+?   subject?: StringFilter | String,
+?   description?: StringFilter | String,
+?   response?: StringNullableFilter | String | Null,
+?   responseDate?: DateTimeNullableFilter | DateTime | Null,
+?   handledAt?: DateTimeNullableFilter | DateTime | Null,
+?   leaveStartDate?: DateTimeNullableFilter | DateTime | Null,
+?   leaveEndDate?: DateTimeNullableFilter | DateTime | Null,
+?   leaveType?: StringNullableFilter | String | Null,
+?   leaveDaysCount?: IntNullableFilter | Int | Null,
+?   visitedCity?: StringNullableFilter | String | Null,
+?   visitDaysCount?: IntNullableFilter | Int | Null,
+?   totalExpenseAmount?: FloatNullableFilter | Float | Null,
+?   totalExpenseData?: JsonNullableListFilter,
+?   sampleData?: JsonNullableListFilter,
+?   pdfs?: JsonNullableListFilter,
+?   budget?: FloatNullableFilter | Float | Null,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   productsId?: StringNullableFilter | String | Null,
+?   doctors?: DoctorListRelationFilter,
+?   user?: UserScalarRelationFilter | UserWhereInput,
+?   products?: ProductsNullableScalarRelationFilter | ProductsWhereInput | Null
+  }
+}
+
+Unknown argument `role`. Did you mean `title`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getTeamRequests (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/manager.controller.js:477:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/managers/team/requests?role=MEDICAL_REP [31m500[0m 154.552 ms - 343[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 225.557 ms - 98[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    paginate: "true",
+    ~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `paginate`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?paginate=true [31m500[0m 77.928 ms - -[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 555.161 ms - 164[0m
+[0mGET /api/plans/all [32m200[0m 304.378 ms - 164[0m
+[0mGET /api/plans/mgmt [32m200[0m 487.550 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 385.404 ms - 164[0m
+[0mGET /api/appraisals [32m200[0m 450.492 ms - 126[0m
+[0mGET /api/coaching-reports/all [32m200[0m 302.885 ms - 164[0m
+[0mGET /api/sales [32m200[0m 436.746 ms - 126[0m
+[0mGET /api/dashboard/manager [32m200[0m 662.211 ms - 170[0m
+[0mGET /api/profiles [32m200[0m 161.369 ms - 700[0m
+[0mGET /api/supervisors/team [32m200[0m 237.692 ms - 970[0m
+[0mGET /api/supervisors/team/requests [32m200[0m 462.260 ms - 164[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 237.274 ms - 98[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 524.747 ms - 164[0m
+[0mGET /api/plans/mgmt [32m200[0m 391.398 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 369.674 ms - 164[0m
+[0mGET /api/coaching-reports [32m200[0m 407.297 ms - 164[0m
+[0mGET /api/reps/me [32m200[0m 312.886 ms - -[0m
+[0mGET /api/profiles [32m200[0m 194.917 ms - 798[0m
+[0mGET /api/products [32m200[0m 233.533 ms - 360[0m
+[0mGET /api/doctors [32m200[0m 272.302 ms - 658[0m
+[0mGET /api/pharmacies [32m200[0m 235.716 ms - 388[0m
+[0mGET /api/visits [32m200[0m 448.890 ms - 164[0m
+[0mGET /api/visits?date=2026-10-04 [32m200[0m 312.449 ms - 164[0m
+[0mGET /api/visits/visit-reports [32m200[0m 393.460 ms - 164[0m
+[0mGET /api/requests [32m200[0m 392.117 ms - 164[0m
+[0mGET /api/plans [32m200[0m 319.239 ms - 164[0m
+[0mGET /api/forecasts [32m200[0m 310.986 ms - 164[0m
+[0mGET /api/appraisals/rep [32m200[0m 243.046 ms - 42[0m
+[0mGET /api/coaching-reports/rep [32m200[0m 312.782 ms - 164[0m
+[0mGET /api/sales [33m403[0m 80.732 ms - -[0m
+[0mGET /api/dashboard/rep [32m200[0m 476.197 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 232.466 ms - -[0m
+[0mGET /api/managers/users?id=90419777-fe0c-48ca-b4ed-bea923104f7b [32m200[0m 345.802 ms - -[0m
+[0mGET /api/managers/users/90419777-fe0c-48ca-b4ed-bea923104f7b [32m200[0m 459.844 ms - -[0m
+[0mGET /api/supervisors/team [32m200[0m 402.085 ms - 970[0m
+[0mGET /api/reps/me [32m200[0m 350.532 ms - -[0m
+[0mPOST /api/products [32m201[0m 158.211 ms - 275[0m
+[0mPUT /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 [33m404[0m 78.096 ms - -[0m
+[0mPUT /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 [33m404[0m 77.965 ms - -[0m
+[0mPOST /api/products [32m201[0m 154.820 ms - 244[0m
+PrismaClientValidationError: 
+Invalid `prisma.products.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:57:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/products?keyword=QA [31m500[0m 79.608 ms - 341[0m
+[0mGET /api/products?page=-1&limit=-5 [32m200[0m 403.094 ms - 166[0m
+PrismaClientValidationError: 
+Invalid `prisma.products.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    notAField: "true",
+    ~~~~~~~~~
+?   AND?: ProductsWhereInput | ProductsWhereInput[],
+?   OR?: ProductsWhereInput[],
+?   NOT?: ProductsWhereInput | ProductsWhereInput[],
+?   id?: StringFilter | String,
+?   name?: StringFilter | String,
+?   internalRef?: StringFilter | String,
+?   salesPrice?: FloatFilter | Float,
+?   image?: JsonNullableFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   sales?: SalesListRelationFilter,
+?   request?: RequestListRelationFilter
+  }
+}
+
+Unknown argument `notAField`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:57:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/products?notAField=true [31m500[0m 99.453 ms - 341[0m
+[0mPOST /api/products [33m403[0m 98.134 ms - -[0m
+[0mPOST /api/pharmacies [32m201[0m 200.810 ms - 294[0m
+[0mPUT /api/pharmacies/31f95819-f76a-4d8a-bb10-07efc794251e [33m404[0m 77.157 ms - -[0m
+[0mPOST /api/pharmacies [32m201[0m 154.972 ms - 249[0m
+PrismaClientValidationError: 
+Invalid `prisma.pharmacy.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Did you mean `city`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllPharmacies (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/pharmacies.controller.js:45:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/pharmacies?keyword=QA [31m500[0m 80.563 ms - 350[0m
+[0mPOST /api/doctors [32m201[0m 159.521 ms - 516[0m
+[0mPUT /api/doctors/44f0f690-857d-47b7-afdd-3f619aed17f5 [33m404[0m 78.232 ms - -[0m
+[0mPOST /api/doctors [32m201[0m 157.056 ms - 448[0m
+PrismaClientValidationError: 
+Invalid `prisma.doctor.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllDoctors (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/doctor.controller.js:101:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/doctors?keyword=QA [31m500[0m 82.018 ms - 338[0m
+[0mPOST /api/managers/users [31m500[0m 239.291 ms - -[0m
+[0mPUT /api/managers/users/undefined [33m404[0m 154.486 ms - 323[0m
+[0mPUT /api/profiles [33m404[0m 76.363 ms - -[0m
+[0mPUT /api/profiles [33m404[0m 78.067 ms - -[0m
+[0mPOST /api/visits [32m201[0m 337.591 ms - 425[0m
+[0mPATCH /api/visits/d38d21df-6fb9-4391-beb2-cdc0333da50d [32m200[0m 257.011 ms - 425[0m
+[0mPATCH /api/visits/d38d21df-6fb9-4391-beb2-cdc0333da50d [33m403[0m 154.497 ms - 384[0m
+[0mPATCH /api/visits/d38d21df-6fb9-4391-beb2-cdc0333da50d [32m200[0m 232.680 ms - 429[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    createdById: "66e124f9-9e0d-4a08-ac6e-25a2e77c35b7",
+    ~~~~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `createdById`. Did you mean `createdBy`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?createdById=66e124f9-9e0d-4a08-ac6e-25a2e77c35b7 [31m500[0m 79.804 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.findUnique()` invocation:
+
+{
+  where: {
+    id: "d38d21df-6fb9-4391-beb2-cdc0333da50d"
+  },
+  include: {
+    reports: true,
+    ~~~~~~~
+?   doctor?: true,
+?   createdBy?: true,
+?   plan?: true,
+?   visitReports?: true
+  }
+}
+
+Unknown field `reports` for include statement on model `Visit`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async addVisitReports (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:263:19) {
+  clientVersion: '7.1.0'
+}
+[0mPOST /api/visits/visit-reports [31m500[0m 80.838 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.findUnique()` invocation:
+
+{
+  where: {
+    id: "d38d21df-6fb9-4391-beb2-cdc0333da50d"
+  },
+  include: {
+    reports: true,
+    ~~~~~~~
+?   doctor?: true,
+?   createdBy?: true,
+?   plan?: true,
+?   visitReports?: true
+  }
+}
+
+Unknown field `reports` for include statement on model `Visit`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async addVisitReports (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:263:19) {
+  clientVersion: '7.1.0'
+}
+[0mPOST /api/visits/visit-reports [31m500[0m 77.927 ms - -[0m
+[0mPOST /api/plans [32m201[0m 1824.729 ms - 679[0m
+[0mPATCH /api/plans/6c9b0332-e51e-44ec-b66d-50f19c0fdead [32m200[0m 546.703 ms - 680[0m
+[0mPATCH /api/plans/6c9b0332-e51e-44ec-b66d-50f19c0fdead [32m200[0m 459.899 ms - 680[0m
+[0mPATCH /api/plans/6c9b0332-e51e-44ec-b66d-50f19c0fdead [32m200[0m 463.478 ms - 680[0m
+[0mPOST /api/forecasts [32m201[0m 159.052 ms - 464[0m
+[0mPOST /api/forecasts [32m201[0m 154.868 ms - 464[0m
+[0mGET /api/forecasts/4d5e61ab-727c-486f-95a8-0c3d216999ab [32m200[0m 293.855 ms - 521[0m
+[0mPATCH /api/forecasts/4d5e61ab-727c-486f-95a8-0c3d216999ab [32m200[0m 200.650 ms - 467[0m
+[0mPOST /api/requests [32m201[0m 815.013 ms - 749[0m
+[0mPATCH /api/requests/6332d9fa-ec90-4e15-b882-ac011e9a93da [32m200[0m 506.062 ms - 803[0m
+[0mPATCH /api/requests/6332d9fa-ec90-4e15-b882-ac011e9a93da [33m400[0m 255.644 ms - 356[0m
+[0mPOST /api/requests [32m201[0m 462.085 ms - 709[0m
+[0mPATCH /api/requests/63d77c28-2ce8-4b6e-a0fd-cf1187924830 [32m200[0m 641.996 ms - 713[0m
+[0mPATCH /api/requests/63d77c28-2ce8-4b6e-a0fd-cf1187924830 [32m200[0m 799.677 ms - 713[0m
+[0mPOST /api/coaching-reports [32m201[0m 243.514 ms - 606[0m
+PrismaClientKnownRequestError: 
+Invalid `prisma.coachingReport.update()` invocation:
+
+
+An operation failed because it depends on one or more records that were required but not found. No record was found for an update.
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async responseToCoachingReport (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/coaching-reports.controller.js:84:14) {
+  code: 'P2025',
+  meta: { modelName: 'CoachingReport', operation: 'an update' },
+  clientVersion: '7.1.0'
+}
+[0mPATCH /api/coaching-reports/0808d017-0fc9-4219-b9d7-a8f798ff84d9 [31m500[0m 236.169 ms - 376[0m
+[0mPOST /api/coaching-reports [32m201[0m 185.474 ms - 563[0m
+[0mPOST /api/appraisals [32m201[0m 201.985 ms - 947[0m
+[0mPATCH /api/appraisals/88f25e07-c7a2-46f5-9e4f-18acbadb3c04 [32m200[0m 651.153 ms - -[0m
+[0mPATCH /api/appraisals/88f25e07-c7a2-46f5-9e4f-18acbadb3c04 [33m403[0m 240.209 ms - 388[0m
+[0mPOST /api/appraisals [32m201[0m 163.362 ms - 947[0m
+[0mGET /api/profiles [33m403[0m 78.329 ms - 323[0m
+[0mPOST /api/auth/login [33m403[0m 154.112 ms - 239[0m
+[0mDELETE /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 [32m200[0m 303.778 ms - 61[0m
+[0mDELETE /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 [33m404[0m 154.468 ms - 325[0m
+[0mDELETE /api/pharmacies/31f95819-f76a-4d8a-bb10-07efc794251e [32m200[0m 229.971 ms - 62[0m
+[0mDELETE /api/pharmacies/31f95819-f76a-4d8a-bb10-07efc794251e [33m404[0m 305.228 ms - 331[0m
+[0mDELETE /api/doctors/44f0f690-857d-47b7-afdd-3f619aed17f5 [32m200[0m 303.951 ms - 60[0m
+[0mDELETE /api/doctors/44f0f690-857d-47b7-afdd-3f619aed17f5 [33m404[0m 224.192 ms - 321[0m
+[0mDELETE /api/managers/users/undefined [31m500[0m 203.290 ms - -[0m
+[0mPOST /api/auth/login [32m200[0m 665.464 ms - 906[0m
+[0mPOST /api/auth/login [32m200[0m 252.533 ms - 953[0m
+[0mPOST /api/auth/login [32m200[0m 220.275 ms - 1009[0m
+[0mPOST /api/auth/login [32m200[0m 286.106 ms - 943[0m
+[0mPOST /api/auth/login [32m200[0m 304.679 ms - 908[0m
+[0mPOST /api/auth/login [33m401[0m 173.454 ms - 245[0m
+[0mGET /api/products [33m401[0m 0.188 ms - -[0m
+[0mPOST /api/auth/signup [33m403[0m 0.180 ms - -[0m
+[0mGET /api/products [32m200[0m 325.423 ms - 360[0m
+[0mGET /api/doctors [32m200[0m 301.646 ms - 658[0m
+[0mGET /api/pharmacies [32m200[0m 305.276 ms - 388[0m
+[0mGET /api/regions [32m200[0m 919.026 ms - 523[0m
+[0mGET /api/sub-regions [32m200[0m 374.906 ms - 517[0m
+[0mGET /api/accounts [32m200[0m 333.415 ms - 603[0m
+[0mGET /api/managers/users [32m200[0m 837.995 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 268.513 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.request.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    role: "MEDICAL_REP",
+    ~~~~
+    userId: {
+      in: [
+        "2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce"
+      ]
+    },
+?   AND?: RequestWhereInput | RequestWhereInput[],
+?   OR?: RequestWhereInput[],
+?   NOT?: RequestWhereInput | RequestWhereInput[],
+?   id?: StringFilter | String,
+?   title?: StringFilter | String,
+?   type?: EnumRequestTypeFilter | RequestType,
+?   status?: EnumRequestStatusFilter | RequestStatus,
+?   urgency?: StringFilter | String,
+?   subject?: StringFilter | String,
+?   description?: StringFilter | String,
+?   response?: StringNullableFilter | String | Null,
+?   responseDate?: DateTimeNullableFilter | DateTime | Null,
+?   handledAt?: DateTimeNullableFilter | DateTime | Null,
+?   leaveStartDate?: DateTimeNullableFilter | DateTime | Null,
+?   leaveEndDate?: DateTimeNullableFilter | DateTime | Null,
+?   leaveType?: StringNullableFilter | String | Null,
+?   leaveDaysCount?: IntNullableFilter | Int | Null,
+?   visitedCity?: StringNullableFilter | String | Null,
+?   visitDaysCount?: IntNullableFilter | Int | Null,
+?   totalExpenseAmount?: FloatNullableFilter | Float | Null,
+?   totalExpenseData?: JsonNullableListFilter,
+?   sampleData?: JsonNullableListFilter,
+?   pdfs?: JsonNullableListFilter,
+?   budget?: FloatNullableFilter | Float | Null,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   productsId?: StringNullableFilter | String | Null,
+?   doctors?: DoctorListRelationFilter,
+?   user?: UserScalarRelationFilter | UserWhereInput,
+?   products?: ProductsNullableScalarRelationFilter | ProductsWhereInput | Null
+  }
+}
+
+Unknown argument `role`. Did you mean `title`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getTeamRequests (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/manager.controller.js:477:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/managers/team/requests?role=MEDICAL_REP [31m500[0m 149.908 ms - 343[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 265.591 ms - 98[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    paginate: "true",
+    ~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `paginate`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?paginate=true [31m500[0m 100.518 ms - -[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 445.400 ms - 164[0m
+[0mGET /api/plans/all [32m200[0m 296.326 ms - 164[0m
+[0mGET /api/plans/mgmt [32m200[0m 550.067 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 332.410 ms - 164[0m
+[0mGET /api/appraisals [32m200[0m 612.536 ms - 126[0m
+[0mGET /api/coaching-reports/all [32m200[0m 408.224 ms - 164[0m
+[0mGET /api/sales [32m200[0m 403.758 ms - 126[0m
+[0mGET /api/dashboard/manager [32m200[0m 759.231 ms - 170[0m
+[0mGET /api/profiles [32m200[0m 155.847 ms - 700[0m
+[0mGET /api/supervisors/team [32m200[0m 307.552 ms - 970[0m
+[0mGET /api/supervisors/team/requests [32m200[0m 378.786 ms - 164[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 329.470 ms - 98[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 611.088 ms - 164[0m
+[0mGET /api/plans/mgmt [32m200[0m 507.331 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 409.654 ms - 164[0m
+[0mGET /api/coaching-reports [32m200[0m 405.810 ms - 164[0m
+[0mGET /api/reps/me [32m200[0m 299.109 ms - -[0m
+[0mGET /api/profiles [32m200[0m 148.908 ms - 798[0m
+[0mGET /api/products [32m200[0m 225.663 ms - 360[0m
+[0mGET /api/doctors [32m200[0m 280.310 ms - 658[0m
+[0mGET /api/pharmacies [32m200[0m 322.965 ms - 388[0m
+[0mGET /api/visits [32m200[0m 388.764 ms - 164[0m
+[0mGET /api/visits?date=2026-10-04 [32m200[0m 302.535 ms - 164[0m
+[0mGET /api/visits/visit-reports [32m200[0m 461.460 ms - 164[0m
+[0mGET /api/requests [32m200[0m 474.756 ms - 164[0m
+[0mGET /api/plans [32m200[0m 304.367 ms - 164[0m
+[0mGET /api/forecasts [32m200[0m 385.936 ms - 164[0m
+[0mGET /api/appraisals/rep [32m200[0m 334.689 ms - 42[0m
+[0mGET /api/coaching-reports/rep [32m200[0m 432.469 ms - 164[0m
+[0mGET /api/sales [33m403[0m 76.945 ms - -[0m
+[0mGET /api/dashboard/rep [32m200[0m 457.295 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 228.969 ms - -[0m
+[0mGET /api/managers/users?id=2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce [32m200[0m 297.442 ms - -[0m
+[0mGET /api/managers/users/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce [32m200[0m 444.099 ms - -[0m
+[0mGET /api/supervisors/team [32m200[0m 229.188 ms - 970[0m
+[0mGET /api/reps/me [32m200[0m 306.074 ms - -[0m
+[0mPOST /api/products [32m201[0m 157.239 ms - 275[0m
+[0mPATCH /api/products/43139eaa-1bfc-44c7-a18b-95f926b69c6d [32m200[0m 228.785 ms - 269[0m
+[0mPATCH /api/products/43139eaa-1bfc-44c7-a18b-95f926b69c6d [32m200[0m 292.530 ms - 268[0m
+[0mPOST /api/products [32m201[0m 161.653 ms - 244[0m
+PrismaClientValidationError: 
+Invalid `prisma.products.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:57:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/products?keyword=QA [31m500[0m 78.096 ms - 341[0m
+[0mGET /api/products?page=-1&limit=-5 [32m200[0m 260.219 ms - 166[0m
+PrismaClientValidationError: 
+Invalid `prisma.products.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    notAField: "true",
+    ~~~~~~~~~
+?   AND?: ProductsWhereInput | ProductsWhereInput[],
+?   OR?: ProductsWhereInput[],
+?   NOT?: ProductsWhereInput | ProductsWhereInput[],
+?   id?: StringFilter | String,
+?   name?: StringFilter | String,
+?   internalRef?: StringFilter | String,
+?   salesPrice?: FloatFilter | Float,
+?   image?: JsonNullableFilter,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   sales?: SalesListRelationFilter,
+?   request?: RequestListRelationFilter
+  }
+}
+
+Unknown argument `notAField`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:57:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/products?notAField=true [31m500[0m 78.056 ms - 341[0m
+[0mPOST /api/products [33m403[0m 74.380 ms - -[0m
+[0mPOST /api/pharmacies [32m201[0m 248.418 ms - 294[0m
+[0mPATCH /api/pharmacies/4f28a49d-8c4a-4ce1-aef7-d66390c01e8e [32m200[0m 303.382 ms - 303[0m
+[0mPOST /api/pharmacies [32m201[0m 304.182 ms - 249[0m
+PrismaClientValidationError: 
+Invalid `prisma.pharmacy.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Did you mean `city`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllPharmacies (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/pharmacies.controller.js:45:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/pharmacies?keyword=QA [31m500[0m 99.336 ms - 350[0m
+[0mPOST /api/doctors [32m201[0m 203.218 ms - 516[0m
+[0mPATCH /api/doctors/d4a3e446-0c13-432b-8043-8b64b94ced6b [32m200[0m 300.836 ms - 521[0m
+[0mPOST /api/doctors [32m201[0m 201.458 ms - 448[0m
+PrismaClientValidationError: 
+Invalid `prisma.doctor.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    OR: [
+      {
+        title: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      },
+      {
+        description: {
+          contains: "QA",
+          mode: "insensitive"
+        }
+      }
+    ]
+  }
+}
+
+Unknown argument `title`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllDoctors (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/doctor.controller.js:101:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/doctors?keyword=QA [31m500[0m 102.576 ms - 338[0m
+[0mPOST /api/managers/users [31m500[0m 243.055 ms - -[0m
+[0mPUT /api/managers/users/undefined [33m404[0m 263.217 ms - 323[0m
+[0mPATCH /api/profiles [32m200[0m 200.845 ms - 868[0m
+[0mPATCH /api/profiles [32m200[0m 201.444 ms - 880[0m
+[0mPOST /api/visits [32m201[0m 251.973 ms - 425[0m
+[0mPATCH /api/visits/8b667de8-c593-4b59-bc51-0399120a7a79 [32m200[0m 229.798 ms - 425[0m
+[0mPATCH /api/visits/8b667de8-c593-4b59-bc51-0399120a7a79 [33m403[0m 150.664 ms - 384[0m
+[0mPATCH /api/visits/8b667de8-c593-4b59-bc51-0399120a7a79 [32m200[0m 231.375 ms - 429[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.count()` invocation:
+
+{
+  select: {
+    _count: {
+      select: {
+        _all: true
+      }
+    }
+  },
+  where: {
+    createdById: "fd31725c-30cf-403e-8dbf-8ed04011f804",
+    ~~~~~~~~~~~
+?   AND?: VisitWhereInput | VisitWhereInput[],
+?   OR?: VisitWhereInput[],
+?   NOT?: VisitWhereInput | VisitWhereInput[],
+?   id?: StringFilter | String,
+?   visitType?: EnumVisitTypeFilter | VisitType,
+?   samples?: StringNullableListFilter,
+?   date?: DateTimeFilter | DateTime,
+?   time?: StringNullableFilter | String | Null,
+?   doctorId?: StringFilter | String,
+?   userId?: StringFilter | String,
+?   planId?: StringNullableFilter | String | Null,
+?   notes?: StringNullableFilter | String | Null,
+?   status?: EnumVisitStatusFilter | VisitStatus,
+?   createdAt?: DateTimeFilter | DateTime,
+?   updatedAt?: DateTimeFilter | DateTime,
+?   doctor?: DoctorScalarRelationFilter | DoctorWhereInput,
+?   createdBy?: UserScalarRelationFilter | UserWhereInput,
+?   plan?: PlanNullableScalarRelationFilter | PlanWhereInput | Null,
+?   visitReports?: VisitReportListRelationFilter
+  }
+}
+
+Unknown argument `createdById`. Did you mean `createdBy`? Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async getAllVisits (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:215:28) {
+  clientVersion: '7.1.0'
+}
+[0mGET /api/visits/all?createdById=fd31725c-30cf-403e-8dbf-8ed04011f804 [31m500[0m 77.847 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.findUnique()` invocation:
+
+{
+  where: {
+    id: "8b667de8-c593-4b59-bc51-0399120a7a79"
+  },
+  include: {
+    reports: true,
+    ~~~~~~~
+?   doctor?: true,
+?   createdBy?: true,
+?   plan?: true,
+?   visitReports?: true
+  }
+}
+
+Unknown field `reports` for include statement on model `Visit`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async addVisitReports (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:263:19) {
+  clientVersion: '7.1.0'
+}
+[0mPOST /api/visits/visit-reports [31m500[0m 78.184 ms - -[0m
+PrismaClientValidationError: 
+Invalid `prisma.visit.findUnique()` invocation:
+
+{
+  where: {
+    id: "8b667de8-c593-4b59-bc51-0399120a7a79"
+  },
+  include: {
+    reports: true,
+    ~~~~~~~
+?   doctor?: true,
+?   createdBy?: true,
+?   plan?: true,
+?   visitReports?: true
+  }
+}
+
+Unknown field `reports` for include statement on model `Visit`. Available options are marked with ?.
+    at tr (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:10:1379)
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7815)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async addVisitReports (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/visit.controller.js:263:19) {
+  clientVersion: '7.1.0'
+}
+[0mPOST /api/visits/visit-reports [31m500[0m 77.986 ms - -[0m
+[0mPOST /api/plans [32m201[0m 695.517 ms - 679[0m
+[0mPATCH /api/plans/16e58678-a9cd-4695-a59f-e81710677956 [32m200[0m 485.848 ms - 680[0m
+[0mPATCH /api/plans/16e58678-a9cd-4695-a59f-e81710677956 [32m200[0m 450.734 ms - 680[0m
+[0mPATCH /api/plans/16e58678-a9cd-4695-a59f-e81710677956 [32m200[0m 457.223 ms - 680[0m
+[0mPOST /api/forecasts [32m201[0m 155.575 ms - 464[0m
+[0mPOST /api/forecasts [32m201[0m 151.713 ms - 464[0m
+[0mGET /api/forecasts/2c353742-6e6c-4213-ad0b-b8a82fe3a58e [32m200[0m 224.556 ms - 521[0m
+[0mPATCH /api/forecasts/2c353742-6e6c-4213-ad0b-b8a82fe3a58e [32m200[0m 194.283 ms - 467[0m
+[0mPOST /api/requests [32m201[0m 606.187 ms - 749[0m
+[0mPATCH /api/requests/f5c10f09-1223-4c2e-ab3e-58266a0f031c [32m200[0m 452.139 ms - 803[0m
+[0mPATCH /api/requests/f5c10f09-1223-4c2e-ab3e-58266a0f031c [33m400[0m 232.837 ms - 356[0m
+[0mPOST /api/requests [32m201[0m 451.696 ms - 709[0m
+[0mPATCH /api/requests/51122b5f-f985-4a03-89fd-695a279c66a5 [32m200[0m 536.760 ms - 713[0m
+[0mPATCH /api/requests/51122b5f-f985-4a03-89fd-695a279c66a5 [32m200[0m 694.178 ms - 713[0m
+[0mPOST /api/coaching-reports [32m201[0m 155.076 ms - 606[0m
+PrismaClientKnownRequestError: 
+Invalid `prisma.coachingReport.update()` invocation:
+
+
+An operation failed because it depends on one or more records that were required but not found. No record was found for an update.
+    at qr.handleRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:8172)
+    at qr.handleAndLogRequestError (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7467)
+    at qr.request (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:65:7174)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async a (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:5816)
+    at async responseToCoachingReport (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/coaching-reports.controller.js:84:14) {
+  code: 'P2025',
+  meta: { modelName: 'CoachingReport', operation: 'an update' },
+  clientVersion: '7.1.0'
+}
+[0mPATCH /api/coaching-reports/eb1df8a7-a9a4-4269-9d34-991d176d7263 [31m500[0m 229.233 ms - 376[0m
+[0mPOST /api/coaching-reports [32m201[0m 152.947 ms - 563[0m
+[0mPOST /api/appraisals [32m201[0m 158.908 ms - 947[0m
+[0mPATCH /api/appraisals/2906f0aa-d70c-4a4a-8e8e-b2e1926119d6 [32m200[0m 608.387 ms - -[0m
+[0mPATCH /api/appraisals/2906f0aa-d70c-4a4a-8e8e-b2e1926119d6 [33m403[0m 155.042 ms - 388[0m
+[0mPOST /api/appraisals [32m201[0m 156.843 ms - 947[0m
+[0mGET /api/profiles [33m403[0m 75.499 ms - 323[0m
+[0mPOST /api/auth/login [33m403[0m 145.002 ms - 239[0m
+[0mDELETE /api/products/43139eaa-1bfc-44c7-a18b-95f926b69c6d [32m200[0m 224.497 ms - 61[0m
+[0mDELETE /api/products/43139eaa-1bfc-44c7-a18b-95f926b69c6d [33m404[0m 151.415 ms - 325[0m
+[0mDELETE /api/pharmacies/4f28a49d-8c4a-4ce1-aef7-d66390c01e8e [32m200[0m 231.175 ms - 62[0m
+[0mDELETE /api/pharmacies/4f28a49d-8c4a-4ce1-aef7-d66390c01e8e [33m404[0m 152.134 ms - 331[0m
+[0mDELETE /api/doctors/d4a3e446-0c13-432b-8043-8b64b94ced6b [32m200[0m 229.202 ms - 60[0m
+[0mDELETE /api/doctors/d4a3e446-0c13-432b-8043-8b64b94ced6b [33m404[0m 153.594 ms - 321[0m
+[0mDELETE /api/managers/users/undefined [31m500[0m 153.572 ms - -[0m
+[0mGET /api/products?paginate=false [33m404[0m 531.442 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 557.600 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 76.594 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 1407.379 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 74.969 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 1682.511 ms - 307[0m
+[0mGET /api/profiles [33m404[0m 536.377 ms - 307[0m

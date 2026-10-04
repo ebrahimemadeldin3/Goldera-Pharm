@@ -1,0 +1,13 @@
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+const require=createRequire('/Users/marwan/Documents/Golderapharm/goldBack/package.json');
+const state=JSON.parse(fs.readFileSync('/private/tmp/goldera-full-qa.json','utf8'));
+if (!/^goldera_qa_20261004_[a-f0-9]{10}$/.test(state.schema) || new URL(state.databaseUrl).searchParams.get("schema") !== state.schema) throw new Error("Refusing to run outside the disposable QA schema");
+if(!/^goldera_qa_20261004_[a-f0-9]{10}$/.test(state.schema)) throw Error('Refusing non-QA schema');
+const client=new (require('pg').Client)({connectionString:state.databaseUrl});
+await client.connect();
+const tables=await client.query('SELECT tablename FROM pg_tables WHERE schemaname=$1',[state.schema]);
+const names=tables.rows.map(r=>`"${state.schema}"."${r.tablename}"`);
+if(names.length) await client.query(`TRUNCATE ${names.join(', ')} CASCADE`);
+await client.end();
+console.log('Only disposable QA tables reset');

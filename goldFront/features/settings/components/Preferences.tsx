@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Globe } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -13,9 +12,6 @@ import {
 } from "@/components/ui/select";
 
 export default function Preferences() {
-  const [language, setLanguage] = useState("en");
-  const [timezone, setTimezone] = useState("Asia/Riyadh");
-
   return (
     <Card className="border-secondary-light w-full rounded-2xl border bg-white shadow-none">
       <CardHeader className="flex flex-row items-start gap-3">
@@ -27,7 +23,7 @@ export default function Preferences() {
             Preferences
           </CardTitle>
           <p className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-            Customize your experience
+            The current language and operational timezone are shown below.
           </p>
         </div>
       </CardHeader>
@@ -43,10 +39,10 @@ export default function Preferences() {
                 Language
               </div>
               <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-                Select your preferred language
+                English is currently supported.
               </div>
             </div>
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value="en" disabled>
               <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select language" />
               </SelectTrigger>
@@ -64,10 +60,10 @@ export default function Preferences() {
                 Timezone
               </div>
               <div className="text-secondary-dark mt-1 text-sm/[21px] font-normal">
-                Set your local timezone
+                Operations currently use Saudi Arabia time.
               </div>
             </div>
-            <Select value={timezone} onValueChange={setTimezone}>
+            <Select value="Asia/Riyadh" disabled>
               <SelectTrigger className="border-secondary-light w-full justify-between border bg-white text-left text-sm font-normal text-black shadow-none sm:w-55">
                 <SelectValue placeholder="Select timezone" />
               </SelectTrigger>

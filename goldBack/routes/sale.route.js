@@ -14,8 +14,12 @@ const router = express.Router();
 router.use(guard);
 
 router.post("/", allowedTo("MANAGER"), sheetUpload, addSale);
-router.get("/", allowedTo("MANAGER"), getAllSales);
+router.get("/", allowedTo("MANAGER", "SUPERVISOR"), getAllSales);
 router.get("/reps", allowedTo("MEDICAL_REP"), getRepsSales);
-router.get("/reps/:repId", allowedTo("MANAGER"), getRepsSalesByRepId);
+router.get(
+  "/reps/:repId",
+  allowedTo("MANAGER", "SUPERVISOR"),
+  getRepsSalesByRepId,
+);
 
 export default router;

@@ -1,0 +1,414 @@
+{
+  "total": 58,
+  "passed": 58,
+  "results": [
+    {
+      "route": "/manager/appraisal",
+      "status": 200,
+      "finalPath": "/manager/appraisal",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/coaching",
+      "status": 200,
+      "finalPath": "/manager/coaching",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "status": 200,
+      "finalPath": "/manager/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/doctors/add",
+      "status": 200,
+      "finalPath": "/manager/doctors/add",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/doctors",
+      "status": 200,
+      "finalPath": "/manager/doctors",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/forecast",
+      "status": 200,
+      "finalPath": "/manager/forecast",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/hr",
+      "status": 200,
+      "finalPath": "/manager/hr",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager",
+      "status": 200,
+      "finalPath": "/manager",
+      "pass": true,
+      "loadMessages": [
+        "failed to load\"))};$RR(\"B:0\",\"S:0\",[[\"/_next/static/css/0dfd65094fa96c3b.css\",\"next\"]])"
+      ]
+    },
+    {
+      "route": "/manager/pharmacies",
+      "status": 200,
+      "finalPath": "/manager/pharmacies",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/plan",
+      "status": 200,
+      "finalPath": "/manager/plan",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/products",
+      "status": 200,
+      "finalPath": "/manager/products",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/profile",
+      "status": 200,
+      "finalPath": "/manager/profile",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/reports",
+      "status": 200,
+      "finalPath": "/manager/reports",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/requests",
+      "status": 200,
+      "finalPath": "/manager/requests",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/sales",
+      "status": 200,
+      "finalPath": "/manager/sales",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/settings",
+      "status": 200,
+      "finalPath": "/manager/settings",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/team/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce",
+      "status": 200,
+      "finalPath": "/manager/team/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/team",
+      "status": 200,
+      "finalPath": "/manager/team",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/visits/add",
+      "status": 200,
+      "finalPath": "/manager/visits/add",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/manager/visits",
+      "status": 200,
+      "finalPath": "/manager/visits",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/coaching",
+      "status": 200,
+      "finalPath": "/supervisor/coaching",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "status": 200,
+      "finalPath": "/supervisor/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/doctors",
+      "status": 200,
+      "finalPath": "/supervisor/doctors",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/forecast",
+      "status": 200,
+      "finalPath": "/supervisor/forecast",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor",
+      "status": 200,
+      "finalPath": "/supervisor",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/pharmacies",
+      "status": 200,
+      "finalPath": "/supervisor/pharmacies",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/plan",
+      "status": 200,
+      "finalPath": "/supervisor/plan",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/products",
+      "status": 200,
+      "finalPath": "/supervisor/products",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/profile",
+      "status": 200,
+      "finalPath": "/supervisor/profile",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/reports",
+      "status": 200,
+      "finalPath": "/supervisor/reports",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/requests",
+      "status": 200,
+      "finalPath": "/supervisor/requests",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/requests/submit",
+      "status": 200,
+      "finalPath": "/supervisor/requests/submit",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/sales",
+      "status": 200,
+      "finalPath": "/supervisor/sales",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/settings",
+      "status": 200,
+      "finalPath": "/supervisor/settings",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/team/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce",
+      "status": 200,
+      "finalPath": "/supervisor/team/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/team",
+      "status": 200,
+      "finalPath": "/supervisor/team",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/visits/add",
+      "status": 200,
+      "finalPath": "/supervisor/visits/add",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/supervisor/visits",
+      "status": 200,
+      "finalPath": "/supervisor/visits",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/appraisal",
+      "status": 200,
+      "finalPath": "/rep/appraisal",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/coaching",
+      "status": 200,
+      "finalPath": "/rep/coaching",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "status": 200,
+      "finalPath": "/rep/doctors/177f4b27-59dc-4060-8492-ce856ceff420",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/doctors",
+      "status": 200,
+      "finalPath": "/rep/doctors",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/forecast/new",
+      "status": 200,
+      "finalPath": "/rep/forecast/new",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/forecast",
+      "status": 200,
+      "finalPath": "/rep/forecast",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep",
+      "status": 200,
+      "finalPath": "/rep",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/pharmacies",
+      "status": 200,
+      "finalPath": "/rep/pharmacies",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/plan",
+      "status": 200,
+      "finalPath": "/rep/plan",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/products",
+      "status": 200,
+      "finalPath": "/rep/products",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/profile",
+      "status": 200,
+      "finalPath": "/rep/profile",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/reports",
+      "status": 200,
+      "finalPath": "/rep/reports",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/requests/new",
+      "status": 200,
+      "finalPath": "/rep/requests/new",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/requests",
+      "status": 200,
+      "finalPath": "/rep/requests",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/sales",
+      "status": 200,
+      "finalPath": "/rep/sales",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/settings",
+      "status": 200,
+      "finalPath": "/rep/settings",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/target",
+      "status": 200,
+      "finalPath": "/rep/target",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/visits/add",
+      "status": 200,
+      "finalPath": "/rep/visits/add",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/visits",
+      "status": 200,
+      "finalPath": "/rep/visits",
+      "pass": true,
+      "loadMessages": []
+    },
+    {
+      "route": "/rep/visits/report",
+      "status": 200,
+      "finalPath": "/rep/visits/report",
+      "pass": true,
+      "loadMessages": []
+    }
+  ]
+}

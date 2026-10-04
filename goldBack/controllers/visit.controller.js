@@ -1,6 +1,14 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import {
+  text,
+  number,
+  date as validDate,
+  stringList,
+  userScope,
+  canManageUser,
+} from "../utils/validation.js";
 
 // Visits and Visit Reports Controllers
 const scheduleVisit = async (req, res, next) => {
@@ -26,14 +34,25 @@ const scheduleVisit = async (req, res, next) => {
       });
 
       if (!rep || rep.managerId !== req.user.id) {
-        return next(new ApiError("Selected rep is not under your management", 400));
+        return next(
+          new ApiError("Selected rep is not under your management", 400),
+        );
       }
 
       if (supervisorId && rep.supervisorId !== supervisorId) {
-        return next(new ApiError("Selected supervisor does not match the rep", 400));
+        return next(
+          new ApiError("Selected supervisor does not match the rep", 400),
+        );
       }
     }
 
+    validDate(date, "Visit date");
+    text(doctorId, "Doctor");
+    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
+      throw new ApiError("Time must use HH:mm", 400);
+    const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
+    if (!doctor || !doctor.isActive)
+      throw new ApiError("Select an active doctor", 400);
     const data = await prisma.visit.create({
       data: {
         samples: Array.isArray(samples) ? samples : [],
@@ -53,7 +72,7 @@ const scheduleVisit = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to schedule visit", 500));
+    next(error);
   }
 };
 
@@ -111,7 +130,7 @@ const getVisits = async (req, res, next) => {
     }
 
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Visit");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -157,7 +176,7 @@ const getVisits = async (req, res, next) => {
 const getAllVisits = async (req, res, next) => {
   try {
     let { paginate } = req.query;
-    let whereClause = {};
+    let whereClause = { createdBy: userScope(req.user) };
     const clientDate = req.query.date ? new Date(req.query.date) : null;
     const { createdById } = req.query || null;
 
@@ -205,11 +224,9 @@ const getAllVisits = async (req, res, next) => {
     }
 
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Visit");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    whereClause = {
-      ...queryObj.where,
-    };
+    whereClause = { ...queryObj.where, ...whereClause };
 
     // Get total count of documents for accurate pagination calculations
     const totalDocuments = await prisma.visit.count({ where: whereClause });
@@ -262,15 +279,14 @@ const addVisitReports = async (req, res, next) => {
 
     const visit = await prisma.visit.findUnique({
       where: { id: visitId },
-      include: { reports: true },
+      include: { visitReports: true, createdBy: true },
     });
 
     if (!visit) {
       return next(new ApiError("Visit not found", 404));
     }
 
-    // Reps can only report on their own visits
-    if (req.user.role === "MEDICAL_REP" && visit.userId !== req.user.id) {
+    if (!canManageUser(req.user, visit.createdBy)) {
       return next(
         new ApiError(
           "Unauthorized: You can only submit reports for your own visits",
@@ -289,40 +305,45 @@ const addVisitReports = async (req, res, next) => {
     // Idempotency / duplicate check
     if (
       visit.status === "COMPLETED" ||
-      (visit.reports && visit.reports.length > 0)
+      (visit.visitReports && visit.visitReports.length > 0)
     ) {
       return next(
-        new ApiError(
-          "A report has already been submitted for this visit",
-          400,
-        ),
+        new ApiError("A report has already been submitted for this visit", 400),
       );
     }
 
-    // Atomic transaction for report creation + visit status update
-    const [report] = await prisma.$transaction([
-      prisma.visitReport.create({
+    text(duration, "Duration");
+    const score = number(rating, "Rating", { min: 1, integer: true });
+    if (score > 5) throw new ApiError("Rating must be between 1 and 5", 400);
+    text(visitPurpose, "Visit purpose");
+    const topics = stringList(discussedTopics, "Discussed topics", {
+      required: true,
+    });
+    const providedSamples = stringList(samplesProvided || [], "Samples");
+    const report = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.visit.updateMany({
+        where: { id: visitId, status: "SCHEDULED" },
+        data: { status: "COMPLETED" },
+      });
+      if (claimed.count !== 1)
+        throw new ApiError(
+          "This visit has already been completed or cancelled",
+          409,
+        );
+      return tx.visitReport.create({
         data: {
           visitId,
-          userId: req.user.id,
-          duration: duration ? String(duration) : null,
-          rating: typeof rating === "number" ? rating : Number(rating) || null,
+          userId: visit.userId,
+          duration: String(duration),
+          rating: String(score),
           doctorFeedback: doctorFeedback || null,
-          visitPurpose: visitPurpose || null,
+          visitPurpose: visitPurpose.trim(),
           notes: notes || null,
-          samplesProvided: Array.isArray(samplesProvided)
-            ? samplesProvided
-            : [],
-          discussedTopics: Array.isArray(discussedTopics)
-            ? discussedTopics
-            : [],
+          samplesProvided: providedSamples,
+          discussedTopics: topics,
         },
-      }),
-      prisma.visit.update({
-        where: { id: visitId },
-        data: { status: "COMPLETED" },
-      }),
-    ]);
+      });
+    });
 
     res.status(200).json({
       status: "success",
@@ -371,7 +392,7 @@ const getMyVisitReports = async (req, res, next) => {
     }
 
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "VisitReport");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = {
       ...queryObj.where,
@@ -425,15 +446,8 @@ const getAllVisitReports = async (req, res, next) => {
   try {
     let { paginate } = req.query;
 
-    const baseWhere = {};
-    if (req.user.role === "SUPERVISOR") {
-      const supervisedReps = await prisma.user.findMany({
-        where: { supervisorId: req.user.id },
-        select: { id: true },
-      });
-      const repIds = supervisedReps.map((r) => r.id);
-      baseWhere.userId = { in: repIds };
-    }
+    const baseWhere = { createdBy: userScope(req.user) };
+    if (req.query.createdById) baseWhere.userId = req.query.createdById;
 
     if (paginate === "false") {
       const data = await prisma.visitReport.findMany({
@@ -468,11 +482,11 @@ const getAllVisitReports = async (req, res, next) => {
     }
 
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "VisitReport");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = {
-      ...baseWhere,
       ...queryObj.where,
+      ...baseWhere,
     };
 
     // filter by rep id
@@ -532,6 +546,7 @@ const updateVisit = async (req, res, next) => {
 
     const visit = await prisma.visit.findUnique({
       where: { id },
+      include: { createdBy: true },
     });
 
     if (!visit) {
@@ -539,7 +554,7 @@ const updateVisit = async (req, res, next) => {
     }
 
     // Authorization check
-    if (req.user.role === "MEDICAL_REP" && visit.userId !== req.user.id) {
+    if (!canManageUser(req.user, visit.createdBy)) {
       return next(
         new ApiError("Unauthorized: You can only update your own visits", 403),
       );
@@ -548,10 +563,9 @@ const updateVisit = async (req, res, next) => {
     // Allowed fields for update - do NOT allow changing userId, doctorId, or id
     const allowedFields = [
       "date",
-      "place",
-      "facility",
+      "time",
       "visitType",
-      "timeLabel",
+      "samples",
       "notes",
       "status",
     ];
@@ -561,6 +575,18 @@ const updateVisit = async (req, res, next) => {
         updateData[key] = req.body[key];
       }
     }
+
+    if (visit.status === "COMPLETED")
+      throw new ApiError("Completed visits cannot be changed", 409);
+    if (updateData.date !== undefined)
+      updateData.date = validDate(updateData.date, "Visit date");
+    if (updateData.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(updateData.time))
+      throw new ApiError("Time must use HH:mm", 400);
+    if (updateData.samples !== undefined)
+      updateData.samples = stringList(updateData.samples, "Samples");
+    // Completion must go through the report transaction.
+    if (updateData.status === "COMPLETED")
+      throw new ApiError("Submit a visit report to complete this visit", 400);
 
     // Legal status transitions check
     if (updateData.status) {

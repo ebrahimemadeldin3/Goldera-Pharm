@@ -25,8 +25,26 @@ if (NODE_ENV === "development") {
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(compression());
+app.use(
+  ["/api/doctors/bulk-import", "/api/pharmacies/bulk-import"],
+  express.json({ limit: "2mb" }),
+);
 app.use(express.json({ limit: "20kb" }));
 app.use(express.urlencoded({ extended: true }));
+
+// Apply one response boundary to every user relation, including nested team data.
+app.use((req, res, next) => {
+  const json = res.json.bind(res);
+  res.json = (body) =>
+    json(
+      JSON.parse(
+        JSON.stringify(body, (key, value) =>
+          key === "password" || key === "newPassword" ? undefined : value,
+        ),
+      ),
+    );
+  next();
+});
 
 // Mount Routes
 mountRoutes(app);

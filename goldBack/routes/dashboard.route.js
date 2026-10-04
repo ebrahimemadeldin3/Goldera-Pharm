@@ -15,5 +15,6 @@ router.get("/reps", allowedTo("MEDICAL_REP"), getRepsDashboard);
 router.get("/rep", allowedTo("MEDICAL_REP"), getRepsDashboard);
 router.get("/managers", allowedTo("MANAGER"), getManagersDashboard);
 router.get("/manager", allowedTo("MANAGER"), getManagersDashboard);
+router.get("/supervisors", allowedTo("SUPERVISOR"), getManagersDashboard);
 
 export default router;

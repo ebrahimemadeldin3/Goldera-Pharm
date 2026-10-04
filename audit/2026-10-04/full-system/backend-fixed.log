@@ -1,0 +1,213 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  write to custom object with { processEnv: myObject }
+Mode: development
+Server is running on port 5051
+[0mPOST /api/auth/login [32m200[0m 794.976 ms - 928[0m
+[0mPOST /api/auth/login [32m200[0m 219.758 ms - 975[0m
+[0mPOST /api/auth/login [32m200[0m 211.544 ms - -[0m
+[0mPOST /api/auth/login [32m200[0m 292.235 ms - 965[0m
+[0mPOST /api/auth/login [32m200[0m 207.171 ms - 930[0m
+[0mPOST /api/auth/login [33m401[0m 148.383 ms - 72[0m
+[0mGET /api/products [33m401[0m 0.601 ms - 88[0m
+[0mPOST /api/auth/signup [33m403[0m 0.321 ms - 97[0m
+[0mGET /api/products [32m200[0m 336.064 ms - 539[0m
+[0mGET /api/doctors [32m200[0m 316.476 ms - -[0m
+[0mGET /api/pharmacies [32m200[0m 277.476 ms - 572[0m
+[0mGET /api/regions [32m200[0m 773.430 ms - 523[0m
+[0mGET /api/sub-regions [32m200[0m 395.778 ms - 517[0m
+[0mGET /api/accounts [32m200[0m 396.730 ms - 603[0m
+[0mGET /api/managers/users [32m200[0m 982.886 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 325.118 ms - -[0m
+[0mGET /api/managers/team/requests?role=MEDICAL_REP [32m200[0m 497.667 ms - -[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 326.747 ms - -[0m
+[0mGET /api/visits/all?paginate=true [32m200[0m 356.576 ms - -[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 558.129 ms - 164[0m
+[0mGET /api/plans/all [32m200[0m 408.103 ms - 849[0m
+[0mGET /api/plans/mgmt [32m200[0m 510.471 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 407.851 ms - -[0m
+[0mGET /api/appraisals [32m200[0m 533.154 ms - -[0m
+[0mGET /api/coaching-reports/all [32m200[0m 307.730 ms - -[0m
+[0mGET /api/sales [32m200[0m 382.058 ms - 126[0m
+[0mGET /api/dashboard/manager [32m200[0m 749.001 ms - -[0m
+[0mGET /api/profiles [32m200[0m 157.536 ms - 700[0m
+[0mGET /api/supervisors/team [32m200[0m 325.701 ms - 904[0m
+[0mGET /api/supervisors/team/requests [32m200[0m 479.198 ms - -[0m
+[0mGET /api/visits/all?paginate=false [32m200[0m 227.455 ms - -[0m
+[0mGET /api/visits/all-visit-reports [32m200[0m 508.019 ms - 164[0m
+[0mGET /api/plans/mgmt [32m200[0m 444.807 ms - 223[0m
+[0mGET /api/forecasts/all [32m200[0m 391.329 ms - -[0m
+[0mGET /api/coaching-reports [32m200[0m 489.539 ms - 164[0m
+[0mGET /api/reps/me [32m200[0m 307.221 ms - -[0m
+[0mGET /api/profiles [32m200[0m 152.938 ms - 806[0m
+[0mGET /api/products [32m200[0m 224.838 ms - 539[0m
+[0mGET /api/doctors [32m200[0m 331.454 ms - -[0m
+[0mGET /api/pharmacies [32m200[0m 226.911 ms - 572[0m
+[0mGET /api/visits [32m200[0m 304.532 ms - -[0m
+[0mGET /api/visits?date=2026-10-04 [32m200[0m 385.209 ms - -[0m
+[0mGET /api/visits/visit-reports [32m200[0m 510.132 ms - 164[0m
+[0mGET /api/requests [32m200[0m 383.421 ms - -[0m
+[0mGET /api/plans [32m200[0m 367.771 ms - 849[0m
+[0mGET /api/forecasts [32m200[0m 469.085 ms - -[0m
+[0mGET /api/appraisals/rep [32m200[0m 281.418 ms - -[0m
+[0mGET /api/coaching-reports/rep [32m200[0m 427.196 ms - -[0m
+[0mGET /api/sales [33m403[0m 78.507 ms - 108[0m
+[0mGET /api/dashboard/rep [32m200[0m 560.792 ms - -[0m
+[0mGET /api/managers/team [32m200[0m 236.223 ms - -[0m
+[0mGET /api/managers/users?id=2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce [32m200[0m 316.000 ms - -[0m
+[0mGET /api/managers/users/2f6aa7dc-0948-4fbe-866c-f8c0ac0af9ce [32m200[0m 552.672 ms - -[0m
+[0mGET /api/supervisors/team [32m200[0m 360.250 ms - 904[0m
+[0mGET /api/reps/me [32m200[0m 312.118 ms - -[0m
+[0mPOST /api/products [32m201[0m 317.661 ms - 269[0m
+[0mPATCH /api/products/d22d2977-9abd-40f4-b866-80049d71afbb [32m200[0m 305.202 ms - 266[0m
+ApiError: Sales price must be a number of at least 0.01
+    at number (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/validation.js:12:89)
+    at updateProduct (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:113:56)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mPATCH /api/products/d22d2977-9abd-40f4-b866-80049d71afbb [33m400[0m 156.899 ms - 92[0m
+ApiError: Name is required
+    at text (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/validation.js:5:11)
+    at addProduct (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:18:15)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at file:///Users/marwan/Documents/Golderapharm/goldBack/middlewares/auth.middleware.js:85:5
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mPOST /api/products [33m400[0m 79.288 ms - 63[0m
+[0mGET /api/products?keyword=QA [32m200[0m 234.231 ms - 558[0m
+ApiError: Page must be positive; limit must be between 1 and 1000
+    at ApiFeatures.paginate (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/apiFeatures.js:62:95)
+    at ApiFeatures.applyFeatures (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/apiFeatures.js:70:27)
+    at getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:55:50)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at /Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:295:15
+    at processParams (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:582:12) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mGET /api/products?page=-1&limit=-5 [33m400[0m 78.191 ms - 102[0m
+ApiError: Unsupported filter: notAField
+    at ApiFeatures.filter (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/apiFeatures.js:21:47)
+    at ApiFeatures.applyFeatures (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/apiFeatures.js:69:10)
+    at getAllProducts (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/product.controller.js:55:50)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at /Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:295:15
+    at processParams (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:582:12) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mGET /api/products?notAField=true [33m400[0m 77.959 ms - 76[0m
+[0mPOST /api/products [33m403[0m 80.180 ms - 108[0m
+[0mPOST /api/pharmacies [32m201[0m 159.844 ms - 294[0m
+[0mPATCH /api/pharmacies/c1dc0d0e-3752-4709-9766-9df4f678a22e [32m200[0m 232.069 ms - 303[0m
+ApiError: Name is required
+    at text (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/validation.js:5:11)
+    at addPharmacy (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/pharmacies.controller.js:21:15)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at file:///Users/marwan/Documents/Golderapharm/goldBack/middlewares/auth.middleware.js:85:5
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mPOST /api/pharmacies [33m400[0m 81.544 ms - 63[0m
+[0mGET /api/pharmacies?keyword=QA [32m200[0m 296.531 ms - 622[0m
+[0mPOST /api/doctors [32m201[0m 158.997 ms - 516[0m
+[0mPATCH /api/doctors/35fbe980-071b-4e67-a62f-f98d7a02e7f2 [32m200[0m 232.115 ms - 521[0m
+[0mPOST /api/doctors [33m400[0m 77.803 ms - 72[0m
+[0mGET /api/doctors?keyword=QA [32m200[0m 235.517 ms - -[0m
+[0mPOST /api/managers/users [32m201[0m 871.456 ms - 793[0m
+[0mPUT /api/managers/users/224ad544-302f-420f-8806-263c2c924a7c [32m200[0m 236.471 ms - 802[0m
+[0mPATCH /api/profiles [33m400[0m 77.739 ms - 94[0m
+[0mPATCH /api/profiles [32m200[0m 246.942 ms - 806[0m
+[0mPOST /api/visits [32m201[0m 320.144 ms - 425[0m
+[0mPATCH /api/visits/4dfbe5fa-bca8-4723-b89d-9a72a5ee6149 [32m200[0m 313.543 ms - 425[0m
+[0mPATCH /api/visits/4dfbe5fa-bca8-4723-b89d-9a72a5ee6149 [33m403[0m 234.993 ms - 96[0m
+[0mPATCH /api/visits/4dfbe5fa-bca8-4723-b89d-9a72a5ee6149 [33m403[0m 232.235 ms - 96[0m
+[0mGET /api/visits/all?createdById=fd31725c-30cf-403e-8dbf-8ed04011f804 [32m200[0m 321.527 ms - 164[0m
+[0mPOST /api/visits/visit-reports [32m200[0m 554.314 ms - 461[0m
+[0mPOST /api/visits/visit-reports [33m400[0m 271.947 ms - 97[0m
+[0mPOST /api/plans [32m201[0m 614.243 ms - 676[0m
+[0mPATCH /api/plans/00579706-ec05-42fb-9626-17d8d7a0c038 [33m403[0m 75.433 ms - 93[0m
+[0mPATCH /api/plans/00579706-ec05-42fb-9626-17d8d7a0c038 [32m200[0m 609.743 ms - 677[0m
+[0mPATCH /api/plans/00579706-ec05-42fb-9626-17d8d7a0c038 [33m409[0m 686.170 ms - 82[0m
+[0mPOST /api/forecasts [33m400[0m 76.359 ms - 87[0m
+[0mPOST /api/forecasts [32m201[0m 156.379 ms - 464[0m
+[0mGET /api/forecasts/76b82a06-056e-4e2d-9a69-971b4448b7a0 [33m404[0m 151.926 ms - 65[0m
+[0mPATCH /api/forecasts/76b82a06-056e-4e2d-9a69-971b4448b7a0 [32m200[0m 307.298 ms - 466[0m
+[0mPOST /api/requests [32m201[0m 847.749 ms - 746[0m
+[0mPATCH /api/requests/3842b9a9-3cf9-4d19-b5a4-7339c9215f0a [32m200[0m 545.103 ms - 800[0m
+[0mPATCH /api/requests/3842b9a9-3cf9-4d19-b5a4-7339c9215f0a [33m400[0m 231.488 ms - 80[0m
+ApiError: Sample quantity must be an integer of at least 1
+    at number (file:///Users/marwan/Documents/Golderapharm/goldBack/utils/validation.js:12:89)
+    at createRequest (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/request.controller.js:176:9)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at multerMiddleware (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/multer/lib/make-middleware.js:19:41)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17)
+    at next (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/route.js:117:3)
+    at handle (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/router/lib/layer.js:152:17) {
+  statusCode: 400,
+  status: 'fail'
+}
+[0mPOST /api/requests [33m400[0m 79.942 ms - 95[0m
+[0mPATCH /api/requests/b533db46-095c-46fd-8368-afd2ceea4828 [32m200[0m 623.078 ms - 713[0m
+ApiError: This request has already been reviewed
+    at file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/request.controller.js:341:38
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async Proxy._transactionWithCallback (/Users/marwan/Documents/Golderapharm/goldBack/node_modules/@prisma/client/runtime/client.js:75:4390)
+    at async updateRequest (file:///Users/marwan/Documents/Golderapharm/goldBack/controllers/request.controller.js:339:30) {
+  statusCode: 409,
+  status: 'fail'
+}
+[0mPATCH /api/requests/b533db46-095c-46fd-8368-afd2ceea4828 [33m409[0m 700.561 ms - 85[0m
+[0mPOST /api/coaching-reports [32m201[0m 242.927 ms - 606[0m
+[0mPATCH /api/coaching-reports/eddbb96b-6ecd-47b0-bd67-7dbcf6b6a4e0 [32m200[0m 233.129 ms - 605[0m
+[0mPOST /api/coaching-reports [33m403[0m 155.933 ms - 85[0m
+[0mPOST /api/appraisals [32m201[0m 251.490 ms - 947[0m
+[0mPATCH /api/appraisals/8506fa4d-22a0-4a79-a12f-d1c862999af4 [32m200[0m 630.740 ms - -[0m
+[0mPATCH /api/appraisals/8506fa4d-22a0-4a79-a12f-d1c862999af4 [33m403[0m 159.540 ms - 91[0m
+[0mPOST /api/appraisals [33m403[0m 246.894 ms - 80[0m
+[0mGET /api/profiles [33m403[0m 77.685 ms - 69[0m
+[0mPOST /api/auth/login [33m403[0m 152.374 ms - 69[0m
+[0mDELETE /api/products/d22d2977-9abd-40f4-b866-80049d71afbb [32m200[0m 234.951 ms - 61[0m
+[0mDELETE /api/products/d22d2977-9abd-40f4-b866-80049d71afbb [33m404[0m 154.704 ms - 64[0m
+[0mDELETE /api/pharmacies/c1dc0d0e-3752-4709-9766-9df4f678a22e [32m200[0m 232.747 ms - 62[0m
+[0mDELETE /api/pharmacies/c1dc0d0e-3752-4709-9766-9df4f678a22e [33m404[0m 151.631 ms - 65[0m
+[0mDELETE /api/doctors/35fbe980-071b-4e67-a62f-f98d7a02e7f2 [32m200[0m 235.393 ms - 60[0m
+[0mDELETE /api/doctors/35fbe980-071b-4e67-a62f-f98d7a02e7f2 [33m404[0m 179.394 ms - 63[0m
+[0mDELETE /api/managers/users/224ad544-302f-420f-8806-263c2c924a7c [32m200[0m 255.755 ms - 58[0m
+[0mDELETE /api/managers/users/224ad544-302f-420f-8806-263c2c924a7c [33m404[0m 155.324 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 543.008 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 515.422 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 72.918 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 80.741 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 523.030 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 545.287 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 74.499 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 71.400 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 532.185 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 541.808 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 76.387 ms - 61[0m
+[0mGET /api/profiles [33m404[0m 74.295 ms - 61[0m

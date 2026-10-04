@@ -141,7 +141,15 @@ function prepareSubmissionData(
  */
 function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
   // Ensure productForecasts is an array (default to empty array if undefined)
-  const productForecasts = apiForecast.productForecasts || [];
+  const productForecasts = (apiForecast.productForecasts || []).map((item) => ({
+    ...item,
+    productUnits: Number(
+      item.productUnits ??
+        (item as unknown as { quantity?: number }).quantity ??
+        0,
+    ),
+    doctorName: item.doctorName || "Unassigned doctor",
+  }));
 
   // Group product forecasts by doctor
   const doctorMap = new Map<string, { products: typeof productForecasts }>();

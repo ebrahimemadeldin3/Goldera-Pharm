@@ -41,7 +41,9 @@ export function calculateForecastStats(forecasts: Forecast[]): ForecastStats {
       (f) =>
         f.distributions
           ?.map((d) => d.doctorId || d.doctorName)
-          .filter((value) => value.trim().length > 0) || [],
+          .filter(
+            (value) => typeof value === "string" && value.trim().length > 0,
+          ) || [],
     ),
   ).size;
 
@@ -76,7 +78,8 @@ export function calculateProductStats(
       ...product,
       allocated,
       remaining: product.totalUnits - allocated,
-      percentage: product.totalUnits > 0 ? (allocated / product.totalUnits) * 100 : 0,
+      percentage:
+        product.totalUnits > 0 ? (allocated / product.totalUnits) * 100 : 0,
     };
   });
 }

@@ -1,93 +1,141 @@
+import { Prisma } from "@prisma/client";
+import * as PrismaClient from "@prisma/client";
+import { ApiError } from "./apiError.js";
+
+// Query fields come from the actual model, not untrusted query parameter names.
 export class ApiFeatures {
-  queryStringObj;
-  queryObj;
-
-  constructor(queryStringObj) {
-    this.queryStringObj = { ...queryStringObj }; // Copy of query object
-    this.queryObj = { where: {} }; // Initialize base query object
+  constructor(queryStringObj = {}, modelName) {
+    this.queryStringObj = { ...queryStringObj };
+    this.model = Prisma.dmmf.datamodel.models.find(
+      (model) => model.name === modelName,
+    );
+    if (!this.model) throw new Error(`Missing query model: ${modelName}`);
+    this.fields = new Map(
+      this.model.fields
+        .filter((f) => f.kind !== "object" && !f.isList)
+        .map((f) => [f.name, f]),
+    );
+    this.queryObj = { where: {} };
   }
-
-  // 1) Filteration: Exclude unwanted query parameters
   filter() {
-    const excludes = ["page", "limit", "sort", "fields", "keyword"];
-    excludes.forEach((exclude) => delete this.queryStringObj[exclude]);
-    this.queryObj.where = { ...this.queryStringObj };
-    return this; // Returning `this` allows method chaining
+    const controls = new Set([
+      "page",
+      "limit",
+      "sort",
+      "fields",
+      "keyword",
+      "paginate",
+    ]);
+    // These aliases are consumed and scoped by the respective controllers.
+    if (!this.fields.has("createdById")) controls.add("createdById");
+    if (!this.fields.has("date")) controls.add("date");
+    for (const [key, value] of Object.entries(this.queryStringObj)) {
+      if (controls.has(key) || value === undefined || value === "") continue;
+      const field = this.fields.get(key);
+      if (!field || key === "password")
+        throw new ApiError(`Unsupported filter: ${key}`, 400);
+      if (typeof value !== "string")
+        throw new ApiError(`Invalid filter: ${key}`, 400);
+      let parsed = value;
+      if (field.type === "Boolean") {
+        if (!["true", "false"].includes(value))
+          throw new ApiError(`Invalid ${key}`, 400);
+        parsed = value === "true";
+      } else if (["Int", "Float", "Decimal"].includes(field.type)) {
+        parsed = Number(value);
+        if (
+          !Number.isFinite(parsed) ||
+          (field.type === "Int" && !Number.isInteger(parsed))
+        )
+          throw new ApiError(`Invalid ${key}`, 400);
+      } else if (field.type === "DateTime") {
+        parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime()))
+          throw new ApiError(`Invalid ${key} date`, 400);
+      } else if (field.kind === "enum") {
+        const values = Object.values(PrismaClient[field.type] || {});
+        if (!values.includes(value)) throw new ApiError(`Invalid ${key}`, 400);
+      }
+      this.queryObj.where[key] = parsed;
+    }
+    return this;
   }
-
-  // 2) Searching: Add search functionality for event-related fields
   search(keyword) {
-    if (keyword) {
-      this.queryObj.where.OR = [
-        { title: { contains: keyword, mode: "insensitive" } },
-        { description: { contains: keyword, mode: "insensitive" } },
-        // Add other fields you want to search by
-      ];
-    }
-    return this; // Allow method chaining
+    if (!keyword) return this;
+    if (typeof keyword !== "string" || keyword.length > 200)
+      throw new ApiError("Invalid search keyword", 400);
+    const names = [
+      "name",
+      "nameAR",
+      "nameEN",
+      "email",
+      "internalRef",
+      "city",
+      "title",
+      "description",
+      "subject",
+      "customer",
+      "notes",
+      "visitPurpose",
+      "visitLocation",
+    ];
+    const fields = names.filter(
+      (name) => this.fields.get(name)?.type === "String",
+    );
+    if (fields.length)
+      this.queryObj.where.OR = fields.map((name) => ({
+        [name]: { contains: keyword.trim(), mode: "insensitive" },
+      }));
+    return this;
   }
-
-  // 3) Sorting
   sort(sortQuery) {
-    if (sortQuery) {
-      const sortBy = sortQuery.split(",").join(" ");
-      this.queryObj.orderBy = { [sortBy]: "asc" }; // Correct Prisma orderBy format
-    } else {
-      // Default sorting by creation date if no sort option is provided
+    if (!sortQuery) {
       this.queryObj.orderBy = { createdAt: "desc" };
+      return this;
     }
-    return this; // Allow method chaining
+    if (typeof sortQuery !== "string") throw new ApiError("Invalid sort", 400);
+    this.queryObj.orderBy = sortQuery.split(",").map((part) => {
+      const descending = part.startsWith("-");
+      const name = descending ? part.slice(1) : part;
+      if (!this.fields.has(name) || name === "password")
+        throw new ApiError(`Unsupported sort: ${name}`, 400);
+      return { [name]: descending ? "desc" : "asc" };
+    });
+    return this;
   }
-
-  // 4) Pagination
   paginate(page = 1, limit = 10) {
+    page = Number(page);
+    limit = Number(limit);
+    if (
+      !Number.isInteger(page) ||
+      page < 1 ||
+      !Number.isInteger(limit) ||
+      limit < 1 ||
+      limit > 1000
+    )
+      throw new ApiError(
+        "Page must be positive; limit must be between 1 and 1000",
+        400,
+      );
     const skip = (page - 1) * limit;
+    if (!Number.isSafeInteger(skip))
+      throw new ApiError("Page is too large", 400);
     this.queryObj.take = limit;
     this.queryObj.skip = skip;
-
-    // Set pagination details
-    return {
-      currentPage: page,
-      limit: limit,
-      skip,
-    };
+    return { currentPage: page, limit, skip };
   }
-
-  // Method to apply all features in sequence
-  applyFeatures(reqQuery) {
-    const { keyword, sort, page, limit } = reqQuery;
-
-    this.filter().search(keyword).sort(sort);
-
-    const pagination = this.paginate(
-      page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 10,
-    );
-
-    return {
-      queryObj: this.queryObj,
-      pagination,
-    };
+  applyFeatures(reqQuery = {}) {
+    this.filter().search(reqQuery.keyword).sort(reqQuery.sort);
+    const pagination = this.paginate(reqQuery.page ?? 1, reqQuery.limit ?? 10);
+    return { queryObj: this.queryObj, pagination };
   }
 }
-
 export const paginationResults = (pagination, numOfDocuments = 0) => {
-  const paginationResults = {
+  const totalPages = Math.ceil(numOfDocuments / pagination.limit);
+  return {
     ...pagination,
-    totalPages: 0,
-    next: 0,
-    prev: 0,
+    totalPages,
+    next: pagination.currentPage < totalPages ? pagination.currentPage + 1 : 0,
+    prev: pagination.currentPage > 1 ? pagination.currentPage - 1 : 0,
   };
-
-  paginationResults.totalPages = Math.ceil(
-    numOfDocuments / paginationResults.limit,
-  );
-  if (paginationResults.currentPage < paginationResults.totalPages) {
-    paginationResults.next = paginationResults.currentPage + 1;
-  }
-  if (paginationResults.currentPage > 1) {
-    paginationResults.prev = paginationResults.currentPage - 1;
-  }
-
-  return paginationResults;
 };

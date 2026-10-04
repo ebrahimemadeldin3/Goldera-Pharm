@@ -7,7 +7,6 @@ import {
   CreateVisitReportDto,
   CreateVisitReportResponse,
   GetVisitReportsResponse,
-  VisitCompletionLocationRequestContract,
   VisitReportData,
 } from "../lib/types/report";
 import { VisitReportFormValues } from "../lib/schemas/report";
@@ -95,13 +94,6 @@ export async function getVisitReports(): Promise<GetVisitReportsResponse> {
  */
 export async function createVisitReportAction(data: VisitReportFormValues) {
   try {
-    const preparedCompletionLocation: VisitCompletionLocationRequestContract | null =
-      data.completionLocation
-        ? { completionLocation: data.completionLocation }
-        : null;
-
-    void preparedCompletionLocation;
-
     const dto: CreateVisitReportDto = {
       visitId: data.visitId,
       duration: data.duration,
@@ -112,11 +104,6 @@ export async function createVisitReportAction(data: VisitReportFormValues) {
       notes: data.notes,
       samplesProvided: data.samplesProvided,
     };
-
-    // Backend integration pending:
-    // POST /api/visits/visit-reports should eventually accept
-    // preparedCompletionLocation.completionLocation. Do not send it yet,
-    // because the current endpoint may reject unknown fields.
 
     await createVisitReport(dto);
 

@@ -1,0 +1,16 @@
+{
+  "schema": "goldera_qa_20261004_86266d2a4f",
+  "schemaRemoved": true,
+  "productionDataModified": false,
+  "disposableCounts": {
+    "users": 5,
+    "requests": 44,
+    "visits": 60,
+    "products": 2,
+    "pharmacies": 6,
+    "doctors": 5
+  },
+  "syntheticAssets": 29,
+  "removedNow": 0,
+  "alreadyRemoved": 29
+}
