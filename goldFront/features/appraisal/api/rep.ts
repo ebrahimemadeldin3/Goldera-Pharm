@@ -80,6 +80,15 @@ function calculateRepAppraisalStats(
   };
 }
 
+async function getRepAppraisalStatsSource(response: GetAppraisalsResponse) {
+  if ((response.results ?? response.data.length) <= response.data.length) {
+    return response.data;
+  }
+
+  const statsResponse = await getRepAppraisals(1, response.results);
+  return statsResponse.data;
+}
+
 function logRepAppraisalApiError(label: string, error: unknown) {
   const err = error as Partial<ApiError>;
 
@@ -98,12 +107,15 @@ export async function getRepAppraisalReviewsAction(
     const response = await getRepAppraisals(page, limit);
     const reviews = response.data.map(mapAppraisalToReview);
     const totalCount = response.results ?? reviews.length;
+    const statsReviews = (await getRepAppraisalStatsSource(response)).map(
+      mapAppraisalToReview,
+    );
 
     return {
       success: true,
       reviews,
       totalCount,
-      stats: calculateRepAppraisalStats(reviews, totalCount),
+      stats: calculateRepAppraisalStats(statsReviews, totalCount),
     };
   } catch (error) {
     logRepAppraisalApiError("Get rep appraisal reviews error:", error);

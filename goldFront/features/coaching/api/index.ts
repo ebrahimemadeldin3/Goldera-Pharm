@@ -72,6 +72,36 @@ type CoachingReportsActionResult =
       error: ApiError;
     };
 
+function calculateManagerCoachingStats(reports: CoachingReportApiResponse[]) {
+  const totalReports = reports.length;
+
+  return {
+    totalReports,
+    awaitingRepFeedback: reports.filter((report) => !report.repComment).length,
+    averageRating:
+      totalReports > 0
+        ? reports.reduce((sum, report) => sum + report.performanceRating, 0) /
+          totalReports
+        : 0,
+    thisMonth: reports.filter((report) => {
+      const reportDate = new Date(report.createdAt);
+      const now = new Date();
+      return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
+    }).length,
+  };
+}
+
+async function getManagerCoachingStatsSource(
+  response: GetAllCoachingReportsResponse,
+) {
+  if (response.results <= response.data.length) {
+    return response.data;
+  }
+
+  const statsResponse = await getAllCoachingReports(1, response.results);
+  return statsResponse.data;
+}
+
 /**
  * Fetch all coaching reports for manager
  */
@@ -97,6 +127,7 @@ export async function getAllCoachingReportsAction(
 ): Promise<CoachingReportsActionResult> {
   try {
     const response = await getAllCoachingReports(page, limit);
+    const statsSource = await getManagerCoachingStatsSource(response);
 
     // Map API response to CoachingReport type
     const reports: CoachingReport[] = response.data.map((report) => {
@@ -146,16 +177,8 @@ export async function getAllCoachingReportsAction(
       reports,
       totalCount: response.results,
       stats: {
+        ...calculateManagerCoachingStats(statsSource),
         totalReports: response.results,
-        awaitingRepFeedback: response.data.filter((r) => !r.repComment).length,
-        averageRating:
-          response.data.reduce((sum, r) => sum + r.performanceRating, 0) /
-          (response.results || 1),
-        thisMonth: response.data.filter((r) => {
-          const reportDate = new Date(r.createdAt);
-          const now = new Date();
-          return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
-        }).length,
       },
     };
   } catch (error) {

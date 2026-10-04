@@ -267,7 +267,7 @@ function AppraisalDetailsDialog({
   onOpenChange: (open: boolean) => void;
   onAcknowledged: (review: Review) => void;
 }) {
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(() => review?.repComment?.trim() ?? "");
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -554,6 +554,7 @@ export function RepAppraisalClient({
   const [filter, setFilter] = useState<FilterKey>("all");
   const [reviews, setReviews] = useState(initialReviews);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [acknowledgedDelta, setAcknowledgedDelta] = useState(0);
 
   const counts = useMemo(
     () => ({
@@ -566,13 +567,15 @@ export function RepAppraisalClient({
 
   const displayStats = useMemo(
     () => ({
-      totalAppraisals: reviews.length || stats.totalAppraisals,
-      latestScore: reviews[0]?.overallCurrent ?? stats.latestScore,
-      pendingAcknowledgement: reviews.filter((review) => !review.acknowledged)
-        .length,
-      acknowledged: reviews.filter((review) => review.acknowledged).length,
+      totalAppraisals: stats.totalAppraisals,
+      latestScore: stats.latestScore,
+      pendingAcknowledgement: Math.max(
+        0,
+        stats.pendingAcknowledgement - acknowledgedDelta,
+      ),
+      acknowledged: stats.acknowledged + acknowledgedDelta,
     }),
-    [reviews, stats],
+    [acknowledgedDelta, stats],
   );
 
   const visibleReviews = useMemo(() => {
@@ -586,11 +589,17 @@ export function RepAppraisalClient({
   }, [filter, reviews]);
 
   function handleAcknowledged(updatedReview: Review) {
+    const previousReview = reviews.find(
+      (review) => review.id === updatedReview.id,
+    );
     setReviews((current) =>
       current.map((review) =>
         review.id === updatedReview.id ? updatedReview : review,
       ),
     );
+    if (previousReview && !previousReview.acknowledged) {
+      setAcknowledgedDelta((current) => current + 1);
+    }
     setSelectedReview(updatedReview);
   }
 
@@ -745,6 +754,7 @@ export function RepAppraisalClient({
       </section>
 
       <AppraisalDetailsDialog
+        key={selectedReview?.id ?? "no-review-selected"}
         review={selectedReview}
         open={Boolean(selectedReview)}
         onOpenChange={(open) => {

@@ -1,4 +1,5 @@
 import AddVisitForm from "@/features/visits/components/AddVisitForm";
+import { VisitsErrorState } from "@/features/visits/components/VisitsErrorState";
 import { fetchDoctors } from "@/features/doctors/api";
 import { getManagerTeamAction } from "@/features/team/api";
 import { ArrowLeft, CalendarPlus } from "lucide-react";
@@ -8,15 +9,43 @@ import { PageContainer } from "@/components/layout/page-container";
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const [doctorsResponse, teamResponse] = await Promise.all([
+  const [doctorsResult, teamResult] = await Promise.allSettled([
     fetchDoctors(undefined, undefined, false),
     getManagerTeamAction(),
   ]);
 
+  if (doctorsResult.status === "rejected") {
+    return (
+      <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden bg-[#F6F8FB]">
+        <VisitsErrorState
+          title="Unable to load doctors"
+          message="Doctors are required before a visit can be scheduled."
+        />
+      </PageContainer>
+    );
+  }
+
+  if (teamResult.status === "rejected" || !teamResult.value.success) {
+    return (
+      <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden bg-[#F6F8FB]">
+        <VisitsErrorState
+          title="Unable to load visit ownership data"
+          message={
+            teamResult.status === "rejected"
+              ? "Team assignments are required before a manager visit can be scheduled."
+              : teamResult.value.error?.message
+          }
+        />
+      </PageContainer>
+    );
+  }
+
+  const doctorsResponse = doctorsResult.value;
+  const teamResponse = teamResult.value;
   const doctors = doctorsResponse.data ?? [];
 
-  const supervisors = teamResponse.success ? teamResponse.supervisors : [];
-  const medicalReps = teamResponse.success ? teamResponse.medicalReps : [];
+  const supervisors = teamResponse.supervisors ?? [];
+  const medicalReps = teamResponse.medicalReps ?? [];
 
   return (
     <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col gap-5 overflow-x-hidden bg-[#F6F8FB]">

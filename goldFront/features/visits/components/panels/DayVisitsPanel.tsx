@@ -12,6 +12,7 @@ import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/utils/toast";
 
 type DayVisitsPanelProps = {
   date: Date;
@@ -38,6 +39,7 @@ export default function DayVisitsPanel({
   const isManager =
     managerTheme || role === "MANAGER" || pathname?.startsWith("/manager");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [isLoadingScheduleData, setIsLoadingScheduleData] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
 
   const addVisitPath =
@@ -48,12 +50,27 @@ export default function DayVisitsPanel({
         : "/rep/visits/add";
 
   const handleOpenSchedule = async () => {
+    if (isLoadingScheduleData) return;
+
     if (doctorsList.length === 0) {
-      const doctorsRes = await getSchedulableDoctorsAction();
-      if (doctorsRes.success && doctorsRes.data) {
-        setDoctorsList(doctorsRes.data);
+      setIsLoadingScheduleData(true);
+      const doctorsRes = await getSchedulableDoctorsAction().finally(() => {
+        setIsLoadingScheduleData(false);
+      });
+
+      if (!doctorsRes.success) {
+        toast.error({
+          title: "Couldn't load doctors",
+          description:
+            doctorsRes.error?.message ||
+            "Doctors are required before scheduling a visit.",
+        });
+        return;
       }
+
+      setDoctorsList(doctorsRes.data ?? []);
     }
+
     setScheduleDialogOpen(true);
   };
 
@@ -108,8 +125,9 @@ export default function DayVisitsPanel({
               <button
                 type="button"
                 onClick={handleOpenSchedule}
+                disabled={isLoadingScheduleData}
                 className={cn(
-                  "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none",
+                  "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60",
                   isRep
                     ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
                     : isManager
@@ -121,7 +139,7 @@ export default function DayVisitsPanel({
                   className={cn("size-4", isManager && "text-[#C9A44C]")}
                   aria-hidden="true"
                 />
-                Schedule Visit
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
               </button>
               <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
                 Schedule Visit Page

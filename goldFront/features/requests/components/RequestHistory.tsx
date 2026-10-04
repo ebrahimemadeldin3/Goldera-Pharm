@@ -105,7 +105,6 @@ export default function RequestHistory({
   requests = [],
   page = 1,
   limit = 10,
-  totalCount = 0,
 }: RequestHistoryProps) {
   const [activeTab, setActiveTab] = useState<TabType>("all");
   const [selectedRequest, setSelectedRequest] = useState<TRequest | null>(null);
@@ -114,6 +113,13 @@ export default function RequestHistory({
     if (activeTab === "all") return requests;
     return requests.filter((r) => r.status === activeTab);
   }, [activeTab, requests]);
+  const totalFilteredRequests = filteredRequests.length;
+  const totalPages = Math.max(1, Math.ceil(totalFilteredRequests / limit));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const visibleRequests = filteredRequests.slice(
+    (safePage - 1) * limit,
+    safePage * limit,
+  );
 
   const counts = useMemo(() => {
     return {
@@ -168,7 +174,7 @@ export default function RequestHistory({
 
       {/* Requests List Grid */}
       <div>
-        {filteredRequests.length === 0 ? (
+        {visibleRequests.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] py-10 px-6 text-center max-h-[220px]">
             <FileText className="size-8 text-[#98A2B3] mb-2" />
             <p className="text-sm font-bold text-[#182033]">
@@ -180,7 +186,7 @@ export default function RequestHistory({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {filteredRequests.map((req) => (
+            {visibleRequests.map((req) => (
               <div
                 key={req.id}
                 className="rounded-[14px] border border-[#E5E8EF] bg-white p-4.5 shadow-none transition-all hover:border-[#CBEFDD] flex flex-col justify-between space-y-3.5"
@@ -247,9 +253,9 @@ export default function RequestHistory({
       </div>
 
       <TablePaginationFooter
-        page={page}
+        page={safePage}
         limit={limit}
-        totalCount={totalCount || requests.length}
+        totalCount={totalFilteredRequests}
         itemLabel="requests"
         ariaLabel="Requests pagination"
         pageNavAriaLabel="Request pages"

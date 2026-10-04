@@ -61,8 +61,6 @@ export default function CoachingReportCard({
     handleSubmitComment("");
   };
 
-  const isCompleted = r.status === "Completed";
-
   return (
     <Card
       className="coaching-card coaching-card-reveal border-gp-border-default bg-gp-surface-card shadow-gp-card gap-0 overflow-hidden rounded-[16px] border py-0"

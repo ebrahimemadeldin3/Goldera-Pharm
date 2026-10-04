@@ -309,7 +309,6 @@ export async function getMyRequestsAction(page?: number, limit?: number) {
       };
     }
     // Transform API response to frontend format
-    console.log("requests.data", requests.data);
     const transformedData: TRequest[] = requests.data.map((request) => ({
       ...mapRequestApiResponseToTRequest(request),
       belongToWho: "me" as const,

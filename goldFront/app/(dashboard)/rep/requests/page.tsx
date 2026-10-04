@@ -8,9 +8,48 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
+const REQUESTS_DIRECTORY_FETCH_LIMIT = 1000;
+
 type PageProps = {
   searchParams?: { page?: string; limit?: string };
 };
+
+async function loadRepRequestsDirectory() {
+  const firstResult = await getMyRequestsAction(1, REQUESTS_DIRECTORY_FETCH_LIMIT);
+
+  if (!firstResult.success) {
+    return firstResult;
+  }
+
+  const firstRequests = firstResult.data ?? [];
+  const apiTotalCount = firstResult.totalCount ?? firstRequests.length;
+  const totalPages = Math.max(
+    1,
+    Math.ceil(apiTotalCount / REQUESTS_DIRECTORY_FETCH_LIMIT),
+  );
+  const remainingResults = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getMyRequestsAction(index + 2, REQUESTS_DIRECTORY_FETCH_LIMIT),
+    ),
+  );
+  const requests = [
+    ...firstRequests,
+    ...remainingResults.flatMap((result) => {
+      if (!result.success) return [];
+      return result.data ?? [];
+    }),
+  ];
+  const requestsById = new Map(
+    requests.map((request) => [request.id, request]),
+  );
+  const data = Array.from(requestsById.values());
+
+  return {
+    success: true,
+    data,
+    totalCount: data.length,
+  };
+}
 
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
@@ -18,11 +57,11 @@ export default async function Page({ searchParams }: PageProps) {
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const requestsResult = await getMyRequestsAction(page, limit);
+  const requestsResult = await loadRepRequestsDirectory();
 
   const requests = requestsResult.success ? (requestsResult.data ?? []) : [];
   const requestsTotalCount = requestsResult.success
-    ? requestsResult.totalCount ?? requests.length
+    ? requests.length
     : 0;
 
   // Calculate stats from requests

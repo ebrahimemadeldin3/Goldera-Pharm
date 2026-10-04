@@ -76,6 +76,34 @@ type AddRepCommentDto = {
   comment: string;
 };
 
+function calculateRepCoachingStats(reports: CoachingReportApiResponse[]) {
+  const totalReports = reports.length;
+
+  return {
+    totalReports,
+    pendingComments: reports.filter((report) => !report.repComment).length,
+    averageRating:
+      totalReports > 0
+        ? reports.reduce((sum, report) => sum + report.performanceRating, 0) /
+          totalReports
+        : 0,
+    thisMonth: reports.filter((report) => {
+      const reportDate = new Date(report.createdAt);
+      const now = new Date();
+      return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
+    }).length,
+  };
+}
+
+async function getRepCoachingStatsSource(response: GetRepCoachingReportsResponse) {
+  if (response.results <= response.data.length) {
+    return response.data;
+  }
+
+  const statsResponse = await getRepCoachingReports(1, response.results);
+  return statsResponse.data;
+}
+
 /**
  * Fetch coaching reports for the logged-in rep
  */
@@ -114,6 +142,7 @@ export async function getRepCoachingReportsAction(
 ): Promise<RepCoachingReportsActionResult> {
   try {
     const response = await getRepCoachingReports(page, limit);
+    const statsSource = await getRepCoachingStatsSource(response);
 
     // Map API response to CoachingReport type
     const reports: CoachingReport[] = response.data.map((report) => {
@@ -163,16 +192,8 @@ export async function getRepCoachingReportsAction(
       reports,
       totalCount: response.results,
       stats: {
+        ...calculateRepCoachingStats(statsSource),
         totalReports: response.results,
-        pendingComments: response.data.filter((r) => !r.repComment).length,
-        averageRating:
-          response.data.reduce((sum, r) => sum + r.performanceRating, 0) /
-          (response.results || 1),
-        thisMonth: response.data.filter((r) => {
-          const reportDate = new Date(r.createdAt);
-          const now = new Date();
-          return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
-        }).length,
       },
     };
   } catch (error) {

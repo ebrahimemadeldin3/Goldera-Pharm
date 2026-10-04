@@ -78,7 +78,7 @@ type Props = {
 
 type StatusFilterType = "all" | "assigned" | "unassigned";
 
-/* Sub-component: Staged Multi-Select Monthly Date Popover */
+/* Sub-component: Staged date popover */
 function DoctorDateSelectorPopover({
   doctor,
   startDate,
@@ -95,7 +95,7 @@ function DoctorDateSelectorPopover({
   onSave: (keys: string[]) => void;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [tempKeys, setTempKeys] = useState<string[]>(assignedDateKeys);
+  const [tempKey, setTempKey] = useState<string>(assignedDateKeys[0] ?? "");
 
   const todayStart = useMemo(() => {
     const now = new Date();
@@ -104,7 +104,7 @@ function DoctorDateSelectorPopover({
 
   const handleOpenChange = (openState: boolean) => {
     if (openState) {
-      setTempKeys(assignedDateKeys);
+      setTempKey(assignedDateKeys[0] ?? "");
     }
     setPopoverOpen(openState);
   };
@@ -125,18 +125,16 @@ function DoctorDateSelectorPopover({
   }, [daysInRange]);
 
   const toggleKey = (dKey: string) => {
-    setTempKeys((prev) =>
-      prev.includes(dKey) ? prev.filter((k) => k !== dKey) : [...prev, dKey]
-    );
+    setTempKey((prev) => (prev === dKey ? "" : dKey));
   };
 
   const handleApply = () => {
-    onSave(tempKeys);
+    onSave(tempKey ? [tempKey] : []);
     setPopoverOpen(false);
   };
 
   const handleClear = () => {
-    setTempKeys([]);
+    setTempKey("");
   };
 
   const isAssigned = assignedDateKeys.length > 0;
@@ -155,9 +153,7 @@ function DoctorDateSelectorPopover({
           )}
         >
           <CalendarIcon className="mr-1.5 size-3.5" />
-          {isAssigned
-            ? `${assignedDateKeys.length} Dates Selected`
-            : "Select Dates"}
+          {isAssigned ? "Date Selected" : "Select Date"}
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -171,7 +167,7 @@ function DoctorDateSelectorPopover({
               {doctor.nameEN || doctor.nameAR}
             </h4>
             <span className="inline-flex items-center rounded-full bg-[#E9F8F1] border border-[#CBEFDD] px-2.5 py-0.5 text-[11px] font-bold text-[#168557] shrink-0">
-              {tempKeys.length} Selected
+              {tempKey ? "Date Selected" : "No Date"}
             </span>
           </div>
           <p className="text-[11px] font-medium text-[#667085] mt-0.5">
@@ -192,7 +188,7 @@ function DoctorDateSelectorPopover({
               <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                 {group.days.map((day) => {
                   const dKey = formatDateOnly(day);
-                  const isSelected = tempKeys.includes(dKey);
+                  const isSelected = tempKey === dKey;
                   const isPast = isBefore(day, todayStart);
                   const dayName = format(day, "EEE");
                   const dayNum = format(day, "d");
@@ -250,7 +246,7 @@ function DoctorDateSelectorPopover({
               onClick={handleApply}
               className="h-9 px-4 text-xs font-bold text-white bg-[#168557] hover:bg-[#126b46] rounded-[8px] shadow-xs"
             >
-              Apply Dates ({tempKeys.length})
+              Apply Date
             </Button>
           </div>
         </div>
@@ -271,7 +267,8 @@ export default function CreatePlanDialogRep({
   >([]);
   const [allDoctorsList, setAllDoctorsList] = useState<DoctorApiResponse[]>([]);
 
-  // Doctor-centric Assignment State: doctorId -> array of dateKey strings ("YYYY-MM-DD")
+  // Doctor-centric assignment state. The current backend stores one visitDate
+  // per unique doctor in a plan, so each doctor is constrained to one date.
   const [doctorAssignments, setDoctorAssignments] = useState<
     Record<string, string[]>
   >({});
@@ -485,18 +482,13 @@ export default function CreatePlanDialogRep({
       const current = prev[doctorId] ?? [];
       const exists = current.includes(dateKey);
 
-      if (!exists) {
-        return { ...prev, [doctorId]: [...current, dateKey] };
-      }
-
-      const updated = current.filter((k) => k !== dateKey);
-      if (updated.length === 0) {
+      if (exists) {
         const next = { ...prev };
         delete next[doctorId];
         return next;
       }
 
-      return { ...prev, [doctorId]: updated };
+      return { ...prev, [doctorId]: [dateKey] };
     });
   };
 
@@ -507,7 +499,7 @@ export default function CreatePlanDialogRep({
         delete next[doctorId];
         return next;
       }
-      return { ...prev, [doctorId]: dateKeys };
+      return { ...prev, [doctorId]: [dateKeys[dateKeys.length - 1]] };
     });
   };
 
@@ -572,7 +564,7 @@ export default function CreatePlanDialogRep({
             Create New Visit Plan
           </DialogTitle>
           <DialogDescription className="text-xs text-[#667085]">
-            Set your plan details and select visit dates per doctor in your territory.
+            Set your plan details and select one visit date per doctor in your territory.
           </DialogDescription>
         </DialogHeader>
 
@@ -802,7 +794,7 @@ export default function CreatePlanDialogRep({
                     <AlertCircle className="size-3.5 shrink-0 text-[#B18732]" />
                     <span>
                       {totalPlannedVisits === 0
-                        ? "Assign visit dates to at least one doctor."
+                        ? "Assign a visit date to at least one doctor."
                         : "Fill in all required fields to submit."}
                     </span>
                   </p>
@@ -992,7 +984,7 @@ export default function CreatePlanDialogRep({
                                     )}
                                   >
                                     {isAssigned
-                                      ? `✓ ${assignedDateKeys.length} Visits Scheduled`
+                                      ? "Visit Scheduled"
                                       : "Not Scheduled"}
                                   </span>
                                 </div>
@@ -1062,7 +1054,7 @@ export default function CreatePlanDialogRep({
                             {planType === "MONTHLY" && assignedDateKeys.length > 0 && (
                               <div className="mt-2.5 flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#EEF1F6]">
                                 <span className="text-[11px] font-semibold text-[#667085]">
-                                  Selected Dates:
+                                  Selected Date:
                                 </span>
                                 {assignedDateKeys.map((dKey) => {
                                   const dateObj = daysKeyMap.get(dKey);

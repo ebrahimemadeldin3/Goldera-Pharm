@@ -57,6 +57,7 @@ import {
   getInitials,
   parseDateValue,
 } from "@/lib/utils";
+import { toast } from "@/lib/utils/toast";
 import {
   KSA_TERRITORY_STRUCTURE,
   getTerritoryLookup,
@@ -226,6 +227,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
   const { features, role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [isLoadingScheduleData, setIsLoadingScheduleData] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
   const {
     isEditMode,
@@ -269,12 +271,27 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
   const displayName = doctor.nameEN || doctor.nameAR;
 
   const openSchedule = async () => {
+    if (isLoadingScheduleData) return;
+
     if (doctorsList.length === 0) {
-      const doctorsRes = await getSchedulableDoctorsAction();
-      if (doctorsRes.success && doctorsRes.data) {
-        setDoctorsList(doctorsRes.data);
+      setIsLoadingScheduleData(true);
+      const doctorsRes = await getSchedulableDoctorsAction().finally(() => {
+        setIsLoadingScheduleData(false);
+      });
+
+      if (!doctorsRes.success) {
+        toast.error({
+          title: "Couldn't load doctors",
+          description:
+            doctorsRes.error?.message ||
+            "Doctors are required before scheduling a visit.",
+        });
+        return;
       }
+
+      setDoctorsList(doctorsRes.data ?? []);
     }
+
     setScheduleOpen(true);
     setScheduleDialogOpen(true);
   };
@@ -329,10 +346,11 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
             <Button
               type="button"
               onClick={handleOpenSchedule}
+              disabled={isLoadingScheduleData}
               className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] bg-gp-rep-primary px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all hover:bg-gp-rep-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gp-rep-primary/30"
             >
               <Calendar size={16} />
-              <span>Schedule Visit</span>
+              <span>{isLoadingScheduleData ? "Loading..." : "Schedule Visit"}</span>
             </Button>
           </div>
         </div>
@@ -420,10 +438,11 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
                 onClick={handleOpenSchedule}
                 variant="outline"
                 size="sm"
+                disabled={isLoadingScheduleData}
                 className="h-9 gap-1.5 rounded-[9px] border-[#E5E8EF] text-xs font-semibold text-[#344054] hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary cursor-pointer"
               >
                 <Calendar size={14} />
-                Schedule Visit
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
               </Button>
             </div>
 
@@ -482,10 +501,11 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
                 <Button
                   type="button"
                   onClick={handleOpenSchedule}
+                  disabled={isLoadingScheduleData}
                   className="mt-4 h-9 gap-1.5 rounded-[9px] bg-gp-rep-primary text-white hover:bg-gp-rep-primary-hover text-xs font-semibold cursor-pointer"
                 >
                   <Calendar size={14} />
-                  Schedule First Visit
+                  {isLoadingScheduleData ? "Loading..." : "Schedule First Visit"}
                 </Button>
               </div>
             )}
@@ -581,10 +601,11 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
               <Button
                 type="button"
                 onClick={openSchedule}
+                disabled={isLoadingScheduleData}
                 className="group bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 cursor-pointer rounded-[10px] px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.2)] motion-reduce:transform-none"
               >
                 <CalendarDays className="size-4 text-gp-gold-500 transition-transform duration-[170ms] group-hover:-translate-y-0.5" />
-                Schedule Visit
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
               </Button>
             ) : null}
             {features.doctors.canEdit && (
@@ -834,9 +855,14 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
 
           <DetailCard title="Quick Actions" icon={ClipboardList}>
             <div className="grid gap-2">
-              <Button type="button" onClick={openSchedule} className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] text-sm font-semibold text-white">
+              <Button
+                type="button"
+                onClick={openSchedule}
+                disabled={isLoadingScheduleData}
+                className="bg-gp-navy-900 hover:bg-gp-navy-900/95 h-10 rounded-[10px] text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-60"
+              >
                 <CalendarDays className="size-4 text-gp-gold-500" />
-                Schedule Visit
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
               </Button>
               <Link href={getBackLink()} className="border-gp-border-control text-gp-navy-900 hover:bg-gp-surface-hover inline-flex h-10 items-center justify-center gap-1.5 rounded-[10px] border bg-white text-sm font-semibold">
                 Back to Doctors

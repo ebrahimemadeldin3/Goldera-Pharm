@@ -1,5 +1,6 @@
 import VisitsHeader from "@/features/visits/components/VisitsHeader";
 import VisitsPlanner from "@/features/visits/components/VisitsPlanner";
+import { VisitsErrorState } from "@/features/visits/components/VisitsErrorState";
 import { getManagerVisitsAction } from "@/features/visits/api";
 import { calculateVisitStats } from "@/features/visits/lib/utils/stats";
 import { PageContainer } from "@/components/layout/page-container";
@@ -12,14 +13,28 @@ export default async function Page() {
     getManagerVisitsAction(undefined, undefined, false),
     getManagerTeamAction("MEDICAL_REP", 1, 1000),
   ]);
-  const visits =
-    visitsResponse.success && visitsResponse.visits
-      ? visitsResponse.visits
-      : [];
-  const medicalReps =
-    teamResponse.success && teamResponse.medicalReps
-      ? teamResponse.medicalReps
-      : [];
+
+  if (!visitsResponse.success) {
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+        <VisitsErrorState message={visitsResponse.error?.message} />
+      </PageContainer>
+    );
+  }
+
+  if (!teamResponse.success) {
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+        <VisitsErrorState
+          title="Unable to load visit ownership data"
+          message={teamResponse.error?.message}
+        />
+      </PageContainer>
+    );
+  }
+
+  const visits = visitsResponse.visits ?? [];
+  const medicalReps = teamResponse.medicalReps ?? [];
   const stats = calculateVisitStats(visits);
 
   return (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus, CheckSquare } from "lucide-react";
 import VisitsHeader from "@/features/visits/components/VisitsHeader";
 import VisitsPlanner from "@/features/visits/components/VisitsPlanner";
+import { VisitsErrorState } from "@/features/visits/components/VisitsErrorState";
 import { getVisitsAction } from "@/features/visits/api";
 import { calculateVisitStats } from "@/features/visits/lib/utils/stats";
 import { PageContainer } from "@/components/layout/page-container";
@@ -18,7 +19,16 @@ export default async function RepVisitsPage({
   const params = await searchParams;
   const plannerDateKey = params?.date || params?.visitDate || "today";
   const visitsResponse = await getVisitsAction(undefined, undefined, false);
-  const visits = visitsResponse.success && visitsResponse.visits ? visitsResponse.visits : [];
+
+  if (!visitsResponse.success) {
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] pb-20 lg:pb-6">
+        <VisitsErrorState message={visitsResponse.error?.message} />
+      </PageContainer>
+    );
+  }
+
+  const visits = visitsResponse.visits ?? [];
   const stats = calculateVisitStats(visits);
 
   return (

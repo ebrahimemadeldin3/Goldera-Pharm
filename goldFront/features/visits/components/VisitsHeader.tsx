@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
@@ -19,6 +19,7 @@ import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { getManagerTeamAction } from "@/features/team/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
+import { toast } from "@/lib/utils/toast";
 
 type VisitsHeaderProps = {
   role: UserRole;
@@ -95,6 +96,7 @@ function VisitSummaryCard({
 
 export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
   const [doctors, setDoctors] = useState<DoctorApiResponse[]>([]);
   const [supervisors, setSupervisors] = useState<User[]>([]);
   const [medicalReps, setMedicalReps] = useState<User[]>([]);
@@ -106,29 +108,54 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
         ? "/supervisor/visits/add"
         : "/rep/visits/add";
 
-  useEffect(() => {
-    if (dialogOpen && doctors.length === 0) {
-      const fetchData = async () => {
-        const doctorsRes = await getSchedulableDoctorsAction();
-        if (doctorsRes.success && doctorsRes.data) {
-          setDoctors(doctorsRes.data);
-        }
-
-        if (role === "MANAGER" || role === "SUPERVISOR") {
-          const teamRes = await getManagerTeamAction();
-          if (teamRes.success) {
-            setSupervisors(teamRes.supervisors || []);
-            setMedicalReps(teamRes.medicalReps || []);
-          }
-        }
-      };
-      fetchData();
-    }
-  }, [dialogOpen, doctors.length, role]);
-
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
+
+  const openAddVisitDialog = async () => {
+    if (isLoadingDialogData) return;
+
+    setIsLoadingDialogData(true);
+
+    try {
+      if (doctors.length === 0) {
+        const doctorsRes = await getSchedulableDoctorsAction();
+
+        if (!doctorsRes.success) {
+          toast.error({
+            title: "Couldn't load doctors",
+            description:
+              doctorsRes.error?.message ||
+              "Doctors are required before adding a visit.",
+          });
+          return;
+        }
+
+        setDoctors(doctorsRes.data ?? []);
+      }
+
+      if (role === "MANAGER" || role === "SUPERVISOR") {
+        const teamRes = await getManagerTeamAction();
+
+        if (!teamRes.success) {
+          toast.error({
+            title: "Couldn't load team",
+            description:
+              teamRes.error?.message ||
+              "Medical reps are required before assigning a visit.",
+          });
+          return;
+        }
+
+        setSupervisors(teamRes.supervisors || []);
+        setMedicalReps(teamRes.medicalReps || []);
+      }
+
+      setDialogOpen(true);
+    } finally {
+      setIsLoadingDialogData(false);
+    }
+  };
 
   const completionPercent =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
@@ -254,14 +281,15 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
           <div className="flex items-center justify-end pb-1">
             <Button
               type="button"
-              onClick={() => setDialogOpen(true)}
-              className="visits-add-trigger group bg-gp-rep-primary hover:bg-gp-rep-primary-hover focus-visible:ring-gp-rep-primary/30 inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:outline-none"
+              onClick={openAddVisitDialog}
+              disabled={isLoadingDialogData}
+              className="visits-add-trigger group bg-gp-rep-primary hover:bg-gp-rep-primary-hover focus-visible:ring-gp-rep-primary/30 inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:-translate-y-px hover:shadow-[0_8px_20px_rgba(22,133,87,0.28)] focus-visible:ring-2 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60"
             >
               <CalendarPlus
                 className="visits-add-trigger-icon h-4 w-4"
                 aria-hidden="true"
               />
-              Add Visit
+              {isLoadingDialogData ? "Loading..." : "Add Visit"}
             </Button>
 
             <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
@@ -290,7 +318,8 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
             <div className="w-full shrink-0 sm:w-auto">
               <Button
                 type="button"
-                onClick={() => setDialogOpen(true)}
+                onClick={openAddVisitDialog}
+                disabled={isLoadingDialogData}
                 className={cn(
                   "visits-add-trigger group h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[11px] px-5 text-sm font-semibold text-white transition-[background-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 sm:w-auto",
                   isManager
@@ -305,7 +334,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
                   )}
                   aria-hidden="true"
                 />
-                Add Visit
+                {isLoadingDialogData ? "Loading..." : "Add Visit"}
               </Button>
 
               <Link href={addVisitPath} className="sr-only" tabIndex={-1}>

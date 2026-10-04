@@ -1,5 +1,4 @@
 import { Forecast, Product } from "../types";
-import { MOCK_PRODUCTS } from "../constants";
 
 export type ForecastStats = {
   totalProducts: number;
@@ -26,7 +25,11 @@ export type AllocationTotals = {
  * @returns Stats object with totalProducts, totalAllocation, myDoctors, pendingApproval
  */
 export function calculateForecastStats(forecasts: Forecast[]): ForecastStats {
-  const totalProducts = MOCK_PRODUCTS.length;
+  const totalProducts = forecasts.reduce(
+    (maxProducts, forecast) =>
+      Math.max(maxProducts, forecast.productsUsed || forecast.products.length),
+    0,
+  );
 
   const totalAllocation = forecasts.reduce(
     (sum, f) => sum + (f.totalUnitsPlanned || 0),
@@ -34,7 +37,12 @@ export function calculateForecastStats(forecasts: Forecast[]): ForecastStats {
   );
 
   const myDoctors = new Set(
-    forecasts.flatMap((f) => f.distributions?.map((d) => d.doctorId) || []),
+    forecasts.flatMap(
+      (f) =>
+        f.distributions
+          ?.map((d) => d.doctorId || d.doctorName)
+          .filter((value) => value.trim().length > 0) || [],
+    ),
   ).size;
 
   const pendingApproval = forecasts.filter(
@@ -68,7 +76,7 @@ export function calculateProductStats(
       ...product,
       allocated,
       remaining: product.totalUnits - allocated,
-      percentage: (allocated / product.totalUnits) * 100,
+      percentage: product.totalUnits > 0 ? (allocated / product.totalUnits) * 100 : 0,
     };
   });
 }

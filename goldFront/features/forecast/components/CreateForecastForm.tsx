@@ -32,6 +32,7 @@ export default function CreateForecastForm() {
   const [products, setProducts] = useState<Product[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoadError, setDataLoadError] = useState("");
   const [currentStep, setCurrentStep] = useState<ForecastStepId>(1);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [allocations, setAllocations] = useState<
@@ -56,6 +57,7 @@ export default function CreateForecastForm() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setDataLoadError("");
       const [productsResult, doctorsResult] = await Promise.all([
         getProductsAction(),
         getMyDoctorsAction(),
@@ -71,6 +73,13 @@ export default function CreateForecastForm() {
       if (doctorsResult.success && doctorsResult.data) {
         setDoctors(doctorsResult.data);
       }
+      if (!productsResult.success || !doctorsResult.success) {
+        setDataLoadError(
+          productsResult.error?.message ||
+            doctorsResult.error?.message ||
+            "Failed to load forecast source data",
+        );
+      }
       setLoading(false);
     };
 
@@ -81,10 +90,30 @@ export default function CreateForecastForm() {
     () => products.filter((p) => selectedProductIds.includes(p.id)),
     [products, selectedProductIds]
   );
+  const selectedProductIdSet = useMemo(
+    () => new Set(selectedProductIds),
+    [selectedProductIds],
+  );
 
   const handleToggleProduct = (productId: string) => {
     setSelectedProductIds((prev) => {
       if (prev.includes(productId)) {
+        setAllocations((currentAllocations) => {
+          const nextAllocations: Record<string, Record<string, number>> = {};
+
+          Object.entries(currentAllocations).forEach(
+            ([doctorId, doctorAlloc]) => {
+              const nextDoctorAlloc = { ...doctorAlloc };
+              delete nextDoctorAlloc[productId];
+
+              if (Object.keys(nextDoctorAlloc).length > 0) {
+                nextAllocations[doctorId] = nextDoctorAlloc;
+              }
+            },
+          );
+
+          return nextAllocations;
+        });
         return prev.filter((id) => id !== productId);
       }
       return [...prev, productId];
@@ -93,6 +122,7 @@ export default function CreateForecastForm() {
 
   const handleClearAllProducts = () => {
     setSelectedProductIds([]);
+    setAllocations({});
   };
 
   const handleAllocationChange = (
@@ -100,6 +130,8 @@ export default function CreateForecastForm() {
     productId: string,
     units: number
   ) => {
+    if (!selectedProductIdSet.has(productId)) return;
+
     setAllocations((prev) => ({
       ...prev,
       [doctorId]: {
@@ -145,8 +177,10 @@ export default function CreateForecastForm() {
     if (step === 3) {
       let hasAllocations = false;
       Object.values(allocations).forEach((docAlloc) => {
-        Object.values(docAlloc).forEach((units) => {
-          if (units > 0) hasAllocations = true;
+        Object.entries(docAlloc).forEach(([productId, units]) => {
+          if (selectedProductIdSet.has(productId) && units > 0) {
+            hasAllocations = true;
+          }
         });
       });
 
@@ -187,7 +221,10 @@ export default function CreateForecastForm() {
     const distributions = Object.entries(allocations)
       .map(([doctorId, doctorAlloc]) => {
         const allocationsArray = Object.entries(doctorAlloc)
-          .filter(([, units]) => units > 0)
+          .filter(
+            ([productId, units]) =>
+              selectedProductIdSet.has(productId) && units > 0,
+          )
           .map(([productId, units]) => ({ productId, units }));
 
         if (allocationsArray.length === 0) return null;
@@ -228,7 +265,20 @@ export default function CreateForecastForm() {
       try {
         const result = await submitForecastAction({
           ...form.getValues(),
-          allocations,
+          allocations: distributions.reduce<Record<string, Record<string, number>>>(
+            (nextAllocations, distribution) => {
+              nextAllocations[distribution.doctorId] =
+                distribution.allocations.reduce<Record<string, number>>(
+                  (doctorAllocations, allocation) => {
+                    doctorAllocations[allocation.productId] = allocation.units;
+                    return doctorAllocations;
+                  },
+                  {},
+                );
+              return nextAllocations;
+            },
+            {},
+          ),
         });
 
         if (result.success) {
@@ -259,6 +309,15 @@ export default function CreateForecastForm() {
       <div className="rounded-[14px] border border-[#E5E8EF] bg-white overflow-hidden p-8 space-y-6">
         <div className="h-16 w-full animate-pulse rounded-[12px] bg-[#F4F6FA]" />
         <div className="h-64 w-full animate-pulse rounded-[12px] bg-[#F4F6FA]" />
+      </div>
+    );
+  }
+
+  if (dataLoadError) {
+    return (
+      <div className="rounded-[14px] border border-[#F5C9C5] bg-[#FFF1F0] p-6 text-[#B42318]">
+        <p className="text-sm font-semibold">Failed to load forecast data</p>
+        <p className="mt-1 text-sm font-medium">{dataLoadError}</p>
       </div>
     );
   }
