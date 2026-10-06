@@ -10,6 +10,7 @@ import {
   Mail,
   MapPinned,
   Phone,
+  Pencil,
   Stethoscope,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -21,6 +22,7 @@ import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { DoctorDirectoryData } from "../lib/utils/mappers";
 import { toast } from "@/lib/utils/toast";
+import RemoveDoctorDialog from "./dialogs/RemoveDoctorDialog";
 
 function isClean(value?: string | null): value is string {
   return Boolean(
@@ -290,6 +292,14 @@ export default function DoctorCard({
         </div>
 
         <div className="border-gp-border-subtle flex flex-col gap-2 border-t pt-3 sm:flex-row sm:justify-end">
+          {features.doctors.canEdit && (
+            <Button asChild variant="outline">
+              <Link href={`${profilePath}?edit=1`}><Pencil className="size-4" /> Edit</Link>
+            </Button>
+          )}
+          {features.doctors.canRemove && (
+            <RemoveDoctorDialog doctorId={id} doctorName={primaryName} redirectAfterDelete={false} />
+          )}
           {features.visits.canScheduleVisit && (
             <div className="flex items-center">
               <Button

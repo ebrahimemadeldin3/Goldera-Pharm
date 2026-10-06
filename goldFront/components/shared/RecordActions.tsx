@@ -27,6 +27,7 @@ type Props = {
   onEdit: () => void;
   onDeleted?: () => void;
   remove: () => Promise<{ success: boolean; error?: { message?: string } }>;
+  inline?: boolean;
 };
 
 export function RecordActions({
@@ -35,6 +36,7 @@ export function RecordActions({
   onEdit,
   onDeleted,
   remove,
+  inline = false,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -67,28 +69,50 @@ export function RecordActions({
   }
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      {inline ? (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
+            type="button"
             variant="outline"
-            size="icon"
-            aria-label={`Actions for ${name}`}
+            onClick={onEdit}
+            disabled={pending}
           >
-            <MoreHorizontal className="size-4" />
+            <Pencil className="size-4" /> Edit
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={onEdit}>
-            <Pencil className="size-4" /> Edit {kind.toLowerCase()}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onSelect={() => setOpen(true)}
+          <Button
+            type="button"
+            variant="outline"
             className="text-gp-danger"
+            onClick={() => setOpen(true)}
+            disabled={pending}
           >
-            <Trash2 className="size-4" /> Delete {kind.toLowerCase()}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+            <Trash2 className="size-4" /> Delete
+          </Button>
+        </div>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={`Actions for ${name}`}
+            >
+              <MoreHorizontal className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={onEdit}>
+              <Pencil className="size-4" /> Edit {kind.toLowerCase()}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => setOpen(true)}
+              className="text-gp-danger"
+            >
+              <Trash2 className="size-4" /> Delete {kind.toLowerCase()}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
       <AlertDialog
         open={open}
         onOpenChange={(next) => {

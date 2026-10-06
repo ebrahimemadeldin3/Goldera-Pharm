@@ -86,6 +86,7 @@ function DoctorDateSelectorPopover({
   daysInRange,
   assignedDateKeys,
   onSave,
+  disabled = false,
 }: {
   doctor: DoctorApiResponse;
   startDate: Date;
@@ -93,6 +94,7 @@ function DoctorDateSelectorPopover({
   daysInRange: Date[];
   assignedDateKeys: string[];
   onSave: (keys: string[]) => void;
+  disabled?: boolean;
 }) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [tempKey, setTempKey] = useState<string>(assignedDateKeys[0] ?? "");
@@ -143,6 +145,7 @@ function DoctorDateSelectorPopover({
     <Popover open={popoverOpen} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button
+          disabled={disabled}
           type="button"
           variant="outline"
           className={cn(
@@ -267,8 +270,7 @@ export default function CreatePlanDialogRep({
   >([]);
   const [allDoctorsList, setAllDoctorsList] = useState<DoctorApiResponse[]>([]);
 
-  // Doctor-centric assignment state. The current backend stores one visitDate
-  // per unique doctor in a plan, so each doctor is constrained to one date.
+  // This planner assigns one visit date to each selected doctor.
   const [doctorAssignments, setDoctorAssignments] = useState<
     Record<string, string[]>
   >({});
@@ -341,6 +343,7 @@ export default function CreatePlanDialogRep({
   const startDate = useWatch({ control: form.control, name: "startDate" });
   const endDate = useWatch({ control: form.control, name: "endDate" });
   const targetVisits = useWatch({ control: form.control, name: "targetVisits" });
+  const title = useWatch({ control: form.control, name: "title" });
 
   const handlePlanTypeChange = (newType: "WEEKLY" | "MONTHLY") => {
     form.setValue("planType", newType);
@@ -462,10 +465,9 @@ export default function CreatePlanDialogRep({
   }, [allDoctorsList, doctorSearchQuery, hospitalFilter, statusFilter, doctorAssignments]);
 
   const isFormSubmittable = useMemo(() => {
-    const values = form.getValues();
-    const hasTitle = Boolean(values.title && values.title.trim().length > 0);
+    const hasTitle = Boolean(title && title.trim().length > 0);
     const hasDates = Boolean(startDate && endDate);
-    const hasTarget = Boolean(values.targetVisits && values.targetVisits >= 1);
+    const hasTarget = Number.isInteger(targetVisits) && targetVisits >= 1;
     const hasAssignments = totalPlannedVisits >= 1;
 
     return (
@@ -473,9 +475,10 @@ export default function CreatePlanDialogRep({
       hasDates &&
       hasTarget &&
       hasAssignments &&
+      totalPlannedVisits <= targetVisits &&
       !isPending
     );
-  }, [form, startDate, endDate, totalPlannedVisits, isPending]);
+  }, [title, startDate, endDate, targetVisits, totalPlannedVisits, isPending]);
 
   const toggleDoctorDateKey = (doctorId: string, dateKey: string) => {
     setDoctorAssignments((prev) => {
@@ -487,7 +490,10 @@ export default function CreatePlanDialogRep({
         delete next[doctorId];
         return next;
       }
-
+      const otherVisits = Object.entries(prev).reduce(
+        (sum, [id, dates]) => sum + (id === doctorId ? 0 : dates.length), 0,
+      );
+      if (otherVisits + 1 > form.getValues("targetVisits")) return prev;
       return { ...prev, [doctorId]: [dateKey] };
     });
   };
@@ -499,6 +505,10 @@ export default function CreatePlanDialogRep({
         delete next[doctorId];
         return next;
       }
+      const otherVisits = Object.entries(prev).reduce(
+        (sum, [id, dates]) => sum + (id === doctorId ? 0 : dates.length), 0,
+      );
+      if (otherVisits + 1 > form.getValues("targetVisits")) return prev;
       return { ...prev, [doctorId]: [dateKeys[dateKeys.length - 1]] };
     });
   };
@@ -699,9 +709,10 @@ export default function CreatePlanDialogRep({
                           {...field}
                           type="number"
                           min="1"
+                          step="1"
                           onChange={(event) =>
                             field.onChange(
-                              parseInt(event.target.value, 10) || 1
+                              Number(event.target.value)
                             )
                           }
                           placeholder="e.g., 25"
@@ -860,6 +871,14 @@ export default function CreatePlanDialogRep({
                     </div>
                   </div>
 
+                  {totalPlannedVisits >= targetVisits && (
+                    <p role="status" className="mb-4 rounded-[10px] border border-[#E9DDB8] bg-[#FFF8E5] p-3 text-sm text-[#8A6515]">
+                      {totalPlannedVisits > targetVisits
+                        ? "Remove visits or increase the limit before submitting this plan."
+                        : "Visit limit reached. Remove an assigned visit or increase the limit to add another doctor."}
+                    </p>
+                  )}
+
                   <div className="sticky top-0 z-10 bg-[#FBFCFE] pt-1 pb-3 space-y-2 border-b border-[#EEF1F6] mb-4">
                     <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                       <div className="relative flex-1">
@@ -1014,6 +1033,7 @@ export default function CreatePlanDialogRep({
                                         <button
                                           key={dateKey}
                                           type="button"
+                                          disabled={!isAssigned && totalPlannedVisits >= targetVisits}
                                           onClick={() =>
                                             toggleDoctorDateKey(
                                               doctor.id,
@@ -1021,7 +1041,7 @@ export default function CreatePlanDialogRep({
                                             )
                                           }
                                           className={cn(
-                                            "flex flex-col items-center justify-center rounded-[6px] px-2 py-1 text-[11px] font-bold border transition-colors min-w-[38px]",
+                                            "flex flex-col items-center justify-center rounded-[6px] px-2 py-1 text-[11px] font-bold border transition-colors min-w-[38px] disabled:opacity-40 disabled:cursor-not-allowed",
                                             isSelected
                                               ? "bg-[#168557] text-white border-[#168557] shadow-xs"
                                               : "bg-[#F9FAFB] text-[#344054] border-[#E5E8EF] hover:bg-[#E9F8F1] hover:text-[#168557]"
@@ -1038,6 +1058,7 @@ export default function CreatePlanDialogRep({
                                 ) : (
                                   /* Redesigned Monthly Popover Component */
                                   <DoctorDateSelectorPopover
+                                    disabled={!isAssigned && totalPlannedVisits >= targetVisits}
                                     doctor={doctor}
                                     startDate={startDate}
                                     endDate={endDate}

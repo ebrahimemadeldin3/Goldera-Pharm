@@ -58,6 +58,7 @@ export function PharmacyRecordActions({
   return (
     <>
       <RecordActions
+        inline
         name={pharmacy.name}
         kind="Pharmacy"
         onEdit={() => {

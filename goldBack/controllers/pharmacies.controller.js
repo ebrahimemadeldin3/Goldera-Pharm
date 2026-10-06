@@ -94,26 +94,71 @@ const updatePharmacy = async (req, res, next) => {
       return next(new ApiError("Pharmacy not found", 404));
     }
 
-    const pharmacy = await prisma.pharmacy.update({
-      where: { id },
-      data: {
-        ...(req.body.name !== undefined
-          ? { name: text(req.body.name, "name") }
-          : {}),
-        ...(req.body.city !== undefined
-          ? { city: text(req.body.city, "city") }
-          : {}),
-        ...(req.body.country !== undefined
-          ? { country: text(req.body.country, "country") }
-          : {}),
-        ...(req.body.region !== undefined
-          ? { region: text(req.body.region, "region") }
-          : {}),
-        ...(req.body.subRegion !== undefined
-          ? { subRegion: text(req.body.subRegion, "subRegion") }
-          : {}),
+    const permitted = ["name", "city", "country", "region", "subRegion"];
+    if (
+      !req.body ||
+      Object.keys(req.body).some((key) => !permitted.includes(key))
+    )
+      return next(new ApiError("Unsupported pharmacy field", 400));
+    const pharmacy = await prisma.$transaction(
+      async (tx) => {
+        const current = await tx.pharmacy.findUnique({ where: { id } });
+        if (!current) throw new ApiError("Pharmacy not found", 404);
+        const newName =
+          req.body.name !== undefined
+            ? text(req.body.name, "name")
+            : current.name;
+        if (newName !== current.name) {
+          const salesCount = await tx.sales.count({
+            where: { customer: current.name },
+          });
+          if (
+            salesCount &&
+            (await tx.pharmacy.count({ where: { name: current.name } })) > 1
+          )
+            throw new ApiError(
+              "Multiple pharmacies share this name. Resolve the sales assignment before renaming this pharmacy.",
+              409,
+            );
+          if (salesCount) {
+            if (
+              await tx.pharmacy.count({
+                where: { name: newName, id: { not: id } },
+              })
+            )
+              throw new ApiError(
+                "Another pharmacy already uses this name. Choose a unique name to preserve sales assignments.",
+                409,
+              );
+            await tx.sales.updateMany({
+              where: { customer: current.name },
+              data: { customer: newName },
+            });
+          }
+        }
+        return tx.pharmacy.update({
+          where: { id },
+          data: {
+            ...(req.body.name !== undefined
+              ? { name: text(req.body.name, "name") }
+              : {}),
+            ...(req.body.city !== undefined
+              ? { city: text(req.body.city, "city") }
+              : {}),
+            ...(req.body.country !== undefined
+              ? { country: text(req.body.country, "country") }
+              : {}),
+            ...(req.body.region !== undefined
+              ? { region: text(req.body.region, "region") }
+              : {}),
+            ...(req.body.subRegion !== undefined
+              ? { subRegion: text(req.body.subRegion, "subRegion") }
+              : {}),
+          },
+        });
       },
-    });
+      { isolationLevel: "Serializable" },
+    );
 
     res.status(200).json({
       status: "success",

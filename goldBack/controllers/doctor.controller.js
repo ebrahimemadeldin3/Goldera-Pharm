@@ -60,7 +60,10 @@ const addNewDoctor = async (req, res, next) => {
     return next(new ApiError("Unsupported doctor field", 400));
   for (const key of ["nameAR", "nameEN"])
     if (req.body[key]) req.body[key] = text(req.body[key], key);
-  if (req.body.avgPatientsPerDay !== undefined)
+  if (
+    req.body.avgPatientsPerDay !== undefined &&
+    req.body.avgPatientsPerDay !== null
+  )
     req.body.avgPatientsPerDay = number(
       req.body.avgPatientsPerDay,
       "Patients per day",
@@ -190,9 +193,27 @@ const updateDoctor = async (req, res, next) => {
     return next(new ApiError("Doctor not found", 404));
   }
 
+  if (!req.body || typeof req.body !== "object" || Array.isArray(req.body))
+    return next(new ApiError("Please provide doctor data", 400));
+  for (const key of [
+    "nameAR",
+    "nameEN",
+    "email",
+    "phone",
+    "specialty",
+    "grade",
+    "LicenseNumber",
+    "accountName",
+    "subRegion",
+    "area",
+  ])
+    if (req.body[key] !== undefined)
+      req.body[key] = text(req.body[key], key, false);
   if (req.body.nameAR !== undefined || req.body.nameEN !== undefined) {
-    const nameAR = req.body.nameAR ?? exists.nameAR;
-    const nameEN = req.body.nameEN ?? exists.nameEN;
+    const nameAR =
+      req.body.nameAR !== undefined ? req.body.nameAR : exists.nameAR;
+    const nameEN =
+      req.body.nameEN !== undefined ? req.body.nameEN : exists.nameEN;
     if (!nameAR?.trim() && !nameEN?.trim())
       return next(new ApiError("A doctor name is required", 400));
   }
@@ -215,7 +236,10 @@ const updateDoctor = async (req, res, next) => {
   ];
   if (Object.keys(req.body).some((key) => !permitted.includes(key)))
     return next(new ApiError("Unsupported doctor field", 400));
-  if (req.body.avgPatientsPerDay !== undefined)
+  if (
+    req.body.avgPatientsPerDay !== undefined &&
+    req.body.avgPatientsPerDay !== null
+  )
     req.body.avgPatientsPerDay = number(
       req.body.avgPatientsPerDay,
       "Patients per day",
@@ -239,10 +263,24 @@ const deleteDoctor = async (req, res, next) => {
 
   const exists = await prisma.doctor.findUnique({
     where: { id },
+    include: {
+      _count: { select: { visits: true, coachings: true, request: true } },
+    },
   });
   if (!exists) {
     return next(new ApiError("Doctor not found", 404));
   }
+  const plans = await prisma.plan.findMany({ select: { doctors: true } });
+  if (
+    Object.values(exists._count).some((count) => count > 0) ||
+    plans.some((plan) => plan.doctors.some((doctor) => doctor?.id === id))
+  )
+    return next(
+      new ApiError(
+        "This doctor is used in visits, plans, coaching, or requests. Set the doctor as inactive to retain these records.",
+        409,
+      ),
+    );
   await prisma.doctor.delete({
     where: { id },
   });

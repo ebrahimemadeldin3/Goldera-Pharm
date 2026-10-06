@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -11,7 +11,6 @@ import {
   Building2,
   Calendar,
   CalendarDays,
-  CircleSlash,
   ClipboardList,
   Ellipsis,
   IdCard,
@@ -225,6 +224,7 @@ function DetailItem({
 export default function DoctorProfile({ doctor }: DoctorProfileProps) {
   const pathname = usePathname();
   const { features, role } = useRoleUI();
+  const searchParams = useSearchParams();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
   const [isLoadingScheduleData, setIsLoadingScheduleData] = useState(false);
@@ -237,7 +237,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
     toggleEditMode,
     saveChanges,
     cancelEdit,
-  } = useEditDoctor(doctor);
+  } = useEditDoctor(doctor, features.doctors.canEdit && searchParams.get("edit") === "1");
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [now] = useState(() => Date.now());
 
@@ -620,7 +620,10 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
                 Edit Profile
               </Button>
             )}
-            {(features.doctors.canInactive || features.doctors.canRemove) && (
+            {features.doctors.canRemove && (
+              <RemoveDoctorDialog doctorId={doctor.id} doctorName={primaryName} />
+            )}
+            {features.doctors.canInactive && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -652,21 +655,7 @@ export default function DoctorProfile({ doctor }: DoctorProfileProps) {
                       }
                     />
                   )}
-                  {features.doctors.canRemove && (
-                    <RemoveDoctorDialog
-                      doctorId={doctor.id}
-                      doctorName={primaryName}
-                      trigger={
-                        <button
-                          type="button"
-                          className="text-gp-danger hover:bg-gp-danger-soft flex w-full cursor-pointer items-center gap-2 rounded-[8px] px-2 py-2 text-left text-sm font-semibold"
-                        >
-                          <CircleSlash className="size-4" />
-                          Remove Doctor
-                        </button>
-                      }
-                    />
-                  )}
+
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

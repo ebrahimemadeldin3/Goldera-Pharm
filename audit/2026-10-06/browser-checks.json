@@ -1,0 +1,7 @@
+{
+  "doctorEdit": "English name and patients per day saved and displayed",
+  "doctorDelete": "Confirmation opens; cancelled without deleting",
+  "pharmacyEdit": "City saved and displayed",
+  "repPlanLimit": "10 assigned; 11th disabled; lowering target to 9 disables submit; moving an existing visit retains count; removing a visit frees a slot; new plan submitted and displayed",
+  "legacyPlanNames": "Page renders after fix for missing English names"
+}

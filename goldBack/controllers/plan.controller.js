@@ -47,6 +47,10 @@ const createPlan = async (req, res, next) => {
   if (!Array.isArray(doctorsWithDates) || !doctorsWithDates.length)
     return next(new ApiError("Select at least one doctor", 400));
   number(targetVisits, "Target visits", { min: 1, integer: true });
+  if (doctorsWithDates.length > Number(targetVisits))
+    return next(
+      new ApiError(`This plan allows at most ${targetVisits} visits`, 400),
+    );
   stringList(objectives, "Objectives", { required: true });
   for (const doctor of doctorsWithDates) {
     text(doctor.doctorId, "Doctor");
@@ -90,12 +94,20 @@ const createPlan = async (req, res, next) => {
       new ApiError("One or more selected doctors no longer exist", 400),
     );
 
-  let doctors = doctorsInDB.map((doctor) => ({
-    ...doctor,
-    visitDate: doctorsWithDates.find((d) => d.doctorId === doctor.id)
-      ? doctorsWithDates.find((d) => d.doctorId === doctor.id).visitDate
-      : null,
-  }));
+  const assignments = new Set();
+  const doctors = doctorsWithDates.map((assignment) => {
+    const key = `${assignment.doctorId}:${new Date(assignment.visitDate).toISOString().slice(0, 10)}`;
+    if (assignments.has(key))
+      throw new ApiError(
+        "A doctor can only be scheduled once on the same date",
+        400,
+      );
+    assignments.add(key);
+    return {
+      ...doctorsInDB.find((doctor) => doctor.id === assignment.doctorId),
+      visitDate: new Date(assignment.visitDate).toISOString(),
+    };
+  });
 
   const data = await prisma.plan.create({
     data: {
@@ -108,8 +120,8 @@ const createPlan = async (req, res, next) => {
       doctors: doctors,
       objectives,
       createdBy: { connect: { id: ownerId } },
-      targetDoctors: doctorsWithDates.length,
-      targetVisits,
+      targetDoctors: new Set(doctorIds).size,
+      targetVisits: Number(targetVisits),
     },
   });
   res.status(201).json({
@@ -311,6 +323,13 @@ const updateOnePlan = async (req, res, next) => {
 
   let visitData;
   if (status === "APPROVED" && plan.status !== "APPROVED") {
+    if (plan.doctors.length > plan.targetVisits)
+      return next(
+        new ApiError(
+          "This plan exceeds its visit limit. Reject it and submit a corrected plan.",
+          409,
+        ),
+      );
     // create visit if the plan is approved
     visitData = plan.doctors?.map((doctor) => {
       return {

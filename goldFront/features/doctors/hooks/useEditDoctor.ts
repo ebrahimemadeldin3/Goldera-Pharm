@@ -24,25 +24,28 @@ type EditableFields = {
 
 function optionalText(value: string | null) {
   const trimmed = String(value ?? "").trim();
-  return trimmed ? trimmed : undefined;
+  return trimmed ? trimmed : null;
 }
 
-export function useEditDoctor(initialData: DoctorProfileData) {
+export function useEditDoctor(
+  initialData: DoctorProfileData,
+  startEditing = false,
+) {
   const router = useRouter();
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(startEditing);
   const [isPending, startTransition] = useTransition();
 
   const [editedData, setEditedData] = useState<EditableFields>({
-    nameEN: initialData.nameEN,
-    nameAR: initialData.nameAR,
+    nameEN: initialData.nameEN ?? "",
+    nameAR: initialData.nameAR ?? "",
     email: initialData.email,
-    phone: initialData.phone,
-    specialty: initialData.specialty,
-    grade: initialData.grade,
+    phone: initialData.phone ?? "",
+    specialty: initialData.specialty ?? "",
+    grade: initialData.grade ?? "",
     avgPatientsPerDay: initialData.avgPatientsPerDay,
     LicenseNumber: initialData.LicenseNumber,
-    accountName: initialData.accountName,
-    subRegion: initialData.subRegion,
+    accountName: initialData.accountName ?? "",
+    subRegion: initialData.subRegion ?? "",
     area: initialData.area,
     latitude: initialData.latitude,
     longitude: initialData.longitude,
@@ -60,16 +63,16 @@ export function useEditDoctor(initialData: DoctorProfileData) {
     if (!isEditMode) {
       // Reset to initial data when entering edit mode
       setEditedData({
-        nameEN: initialData.nameEN,
-        nameAR: initialData.nameAR,
+        nameEN: initialData.nameEN ?? "",
+        nameAR: initialData.nameAR ?? "",
         email: initialData.email,
-        phone: initialData.phone,
-        specialty: initialData.specialty,
-        grade: initialData.grade,
+        phone: initialData.phone ?? "",
+        specialty: initialData.specialty ?? "",
+        grade: initialData.grade ?? "",
         avgPatientsPerDay: initialData.avgPatientsPerDay,
         LicenseNumber: initialData.LicenseNumber,
-        accountName: initialData.accountName,
-        subRegion: initialData.subRegion,
+        accountName: initialData.accountName ?? "",
+        subRegion: initialData.subRegion ?? "",
         area: initialData.area,
         latitude: initialData.latitude,
         longitude: initialData.longitude,
@@ -88,12 +91,12 @@ export function useEditDoctor(initialData: DoctorProfileData) {
           specialty: editedData.specialty.trim(),
           grade: editedData.grade.trim(),
           LicenseNumber: optionalText(editedData.LicenseNumber),
-          avgPatientsPerDay: editedData.avgPatientsPerDay ?? undefined,
+          avgPatientsPerDay: editedData.avgPatientsPerDay,
           accountName: editedData.accountName.trim(),
           subRegion: editedData.subRegion.trim(),
           area: optionalText(editedData.area),
-          latitude: editedData.latitude ?? undefined,
-          longitude: editedData.longitude ?? undefined,
+          latitude: editedData.latitude,
+          longitude: editedData.longitude,
         };
 
         const result = await updateDoctorAction(initialData.id, dataToUpdate);
@@ -124,16 +127,16 @@ export function useEditDoctor(initialData: DoctorProfileData) {
     setIsEditMode(false);
     // Reset to initial data
     setEditedData({
-      nameEN: initialData.nameEN,
-      nameAR: initialData.nameAR,
+      nameEN: initialData.nameEN ?? "",
+      nameAR: initialData.nameAR ?? "",
       email: initialData.email,
-      phone: initialData.phone,
-      specialty: initialData.specialty,
-      grade: initialData.grade,
+      phone: initialData.phone ?? "",
+      specialty: initialData.specialty ?? "",
+      grade: initialData.grade ?? "",
       avgPatientsPerDay: initialData.avgPatientsPerDay,
       LicenseNumber: initialData.LicenseNumber,
-      accountName: initialData.accountName,
-      subRegion: initialData.subRegion,
+      accountName: initialData.accountName ?? "",
+      subRegion: initialData.subRegion ?? "",
       area: initialData.area,
       latitude: initialData.latitude,
       longitude: initialData.longitude,

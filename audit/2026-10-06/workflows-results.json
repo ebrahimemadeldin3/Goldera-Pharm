@@ -1,0 +1,74 @@
+{
+  "passed": 17,
+  "total": 17,
+  "results": [
+    {
+      "name": "10 visits accepted and stored",
+      "passed": true
+    },
+    {
+      "name": "11 visits rejected at a limit of 10",
+      "passed": true
+    },
+    {
+      "name": "12 visits rejected at a limit of 10",
+      "passed": true
+    },
+    {
+      "name": "Non-integer target rejected",
+      "passed": true
+    },
+    {
+      "name": "Repeated doctor/date rejected",
+      "passed": true
+    },
+    {
+      "name": "Same doctor on different dates preserves both visits",
+      "passed": true
+    },
+    {
+      "name": "Approval creates exactly 10 linked visits",
+      "passed": true
+    },
+    {
+      "name": "Legacy over-limit plan cannot be approved",
+      "passed": true
+    },
+    {
+      "name": "Doctor edit persists and optional number can clear",
+      "passed": true
+    },
+    {
+      "name": "Doctor deletion persists for unused records",
+      "passed": true
+    },
+    {
+      "name": "Linked doctor deletion returns conflict",
+      "passed": true
+    },
+    {
+      "name": "Rep cannot edit/delete master data",
+      "passed": true
+    },
+    {
+      "name": "Pharmacy edit and deletion persist",
+      "passed": true
+    },
+    {
+      "name": "Pharmacy rename preserves sales linkage",
+      "passed": true
+    },
+    {
+      "name": "Linked pharmacy deletion blocked",
+      "passed": true
+    },
+    {
+      "name": "Manager performance reports real targets and completed visits",
+      "passed": true
+    },
+    {
+      "name": "Performance API isolates managers and excludes reps",
+      "passed": true
+    }
+  ]
+}
