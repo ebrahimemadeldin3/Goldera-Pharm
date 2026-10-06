@@ -90,7 +90,7 @@ export class ApiFeatures {
   }
   sort(sortQuery) {
     if (!sortQuery) {
-      this.queryObj.orderBy = { createdAt: "desc" };
+      this.queryObj.orderBy = [{ createdAt: "desc" }, { id: "desc" }];
       return this;
     }
     if (typeof sortQuery !== "string") throw new ApiError("Invalid sort", 400);
@@ -101,6 +101,9 @@ export class ApiFeatures {
         throw new ApiError(`Unsupported sort: ${name}`, 400);
       return { [name]: descending ? "desc" : "asc" };
     });
+    // Bulk imports share timestamps; a unique tie-breaker prevents repeated pages.
+    if (!this.queryObj.orderBy.some((item) => "id" in item))
+      this.queryObj.orderBy.push({ id: "desc" });
     return this;
   }
   paginate(page = 1, limit = 10) {

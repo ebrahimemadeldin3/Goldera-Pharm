@@ -1,6 +1,6 @@
 {
-  "passed": 17,
-  "total": 17,
+  "passed": 28,
+  "total": 28,
   "results": [
     {
       "name": "10 visits accepted and stored",
@@ -63,11 +63,55 @@
       "passed": true
     },
     {
-      "name": "Manager performance reports real targets and completed visits",
+      "name": "Overview: every section loads from real database queries",
       "passed": true
     },
     {
-      "name": "Performance API isolates managers and excludes reps",
+      "name": "Overview: visits reconcile and exclude another manager",
+      "passed": true
+    },
+    {
+      "name": "Overview: sales sum and trends use ledger amounts",
+      "passed": true
+    },
+    {
+      "name": "Overview: real territory filters apply to visits and sales",
+      "passed": true
+    },
+    {
+      "name": "Overview: representative filter applies without inventing sales ownership",
+      "passed": true
+    },
+    {
+      "name": "Overview: coaching and complete appraisal scores use their real scales",
+      "passed": true
+    },
+    {
+      "name": "Overview: current approvals are distinct from dated request history",
+      "passed": true
+    },
+    {
+      "name": "Overview: empty date range gives honest zeros and null percentages",
+      "passed": true
+    },
+    {
+      "name": "Overview: Saudi midnight boundaries include the correct day",
+      "passed": true
+    },
+    {
+      "name": "Overview: invalid range, impossible dates and mismatched geography reject",
+      "passed": true
+    },
+    {
+      "name": "Overview: other representatives and roles cannot bypass scope",
+      "passed": true
+    },
+    {
+      "name": "Overview: recorded visits remain visible across current representative assignments",
+      "passed": true
+    },
+    {
+      "name": "Overview: a failed coaching source does not discard successful sources",
       "passed": true
     }
   ]

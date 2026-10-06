@@ -1,0 +1,880 @@
+{
+  "generatedAt": "2026-10-06T02:05:52.973Z",
+  "requestId": "58593909-ba7e-4025-9332-ff3e7d913cc8",
+  "range": {
+    "from": "2026-10-01",
+    "to": "2026-10-31",
+    "bucket": "day",
+    "timeZone": "Asia/Riyadh"
+  },
+  "filters": {
+    "repId": "all",
+    "district": "all",
+    "regionId": "all",
+    "territoryId": "all"
+  },
+  "options": {
+    "districts": [
+      "Central & Eastern District",
+      "Western & Southern District"
+    ],
+    "regions": [
+      {
+        "id": "089288ac-cbcf-4d43-91d0-99025adfe833",
+        "name": "Central Region",
+        "district": "Central & Eastern District",
+        "territories": [
+          {
+            "id": "e88b7a45-e196-4872-83f8-339edcd97b91",
+            "name": "Riyadh 1"
+          }
+        ]
+      },
+      {
+        "id": "415eb71e-5c04-4549-9815-90752324c0c4",
+        "name": "Western Region",
+        "district": "Western & Southern District",
+        "territories": [
+          {
+            "id": "268f51f9-7580-4f8c-9562-c53f765f91f4",
+            "name": "Jeddah 1"
+          }
+        ]
+      }
+    ],
+    "reps": [
+      {
+        "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+        "name": "Rep",
+        "territoryId": "e88b7a45-e196-4872-83f8-339edcd97b91"
+      },
+      {
+        "id": "658740b6-a71b-44c7-a1ac-566271e48ea1",
+        "name": "WestRep",
+        "territoryId": "268f51f9-7580-4f8c-9562-c53f765f91f4"
+      }
+    ]
+  },
+  "sections": {
+    "visits": {
+      "status": "ready",
+      "data": {
+        "total": 15,
+        "completed": 6,
+        "scheduled": 8,
+        "cancelled": 1,
+        "completionRate": 40,
+        "statuses": [
+          {
+            "status": "SCHEDULED",
+            "count": 8
+          },
+          {
+            "status": "COMPLETED",
+            "count": 6
+          },
+          {
+            "status": "CANCELLED",
+            "count": 1
+          }
+        ],
+        "byRep": [
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "status": "SCHEDULED",
+            "count": 8
+          },
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "status": "COMPLETED",
+            "count": 4
+          },
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "status": "CANCELLED",
+            "count": 1
+          },
+          {
+            "id": "658740b6-a71b-44c7-a1ac-566271e48ea1",
+            "status": "COMPLETED",
+            "count": 2
+          }
+        ],
+        "trend": [
+          {
+            "date": "2026-10-01",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-02",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-03",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-04",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-05",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-06",
+            "total": 5,
+            "completed": 3
+          },
+          {
+            "date": "2026-10-07",
+            "total": 10,
+            "completed": 3
+          },
+          {
+            "date": "2026-10-08",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-09",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-10",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-11",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-12",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-13",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-14",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-15",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-16",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-17",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-18",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-19",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-20",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-21",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-22",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-23",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-24",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-25",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-26",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-27",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-28",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-29",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-30",
+            "total": 0,
+            "completed": 0
+          },
+          {
+            "date": "2026-10-31",
+            "total": 0,
+            "completed": 0
+          }
+        ],
+        "coveredDoctors": 5,
+        "overdue": 0,
+        "upcomingCount": 8,
+        "upcoming": [
+          {
+            "id": "047b794f-d2f5-407c-bbce-bef4fd3e07fc",
+            "date": "2026-10-06T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "3d3cd23a-9a4e-4668-a15d-76798ff7b7e3",
+            "doctor": "طبيب تجريبي 1",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "534bc636-e834-40bd-a418-1e3d20f40340",
+            "date": "2026-10-06T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "3d3cd23a-9a4e-4668-a15d-76798ff7b7e3",
+            "doctor": "طبيب تجريبي 1",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "b8fd6230-9617-4a34-8237-46bafcaf1fa8",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "382b6106-9503-47d3-84b7-e361f3c8373a",
+            "doctor": "طبيب تجريبي 10",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "ccd17c67-060c-4836-a542-5c5ea5683051",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "3d3cd23a-9a4e-4668-a15d-76798ff7b7e3",
+            "doctor": "طبيب تجريبي 1",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "e542e5ba-ca05-4d41-bd88-ec9ec95bb84e",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "309249d4-ae72-44b6-a849-5dcdec2b1f50",
+            "doctor": "طبيب تجريبي 2",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "f3747b7b-8875-4a7f-b0be-9a55c04b7678",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "2a3f31d3-543e-4678-afd1-5a2dedd966e4",
+            "doctor": "طبيب تجريبي 6",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          }
+        ],
+        "recent": [
+          {
+            "id": "fbcf7669-d36c-4b39-8cbd-ee4bb867f2e6",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "aab1caef-35d8-4ae5-8593-2c8752fe7af3",
+            "doctor": "طبيب تجريبي 9",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "f70fe794-849c-453b-a7a9-cca78723ca54",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "dec43257-d218-412a-9add-df97435976c6",
+            "doctor": "طبيب تجريبي 5",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "f3747b7b-8875-4a7f-b0be-9a55c04b7678",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "2a3f31d3-543e-4678-afd1-5a2dedd966e4",
+            "doctor": "طبيب تجريبي 6",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "e542e5ba-ca05-4d41-bd88-ec9ec95bb84e",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "309249d4-ae72-44b6-a849-5dcdec2b1f50",
+            "doctor": "طبيب تجريبي 2",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "ccd17c67-060c-4836-a542-5c5ea5683051",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "3d3cd23a-9a4e-4668-a15d-76798ff7b7e3",
+            "doctor": "طبيب تجريبي 1",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          },
+          {
+            "id": "b8fd6230-9617-4a34-8237-46bafcaf1fa8",
+            "date": "2026-10-07T00:00:00.000Z",
+            "time": null,
+            "status": "SCHEDULED",
+            "doctorId": "382b6106-9503-47d3-84b7-e361f3c8373a",
+            "doctor": "طبيب تجريبي 10",
+            "territory": "Riyadh 1",
+            "repId": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "rep": "Rep"
+          }
+        ],
+        "byTerritory": [
+          {
+            "id": "268f51f9-7580-4f8c-9562-c53f765f91f4",
+            "name": "Jeddah 1",
+            "total": 1,
+            "completed": 1
+          },
+          {
+            "id": "e88b7a45-e196-4872-83f8-339edcd97b91",
+            "name": "Riyadh 1",
+            "total": 14,
+            "completed": 5
+          }
+        ]
+      },
+      "error": null
+    },
+    "sales": {
+      "status": "ready",
+      "data": {
+        "total": 150,
+        "quantity": 3,
+        "records": 2,
+        "currency": "SAR",
+        "trend": [
+          {
+            "date": "2026-10-01",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-02",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-03",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-04",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-05",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-06",
+            "amount": 150
+          },
+          {
+            "date": "2026-10-07",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-08",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-09",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-10",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-11",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-12",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-13",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-14",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-15",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-16",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-17",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-18",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-19",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-20",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-21",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-22",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-23",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-24",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-25",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-26",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-27",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-28",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-29",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-30",
+            "amount": 0
+          },
+          {
+            "date": "2026-10-31",
+            "amount": 0
+          }
+        ],
+        "products": [
+          {
+            "id": "191ca886-8d01-4be5-8a63-e780294146b6",
+            "name": "QA Medicine",
+            "amount": 150,
+            "quantity": 3
+          }
+        ],
+        "recent": [
+          {
+            "id": "8682c389-edc3-4c0a-824f-bce79d90dc6c",
+            "customer": "QA Western Pharmacy",
+            "date": "2026-10-06T00:00:00.000Z",
+            "product": "QA Medicine",
+            "amount": 50,
+            "quantity": 2
+          },
+          {
+            "id": "148c8d55-f775-4a7c-83e4-2676aee60bff",
+            "customer": "QA Renamed Sales Pharmacy",
+            "date": "2026-10-06T00:00:00.000Z",
+            "product": "QA Medicine",
+            "amount": 100,
+            "quantity": 1
+          }
+        ],
+        "scope": "All company sales",
+        "representativeFilterApplied": false,
+        "unmatchedRecords": 0,
+        "ambiguousAccounts": 0
+      },
+      "error": null
+    },
+    "directory": {
+      "status": "ready",
+      "data": {
+        "doctors": 12,
+        "activeDoctors": 12,
+        "pharmacies": 2,
+        "facilities": 2,
+        "missingEmail": 12,
+        "missingPhone": 1,
+        "missingCity": 0,
+        "specialties": [
+          {
+            "name": "Cardiology",
+            "count": 12
+          }
+        ],
+        "coverage": [
+          {
+            "id": "e88b7a45-e196-4872-83f8-339edcd97b91",
+            "name": "Riyadh 1",
+            "region": "Central Region",
+            "district": "Central & Eastern District",
+            "reps": [
+              {
+                "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+                "name": "Rep"
+              }
+            ]
+          },
+          {
+            "id": "268f51f9-7580-4f8c-9562-c53f765f91f4",
+            "name": "Jeddah 1",
+            "region": "Western Region",
+            "district": "Western & Southern District",
+            "reps": [
+              {
+                "id": "658740b6-a71b-44c7-a1ac-566271e48ea1",
+                "name": "WestRep"
+              }
+            ]
+          }
+        ],
+        "unassignedTerritories": 0,
+        "scope": "Current company directory"
+      },
+      "error": null
+    },
+    "team": {
+      "status": "ready",
+      "data": {
+        "members": [
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "name": "Rep",
+            "role": "MEDICAL_REP",
+            "active": true,
+            "supervisor": "Supervisor",
+            "territories": [
+              "Riyadh 1"
+            ],
+            "territoryIds": [
+              "e88b7a45-e196-4872-83f8-339edcd97b91"
+            ],
+            "lastLogin": null,
+            "leaveDays": 0,
+            "inCurrentScope": true
+          },
+          {
+            "id": "6094d59f-6eaf-4b59-b43d-3686bd9c1ffa",
+            "name": "Supervisor",
+            "role": "SUPERVISOR",
+            "active": true,
+            "supervisor": null,
+            "territories": [
+              "Riyadh 1"
+            ],
+            "territoryIds": [
+              "e88b7a45-e196-4872-83f8-339edcd97b91"
+            ],
+            "lastLogin": null,
+            "leaveDays": 0,
+            "inCurrentScope": true
+          },
+          {
+            "id": "658740b6-a71b-44c7-a1ac-566271e48ea1",
+            "name": "WestRep",
+            "role": "MEDICAL_REP",
+            "active": true,
+            "supervisor": null,
+            "territories": [
+              "Jeddah 1"
+            ],
+            "territoryIds": [
+              "268f51f9-7580-4f8c-9562-c53f765f91f4"
+            ],
+            "lastLogin": null,
+            "leaveDays": 0,
+            "inCurrentScope": true
+          }
+        ],
+        "performanceMembers": [
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "name": "Rep",
+            "role": "MEDICAL_REP",
+            "active": true,
+            "supervisor": "Supervisor",
+            "territories": [
+              "Riyadh 1"
+            ],
+            "territoryIds": [
+              "e88b7a45-e196-4872-83f8-339edcd97b91"
+            ],
+            "lastLogin": null,
+            "leaveDays": 0,
+            "inCurrentScope": true
+          },
+          {
+            "id": "658740b6-a71b-44c7-a1ac-566271e48ea1",
+            "name": "WestRep",
+            "role": "MEDICAL_REP",
+            "active": true,
+            "supervisor": null,
+            "territories": [
+              "Jeddah 1"
+            ],
+            "territoryIds": [
+              "268f51f9-7580-4f8c-9562-c53f765f91f4"
+            ],
+            "lastLogin": null,
+            "leaveDays": 0,
+            "inCurrentScope": true
+          }
+        ],
+        "total": 3,
+        "active": 3,
+        "reps": 2,
+        "supervisors": 1,
+        "missingTerritory": 0,
+        "recentLogins": 0,
+        "leaveDays": 0
+      },
+      "error": null
+    },
+    "coaching": {
+      "status": "ready",
+      "data": {
+        "total": 2,
+        "scored": 2,
+        "average": 3.5,
+        "accepted": 1,
+        "followUps": 1,
+        "lowRatings": 1,
+        "excluded": 0,
+        "distribution": [
+          {
+            "rating": 2,
+            "count": 1
+          },
+          {
+            "rating": 5,
+            "count": 1
+          }
+        ],
+        "byRep": [
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "average": 3.5,
+            "count": 2
+          }
+        ],
+        "recent": [
+          {
+            "id": "e2df5f4d-3d67-4658-bfb8-54e68279a8a0",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep",
+            "rating": 2
+          },
+          {
+            "id": "10ce06d4-f0fe-4bbb-8974-5d9b3130a0bc",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep",
+            "rating": 5
+          }
+        ]
+      },
+      "error": null
+    },
+    "appraisals": {
+      "status": "ready",
+      "data": {
+        "total": 2,
+        "scored": 1,
+        "average": 80,
+        "excluded": 1,
+        "distribution": [
+          {
+            "label": "80–89",
+            "count": 1
+          }
+        ],
+        "recent": [
+          {
+            "id": "9ffeb7c7-2de3-4306-bee7-dd896a9f5902",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep",
+            "acknowledged": false
+          },
+          {
+            "id": "8858dc28-2da3-4b02-9f30-3bb51584c2ce",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep",
+            "acknowledged": false
+          }
+        ]
+      },
+      "error": null
+    },
+    "workflow": {
+      "status": "ready",
+      "data": {
+        "requests": [
+          {
+            "status": "PENDING",
+            "count": 1
+          },
+          {
+            "status": "APPROVED",
+            "count": 1
+          }
+        ],
+        "plans": [
+          {
+            "status": "APPROVED",
+            "count": 1
+          },
+          {
+            "status": "PENDING",
+            "count": 2
+          }
+        ],
+        "pendingRequests": 2,
+        "pendingPlans": 2,
+        "target": 10,
+        "completed": 3,
+        "achievement": 30,
+        "byRep": [
+          {
+            "id": "344aa859-ade0-4c7d-94cb-0769e2902fdb",
+            "target": 10,
+            "completed": 3
+          }
+        ],
+        "recentRequests": [
+          {
+            "id": "be2f73d2-d797-44c2-abe4-18358a58de58",
+            "title": "QA Current pending",
+            "status": "PENDING",
+            "type": "EXPENSE",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep"
+          },
+          {
+            "id": "4289c386-d154-4d54-bf33-17fefe361048",
+            "title": "QA Approved",
+            "status": "APPROVED",
+            "type": "EXPENSE",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep"
+          }
+        ],
+        "recentPlans": [
+          {
+            "id": "ecd957d2-979e-4694-be01-e76ce6dca84e",
+            "title": "QA 1 visits 1791252324878",
+            "status": "PENDING",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep"
+          },
+          {
+            "id": "5ce67f34-3627-497f-9cc4-05df4875deff",
+            "title": "QA legacy excess",
+            "status": "PENDING",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep"
+          },
+          {
+            "id": "1b43783a-fc18-4755-bdc7-74aeec164c11",
+            "title": "QA 10 visits 1791252324830",
+            "status": "APPROVED",
+            "date": "2026-10-06T00:00:00.000Z",
+            "employee": "Rep"
+          }
+        ]
+      },
+      "error": null
+    }
+  }
+}

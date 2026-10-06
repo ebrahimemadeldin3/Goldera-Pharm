@@ -1,0 +1,42 @@
+Loaded Prisma config from prisma.config.js.
+
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ⚙️  enable debug logging with { debug: true }
+PASS 10 visits accepted and stored
+PASS 11 visits rejected at a limit of 10
+PASS 12 visits rejected at a limit of 10
+PASS Non-integer target rejected
+PASS Repeated doctor/date rejected
+PASS Same doctor on different dates preserves both visits
+PASS Approval creates exactly 10 linked visits
+PASS Legacy over-limit plan cannot be approved
+PASS Doctor edit persists and optional number can clear
+PASS Doctor deletion persists for unused records
+PASS Linked doctor deletion returns conflict
+PASS Rep cannot edit/delete master data
+PASS Pharmacy edit and deletion persist
+PASS Pharmacy rename preserves sales linkage
+PASS Linked pharmacy deletion blocked
+PASS Overview: every section loads from real database queries
+PASS Overview: visits reconcile and exclude another manager
+PASS Overview: sales sum and trends use ledger amounts
+PASS Overview: real territory filters apply to visits and sales
+PASS Overview: representative filter applies without inventing sales ownership
+PASS Overview: coaching and complete appraisal scores use their real scales
+PASS Overview: current approvals are distinct from dated request history
+PASS Overview: empty date range gives honest zeros and null percentages
+PASS Overview: Saudi midnight boundaries include the correct day
+PASS Overview: invalid range, impossible dates and mismatched geography reject
+PASS Overview: other representatives and roles cannot bypass scope
+PASS Overview: recorded visits remain visible across current representative assignments
+Manager dashboard section failed {
+  source: 'coaching',
+  requestId: '010d1193-ac75-475e-8f65-3bf5b89e7257',
+  code: 'QA_SOURCE_FAILURE'
+}
+PASS Overview: a failed coaching source does not discard successful sources
+Disposable QA API available on 5052. Only synthetic users/data; credentials defined in this QA script.
+Manager dashboard section failed {
+  source: 'coaching',
+  requestId: 'eeb1dee2-2987-4cb0-8066-ce8fe7cd855b',
+  code: 'QA_SOURCE_FAILURE'
+}

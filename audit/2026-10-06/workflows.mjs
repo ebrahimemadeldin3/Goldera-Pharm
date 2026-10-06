@@ -42,6 +42,26 @@ const app = express();
 app.use(express.json());
 const { default: mount } = await import(`${root}/goldBack/routes/index.js`);
 const { default: errorMiddleware } = await import(`${root}/goldBack/middlewares/error.middleware.js`);
+// Failure controls exist only in this disposable, localhost-bound QA harness.
+if (process.argv.includes('--overview')) {
+ const { guard, allowedTo } = await import(`${root}/goldBack/middlewares/auth.middleware.js`);
+ const { buildManagerOverview } = await import(`${root}/goldBack/controllers/manager-overview.controller.js`);
+ let failureSource = 'clear';
+ app.post('/__qa/overview-failure', (req, res) => {
+  if (!['clear', 'coaching', 'global'].includes(req.body?.source)) return res.status(400).json({ message: 'Unknown QA failure source' });
+  failureSource = req.body.source;
+  res.json({ success: true, source: failureSource });
+ });
+ app.get('/api/dashboard/managers/overview', guard, allowedTo('MANAGER'), async (req, res, next) => {
+  if (failureSource === 'clear') return next();
+  if (failureSource === 'global') return res.status(503).json({ message: 'The QA dashboard connection is temporarily unavailable.', code: 'QA_UNAVAILABLE' });
+  try {
+   const { faultedOverviewDb } = await import('./manager-redesign/overview-checks.mjs');
+   const failing = faultedOverviewDb(prisma);
+   res.json({ status: 'success', data: await buildManagerOverview(failing, req.user, req.query) });
+  } catch (error) { next(error); }
+ });
+}
 mount(app);
 app.use(errorMiddleware);
 const server = app.listen(5052, '127.0.0.1');
@@ -73,6 +93,10 @@ const product = await prisma.products.create({ data: { name: 'QA Medicine', inte
 const sale = await prisma.sales.create({ data: { sheetName: 'QA', customer: linkedPharmacy.name, order: 'QA001', productId: product.id, orderDate: new Date('2026-10-06'), qtyOrdered: 1, untaxedTotal: 100 } });
 await check('Pharmacy rename preserves sales linkage', async () => { const response = await request('manager', 'PATCH', `/pharmacies/${linkedPharmacy.id}`, { name: 'QA Renamed Sales Pharmacy' }); assert.equal(response.status, 200, JSON.stringify(response.body)); assert.equal((await prisma.sales.findUnique({ where: { id: sale.id } })).customer, 'QA Renamed Sales Pharmacy'); });
 await check('Linked pharmacy deletion blocked', async () => assert.equal((await request('manager', 'DELETE', `/pharmacies/${linkedPharmacy.id}`)).status, 409));
+if (process.argv.includes('--overview')) {
+  const { runOverviewChecks } = await import('./manager-redesign/overview-checks.mjs');
+  await runOverviewChecks({ prisma, actors, request, check, user });
+}
 fs.writeFileSync(`${root}/audit/2026-10-06/workflows-results.json`, JSON.stringify({ passed: results.filter(result => result.passed).length, total: results.length, results }, null, 2));
 if (process.argv.includes('--serve') && results.every(result => result.passed)) {
  console.log('Disposable QA API available on 5052. Only synthetic users/data; credentials defined in this QA script.');
