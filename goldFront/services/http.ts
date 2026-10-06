@@ -40,6 +40,8 @@ export async function apiFetch<T>(
         statusCode: data.statusCode || data.err?.statusCode || res.status,
         code: data.code || data.status || "API_ERROR",
         message: data.message || "Something went wrong",
+        canArchive: data.canArchive,
+        dependencies: data.dependencies,
       };
     } catch {
       error = {

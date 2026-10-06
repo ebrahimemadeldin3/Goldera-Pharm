@@ -5,6 +5,43 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
+const MAX_SAFE_FORECAST_PAGE_SIZE = 1000;
+
+async function getAllForecastPages() {
+  const firstResult = await getAllForecastsAction(
+    1,
+    MAX_SAFE_FORECAST_PAGE_SIZE,
+  );
+  if (!firstResult.success || !firstResult.data) return firstResult;
+
+  const totalCount = firstResult.totalCount ?? firstResult.data.results;
+  const totalPages = Math.ceil(totalCount / MAX_SAFE_FORECAST_PAGE_SIZE);
+  if (totalPages <= 1) return firstResult;
+
+  const remainingResults = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getAllForecastsAction(index + 2, MAX_SAFE_FORECAST_PAGE_SIZE),
+    ),
+  );
+
+  const failed = remainingResults.find(
+    (result) => !result.success || !result.data,
+  );
+  if (failed) return failed;
+
+  return {
+    success: true,
+    data: {
+      data: [
+        ...firstResult.data.data,
+        ...remainingResults.flatMap((result) => result.data?.data ?? []),
+      ],
+      results: totalCount,
+    },
+    totalCount,
+  };
+}
+
 export default async function Page({
   searchParams,
 }: {
@@ -15,7 +52,7 @@ export default async function Page({
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const result = await getAllForecastsAction(page, limit);
+  const result = await getAllForecastPages();
 
   if (!result.success || !result.data) {
     return (

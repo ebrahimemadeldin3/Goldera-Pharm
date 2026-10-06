@@ -172,13 +172,14 @@ const createRequest = async (req, res, next) => {
       const productsCount = await prisma.products.count({
         where: {
           id: { in: [...new Set(sampleData.map((item) => item.productId))] },
+          isArchived: false,
         },
       });
       if (
         productsCount !== new Set(sampleData.map((item) => item.productId)).size
       )
         throw new ApiError(
-          "One or more selected products no longer exist",
+          "One or more selected products are unavailable",
           400,
         );
     } else if (type === "PERSONAL_EXPENSE") {

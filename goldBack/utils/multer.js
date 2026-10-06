@@ -21,6 +21,21 @@ const imageUpload = multer({
   },
 }).single("profileImage");
 
+const productImageUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new ApiError("Please select a JPG, PNG or WebP image.", 415), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+}).single("image");
+
 const filesUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
@@ -66,4 +81,4 @@ const sheetUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single("sheet");
 
-export { imageUpload, filesUpload, sheetUpload };
+export { imageUpload, productImageUpload, filesUpload, sheetUpload };

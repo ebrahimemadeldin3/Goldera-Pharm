@@ -34,7 +34,8 @@ type CoachingReportApiResponse = {
   };
   doctor: {
     id: string;
-    name: string;
+    nameAR?: string | null;
+    nameEN?: string | null;
     email: string;
     phone: string;
   };
@@ -73,7 +74,8 @@ type RepCoachingReportsActionResult =
     };
 
 type AddRepCommentDto = {
-  comment: string;
+  comment?: string;
+  accept?: boolean;
 };
 
 function calculateRepCoachingStats(reports: CoachingReportApiResponse[]) {
@@ -81,7 +83,7 @@ function calculateRepCoachingStats(reports: CoachingReportApiResponse[]) {
 
   return {
     totalReports,
-    pendingComments: reports.filter((report) => !report.repComment).length,
+    pendingComments: reports.filter((report) => !report.repAccepted).length,
     averageRating:
       totalReports > 0
         ? reports.reduce((sum, report) => sum + report.performanceRating, 0) /
@@ -95,7 +97,13 @@ function calculateRepCoachingStats(reports: CoachingReportApiResponse[]) {
   };
 }
 
-async function getRepCoachingStatsSource(response: GetRepCoachingReportsResponse) {
+function getDoctorDisplayName(doctor: CoachingReportApiResponse["doctor"]) {
+  return doctor.nameEN || doctor.nameAR || "Unknown doctor";
+}
+
+async function getRepCoachingStatsSource(
+  response: GetRepCoachingReportsResponse,
+) {
   if (response.results <= response.data.length) {
     return response.data;
   }
@@ -157,7 +165,7 @@ export async function getRepCoachingReportsAction(
       };
 
       // Determine status based on rep response
-      const status: "Completed" | "Pending Feedback" = report.repComment
+      const status: "Completed" | "Pending Feedback" = report.repAccepted
         ? "Completed"
         : "Pending Feedback";
 
@@ -173,7 +181,7 @@ export async function getRepCoachingReportsAction(
           initials: getInitials(report.rep.name),
         },
         supervisor: report.createdBy.name,
-        doctor: report.doctor.name,
+        doctor: getDoctorDisplayName(report.doctor),
         hospital: report.visitLocation,
         date: formattedDate,
         visitType: "Joint Visit",
@@ -183,7 +191,7 @@ export async function getRepCoachingReportsAction(
         improvements: report.visitCons,
         actionPlan: report.actionItems.join(", "),
         supervisorComments: report.recommendations,
-        repResponse: report.repComment || "No response yet",
+        repResponse: report.repComment || "Accepted without comment",
       };
     });
 
@@ -216,7 +224,11 @@ export async function getRepCoachingReportsAction(
  */
 export async function addRepCommentAction(reportId: string, comment: string) {
   try {
-    await addRepComment(reportId, { comment });
+    const trimmed = comment.trim();
+    await addRepComment(
+      reportId,
+      trimmed ? { comment: trimmed } : { accept: true },
+    );
 
     return {
       success: true,

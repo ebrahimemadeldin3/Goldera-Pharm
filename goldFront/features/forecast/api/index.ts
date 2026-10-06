@@ -120,6 +120,7 @@ function prepareSubmissionData(
         const productName = product?.name || "Unknown Product";
 
         productForecasts.push({
+          productId,
           productName,
           productUnits: units,
           doctorName,

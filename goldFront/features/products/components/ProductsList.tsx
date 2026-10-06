@@ -9,27 +9,53 @@ import {
   type CSSProperties,
 } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   ChevronDown,
   Check,
+  Archive,
   Leaf,
+  Loader2,
+  MoreHorizontal,
   Package,
   PackageOpen,
+  Pencil,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   Tag,
   TrendingUp,
+  Trash2,
   X,
   type LucideIcon,
 } from "lucide-react";
 import { useRoleUI } from "@/core/ui/role-ui-context";
-import { RecordActions } from "@/components/shared/RecordActions";
 import { AddProductDialog } from "./AddProductDialog";
-import { deleteProductAction } from "../api";
+import {
+  archiveProductAction,
+  deleteProductAction,
+  restoreProductAction,
+} from "../api";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/utils/toast";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Popover,
   PopoverContent,
@@ -75,6 +101,8 @@ type PriceLimits = {
 };
 type FilterPanelMode = "desktop" | "mobile";
 type DateFilterValue = "any" | "today" | "last7" | "last30";
+type ProductLifecycleFilter = "active" | "archived" | "all";
+type ProductLifecycleAction = "delete" | "archive" | "restore";
 type ProductFilterCriteria = {
   term: string;
   selectedCategories: string[];
@@ -101,6 +129,12 @@ const dateFilterLabels: Record<DateFilterValue, string> = {
   today: "Today",
   last7: "Last 7 days",
   last30: "Last 30 days",
+};
+
+const lifecycleFilterLabels: Record<ProductLifecycleFilter, string> = {
+  active: "Active",
+  archived: "Archived",
+  all: "All",
 };
 
 const summaryToneStyles: Record<SummaryCardProps["tone"], string> = {
@@ -850,6 +884,11 @@ function ProductName({ product }: { product: ProductApiResponse }) {
           {displayName.secondary}
         </p>
       )}
+      {product.isArchived && (
+        <span className="mt-1.5 inline-flex w-fit rounded-[7px] border border-[#D0D5DD] bg-[#F8FAFC] px-2 py-0.5 text-[11px] font-bold text-[#667085]">
+          Archived
+        </span>
+      )}
     </div>
   );
 }
@@ -862,20 +901,154 @@ function ProductActionsButton({
   canManageProducts: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [action, setAction] = useState<ProductLifecycleAction | null>(null);
+  const [pending, setPending] = useState(false);
+  const router = useRouter();
+
   if (!canManageProducts) return null;
+
+  const productName = getProductDisplayName(product.name).primary;
+  const isArchived = product.isArchived;
+
+  const actionCopy = {
+    delete: {
+      title: "Delete product?",
+      description: `Delete "${productName}"? This permanently removes the product only if it has no sales, requests, sample requests, or forecasts.`,
+      button: "Delete product",
+      loading: "Deleting...",
+      success: "Product deleted successfully.",
+      error: "Could not delete product",
+      buttonClassName: "bg-gp-danger hover:bg-gp-danger/90 text-white",
+    },
+    archive: {
+      title: "Archive product?",
+      description: `Archive "${productName}"? The product will remain available in historical records but will no longer be available for new operations.`,
+      button: "Archive product",
+      loading: "Archiving...",
+      success: "Product archived successfully.",
+      error: "Could not archive product",
+      buttonClassName: "bg-[#101D36] hover:bg-[#101D36]/95 text-white",
+    },
+    restore: {
+      title: "Restore product?",
+      description: `Restore "${productName}"? The product will become available for new operations again.`,
+      button: "Restore product",
+      loading: "Restoring...",
+      success: "Product restored successfully.",
+      error: "Could not restore product",
+      buttonClassName: "bg-[#168557] hover:bg-[#107349] text-white",
+    },
+  } as const;
+
+  async function runLifecycleAction() {
+    if (!action || pending) return;
+    setPending(true);
+    try {
+      const result =
+        action === "delete"
+          ? await deleteProductAction(product.id)
+          : action === "archive"
+            ? await archiveProductAction(product.id)
+            : await restoreProductAction(product.id);
+
+      if (!result.success) {
+        toast.error({
+          title: actionCopy[action].error,
+          description: result.error?.message || "Please try again.",
+        });
+        return;
+      }
+
+      toast.success({ title: actionCopy[action].success });
+      setAction(null);
+      router.refresh();
+    } catch {
+      toast.error({
+        title: actionCopy[action].error,
+        description: "Please try again.",
+      });
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
     <>
-      <RecordActions
-        name={product.name}
-        kind="Product"
-        onEdit={() => setEditing(true)}
-        remove={() => deleteProductAction(product.id)}
-      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={`Actions for ${productName}`}
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {!isArchived ? (
+            <>
+              <DropdownMenuItem onSelect={() => setEditing(true)}>
+                <Pencil className="size-4" /> Edit product
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setAction("archive")}>
+                <Archive className="size-4" /> Archive product
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => setAction("delete")}
+                className="text-gp-danger"
+              >
+                <Trash2 className="size-4" /> Delete product
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem onSelect={() => setAction("restore")}>
+              <RotateCcw className="size-4" /> Restore product
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <AddProductDialog
         product={product}
         open={editing}
         onOpenChange={setEditing}
       />
+      <AlertDialog
+        open={Boolean(action)}
+        onOpenChange={(next) => {
+          if (!pending) setAction(next ? action : null);
+        }}
+      >
+        <AlertDialogContent>
+          {action && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{actionCopy[action].title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {actionCopy[action].description}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+                <Button
+                  disabled={pending}
+                  onClick={runLifecycleAction}
+                  className={actionCopy[action].buttonClassName}
+                >
+                  {pending && (
+                    <Loader2
+                      className="size-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {pending
+                    ? actionCopy[action].loading
+                    : actionCopy[action].button}
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
@@ -889,8 +1062,11 @@ export default function ProductsList({
   const pathname = usePathname();
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
-  const canManageProducts = role === "MANAGER";
+  const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
+  const canManageProducts = isManager;
   const [q, setQ] = useState("");
+  const [lifecycleFilter, setLifecycleFilter] =
+    useState<ProductLifecycleFilter>("active");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<PriceRange | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilterValue>("any");
@@ -905,8 +1081,27 @@ export default function ProductsList({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const isMobileFilterPanel = useIsMobileFilterPanel();
 
-  const visibleProducts = products;
-  const safeTotalCount = totalCount || products.length;
+  const visibleProducts = useMemo(() => {
+    if (!isManager) return products.filter((product) => !product.isArchived);
+    if (lifecycleFilter === "archived") {
+      return products.filter((product) => product.isArchived);
+    }
+    if (lifecycleFilter === "active") {
+      return products.filter((product) => !product.isArchived);
+    }
+    return products;
+  }, [isManager, lifecycleFilter, products]);
+  const activeProductsCount = useMemo(
+    () => products.filter((product) => !product.isArchived).length,
+    [products],
+  );
+  const archivedProductsCount = useMemo(
+    () => products.filter((product) => product.isArchived).length,
+    [products],
+  );
+  const safeTotalCount = isManager
+    ? visibleProducts.length
+    : totalCount || visibleProducts.length;
 
   const categoryOptions = useMemo(
     () =>
@@ -1034,7 +1229,7 @@ export default function ProductsList({
     const startIndex = (displayedPage - 1) * limit;
     return filtered.slice(startIndex, startIndex + limit);
   }, [displayedPage, filtered, limit]);
-  const criteriaSignature = `${trimmedQuery}-${effectiveSelectedCategories.join("|")}-${activePriceRange[0]}-${activePriceRange[1]}-${dateFilter}-${filtered.length}`;
+  const criteriaSignature = `${lifecycleFilter}-${trimmedQuery}-${effectiveSelectedCategories.join("|")}-${activePriceRange[0]}-${activePriceRange[1]}-${dateFilter}-${filtered.length}`;
 
   function resetFilters() {
     setSelectedCategories([]);
@@ -1106,7 +1301,11 @@ export default function ProductsList({
         <SummaryCard
           label="Total Products"
           value={numberFormatter.format(summary.totalProducts)}
-          helper="Active pharmaceutical items"
+          helper={
+            isManager
+              ? `${lifecycleFilterLabels[lifecycleFilter]} catalog items`
+              : "Active pharmaceutical items"
+          }
           icon={Package}
           tone="navy"
           animationDelay="120ms"
@@ -1128,6 +1327,52 @@ export default function ProductsList({
           animationDelay="230ms"
         />
       </section>
+
+      {isManager && (
+        <section
+          className="products-page-enter products-page-enter-delay-2 flex flex-wrap items-center gap-2"
+          aria-label="Product lifecycle filter"
+        >
+          {(
+            [
+              ["active", activeProductsCount],
+              ["archived", archivedProductsCount],
+              ["all", products.length],
+            ] as Array<[ProductLifecycleFilter, number]>
+          ).map(([value, count]) => {
+            const isActive = lifecycleFilter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => {
+                  setLifecycleFilter(value);
+                  resetFilters();
+                }}
+                className={cn(
+                  "inline-flex h-10 items-center gap-2 rounded-[10px] border px-3.5 text-sm font-bold transition-[background-color,border-color,color,box-shadow] duration-[160ms] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none",
+                  isActive
+                    ? "border-[#101D36] bg-[#101D36] text-white shadow-[0_8px_18px_rgba(16,29,54,0.14)]"
+                    : "border-[#E5E8EF] bg-white text-[#344054] hover:border-[#E9DDB8] hover:bg-[#FFFDF7]",
+                )}
+              >
+                {lifecycleFilterLabels[value]}
+                <span
+                  className={cn(
+                    "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5",
+                    isActive
+                      ? "bg-[#C9A44C] text-[#101D36]"
+                      : "bg-[#F4F6FA] text-[#667085]",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      )}
 
       <section className="products-page-enter products-page-enter-delay-2 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <header className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,520px)] lg:items-start lg:gap-6">

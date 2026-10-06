@@ -18,12 +18,59 @@ const createForecast = async (req, res, next) => {
         min: 1,
         integer: true,
       });
+    const productIds = [
+      ...new Set(
+        productForecasts.map((item) => item.productId).filter(Boolean),
+      ),
+    ];
+    const productNames = [
+      ...new Set(
+        productForecasts
+          .filter((item) => !item.productId)
+          .map((item) => item.productName)
+          .filter(Boolean),
+      ),
+    ];
+    if (!productIds.length && !productNames.length) {
+      return next(
+        new ApiError("Each forecast row must include a product", 400),
+      );
+    }
+    const activeProducts = await prisma.products.findMany({
+      where: {
+        isArchived: false,
+        OR: [
+          ...(productIds.length ? [{ id: { in: productIds } }] : []),
+          ...(productNames.length ? [{ name: { in: productNames } }] : []),
+        ],
+      },
+      select: { id: true, name: true },
+    });
+    const activeProductIds = new Set(
+      activeProducts.map((product) => product.id),
+    );
+    const activeProductNames = new Set(
+      activeProducts.map((product) => product.name),
+    );
+    if (
+      productIds.some((productId) => !activeProductIds.has(productId)) ||
+      productNames.some((productName) => !activeProductNames.has(productName))
+    ) {
+      return next(
+        new ApiError("One or more selected products are unavailable", 400),
+      );
+    }
+
     const forecast = await prisma.forecast.create({
       data: {
         periodType,
         periodDate: date(periodDate, "Forecast period"),
         productForecasts: productForecasts.map((item) => ({
           ...item,
+          productId:
+            item.productId ||
+            activeProducts.find((product) => product.name === item.productName)
+              ?.id,
           productUnits: Number(item.productUnits ?? item.quantity),
           doctorName: item.doctorName || "Unassigned doctor",
         })),
@@ -128,7 +175,7 @@ const getAllForecasts = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return next(new ApiError(`Get Forecasts Error: ${err}`));
+    return next(err);
   }
 };
 
@@ -165,6 +212,11 @@ const updateForecast = async (req, res, next) => {
             : existing.status;
     if (!["APPROVED", "REJECTED", "PENDING", "DRAFT"].includes(nextStatus))
       return next(new ApiError("Invalid forecast status", 400));
+    if (productForecasts !== undefined) {
+      return next(
+        new ApiError("Forecast product rows cannot be changed here", 400),
+      );
+    }
     const forecast = await prisma.forecast.update({
       where: { id },
       data: {
@@ -175,7 +227,6 @@ const updateForecast = async (req, res, next) => {
         ...(periodDate !== undefined
           ? { periodDate: new Date(periodDate) }
           : {}),
-        ...(productForecasts !== undefined ? { productForecasts } : {}),
       },
     });
     res.status(200).json({
@@ -185,7 +236,7 @@ const updateForecast = async (req, res, next) => {
     });
   } catch (err) {
     console.error(err);
-    return next(new ApiError(`Update Forecast Error: ${err}`));
+    return next(err);
   }
 };
 

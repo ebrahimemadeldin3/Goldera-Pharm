@@ -26,11 +26,14 @@ export default function globalError(err, req, res, next) {
     numeric >= 500
       ? "An unexpected error occurred. Please try again."
       : err.message;
-  res
-    .status(numeric)
-    .json({
-      status: numeric >= 500 ? "error" : "fail",
-      statusCode: numeric,
-      message,
-    });
+  res.status(numeric).json({
+    status: numeric >= 500 ? "error" : "fail",
+    statusCode: numeric,
+    ...(err.code ? { code: err.code } : {}),
+    ...(err.canArchive !== undefined ? { canArchive: err.canArchive } : {}),
+    ...(Array.isArray(err.dependencies)
+      ? { dependencies: err.dependencies }
+      : {}),
+    message,
+  });
 }

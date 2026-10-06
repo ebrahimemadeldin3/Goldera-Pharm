@@ -8,6 +8,7 @@ import {
   normalizeSalesDateFilter,
 } from "@/features/sales/lib/utils";
 import { PageContainer } from "@/components/layout/page-container";
+import type { SalesQueryParams } from "@/features/sales/lib/types";
 
 type PageProps = {
   searchParams: Promise<{
@@ -24,6 +25,49 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
+const MAX_SAFE_SALES_PAGE_SIZE = 1000;
+
+async function getAllRepSales(params: SalesQueryParams) {
+  const firstResult = await getRepSalesAction({
+    ...params,
+    page: 1,
+    limit: MAX_SAFE_SALES_PAGE_SIZE,
+  });
+
+  if (!firstResult.success) return firstResult;
+
+  const firstSales = extractSales(firstResult.data);
+  const totalCount = getSalesTotalCount(firstResult.data, firstSales.length);
+  const totalPages = Math.ceil(totalCount / MAX_SAFE_SALES_PAGE_SIZE);
+
+  if (totalPages <= 1) return firstResult;
+
+  const remainingResults = await Promise.all(
+    Array.from({ length: totalPages - 1 }, (_, index) =>
+      getRepSalesAction({
+        ...params,
+        page: index + 2,
+        limit: MAX_SAFE_SALES_PAGE_SIZE,
+      }),
+    ),
+  );
+
+  const failed = remainingResults.find((result) => !result.success);
+  if (failed) return failed;
+
+  return {
+    success: true,
+    data: {
+      status: "success",
+      results: totalCount,
+      data: [
+        ...firstSales,
+        ...remainingResults.flatMap((result) => extractSales(result.data)),
+      ],
+    },
+  };
+}
+
 export default async function Page({ searchParams }: PageProps) {
   const params = await searchParams;
   const { date, dateFrom, dateTo, sheetName, timeFilter, q } = params;
@@ -34,11 +78,13 @@ export default async function Page({ searchParams }: PageProps) {
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const result = await getRepSalesAction({
+  const result = await getAllRepSales({
     date: apiDate,
+    dateFrom,
+    dateTo,
     sheetName,
-    page,
-    limit,
+    timeFilter: selectedTimeFilter,
+    q: searchQuery,
   });
 
   if (!result.success) {
@@ -50,28 +96,7 @@ export default async function Page({ searchParams }: PageProps) {
     );
   }
 
-  let sales = extractSales(result.data);
-  const totalCount = getSalesTotalCount(result.data, sales.length);
-
-  if (totalCount !== sales.length) {
-    const allSalesResult = await getRepSalesAction({
-      date: apiDate,
-      sheetName,
-      page: 1,
-      limit: totalCount,
-    });
-
-    if (!allSalesResult.success) {
-      return (
-        <PageContainer className="min-h-[calc(100vh-80px)] space-y-5 overflow-x-hidden bg-[#F6F8FB]">
-          <SalesHeader sales={[]} />
-          <SalesErrorState message={allSalesResult.error?.message} />
-        </PageContainer>
-      );
-    }
-
-    sales = extractSales(allSalesResult.data);
-  }
+  const sales = extractSales(result.data);
   const hasAppliedFilters = Boolean(
     date ||
     dateFrom ||
@@ -82,7 +107,7 @@ export default async function Page({ searchParams }: PageProps) {
   );
 
   return (
-    <PageContainer className="min-h-[calc(100vh-80px)] flex flex-col gap-6 overflow-x-hidden">
+    <PageContainer className="flex min-h-[calc(100vh-80px)] flex-col gap-6 overflow-x-hidden">
       <SalesHeader
         sales={sales}
         selectedDate={date}

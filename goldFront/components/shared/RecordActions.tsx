@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
@@ -37,30 +37,33 @@ export function RecordActions({
   remove,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const router = useRouter();
-  function deleteRecord() {
-    startTransition(async () => {
-      try {
-        const result = await remove();
-        if (!result.success) {
-          toast.error({
-            title: `Could not delete ${kind}`,
-            description: result.error?.message || "Please try again.",
-          });
-          return;
-        }
-        setOpen(false);
-        onDeleted?.();
-        toast.success({ title: `${kind} deleted successfully` });
-        router.refresh();
-      } catch {
+
+  async function deleteRecord() {
+    if (pending) return;
+    setPending(true);
+    try {
+      const result = await remove();
+      if (!result.success) {
         toast.error({
           title: `Could not delete ${kind}`,
-          description: "Please try again.",
+          description: result.error?.message || "Please try again.",
         });
+        return;
       }
-    });
+      setOpen(false);
+      onDeleted?.();
+      toast.success({ title: `${kind} deleted successfully` });
+      router.refresh();
+    } catch {
+      toast.error({
+        title: `Could not delete ${kind}`,
+        description: "Please try again.",
+      });
+    } finally {
+      setPending(false);
+    }
   }
   return (
     <>

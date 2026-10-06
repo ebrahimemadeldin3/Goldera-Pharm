@@ -3,11 +3,67 @@
 import { apiFetch } from "@/services/http";
 import { ApiError } from "@/services/api-error";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import type {
   GetProductsResponse,
   ProductApiResponse,
   CreateProductDto,
+  ProductStatusFilter,
 } from "../lib/types";
+
+type ProductEnvelope = { data: ProductApiResponse };
+type ProductSubmission = CreateProductDto | FormData;
+
+function revalidateProductPages() {
+  for (const role of ["manager", "supervisor", "rep"])
+    revalidatePath(`/${role}/products`);
+}
+
+function unwrapProductResponse(response: ProductApiResponse | ProductEnvelope) {
+  return "data" in response ? response.data : response;
+}
+
+async function apiFetchProductFormData(
+  endpoint: string,
+  method: "POST" | "PATCH",
+  formData: FormData,
+): Promise<ProductApiResponse> {
+  const token = (await cookies()).get("token")?.value;
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`,
+    {
+      method,
+      credentials: "include",
+      cache: "no-store",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    },
+  );
+
+  if (!res.ok) {
+    let error: ApiError;
+    try {
+      const data = await res.json();
+      error = {
+        statusCode: data.statusCode || data.err?.statusCode || res.status,
+        code: data.code || data.status || "API_ERROR",
+        message: data.message || "Something went wrong",
+      };
+    } catch {
+      error = {
+        statusCode: res.status,
+        code: "UNKNOWN_ERROR",
+        message: "Something went wrong",
+      };
+    }
+    throw error;
+  }
+
+  const response = (await res.json()) as ProductEnvelope;
+  return response.data;
+}
 
 /**
  * Fetch all products
@@ -16,6 +72,7 @@ export async function fetchProducts(
   page?: number,
   limit?: number,
   paginate?: boolean,
+  status: ProductStatusFilter = "active",
 ): Promise<GetProductsResponse> {
   const params = new URLSearchParams();
 
@@ -30,6 +87,7 @@ export async function fetchProducts(
       params.append("limit", String(limit));
     }
   }
+  params.append("status", status);
 
   const endpoint = `/api/products${params.toString() ? `?${params.toString()}` : ""}`;
 
@@ -42,12 +100,40 @@ export async function fetchProducts(
  * Create a new product
  */
 export async function createProduct(
-  data: CreateProductDto,
+  data: ProductSubmission,
 ): Promise<ProductApiResponse> {
-  return apiFetch<ProductApiResponse>("/api/products", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
+  if (data instanceof FormData) {
+    return apiFetchProductFormData("/api/products", "POST", data);
+  }
+
+  const response = await apiFetch<ProductApiResponse | ProductEnvelope>(
+    "/api/products",
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    },
+  );
+
+  return unwrapProductResponse(response);
+}
+
+export async function updateProduct(
+  id: string,
+  data: ProductSubmission,
+): Promise<ProductApiResponse> {
+  if (data instanceof FormData) {
+    return apiFetchProductFormData(`/api/products/${id}`, "PATCH", data);
+  }
+
+  const response = await apiFetch<ProductApiResponse | ProductEnvelope>(
+    `/api/products/${id}`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    },
+  );
+
+  return unwrapProductResponse(response);
 }
 
 /**
@@ -58,9 +144,10 @@ export async function getProductsAction(
   page?: number,
   limit?: number,
   paginate?: boolean,
+  status: ProductStatusFilter = "active",
 ) {
   try {
-    const response = await fetchProducts(page, limit, paginate);
+    const response = await fetchProducts(page, limit, paginate, status);
     return {
       success: true,
       data: response.data,
@@ -84,13 +171,11 @@ export async function getProductsAction(
 /**
  * Server action to create a product
  */
-export async function createProductAction(data: CreateProductDto) {
+export async function createProductAction(data: ProductSubmission) {
   try {
     const response = await createProduct(data);
 
-    revalidatePath("/manager/products");
-    revalidatePath("/supervisor/products");
-    revalidatePath("/rep/products");
+    revalidateProductPages();
 
     return {
       success: true,
@@ -110,20 +195,19 @@ export async function createProductAction(data: CreateProductDto) {
   }
 }
 
-export async function updateProductAction(id: string, data: CreateProductDto) {
+export async function updateProductAction(id: string, data: ProductSubmission) {
   try {
-    const response = await apiFetch<{ data: ProductApiResponse }>(
-      `/api/products/${id}`,
-      { method: "PATCH", body: JSON.stringify(data) },
-    );
-    for (const role of ["manager", "supervisor", "rep"])
-      revalidatePath(`/${role}/products`);
-    return { success: true, data: response.data };
+    const response = await updateProduct(id, data);
+    revalidateProductPages();
+    return { success: true, data: response };
   } catch (error) {
+    const err = error as ApiError;
     return {
       success: false,
       error: {
-        message: (error as ApiError).message || "Could not update product",
+        code: err.code || "UPDATE_ERROR",
+        message: err.message || "Could not update product",
+        statusCode: err.statusCode || 500,
       },
     };
   }
@@ -132,14 +216,63 @@ export async function updateProductAction(id: string, data: CreateProductDto) {
 export async function deleteProductAction(id: string) {
   try {
     await apiFetch(`/api/products/${id}`, { method: "DELETE" });
-    for (const role of ["manager", "supervisor", "rep"])
-      revalidatePath(`/${role}/products`);
+    revalidateProductPages();
     return { success: true };
   } catch (error) {
+    const err = error as ApiError & {
+      canArchive?: boolean;
+      dependencies?: string[];
+    };
     return {
       success: false,
       error: {
-        message: (error as ApiError).message || "Could not delete product",
+        code: err.code || "DELETE_ERROR",
+        message: err.message || "Could not delete product",
+        statusCode: err.statusCode || 500,
+        canArchive: err.canArchive,
+        dependencies: err.dependencies,
+      },
+    };
+  }
+}
+
+export async function archiveProductAction(id: string) {
+  try {
+    const response = await apiFetch<{ data: ProductApiResponse }>(
+      `/api/products/${id}/archive`,
+      { method: "PATCH" },
+    );
+    revalidateProductPages();
+    return { success: true, data: response.data };
+  } catch (error) {
+    const err = error as ApiError;
+    return {
+      success: false,
+      error: {
+        code: err.code || "ARCHIVE_ERROR",
+        message: err.message || "Could not archive product",
+        statusCode: err.statusCode || 500,
+      },
+    };
+  }
+}
+
+export async function restoreProductAction(id: string) {
+  try {
+    const response = await apiFetch<{ data: ProductApiResponse }>(
+      `/api/products/${id}/restore`,
+      { method: "PATCH" },
+    );
+    revalidateProductPages();
+    return { success: true, data: response.data };
+  } catch (error) {
+    const err = error as ApiError;
+    return {
+      success: false,
+      error: {
+        code: err.code || "RESTORE_ERROR",
+        message: err.message || "Could not restore product",
+        statusCode: err.statusCode || 500,
       },
     };
   }

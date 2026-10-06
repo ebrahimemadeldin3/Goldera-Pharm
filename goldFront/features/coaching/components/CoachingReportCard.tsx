@@ -73,7 +73,6 @@ export default function CoachingReportCard({
       <CardHeader className="flex flex-wrap items-start justify-between gap-3 p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <div className="coaching-card-avatar text-gp-gold-500 bg-gp-navy-900 border-gp-gold-300/60 flex size-14 shrink-0 items-center justify-center rounded-full border text-sm font-bold">
-
             {r.rep.initials}
           </div>
           <div className="min-w-0 flex-1">
@@ -91,7 +90,6 @@ export default function CoachingReportCard({
                     ? "text-gp-success border-gp-success-border bg-gp-success-soft"
                     : "text-gp-warning border-gp-warning-border bg-gp-warning-soft",
                 )}
-
               >
                 <span
                   className={cn(
@@ -229,11 +227,15 @@ export default function CoachingReportCard({
             />
             {isRep ? "Your Response" : `${r.rep.name}'s Response`}
           </p>
-          {isRep && r.status === "Completed" && (
+          {r.status === "Completed" ? (
             <p className="text-gp-text-secondary mt-2 text-sm leading-6">
               {r.repResponse}
             </p>
-          )}
+          ) : !isRep ? (
+            <p className="text-gp-text-muted mt-2 text-sm leading-6">
+              Waiting for the representative response.
+            </p>
+          ) : null}
         </div>
 
         {isRep && r.status === "Pending Feedback" && (

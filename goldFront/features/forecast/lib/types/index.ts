@@ -30,6 +30,7 @@ export interface CreateForecastApiDto {
   periodType: string;
   periodDate: string;
   productForecasts: {
+    productId?: string;
     productName: string;
     productUnits: number;
     doctorName: string;

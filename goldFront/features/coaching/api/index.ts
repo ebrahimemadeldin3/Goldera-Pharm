@@ -34,7 +34,8 @@ export type CoachingReportApiResponse = {
   };
   doctor: {
     id: string;
-    name: string;
+    nameAR?: string | null;
+    nameEN?: string | null;
     email: string;
     phone: string;
   };
@@ -77,7 +78,7 @@ function calculateManagerCoachingStats(reports: CoachingReportApiResponse[]) {
 
   return {
     totalReports,
-    awaitingRepFeedback: reports.filter((report) => !report.repComment).length,
+    awaitingRepFeedback: reports.filter((report) => !report.repAccepted).length,
     averageRating:
       totalReports > 0
         ? reports.reduce((sum, report) => sum + report.performanceRating, 0) /
@@ -89,6 +90,10 @@ function calculateManagerCoachingStats(reports: CoachingReportApiResponse[]) {
       return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
     }).length,
   };
+}
+
+function getDoctorDisplayName(doctor: CoachingReportApiResponse["doctor"]) {
+  return doctor.nameEN || doctor.nameAR || "Unknown doctor";
 }
 
 async function getManagerCoachingStatsSource(
@@ -142,7 +147,7 @@ export async function getAllCoachingReportsAction(
       };
 
       // Determine status based on rep response
-      const status: "Completed" | "Pending Feedback" = report.repComment
+      const status: "Completed" | "Pending Feedback" = report.repAccepted
         ? "Completed"
         : "Pending Feedback";
 
@@ -158,7 +163,7 @@ export async function getAllCoachingReportsAction(
           initials: getInitials(report.rep.name),
         },
         supervisor: report.createdBy.name,
-        doctor: report.doctor.name,
+        doctor: getDoctorDisplayName(report.doctor),
         hospital: report.visitLocation,
         date: formattedDate,
         visitType: "Joint Visit", // Default to Joint Visit as per the form
@@ -168,7 +173,7 @@ export async function getAllCoachingReportsAction(
         improvements: report.visitCons,
         actionPlan: report.actionItems.join(", "),
         supervisorComments: report.recommendations,
-        repResponse: report.repComment || "No response yet",
+        repResponse: report.repComment || "Accepted without comment",
       };
     });
 

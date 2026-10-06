@@ -63,7 +63,9 @@ export function getProductDisplayName(name: string): {
   };
 }
 
-function getExistingProductImage(product: ProductApiResponse): string | null {
+export function getProductStoredImageUrl(
+  product: ProductApiResponse,
+): string | null {
   const record = product as ProductApiResponse & Record<string, unknown>;
   const directImageKeys = [
     "image",
@@ -101,7 +103,7 @@ function getExistingProductImage(product: ProductApiResponse): string | null {
 export function getProductImageInfo(
   product: ProductApiResponse,
 ): ProductImageInfo | null {
-  const existingImage = getExistingProductImage(product);
+  const existingImage = getProductStoredImageUrl(product);
   if (existingImage) {
     return {
       src: existingImage,
