@@ -1,0 +1,21 @@
+
+> golderapharm@0.1.0 build
+> next build --webpack
+
+▲ Next.js 16.1.0 (webpack)
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+/*! 🌼 daisyUI 5.7.19 */
+✓ Compiled successfully in 9.7s
+  Running TypeScript ...
+Failed to compile.
+
+app/(dashboard)/manager/appraisal/page.tsx
+Type error: Type '{ searchParams?: { page?: string | undefined; limit?: string | undefined; } | undefined; }' does not satisfy the constraint 'PageProps'.
+  Types of property 'searchParams' are incompatible.
+    Type '{ page?: string | undefined; limit?: string | undefined; } | undefined' is not assignable to type 'Promise<any> | undefined'.
+      Type '{ page?: string | undefined; limit?: string | undefined; }' is missing the following properties from type 'Promise<any>': then, catch, finally, [Symbol.toStringTag]
+
+Next.js build worker exited with code: 1 and signal: null

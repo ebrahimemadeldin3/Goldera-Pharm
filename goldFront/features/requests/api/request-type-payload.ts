@@ -23,6 +23,9 @@ export function buildCreateRequestPayload(
   }
 
   if (payload.type === "SAMPLE") {
+    payload.doctorIds = (data.doctorIds ?? []).filter(
+      (doctorId): doctorId is string => Boolean(doctorId),
+    );
     payload.sampleData = (data.sampleData ?? []).map((item) => ({
       productId: item.productId,
       productName: item.productName,
@@ -72,11 +75,7 @@ export function appendCreateRequestFields(
   if (payload.type === "EXPENSE" || payload.type === "MARKETING") {
     const doctorIds = payload.doctorIds ?? [];
 
-    doctorIds.forEach((doctorId) => {
-      fd.append("doctorIds", doctorId);
-      fd.append("doctorIds[]", doctorId);
-    });
-    fd.append("doctorIdsJson", JSON.stringify(doctorIds));
+    fd.append("doctorIds", JSON.stringify(doctorIds));
 
     if (payload.budget != null) {
       fd.append("budget", String(payload.budget));
@@ -88,34 +87,8 @@ export function appendCreateRequestFields(
       (item) => Boolean(item.productId) && Number(item.amount) > 0,
     );
 
-    const productIds = Array.from(
-      new Set(
-        [
-          ...(payload.productIds ?? []),
-          ...sampleData.map((item) => item.productId),
-        ].filter((id): id is string => Boolean(id)),
-      ),
-    );
-
     fd.append("sampleData", JSON.stringify(sampleData));
-    fd.append("sampleDataJson", JSON.stringify(sampleData));
-
-    // Keep "productIds" as a JSON array string to support parsers that
-    // expect req.body.productIds to be JSON parseable.
-    fd.append("productIds", JSON.stringify(productIds));
-    fd.append("productIdsJson", JSON.stringify(productIds));
-
-    // Also provide repeated-array style keys for backends that parse arrays from repeated fields.
-    productIds.forEach((productId) => {
-      fd.append("productIds[]", productId);
-      fd.append("productId", productId);
-    });
-
-    sampleData.forEach((item, index) => {
-      fd.append(`sampleData[${index}][productId]`, item.productId);
-      fd.append(`sampleData[${index}][productName]`, item.productName);
-      fd.append(`sampleData[${index}][amount]`, String(item.amount));
-    });
+    fd.append("doctorIds", JSON.stringify(payload.doctorIds || []));
   }
 
   if (payload.type === "LEAVE") {
@@ -132,13 +105,9 @@ export function appendCreateRequestFields(
 
   if (payload.type === "PERSONAL_EXPENSE") {
     const totalExpenseData = payload.totalExpenseData ?? [];
-    const personalExpenseItems = totalExpenseData.map((item) => ({
-      amount: Number(item.amount),
-    }));
 
     if (payload.visitedCity) {
       fd.append("visitedCity", payload.visitedCity);
-      fd.append("visitCity", payload.visitedCity);
     }
     if (payload.visitDaysCount != null) {
       fd.append("visitDaysCount", String(payload.visitDaysCount));
@@ -147,11 +116,7 @@ export function appendCreateRequestFields(
       fd.append("totalExpenseAmount", String(payload.totalExpenseAmount));
     }
 
-    // Canonical keys first; extra fallback shapes are handled in API action retries.
     fd.append("totalExpenseData", JSON.stringify(totalExpenseData));
-    fd.append("totalExpenseDataJson", JSON.stringify(totalExpenseData));
-    fd.append("personalExpenseItems", JSON.stringify(personalExpenseItems));
-    fd.append("personalExpenseItemsJson", JSON.stringify(personalExpenseItems));
   }
 }
 

@@ -21,11 +21,18 @@ export type Visit = {
   visitType?: string;
   doctorId: string;
   userId: string;
+  medicalRepId?: string;
+  medicalRepName?: string;
+  facility?: string;
+  territory?: string;
   doctor?: {
     id: string;
-    nameAR: string;
-    nameEN: string;
-    accountName: string;
+    nameAR?: string;
+    nameEN?: string;
+    accountName?: string;
+    specialty?: string;
+    subRegion?: string;
+    area?: string | null;
   };
   doctorNameEN?: string;
   doctorNameAR?: string;

@@ -1,0 +1,691 @@
+{
+  "connectivity": "PASS (read-only SELECT)",
+  "columns": [
+    {
+      "table_name": "Request",
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "title",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "userId",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "type",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": "'PENDING'::\"RequestStatus\""
+    },
+    {
+      "table_name": "Request",
+      "column_name": "urgency",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "subject",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "description",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "response",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "responseDate",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "handledAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "leaveStartDate",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "leaveEndDate",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "leaveType",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "leaveDaysCount",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "createdAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Request",
+      "column_name": "updatedAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "budget",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "visitDaysCount",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "visitedCity",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "pdfs",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "totalExpenseAmount",
+      "data_type": "double precision",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "totalExpenseData",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "sampleData",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Request",
+      "column_name": "productsId",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "name",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "email",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "phone",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "role",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": "'MEDICAL_REP'::\"Role\""
+    },
+    {
+      "table_name": "User",
+      "column_name": "password",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "dateOfBirth",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "dateOfRecruitment",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "User",
+      "column_name": "department",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "location",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "bio",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "educationBackground",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "iqamaNumber",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "passportNumber",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "resume",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "certificates",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "lastLogin",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "isActive",
+      "data_type": "boolean",
+      "is_nullable": "YES",
+      "column_default": "true"
+    },
+    {
+      "table_name": "User",
+      "column_name": "profileImage",
+      "data_type": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "leaveStartDate",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "leaveEndDate",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "supervisorId",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "managerId",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "createdAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "User",
+      "column_name": "updatedAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "subRegionId",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "User",
+      "column_name": "leaveDaysCountTotal",
+      "data_type": "integer",
+      "is_nullable": "YES",
+      "column_default": "0"
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "visitType",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": "'ROUTINE'::\"VisitType\""
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "samples",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "date",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "time",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "doctorId",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "userId",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "is_nullable": "NO",
+      "column_default": "'SCHEDULED'::\"VisitStatus\""
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "createdAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "updatedAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "Visit",
+      "column_name": "planId",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "id",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "visitId",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "userId",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "duration",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "rating",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "discussedTopics",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "doctorFeedback",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "visitPurpose",
+      "data_type": "text",
+      "is_nullable": "NO",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "notes",
+      "data_type": "text",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "samplesProvided",
+      "data_type": "ARRAY",
+      "is_nullable": "YES",
+      "column_default": null
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "createdAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": "CURRENT_TIMESTAMP"
+    },
+    {
+      "table_name": "VisitReport",
+      "column_name": "updatedAt",
+      "data_type": "timestamp without time zone",
+      "is_nullable": "NO",
+      "column_default": null
+    }
+  ],
+  "applied": [
+    {
+      "migration_name": "20260204120014_init",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260204193343",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260204194250",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260204212121",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205092840",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205093638",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205101013",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205113216",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205114121",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205114910",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205122631",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260205191443",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260206080558",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260206094213",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260220163109",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260306225904",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260307211622",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260307214612",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260309101334",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260309105947",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260311232252",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260315212737",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260315214554",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260315222954",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260315223635",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260329120142",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260329120404",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260417115615",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260417121812",
+      "finished": true,
+      "rolled_back": false
+    },
+    {
+      "migration_name": "20260514105626",
+      "finished": true,
+      "rolled_back": false
+    }
+  ],
+  "pending": [],
+  "localMigrationCount": 30
+}

@@ -1,44 +1,70 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRoleRedirectPath } from "./features/auth/lib/types/roles"
-import { UserRole } from "@/lib/types"
+import { getRoleRedirectPath } from "./features/auth/lib/types/roles";
+import { UserRole } from "@/lib/types";
+
+const knownRoles = new Set<UserRole>(["MANAGER", "SUPERVISOR", "MEDICAL_REP"]);
+
+function decodeJwtPayload(token: string): { role?: unknown; exp?: unknown } {
+  const payload = token.split(".")[1];
+  if (!payload) throw new Error("Missing token payload");
+
+  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    "=",
+  );
+
+  return JSON.parse(atob(padded));
+}
+
+function redirectToLogin(req: NextRequest) {
+  const response = NextResponse.redirect(new URL("/", req.url));
+  response.cookies.delete("token");
+  return response;
+}
 
 export function proxy(req: NextRequest) {
   const url = req.nextUrl.clone();
   const token = req.cookies.get("token")?.value;
 
-  // If no token, redirect all protected routes to login
   if (!token) {
     if (url.pathname !== "/") {
       url.pathname = "/";
       return NextResponse.redirect(url);
     }
+
     return NextResponse.next();
   }
 
-  // Decode JWT payload (without verifying — ok for routing)
-  let payload: { role: UserRole } = { role: "MEDICAL_REP" };
+  let payload: { role?: unknown; exp?: unknown };
   try {
-    payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+    payload = decodeJwtPayload(token);
   } catch {
-    // Invalid token → clear cookie and redirect to login
-    const response = NextResponse.redirect(new URL("/", req.url));
-    response.cookies.delete("token");
-    return response;
+    return redirectToLogin(req);
   }
 
-  const role = payload.role;
+  if (
+    typeof payload.exp === "number" &&
+    Number.isFinite(payload.exp) &&
+    Date.now() >= payload.exp * 1000
+  ) {
+    return redirectToLogin(req);
+  }
+
+  if (!knownRoles.has(payload.role as UserRole)) {
+    return redirectToLogin(req);
+  }
+
+  const role = payload.role as UserRole;
   const roleBasedPath = getRoleRedirectPath(role);
 
-  // If user is logged in and tries to access login page, redirect to their dashboard
+  // Let the login page verify the token with the backend. This prevents a
+  // revoked-session loop between "/" and a protected dashboard route.
   if (url.pathname === "/") {
-    url.pathname = roleBasedPath;
-    return NextResponse.redirect(url);
+    return NextResponse.next();
   }
 
-  // Role-based route protection - prevent access to other roles' routes
-  const path = url.pathname;
-
-  if (!path.startsWith(roleBasedPath)) {
+  if (!url.pathname.startsWith(roleBasedPath)) {
     url.pathname = roleBasedPath;
     return NextResponse.redirect(url);
   }

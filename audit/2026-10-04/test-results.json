@@ -1,0 +1,809 @@
+{
+  "mode": "Synthetic persistence and upload boundaries; real source/actions/routes/guard/Multer",
+  "results": [
+    {
+      "name": "Unauthenticated report submission",
+      "observed": {
+        "status": 401,
+        "body": {
+          "status": "error",
+          "message": "Not authenticated to perform this action."
+        }
+      },
+      "evidence": "Real guard and route"
+    },
+    {
+      "name": "Rep cannot approve request",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Access Denied - You are not authorized to perform this action"
+        }
+      },
+      "evidence": "Real allowedTo guard"
+    },
+    {
+      "name": "Unauthenticated signup can choose MANAGER",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Registration for privileged roles is not permitted"
+        }
+      },
+      "evidence": "Real signup controller/JWT signing; synthetic user persistence"
+    },
+    {
+      "name": "Disabled user can access reports",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Account is deactivated"
+        }
+      },
+      "evidence": "Real guard, synthetic isActive=false user"
+    },
+    {
+      "name": "Sample JSON normal completion",
+      "observed": {
+        "success": true
+      },
+      "evidence": {
+        "created": 1,
+        "doctorConnect": [
+          {
+            "id": "doctor-a",
+            "nameEN": "Audit Doctor",
+            "nameAR": "طبيب تجريبي",
+            "accountName": "Audit Clinic",
+            "specialty": "General",
+            "class": "A",
+            "subRegion": "Audit Region"
+          }
+        ],
+        "sampleData": [
+          {
+            "productId": "product-a",
+            "productName": "Audit Product",
+            "amount": 2
+          }
+        ]
+      }
+    },
+    {
+      "name": "EXPENSE multipart doctor duplication",
+      "observed": {
+        "status": 201,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "title": "Audit Request",
+            "description": "Synthetic description",
+            "subject": "Synthetic subject",
+            "type": "EXPENSE",
+            "urgency": "Medium",
+            "user": {
+              "id": "rep-a",
+              "name": "Audit Representative A",
+              "email": "rep@audit.invalid",
+              "role": "MEDICAL_REP",
+              "managerId": "manager-a",
+              "supervisorId": "supervisor-a",
+              "isActive": true
+            },
+            "leaveStartDate": null,
+            "leaveEndDate": null,
+            "leaveDaysCount": null,
+            "leaveType": null,
+            "budget": 100,
+            "sampleData": [],
+            "doctors": [
+              {
+                "id": "doctor-a",
+                "nameEN": "Audit Doctor",
+                "nameAR": "طبيب تجريبي",
+                "accountName": "Audit Clinic",
+                "specialty": "General",
+                "class": "A",
+                "subRegion": "Audit Region"
+              }
+            ],
+            "visitDaysCount": null,
+            "visitedCity": null,
+            "totalExpenseAmount": null,
+            "pdfs": [
+              {
+                "name": "EXPENSE pdf",
+                "public_id": "EXPENSE_pdf_rep-a_1791139822106",
+                "url": "https://example.invalid/audit.pdf"
+              }
+            ],
+            "totalExpenseData": [],
+            "id": "request-1",
+            "userId": "rep-a",
+            "status": "PENDING",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z",
+            "response": null,
+            "responseDate": null,
+            "handledAt": null
+          }
+        }
+      },
+      "evidence": {
+        "connect": {
+          "connect": [
+            {
+              "id": "doctor-a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "MARKETING multipart doctor duplication",
+      "observed": {
+        "status": 201,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "title": "Audit Request",
+            "description": "Synthetic description",
+            "subject": "Synthetic subject",
+            "type": "MARKETING",
+            "urgency": "Medium",
+            "user": {
+              "id": "rep-a",
+              "name": "Audit Representative A",
+              "email": "rep@audit.invalid",
+              "role": "MEDICAL_REP",
+              "managerId": "manager-a",
+              "supervisorId": "supervisor-a",
+              "isActive": true
+            },
+            "leaveStartDate": null,
+            "leaveEndDate": null,
+            "leaveDaysCount": null,
+            "leaveType": null,
+            "budget": 100,
+            "sampleData": [],
+            "doctors": [
+              {
+                "id": "doctor-a",
+                "nameEN": "Audit Doctor",
+                "nameAR": "طبيب تجريبي",
+                "accountName": "Audit Clinic",
+                "specialty": "General",
+                "class": "A",
+                "subRegion": "Audit Region"
+              }
+            ],
+            "visitDaysCount": null,
+            "visitedCity": null,
+            "totalExpenseAmount": null,
+            "pdfs": [
+              {
+                "name": "MARKETING pdf",
+                "public_id": "MARKETING_pdf_rep-a_1791139822107",
+                "url": "https://example.invalid/audit.pdf"
+              }
+            ],
+            "totalExpenseData": [],
+            "id": "request-1",
+            "userId": "rep-a",
+            "status": "PENDING",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z",
+            "response": null,
+            "responseDate": null,
+            "handledAt": null
+          }
+        }
+      },
+      "evidence": {
+        "connect": {
+          "connect": [
+            {
+              "id": "doctor-a"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Personal expense canonical multipart",
+      "observed": {
+        "status": 201,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "title": "Audit Request",
+            "description": "Synthetic description",
+            "subject": "Synthetic subject",
+            "type": "PERSONAL_EXPENSE",
+            "urgency": "Medium",
+            "user": {
+              "id": "rep-a",
+              "name": "Audit Representative A",
+              "email": "rep@audit.invalid",
+              "role": "MEDICAL_REP",
+              "managerId": "manager-a",
+              "supervisorId": "supervisor-a",
+              "isActive": true
+            },
+            "leaveStartDate": null,
+            "leaveEndDate": null,
+            "leaveDaysCount": null,
+            "leaveType": null,
+            "budget": null,
+            "sampleData": [],
+            "doctors": [],
+            "visitDaysCount": 1,
+            "visitedCity": "Cairo",
+            "totalExpenseAmount": 100,
+            "pdfs": [
+              {
+                "name": "PERSONAL_EXPENSE pdf",
+                "public_id": "PERSONAL_EXPENSE_pdf_rep-a_1791139822110_0",
+                "url": "https://example.invalid/audit.pdf"
+              }
+            ],
+            "totalExpenseData": [
+              {
+                "name": "Taxi",
+                "amount": 100
+              }
+            ],
+            "id": "request-1",
+            "userId": "rep-a",
+            "status": "PENDING",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z",
+            "response": null,
+            "responseDate": null,
+            "handledAt": null
+          }
+        }
+      },
+      "evidence": {
+        "creates": 1
+      }
+    },
+    {
+      "name": "Personal expense frontend fallback completion",
+      "observed": {
+        "success": true
+      },
+      "evidence": {
+        "creates": 1,
+        "storedItems": [
+          {
+            "name": "Taxi",
+            "amount": 100
+          }
+        ]
+      }
+    },
+    {
+      "name": "Leave PDF normal completion",
+      "observed": {
+        "success": true
+      },
+      "evidence": {
+        "creates": 1,
+        "days": 2
+      }
+    },
+    {
+      "name": "Leave missing attachment",
+      "observed": {
+        "success": false,
+        "error": {
+          "code": "CREATE_ERROR",
+          "message": "Please upload a file",
+          "statusCode": 500
+        }
+      },
+      "evidence": {
+        "creates": 1
+      }
+    },
+    {
+      "name": "UI-supported PNG rejected",
+      "observed": {
+        "status": 422,
+        "body": {
+          "status": "error",
+          "message": "Only PDF files are allowed!"
+        }
+      },
+      "evidence": "Real Multer MIME filter"
+    },
+    {
+      "name": "Spoofed PDF accepted for upload",
+      "observed": {
+        "status": 201,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "title": "Audit Request",
+            "description": "Synthetic description",
+            "subject": "Synthetic subject",
+            "type": "LEAVE",
+            "urgency": "Medium",
+            "user": {
+              "id": "rep-a",
+              "name": "Audit Representative A",
+              "email": "rep@audit.invalid",
+              "role": "MEDICAL_REP",
+              "managerId": "manager-a",
+              "supervisorId": "supervisor-a",
+              "isActive": true
+            },
+            "leaveStartDate": "2026-10-04T00:00:00.000Z",
+            "leaveEndDate": "2026-10-05T00:00:00.000Z",
+            "leaveDaysCount": 2,
+            "leaveType": "Sick",
+            "budget": null,
+            "sampleData": [],
+            "doctors": [],
+            "visitDaysCount": null,
+            "visitedCity": null,
+            "totalExpenseAmount": null,
+            "pdfs": [
+              {
+                "name": "LEAVE pdf",
+                "public_id": "LEAVE_pdf_rep-a_1791139822123",
+                "url": "https://example.invalid/audit.pdf"
+              }
+            ],
+            "totalExpenseData": [],
+            "id": "request-2",
+            "userId": "rep-a",
+            "status": "PENDING",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z",
+            "response": null,
+            "responseDate": null,
+            "handledAt": null
+          }
+        }
+      },
+      "evidence": {
+        "lastUpload": {
+          "size": 23,
+          "options": {
+            "public_id": "LEAVE_pdf_rep-a_1791139822123",
+            "folder": "folder-files/pdfs"
+          }
+        }
+      }
+    },
+    {
+      "name": "Oversized PDF error is unmapped",
+      "observed": {
+        "status": 500,
+        "body": {
+          "status": "error",
+          "message": "File too large"
+        }
+      },
+      "evidence": "Real Multer limit; error has no statusCode"
+    },
+    {
+      "name": "Multiple leave PDFs silently trimmed",
+      "observed": {
+        "status": 201,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "title": "Audit Request",
+            "description": "Synthetic description",
+            "subject": "Synthetic subject",
+            "type": "LEAVE",
+            "urgency": "Medium",
+            "user": {
+              "id": "rep-a",
+              "name": "Audit Representative A",
+              "email": "rep@audit.invalid",
+              "role": "MEDICAL_REP",
+              "managerId": "manager-a",
+              "supervisorId": "supervisor-a",
+              "isActive": true
+            },
+            "leaveStartDate": "2026-10-04T00:00:00.000Z",
+            "leaveEndDate": "2026-10-05T00:00:00.000Z",
+            "leaveDaysCount": 2,
+            "leaveType": "Annual",
+            "budget": null,
+            "sampleData": [],
+            "doctors": [],
+            "visitDaysCount": null,
+            "visitedCity": null,
+            "totalExpenseAmount": null,
+            "pdfs": [
+              {
+                "name": "LEAVE pdf",
+                "public_id": "LEAVE_pdf_rep-a_1791139822131",
+                "url": "https://example.invalid/audit.pdf"
+              }
+            ],
+            "totalExpenseData": [],
+            "id": "request-3",
+            "userId": "rep-a",
+            "status": "PENDING",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z",
+            "response": null,
+            "responseDate": null,
+            "handledAt": null
+          }
+        }
+      },
+      "evidence": {
+        "sentFiles": 2,
+        "uploadedFiles": 1
+      }
+    },
+    {
+      "name": "Upload retained after persistence failure",
+      "observed": {
+        "status": 500,
+        "body": {
+          "status": "error",
+          "message": "Failed to create request"
+        }
+      },
+      "evidence": {
+        "uploads": 0,
+        "creates": 0
+      }
+    },
+    {
+      "name": "Lost response returns error after sample commit",
+      "observed": {
+        "success": false,
+        "error": {
+          "code": "CREATE_ERROR",
+          "message": "At least one product is required",
+          "statusCode": 500
+        }
+      },
+      "evidence": {
+        "creates": 1,
+        "createCalls": 1
+      }
+    },
+    {
+      "name": "User retry duplicates committed sample",
+      "observed": {
+        "success": true
+      },
+      "evidence": {
+        "creates": 2
+      }
+    },
+    {
+      "name": "Manager approves foreign request",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Unauthorized to review requests outside your team"
+        }
+      },
+      "evidence": {
+        "leaveTotal": 0
+      }
+    },
+    {
+      "name": "Repeated approval counts leave twice",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Unauthorized to review requests outside your team"
+        }
+      },
+      "evidence": {
+        "leaveTotal": 0
+      }
+    },
+    {
+      "name": "Report completion drops discussed topics",
+      "observed": {
+        "status": 200,
+        "body": {
+          "status": "success",
+          "message": "Data created successfully",
+          "data": {
+            "visitId": "visit-a",
+            "userId": "rep-a",
+            "duration": "15 min",
+            "rating": 5,
+            "doctorFeedback": "Good",
+            "visitPurpose": "Follow up",
+            "notes": "Audit note",
+            "samplesProvided": [
+              "Audit Product"
+            ],
+            "discussedTopics": [
+              "Product efficacy"
+            ],
+            "id": "report-1",
+            "createdAt": "2026-10-04T09:00:00.000Z",
+            "updatedAt": "2026-10-04T09:00:00.000Z"
+          }
+        }
+      },
+      "evidence": {
+        "createKeys": [
+          "visitId",
+          "userId",
+          "duration",
+          "rating",
+          "doctorFeedback",
+          "visitPurpose",
+          "notes",
+          "samplesProvided",
+          "discussedTopics"
+        ],
+        "visitStatus": "COMPLETED"
+      }
+    },
+    {
+      "name": "Duplicate report accepted",
+      "observed": {
+        "status": 400,
+        "body": {
+          "status": "error",
+          "message": "A report has already been submitted for this visit"
+        }
+      },
+      "evidence": {
+        "reports": 1
+      }
+    },
+    {
+      "name": "Rep reports another rep cancelled visit",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Unauthorized: You can only submit reports for your own visits"
+        }
+      },
+      "evidence": {
+        "foreignVisitStatus": "CANCELLED"
+      }
+    },
+    {
+      "name": "Rep arbitrary visit update",
+      "observed": {
+        "status": 403,
+        "body": {
+          "status": "error",
+          "message": "Unauthorized: You can only update your own visits"
+        }
+      },
+      "evidence": {
+        "foreignOwner": "rep-b"
+      }
+    },
+    {
+      "name": "Report saved after visit update fails",
+      "observed": {
+        "status": 500,
+        "body": {
+          "status": "error",
+          "message": "Injected visit update failure"
+        }
+      },
+      "evidence": {
+        "reports": 1,
+        "visitStatus": "SCHEDULED"
+      }
+    },
+    {
+      "name": "Frontend discards verified location",
+      "observed": {
+        "visitId": "visit-a",
+        "userId": "rep-a",
+        "duration": "15 min",
+        "rating": 5,
+        "doctorFeedback": "Good",
+        "visitPurpose": "Follow up",
+        "notes": "Audit note",
+        "samplesProvided": [
+          "Audit Product"
+        ],
+        "discussedTopics": [
+          "Topic A",
+          "Topic B"
+        ]
+      },
+      "evidence": "Real action and controller; no location field or model"
+    },
+    {
+      "name": "Supervisor reads reports from other teams",
+      "observed": {
+        "status": 200,
+        "body": {
+          "status": "success",
+          "message": "Data fetched successfully",
+          "results": 1,
+          "pagination": {
+            "currentPage": 1,
+            "limit": 10,
+            "skip": 0,
+            "totalPages": 1,
+            "next": 0,
+            "prev": 0
+          },
+          "data": [
+            {
+              "visitId": "visit-a",
+              "userId": "rep-a",
+              "duration": "15 min",
+              "rating": 5,
+              "doctorFeedback": "Good",
+              "visitPurpose": "Follow up",
+              "notes": "Audit note",
+              "samplesProvided": [
+                "Audit Product"
+              ],
+              "discussedTopics": [
+                "Topic A",
+                "Topic B"
+              ],
+              "id": "report-1",
+              "createdAt": "2026-10-04T09:00:00.000Z",
+              "updatedAt": "2026-10-04T09:00:00.000Z",
+              "visit": {
+                "id": "visit-a",
+                "userId": "rep-a",
+                "date": "2026-10-04T09:00:00.000Z",
+                "status": "COMPLETED",
+                "doctorId": "doctor-a",
+                "doctor": {
+                  "id": "doctor-a",
+                  "nameEN": "Audit Doctor",
+                  "nameAR": "طبيب تجريبي",
+                  "accountName": "Audit Clinic",
+                  "specialty": "General",
+                  "class": "A",
+                  "subRegion": "Audit Region"
+                },
+                "samples": [],
+                "createdBy": {
+                  "id": "rep-a",
+                  "name": "Audit Representative A",
+                  "email": "rep@audit.invalid",
+                  "role": "MEDICAL_REP",
+                  "managerId": "manager-a",
+                  "supervisorId": "supervisor-a",
+                  "isActive": true
+                }
+              }
+            }
+          ]
+        }
+      },
+      "evidence": "Real route/controller; all reports returned, no team predicate"
+    },
+    {
+      "name": "Manager report mapping loses representative",
+      "observed": {
+        "success": true,
+        "data": {
+          "reports": [
+            {
+              "id": "report-1",
+              "visitId": "visit-a",
+              "doctorNameAR": "طبيب تجريبي",
+              "doctorNameEN": "Audit Doctor",
+              "representativeName": "Audit Representative A",
+              "representativeId": "rep-a",
+              "visitDate": "Oct 04, 2026",
+              "duration": "15 min",
+              "rating": 5,
+              "discussedTopics": [
+                "Topic A",
+                "Topic B"
+              ],
+              "doctorFeedback": "Good",
+              "visitPurpose": "Follow up",
+              "notes": "Audit note",
+              "samplesProvided": [
+                "Audit Product"
+              ],
+              "createdAt": "Oct 04, 2026 at 12:00 PM"
+            },
+            {
+              "id": "foreign-report",
+              "visitId": "visit-b",
+              "doctorNameAR": "طبيب تجريبي",
+              "doctorNameEN": "Audit Doctor",
+              "representativeName": "Audit Representative B",
+              "representativeId": "rep-b",
+              "visitDate": "Oct 04, 2026",
+              "duration": "15 min",
+              "rating": "5",
+              "discussedTopics": [
+                "Product efficacy"
+              ],
+              "doctorFeedback": "Good",
+              "visitPurpose": "Follow up",
+              "notes": "Audit note",
+              "samplesProvided": [
+                "Audit Product"
+              ],
+              "createdAt": "Oct 04, 2026 at 12:00 PM"
+            }
+          ],
+          "totalCount": 2
+        }
+      },
+      "evidence": "Backend visit.createdBy omitted by frontend mapper"
+    },
+    {
+      "name": "All report query failure masks original error",
+      "observed": {
+        "status": 500,
+        "body": {
+          "status": "error",
+          "message": "Injected query failure"
+        }
+      },
+      "evidence": "Catch references next without declaring parameter"
+    },
+    {
+      "name": "Manager role filter reaches nonexistent Request.role",
+      "observed": {
+        "status": 200,
+        "body": {
+          "status": "success",
+          "message": "Data fetched successfully",
+          "results": 0,
+          "pagination": {
+            "currentPage": 1,
+            "limit": 10,
+            "skip": 0,
+            "totalPages": 0,
+            "next": 0,
+            "prev": 0
+          },
+          "data": []
+        }
+      },
+      "evidence": {
+        "where": {
+          "role": "MEDICAL_REP",
+          "userId": {
+            "in": [
+              "rep-a"
+            ]
+          }
+        },
+        "modelHasRole": false
+      }
+    },
+    {
+      "name": "Reversed leave dates passes frontend schema",
+      "observed": false,
+      "evidence": "Actual Zod schema"
+    },
+    {
+      "name": "Whitespace common fields passes frontend schema",
+      "observed": false,
+      "evidence": "Actual Zod schema"
+    }
+  ]
+}

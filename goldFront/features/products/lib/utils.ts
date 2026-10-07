@@ -7,20 +7,6 @@ export type ProductImageInfo = {
   verified: "exact" | "fallback";
 };
 
-export type StoredProductImageMap = Record<string, ProductImageInfo>;
-export type StoredProductOverride = Pick<
-  ProductApiResponse,
-  "id" | "name" | "internalRef" | "salesPrice" | "updatedAt"
->;
-export type StoredProductOverrideMap = Record<string, StoredProductOverride>;
-
-const LOCAL_PRODUCT_IMAGES_STORAGE_KEY =
-  "golderapharm:product-images-by-reference:v1";
-const LOCAL_PRODUCT_OVERRIDES_STORAGE_KEY =
-  "golderapharm:product-overrides-by-id:v1";
-const LOCAL_REMOVED_PRODUCTS_STORAGE_KEY =
-  "golderapharm:removed-product-ids:v1";
-
 const PRODUCT_IMAGE_BY_REF: Record<string, ProductImageInfo> = {
   P0101: {
     src: "/images/products/catalog/rizona-plus-cream-30g.jpeg",
@@ -47,228 +33,6 @@ const PRODUCT_IMAGE_BY_REF: Record<string, ProductImageInfo> = {
     verified: "exact",
   },
 };
-
-function getStoredProductImageKey(product: {
-  name: string;
-  internalRef: string | null;
-}): string {
-  const ref = product.internalRef?.trim().toUpperCase();
-
-  if (ref) {
-    return `ref:${ref}`;
-  }
-
-  return `name:${product.name.trim().toLowerCase()}`;
-}
-
-function dispatchProductLocalStateUpdate() {
-  window.dispatchEvent(new CustomEvent("goldera-products-local-state-updated"));
-}
-
-export function readStoredProductImages(): StoredProductImageMap {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const raw = window.localStorage.getItem(LOCAL_PRODUCT_IMAGES_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-
-    if (!parsed || typeof parsed !== "object") {
-      return {};
-    }
-
-    return parsed as StoredProductImageMap;
-  } catch {
-    return {};
-  }
-}
-
-export function saveStoredProductImage(
-  product: { name: string; internalRef: string | null },
-  src: string,
-): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const images = readStoredProductImages();
-    const key = getStoredProductImageKey(product);
-
-    images[key] = {
-      src,
-      alt: `${product.name} product image`,
-      source: "Browser local product image",
-      verified: "exact",
-    };
-
-    window.localStorage.setItem(
-      LOCAL_PRODUCT_IMAGES_STORAGE_KEY,
-      JSON.stringify(images),
-    );
-    window.dispatchEvent(new CustomEvent("goldera-product-images-updated"));
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function readStoredProductOverrides(): StoredProductOverrideMap {
-  if (typeof window === "undefined") {
-    return {};
-  }
-
-  try {
-    const raw = window.localStorage.getItem(
-      LOCAL_PRODUCT_OVERRIDES_STORAGE_KEY,
-    );
-    const parsed = raw ? JSON.parse(raw) : {};
-
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {};
-    }
-
-    const overrides: StoredProductOverrideMap = {};
-
-    for (const [productId, value] of Object.entries(parsed)) {
-      if (!value || typeof value !== "object") {
-        continue;
-      }
-
-      const record = value as Partial<StoredProductOverride>;
-      const salesPrice = Number(record.salesPrice);
-
-      if (
-        typeof record.name === "string" &&
-        typeof record.internalRef === "string" &&
-        Number.isFinite(salesPrice)
-      ) {
-        overrides[productId] = {
-          id: productId,
-          name: record.name,
-          internalRef: record.internalRef,
-          salesPrice,
-          updatedAt:
-            typeof record.updatedAt === "string"
-              ? record.updatedAt
-              : new Date().toISOString(),
-        };
-      }
-    }
-
-    return overrides;
-  } catch {
-    return {};
-  }
-}
-
-export function saveStoredProductOverride(
-  product: ProductApiResponse,
-): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const overrides = readStoredProductOverrides();
-
-    overrides[product.id] = {
-      id: product.id,
-      name: product.name,
-      internalRef: product.internalRef,
-      salesPrice: product.salesPrice,
-      updatedAt: product.updatedAt,
-    };
-
-    window.localStorage.setItem(
-      LOCAL_PRODUCT_OVERRIDES_STORAGE_KEY,
-      JSON.stringify(overrides),
-    );
-    dispatchProductLocalStateUpdate();
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function removeStoredProductOverride(productId: string): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const overrides = readStoredProductOverrides();
-
-    delete overrides[productId];
-    window.localStorage.setItem(
-      LOCAL_PRODUCT_OVERRIDES_STORAGE_KEY,
-      JSON.stringify(overrides),
-    );
-    dispatchProductLocalStateUpdate();
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function readRemovedProductIds(): string[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(LOCAL_REMOVED_PRODUCTS_STORAGE_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
-
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((value): value is string => typeof value === "string");
-  } catch {
-    return [];
-  }
-}
-
-export function saveRemovedProductId(productId: string): boolean {
-  if (typeof window === "undefined") {
-    return false;
-  }
-
-  try {
-    const removedProductIds = new Set(readRemovedProductIds());
-    const overrides = readStoredProductOverrides();
-
-    removedProductIds.add(productId);
-    delete overrides[productId];
-    window.localStorage.setItem(
-      LOCAL_PRODUCT_OVERRIDES_STORAGE_KEY,
-      JSON.stringify(overrides),
-    );
-    window.localStorage.setItem(
-      LOCAL_REMOVED_PRODUCTS_STORAGE_KEY,
-      JSON.stringify(Array.from(removedProductIds)),
-    );
-    dispatchProductLocalStateUpdate();
-
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-export function getStoredProductImageInfo(
-  product: ProductApiResponse,
-  images: StoredProductImageMap,
-): ProductImageInfo | null {
-  const image = images[getStoredProductImageKey(product)];
-
-  return image?.src ? image : null;
-}
 
 export function getProductCategory(internalRef: string | null): string {
   if (!internalRef) return "General";
@@ -299,7 +63,9 @@ export function getProductDisplayName(name: string): {
   };
 }
 
-function getExistingProductImage(product: ProductApiResponse): string | null {
+export function getProductStoredImageUrl(
+  product: ProductApiResponse,
+): string | null {
   const record = product as ProductApiResponse & Record<string, unknown>;
   const directImageKeys = [
     "image",
@@ -337,7 +103,7 @@ function getExistingProductImage(product: ProductApiResponse): string | null {
 export function getProductImageInfo(
   product: ProductApiResponse,
 ): ProductImageInfo | null {
-  const existingImage = getExistingProductImage(product);
+  const existingImage = getProductStoredImageUrl(product);
   if (existingImage) {
     return {
       src: existingImage,

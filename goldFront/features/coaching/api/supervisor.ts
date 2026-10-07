@@ -33,7 +33,8 @@ type SupervisorCoachingReportResponse = {
   };
   doctor: {
     id: string;
-    name: string;
+    nameAR?: string | null;
+    nameEN?: string | null;
     email: string;
     phone: string;
   };
@@ -65,6 +66,12 @@ function getStatus(rating: number): "Excellent" | "Needs Improvement" {
   return rating >= 4 ? "Excellent" : "Needs Improvement";
 }
 
+function getDoctorDisplayName(
+  doctor: SupervisorCoachingReportResponse["doctor"],
+) {
+  return doctor.nameEN || doctor.nameAR || "Unknown doctor";
+}
+
 export async function getSupervisorCoachingReportsAction(
   page?: number,
   limit?: number,
@@ -90,7 +97,7 @@ export async function getSupervisorCoachingReportsAction(
       id: report.id,
       repName: report.rep.name,
       repInitials: getInitials(report.rep.name),
-      doctorName: report.doctor.name,
+      doctorName: getDoctorDisplayName(report.doctor),
       date: formatSaudiDateDisplay(parseDateValue(report.visitDate)),
       duration: report.visitDuration,
       location: report.visitLocation,

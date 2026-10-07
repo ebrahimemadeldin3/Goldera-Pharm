@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const TEAM_DIRECTORY_FETCH_LIMIT = 1000;
 
 type PageProps = {
-  searchParams?: { page?: string; limit?: string; openDialog?: string };
+  searchParams?: Promise<{ page?: string; limit?: string; openDialog?: string }>;
 };
 
 export default async function Page({ searchParams }: PageProps) {

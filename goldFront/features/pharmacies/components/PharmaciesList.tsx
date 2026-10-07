@@ -61,6 +61,7 @@ import {
   UNASSIGNED_DISTRICT,
 } from "@/features/plan/lib/territory";
 import type { PharmacyApiResponse } from "../lib/types";
+import { PharmacyRecordActions } from "./PharmacyRecordActions";
 import {
   normalizePharmacyFilterValue,
   normalizePharmacyForDirectory,
@@ -524,9 +525,27 @@ function PharmacyMobileCard({
             />
           </Button>
         </div>
+        {isManager && (
+          <div className="mt-3">
+            <PharmacyDirectoryActions row={row} />
+          </div>
+        )}
       </div>
     </article>
   );
+}
+
+function PharmacyDirectoryActions({ row }: { row: PharmacyDirectoryRow }) {
+  return <PharmacyRecordActions pharmacy={{
+    id: row.id,
+    name: row.name,
+    city: row.city,
+    country: row.country,
+    region: row.sourceRegion,
+    subRegion: row.sourceTerritory,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+  }} />;
 }
 
 function PharmacyDetailsSheet({
@@ -674,6 +693,21 @@ function PharmacyDetailsSheet({
             </div>
 
             <SheetFooter className="border-gp-border-subtle border-t bg-white p-4">
+              {isManager && (
+                <PharmacyRecordActions
+                  pharmacy={{
+                    id: pharmacy.id,
+                    name: pharmacy.name,
+                    city: pharmacy.city,
+                    country: pharmacy.country,
+                    region: pharmacy.sourceRegion,
+                    subRegion: pharmacy.sourceTerritory,
+                    createdAt: pharmacy.createdAt,
+                    updatedAt: pharmacy.updatedAt,
+                  }}
+                  onDeleted={() => onOpenChange(false)}
+                />
+              )}
               <Button
                 type="button"
                 onClick={() => onOpenChange(false)}
@@ -1457,7 +1491,7 @@ export default function PharmaciesList({
           {visibleRows.length > 0 ? (
             <>
               <div className="border-gp-border-subtle hidden overflow-hidden rounded-[14px] border bg-white lg:block">
-                <div className="max-h-[calc(100vh-360px)] overflow-y-auto">
+                <div className="max-h-[calc(100vh-360px)] overflow-auto">
                   <table className="w-full min-w-[980px] text-left text-sm">
                     <thead className="border-gp-border-subtle text-gp-text-muted sticky top-0 z-10 border-b bg-[#F9FAFB] text-[11px] font-semibold tracking-[0.06em] uppercase">
                       <tr>
@@ -1469,7 +1503,7 @@ export default function PharmaciesList({
                         <th className="px-4 py-3 font-semibold">Territory</th>
                         <th className="px-4 py-3 font-semibold">Country</th>
                         <th className="px-4 py-3 font-semibold">Added</th>
-                        <th className="w-44 px-4 py-3 text-right font-semibold">
+                        <th className={cn("px-4 py-3 text-right font-semibold", isManager ? "min-w-[240px]" : "w-44")}>
                           Actions
                         </th>
                       </tr>
@@ -1535,7 +1569,8 @@ export default function PharmaciesList({
                             {formatDate(row.createdAt)}
                           </td>
                           <td className="px-4 py-3.5">
-                            <div className="flex items-center justify-end gap-2">
+                            <div className="flex flex-wrap items-center justify-end gap-2">
+                              {isManager && <PharmacyDirectoryActions row={row} />}
                               <Button
                                 type="button"
                                 onClick={() => openDetails(row)}
@@ -1690,7 +1725,10 @@ export default function PharmaciesList({
       </section>
 
       <PharmacyDetailsSheet
-        pharmacy={selectedPharmacy}
+        pharmacy={
+          rows.find((row) => row.id === selectedPharmacy?.id) ||
+          selectedPharmacy
+        }
         open={Boolean(selectedPharmacy)}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setSelectedPharmacy(null);

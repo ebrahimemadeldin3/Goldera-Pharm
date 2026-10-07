@@ -42,11 +42,24 @@ export function VisitsSkeleton() {
             <Skeleton className="h-6 w-48 bg-slate-200" />
             <Skeleton className="h-9 w-32 rounded-[10px] bg-slate-100" />
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-[14px] border border-[#E5E8EF] bg-white p-4 space-y-2">
-                <Skeleton className="h-5 w-40 bg-slate-200" />
-                <Skeleton className="h-4 w-60 bg-slate-100" />
+              <div
+                key={i}
+                className="grid min-h-[94px] grid-cols-[82px_minmax(0,1fr)_auto] overflow-hidden rounded-[12px] border border-[#E5E8EF] bg-white"
+              >
+                <div className="border-r border-[#EEF1F6] bg-[#FBFCFE] p-3">
+                  <Skeleton className="mx-auto h-4 w-12 bg-slate-200" />
+                  <Skeleton className="mx-auto mt-2 h-2.5 w-6 bg-slate-100" />
+                </div>
+                <div className="space-y-2 p-3">
+                  <Skeleton className="h-4 w-44 bg-slate-200" />
+                  <Skeleton className="h-3.5 w-64 max-w-full bg-slate-100" />
+                  <Skeleton className="h-3.5 w-52 max-w-full bg-slate-100" />
+                </div>
+                <div className="flex items-center p-3">
+                  <Skeleton className="h-8 w-20 rounded-[8px] bg-slate-100" />
+                </div>
               </div>
             ))}
           </div>

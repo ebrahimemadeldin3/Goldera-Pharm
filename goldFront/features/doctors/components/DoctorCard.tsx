@@ -10,6 +10,7 @@ import {
   Mail,
   MapPinned,
   Phone,
+  Pencil,
   Stethoscope,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -20,6 +21,8 @@ import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { DoctorDirectoryData } from "../lib/utils/mappers";
+import { toast } from "@/lib/utils/toast";
+import RemoveDoctorDialog from "./dialogs/RemoveDoctorDialog";
 
 function isClean(value?: string | null): value is string {
   return Boolean(
@@ -94,6 +97,7 @@ export default function DoctorCard({
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [isLoadingScheduleData, setIsLoadingScheduleData] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
 
   const cleanNameAR = isClean(nameAR) ? nameAR.trim() : null;
@@ -129,12 +133,27 @@ export default function DoctorCard({
         : `/rep/visits/add?doctorId=${id}`;
 
   const handleOpenSchedule = async () => {
+    if (isLoadingScheduleData) return;
+
     if (doctorsList.length === 0) {
-      const doctorsRes = await getSchedulableDoctorsAction();
-      if (doctorsRes.success && doctorsRes.data) {
-        setDoctorsList(doctorsRes.data);
+      setIsLoadingScheduleData(true);
+      const doctorsRes = await getSchedulableDoctorsAction().finally(() => {
+        setIsLoadingScheduleData(false);
+      });
+
+      if (!doctorsRes.success) {
+        toast.error({
+          title: "Couldn't load doctors",
+          description:
+            doctorsRes.error?.message ||
+            "Doctors are required before scheduling a visit.",
+        });
+        return;
       }
+
+      setDoctorsList(doctorsRes.data ?? []);
     }
+
     setScheduleDialogOpen(true);
   };
 
@@ -273,13 +292,22 @@ export default function DoctorCard({
         </div>
 
         <div className="border-gp-border-subtle flex flex-col gap-2 border-t pt-3 sm:flex-row sm:justify-end">
+          {features.doctors.canEdit && (
+            <Button asChild variant="outline">
+              <Link href={`${profilePath}?edit=1`}><Pencil className="size-4" /> Edit</Link>
+            </Button>
+          )}
+          {features.doctors.canRemove && (
+            <RemoveDoctorDialog doctorId={id} doctorName={primaryName} redirectAfterDelete={false} />
+          )}
           {features.visits.canScheduleVisit && (
             <div className="flex items-center">
               <Button
                 type="button"
                 onClick={handleOpenSchedule}
+                disabled={isLoadingScheduleData}
                 className={cn(
-                  "group/schedule h-10 w-full cursor-pointer rounded-[10px] border px-3.5 text-xs font-semibold shadow-none transition-[background-color,border-color,color,box-shadow] duration-[180ms] focus-visible:ring-3 focus-visible:outline-none sm:w-auto",
+                  "group/schedule h-10 w-full cursor-pointer rounded-[10px] border px-3.5 text-xs font-semibold shadow-none transition-[background-color,border-color,color,box-shadow] duration-[180ms] focus-visible:ring-3 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60 sm:w-auto",
                   isRep
                     ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] hover:border-[#168557] hover:bg-[#D5F3E4] focus-visible:ring-[#168557]/20"
                     : "border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 hover:border-gp-gold-500 hover:bg-gp-surface-hover focus-visible:ring-gp-gold-500/20",
@@ -289,7 +317,7 @@ export default function DoctorCard({
                   className="size-3.5 transition-transform duration-[180ms] group-hover/schedule:-translate-y-0.5 motion-reduce:transition-none"
                   aria-hidden="true"
                 />
-                Schedule Visit
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
               </Button>
               <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
                 Schedule Visit Page

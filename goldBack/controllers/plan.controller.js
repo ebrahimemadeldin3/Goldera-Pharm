@@ -1,9 +1,27 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import {
+  text,
+  date,
+  number,
+  stringList,
+  userScope,
+  canManageUser,
+} from "../utils/validation.js";
 
 // Plans Controllers
 const createPlan = async (req, res, next) => {
+  const ownerId = req.body.repId || req.user.id;
+  if (ownerId !== req.user.id) {
+    const owner = await prisma.user.findUnique({ where: { id: ownerId } });
+    if (
+      req.user.role === "MEDICAL_REP" ||
+      owner?.role !== "MEDICAL_REP" ||
+      !canManageUser(req.user, owner)
+    )
+      return next(new ApiError("Select a representative from your team", 403));
+  }
   const {
     title,
     type,
@@ -16,10 +34,37 @@ const createPlan = async (req, res, next) => {
     doctorsWithDates,
   } = req.body;
 
+  text(title, "Title");
+  text(description, "Description");
+  const start = date(startDate, "Start date");
+  const end = date(endDate, "End date");
+  if (start > end)
+    return next(new ApiError("Start date must be before end date", 400));
+  if (!["WEEKLY", "MONTHLY"].includes(type))
+    return next(new ApiError("Invalid plan type", 400));
+  if (status && status !== "PENDING")
+    return next(new ApiError("New plans must be submitted for approval", 400));
+  if (!Array.isArray(doctorsWithDates) || !doctorsWithDates.length)
+    return next(new ApiError("Select at least one doctor", 400));
+  number(targetVisits, "Target visits", { min: 1, integer: true });
+  if (doctorsWithDates.length > Number(targetVisits))
+    return next(
+      new ApiError(`This plan allows at most ${targetVisits} visits`, 400),
+    );
+  stringList(objectives, "Objectives", { required: true });
+  for (const doctor of doctorsWithDates) {
+    text(doctor.doctorId, "Doctor");
+    const visitDate = date(doctor.visitDate, "Doctor visit date");
+    if (visitDate < start || visitDate > end)
+      return next(
+        new ApiError("Visit dates must be within the plan period", 400),
+      );
+  }
+
   const existingPlan = await prisma.plan.findFirst({
     where: {
       title,
-      createdById: req.user.id,
+      createdById: ownerId,
     },
   });
 
@@ -44,27 +89,39 @@ const createPlan = async (req, res, next) => {
       subRegion: true,
     },
   });
+  if (doctorsInDB.length !== new Set(doctorIds).size)
+    return next(
+      new ApiError("One or more selected doctors no longer exist", 400),
+    );
 
-  let doctors = doctorsInDB.map((doctor) => ({
-    ...doctor,
-    visitDate: doctorsWithDates.find((d) => d.doctorId === doctor.id)
-      ? doctorsWithDates.find((d) => d.doctorId === doctor.id).visitDate
-      : null,
-  }));
+  const assignments = new Set();
+  const doctors = doctorsWithDates.map((assignment) => {
+    const key = `${assignment.doctorId}:${new Date(assignment.visitDate).toISOString().slice(0, 10)}`;
+    if (assignments.has(key))
+      throw new ApiError(
+        "A doctor can only be scheduled once on the same date",
+        400,
+      );
+    assignments.add(key);
+    return {
+      ...doctorsInDB.find((doctor) => doctor.id === assignment.doctorId),
+      visitDate: new Date(assignment.visitDate).toISOString(),
+    };
+  });
 
   const data = await prisma.plan.create({
     data: {
       title,
       type,
-      status,
+      status: "PENDING",
       description,
       startDate: new Date(startDate),
       endDate: new Date(endDate),
       doctors: doctors,
       objectives,
-      createdBy: { connect: { id: req.user.id } },
-      targetDoctors: doctorsWithDates.length,
-      targetVisits,
+      createdBy: { connect: { id: ownerId } },
+      targetDoctors: new Set(doctorIds).size,
+      targetVisits: Number(targetVisits),
     },
   });
   res.status(201).json({
@@ -78,12 +135,13 @@ const getOnePlan = async (req, res, next) => {
   try {
     const { id } = req.params;
     const data = await prisma.plan.findUnique({
-      where: { id },
+      where: { id, createdBy: userScope(req.user) },
       include: {
         createdBy: { select: { id: true, name: true } },
       },
     });
 
+    if (!data) return next(new ApiError("Plan not found", 404));
     res.status(200).json({
       status: "success",
       message: "Data fetched successfully",
@@ -98,10 +156,11 @@ const getOnePlan = async (req, res, next) => {
 const getMyPlans = async (req, res, next) => {
   try {
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Plan");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = {
       ...queryObj.where,
+      createdBy: userScope(req.user),
       createdById: req.user.id,
     };
 
@@ -129,17 +188,18 @@ const getMyPlans = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch plans", 500));
+    next(error);
   }
 };
 
 const getAllPlans = async (req, res, next) => {
   try {
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Plan");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
     const whereClause = {
       ...queryObj.where,
+      createdBy: userScope(req.user),
     };
 
     if (req.query.createdById) {
@@ -170,14 +230,14 @@ const getAllPlans = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch plans", 500));
+    next(error);
   }
 };
 
 const getPlansMGMT = async (req, res, next) => {
   try {
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Plan");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     let teamIds = [];
@@ -186,7 +246,7 @@ const getPlansMGMT = async (req, res, next) => {
       teamIds.push(req.query.createdById);
     } else {
       const team = await prisma.user.findMany({
-        where: { supervisorId: req.user.id },
+        where: userScope(req.user),
         select: { id: true },
       });
       teamIds = team.map((team) => team.id);
@@ -194,10 +254,7 @@ const getPlansMGMT = async (req, res, next) => {
 
     let whereClause = {
       ...queryObj.where,
-      OR: [
-        { createdBy: { id: req.user.id } },
-        { createdBy: { id: { in: teamIds } } },
-      ],
+      createdBy: userScope(req.user),
       status: "PENDING",
     };
 
@@ -235,7 +292,7 @@ const getPlansMGMT = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch requests", 500));
+    next(error);
   }
 };
 
@@ -243,11 +300,36 @@ const updateOnePlan = async (req, res, next) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  const plan = await prisma.plan.findUnique({ where: { id } });
+  if (!["MANAGER", "SUPERVISOR"].includes(req.user.role))
+    return next(
+      new ApiError("Only managers and supervisors can review plans", 403),
+    );
+  if (!["APPROVED", "REJECTED"].includes(status))
+    return next(new ApiError("Invalid review status", 400));
+  const plan = await prisma.plan.findUnique({
+    where: { id },
+    include: { createdBy: true },
+  });
   if (!plan) return next(new ApiError("Plan not found", 404));
+  if (
+    plan.createdById === req.user.id ||
+    !canManageUser(req.user, plan.createdBy)
+  )
+    return next(
+      new ApiError("You can only review plans submitted by your team", 403),
+    );
+  if (plan.status !== "PENDING")
+    return next(new ApiError("This plan has already been reviewed", 409));
 
   let visitData;
   if (status === "APPROVED" && plan.status !== "APPROVED") {
+    if (plan.doctors.length > plan.targetVisits)
+      return next(
+        new ApiError(
+          "This plan exceeds its visit limit. Reject it and submit a corrected plan.",
+          409,
+        ),
+      );
     // create visit if the plan is approved
     visitData = plan.doctors?.map((doctor) => {
       return {
@@ -259,16 +341,16 @@ const updateOnePlan = async (req, res, next) => {
     });
   }
 
-  const updatedPlan = await prisma.plan.update({
-    where: { id },
-    data: { status },
-  });
-
-  if (visitData?.length > 0 && updatedPlan.status === "APPROVED") {
-    await prisma.visit.createMany({
-      data: visitData,
+  const updatedPlan = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.plan.updateMany({
+      where: { id, status: "PENDING" },
+      data: { status, supervisorFeedback: req.body.supervisorFeedback || null },
     });
-  }
+    if (claimed.count !== 1)
+      throw new ApiError("This plan has already been reviewed", 409);
+    if (visitData?.length) await tx.visit.createMany({ data: visitData });
+    return tx.plan.findUnique({ where: { id } });
+  });
 
   res.status(200).json({
     status: "success",

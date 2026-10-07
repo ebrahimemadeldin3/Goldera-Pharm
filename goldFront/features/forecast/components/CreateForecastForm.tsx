@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,11 +27,12 @@ import { ForecastReviewStep } from "./ForecastReviewStep";
 
 export default function CreateForecastForm() {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [products, setProducts] = useState<Product[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoadError, setDataLoadError] = useState("");
   const [currentStep, setCurrentStep] = useState<ForecastStepId>(1);
   const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
   const [allocations, setAllocations] = useState<
@@ -56,6 +57,7 @@ export default function CreateForecastForm() {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setDataLoadError("");
       const [productsResult, doctorsResult] = await Promise.all([
         getProductsAction(),
         getMyDoctorsAction(),
@@ -65,11 +67,20 @@ export default function CreateForecastForm() {
         setProducts(productsResult.data);
         // Pre-select first 3 products as default suggestions if available
         if (productsResult.data.length > 0) {
-          setSelectedProductIds(productsResult.data.slice(0, 3).map((p) => p.id));
+          setSelectedProductIds(
+            productsResult.data.slice(0, 3).map((p) => p.id),
+          );
         }
       }
       if (doctorsResult.success && doctorsResult.data) {
         setDoctors(doctorsResult.data);
+      }
+      if (!productsResult.success || !doctorsResult.success) {
+        setDataLoadError(
+          productsResult.error?.message ||
+            doctorsResult.error?.message ||
+            "Failed to load forecast source data",
+        );
       }
       setLoading(false);
     };
@@ -79,12 +90,32 @@ export default function CreateForecastForm() {
 
   const selectedProducts = useMemo(
     () => products.filter((p) => selectedProductIds.includes(p.id)),
-    [products, selectedProductIds]
+    [products, selectedProductIds],
+  );
+  const selectedProductIdSet = useMemo(
+    () => new Set(selectedProductIds),
+    [selectedProductIds],
   );
 
   const handleToggleProduct = (productId: string) => {
     setSelectedProductIds((prev) => {
       if (prev.includes(productId)) {
+        setAllocations((currentAllocations) => {
+          const nextAllocations: Record<string, Record<string, number>> = {};
+
+          Object.entries(currentAllocations).forEach(
+            ([doctorId, doctorAlloc]) => {
+              const nextDoctorAlloc = { ...doctorAlloc };
+              delete nextDoctorAlloc[productId];
+
+              if (Object.keys(nextDoctorAlloc).length > 0) {
+                nextAllocations[doctorId] = nextDoctorAlloc;
+              }
+            },
+          );
+
+          return nextAllocations;
+        });
         return prev.filter((id) => id !== productId);
       }
       return [...prev, productId];
@@ -93,13 +124,16 @@ export default function CreateForecastForm() {
 
   const handleClearAllProducts = () => {
     setSelectedProductIds([]);
+    setAllocations({});
   };
 
   const handleAllocationChange = (
     doctorId: string,
     productId: string,
-    units: number
+    units: number,
   ) => {
+    if (!selectedProductIdSet.has(productId)) return;
+
     setAllocations((prev) => ({
       ...prev,
       [doctorId]: {
@@ -132,7 +166,9 @@ export default function CreateForecastForm() {
 
     if (step === 2) {
       if (selectedProductIds.length === 0) {
-        setError("Please select at least one product to include in the forecast");
+        setError(
+          "Please select at least one product to include in the forecast",
+        );
         toast.error({
           title: "Selection Required",
           description: "Please select at least one product to proceed",
@@ -145,8 +181,10 @@ export default function CreateForecastForm() {
     if (step === 3) {
       let hasAllocations = false;
       Object.values(allocations).forEach((docAlloc) => {
-        Object.values(docAlloc).forEach((units) => {
-          if (units > 0) hasAllocations = true;
+        Object.entries(docAlloc).forEach(([productId, units]) => {
+          if (selectedProductIdSet.has(productId) && units > 0) {
+            hasAllocations = true;
+          }
         });
       });
 
@@ -154,7 +192,8 @@ export default function CreateForecastForm() {
         setError("Please allocate units to at least one doctor");
         toast.error({
           title: "Allocations Required",
-          description: "Please allocate units to at least one doctor to proceed",
+          description:
+            "Please allocate units to at least one doctor to proceed",
         });
         return false;
       }
@@ -181,13 +220,17 @@ export default function CreateForecastForm() {
   };
 
   const onSubmit = async () => {
+    if (isSubmitting) return;
     setError("");
 
     // Convert allocations to distributions format
     const distributions = Object.entries(allocations)
       .map(([doctorId, doctorAlloc]) => {
         const allocationsArray = Object.entries(doctorAlloc)
-          .filter(([, units]) => units > 0)
+          .filter(
+            ([productId, units]) =>
+              selectedProductIdSet.has(productId) && units > 0,
+          )
           .map(([productId, units]) => ({ productId, units }));
 
         if (allocationsArray.length === 0) return null;
@@ -224,41 +267,63 @@ export default function CreateForecastForm() {
       return;
     }
 
-    startTransition(async () => {
-      try {
-        const result = await submitForecastAction({
-          ...form.getValues(),
-          allocations,
-        });
+    setIsSubmitting(true);
+    try {
+      const result = await submitForecastAction({
+        ...form.getValues(),
+        allocations: distributions.reduce<
+          Record<string, Record<string, number>>
+        >((nextAllocations, distribution) => {
+          nextAllocations[distribution.doctorId] =
+            distribution.allocations.reduce<Record<string, number>>(
+              (doctorAllocations, allocation) => {
+                doctorAllocations[allocation.productId] = allocation.units;
+                return doctorAllocations;
+              },
+              {},
+            );
+          return nextAllocations;
+        }, {}),
+      });
 
-        if (result.success) {
-          toast.success({
-            title: "Forecast submitted for approval",
-            description: "Your supervisor will review your forecast submission",
-          });
-          router.push("/rep/forecast");
-        } else {
-          setError(result.error?.message || "Failed to submit forecast");
-          toast.error({
-            title: "Submission Failed",
-            description: result.error?.message || "Failed to submit forecast",
-          });
-        }
-      } catch {
-        setError("An unexpected error occurred");
+      if (result.success) {
+        toast.success({
+          title: "Forecast submitted for approval",
+          description: "Your supervisor will review your forecast submission",
+        });
+        router.push("/rep/forecast");
+      } else {
+        setError(result.error?.message || "Failed to submit forecast");
         toast.error({
-          title: "Error",
-          description: "An unexpected error occurred",
+          title: "Submission Failed",
+          description: result.error?.message || "Failed to submit forecast",
         });
       }
-    });
+    } catch {
+      setError("An unexpected error occurred");
+      toast.error({
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (loading) {
     return (
-      <div className="rounded-[14px] border border-[#E5E8EF] bg-white overflow-hidden p-8 space-y-6">
+      <div className="space-y-6 overflow-hidden rounded-[14px] border border-[#E5E8EF] bg-white p-8">
         <div className="h-16 w-full animate-pulse rounded-[12px] bg-[#F4F6FA]" />
         <div className="h-64 w-full animate-pulse rounded-[12px] bg-[#F4F6FA]" />
+      </div>
+    );
+  }
+
+  if (dataLoadError) {
+    return (
+      <div className="rounded-[14px] border border-[#F5C9C5] bg-[#FFF1F0] p-6 text-[#B42318]">
+        <p className="text-sm font-semibold">Failed to load forecast data</p>
+        <p className="mt-1 text-sm font-medium">{dataLoadError}</p>
       </div>
     );
   }
@@ -273,14 +338,14 @@ export default function CreateForecastForm() {
       />
 
       {/* Main Form Container */}
-      <div className="rounded-[14px] border border-[#E5E8EF] bg-white shadow-none overflow-hidden">
+      <div className="overflow-hidden rounded-[14px] border border-[#E5E8EF] bg-white shadow-none">
         <Form {...form}>
           <div className="p-6 md:p-8">
             {currentStep === 1 && (
               <ForecastSetupStep
                 form={form}
                 years={years}
-                isPending={isPending}
+                isPending={isSubmitting}
               />
             )}
 
@@ -299,7 +364,7 @@ export default function CreateForecastForm() {
                 selectedProducts={selectedProducts}
                 allocations={allocations}
                 onAllocationChange={handleAllocationChange}
-                isPending={isPending}
+                isPending={isSubmitting}
               />
             )}
 
@@ -310,7 +375,7 @@ export default function CreateForecastForm() {
                 doctors={doctors}
                 allocations={allocations}
                 onGoToStep={handleGoToStep}
-                isPending={isPending}
+                isPending={isSubmitting}
                 validationError={error}
               />
             )}
@@ -322,7 +387,7 @@ export default function CreateForecastForm() {
                   <Button
                     type="button"
                     onClick={handleBack}
-                    disabled={isPending}
+                    disabled={isSubmitting}
                     variant="outline"
                     className="h-10 rounded-[10px] border border-[#E5E8EF] px-5 text-sm font-semibold text-[#344054] hover:bg-[#F9FAFB]"
                   >
@@ -333,7 +398,7 @@ export default function CreateForecastForm() {
                   <Button
                     type="button"
                     onClick={() => router.push("/rep/forecast")}
-                    disabled={isPending}
+                    disabled={isSubmitting}
                     variant="outline"
                     className="h-10 rounded-[10px] border border-[#E5E8EF] px-5 text-sm font-semibold text-[#344054] hover:bg-[#F9FAFB]"
                   >
@@ -347,8 +412,8 @@ export default function CreateForecastForm() {
                   <Button
                     type="button"
                     onClick={handleNext}
-                    disabled={isPending}
-                    className="h-10 rounded-[10px] bg-gp-rep-primary px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30"
+                    disabled={isSubmitting}
+                    className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 rounded-[10px] px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] focus-visible:ring-2 focus-visible:ring-[#168557]/30"
                   >
                     Continue
                     <ChevronRight className="ml-1.5 size-4" />
@@ -357,10 +422,10 @@ export default function CreateForecastForm() {
                   <Button
                     type="button"
                     onClick={onSubmit}
-                    disabled={isPending}
-                    className="h-10 rounded-[10px] bg-gp-rep-primary px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] hover:bg-gp-rep-primary-hover focus-visible:ring-2 focus-visible:ring-[#168557]/30"
+                    disabled={isSubmitting}
+                    className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 rounded-[10px] px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] focus-visible:ring-2 focus-visible:ring-[#168557]/30"
                   >
-                    {isPending ? (
+                    {isSubmitting ? (
                       <>
                         <span className="mr-2 size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                         Submitting...

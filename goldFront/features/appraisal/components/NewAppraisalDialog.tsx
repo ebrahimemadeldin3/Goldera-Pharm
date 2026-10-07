@@ -45,11 +45,6 @@ function lastDay(year: number, month: number) {
   return formatDateOnly(new Date(year, month, 0));
 }
 
-const MONTHS = Array.from({ length: 12 }, (_, i) => ({
-  value: lastDay(2026, i + 1),
-  label: formatSaudiMonthYear(new Date(2026, i, 1)),
-}));
-
 const SECTIONS: {
   title: string;
   fields: { name: keyof CreateAppraisalFormValues; label: string }[];
@@ -113,6 +108,16 @@ const DEFAULT_SCORE = 75;
 const SAUDI_TODAY = getSaudiDateParts(new Date());
 const SAUDI_CURRENT_YEAR = Number(SAUDI_TODAY.year);
 const SAUDI_CURRENT_MONTH = Number(SAUDI_TODAY.month);
+const MONTHS = Array.from({ length: 12 }, (_, i) => ({
+  value: lastDay(SAUDI_CURRENT_YEAR, i + 1),
+  label: formatSaudiMonthYear(new Date(SAUDI_CURRENT_YEAR, i, 1)),
+}));
+const DEFAULT_FORM_VALUES = {
+  repId: "",
+  period: lastDay(SAUDI_CURRENT_YEAR, SAUDI_CURRENT_MONTH),
+  ...Object.fromEntries(SCORE_NAMES.map((n) => [n, DEFAULT_SCORE])),
+  feedbackComments: "",
+} as CreateAppraisalFormValues;
 
 const STEP_NAMES = [
   { number: "01", label: "Context" },
@@ -167,12 +172,7 @@ export function NewAppraisalDialog() {
   const { control, handleSubmit, reset, getValues, register } =
     useForm<CreateAppraisalFormValues>({
       resolver: zodResolver(createAppraisalSchema),
-      defaultValues: {
-        repId: "",
-        period: lastDay(SAUDI_CURRENT_YEAR, SAUDI_CURRENT_MONTH),
-        ...Object.fromEntries(SCORE_NAMES.map((n) => [n, DEFAULT_SCORE])),
-        feedbackComments: "",
-      },
+      defaultValues: DEFAULT_FORM_VALUES,
     });
 
   // Direct DOM update — zero React renders for the overall bar
@@ -185,6 +185,18 @@ export function NewAppraisalDialog() {
     if (scoreTextRef.current) scoreTextRef.current.textContent = `${score}%`;
     if (badgeRef.current) {
       const b = badgeFor(score);
+      badgeRef.current.textContent = b.label;
+      badgeRef.current.className = `rounded-full border px-3 py-0.5 text-xs font-semibold ${b.cls}`;
+    }
+  }
+
+  function syncDefaultOverall() {
+    if (barRef.current) barRef.current.style.width = `${DEFAULT_SCORE}%`;
+    if (scoreTextRef.current) {
+      scoreTextRef.current.textContent = `${DEFAULT_SCORE}%`;
+    }
+    if (badgeRef.current) {
+      const b = badgeFor(DEFAULT_SCORE);
       badgeRef.current.textContent = b.label;
       badgeRef.current.className = `rounded-full border px-3 py-0.5 text-xs font-semibold ${b.cls}`;
     }
@@ -218,9 +230,19 @@ export function NewAppraisalDialog() {
 
   function closeAndReset() {
     setOpen(false);
-    reset();
+    reset(DEFAULT_FORM_VALUES);
     activeStepRef.current = 0;
     setActiveStep(0);
+    syncDefaultOverall();
+  }
+
+  function handleOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      closeAndReset();
+      return;
+    }
+
+    setOpen(true);
   }
 
   useEffect(() => {
@@ -250,9 +272,10 @@ export function NewAppraisalDialog() {
       if (result.success) {
         toast.success({ title: "Appraisal created successfully" });
         setOpen(false);
-        reset();
+        reset(DEFAULT_FORM_VALUES);
         activeStepRef.current = 0;
         setActiveStep(0);
+        syncDefaultOverall();
         router.refresh();
       } else {
         toast.error({
@@ -272,7 +295,7 @@ export function NewAppraisalDialog() {
   return (
     <FormDrawer
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={handleOpenChange}
       trigger={
         <Button className="appraisal-add-trigger group bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-[10px] border border-transparent px-4 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[filter,box-shadow,transform] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-[3px] focus-visible:outline-none active:translate-y-0 active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:translate-y-0">
           <UserPlus

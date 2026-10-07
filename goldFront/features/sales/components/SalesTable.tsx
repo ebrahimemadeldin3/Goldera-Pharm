@@ -334,7 +334,7 @@ function ColumnSelector({
             "sales-column-trigger inline-flex h-10 w-full shrink-0 items-center justify-center gap-2 rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] px-3 text-sm font-semibold text-[#344054] transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:w-auto",
             isRep
               ? "hover:border-[#CBEFDD] hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-              : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+              : "hover:border-[#E9DDB8] hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
           )}
           aria-label="Customize sales table columns"
         >
@@ -347,7 +347,7 @@ function ColumnSelector({
             <span
               className={cn(
                 "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-none font-bold text-white",
-                isRep ? "bg-[#168557]" : "bg-[#C9A44C]"
+                isRep ? "bg-[#168557]" : "bg-[#C9A44C]",
               )}
             >
               {visibleCount}
@@ -378,7 +378,7 @@ function ColumnSelector({
                 "rounded-full px-2 py-1 text-xs font-bold transition-colors disabled:cursor-not-allowed disabled:text-[#B7BFCC] disabled:hover:bg-transparent",
                 isRep
                   ? "text-[#168557] hover:bg-[#E9F8F1]"
-                  : "text-[#8A6515] hover:bg-[#FFF8E5]"
+                  : "text-[#8A6515] hover:bg-[#FFF8E5]",
               )}
             >
               Reset
@@ -397,7 +397,9 @@ function ColumnSelector({
                 disabled
                 className={cn(
                   "text-white",
-                  isRep ? "border-[#168557] bg-[#168557]" : "border-[#C9A44C] bg-[#C9A44C]"
+                  isRep
+                    ? "border-[#168557] bg-[#168557]"
+                    : "border-[#C9A44C] bg-[#C9A44C]",
                 )}
                 aria-label={`${label} column is always visible`}
               />
@@ -420,7 +422,7 @@ function ColumnSelector({
                       "sales-column-option flex h-9 cursor-pointer items-center gap-2 rounded-[9px] px-2 text-sm font-medium text-[#344054] transition-[background-color,color] duration-[150ms]",
                       isRep
                         ? "hover:bg-[#E9F8F1]/60 hover:text-[#168557]"
-                        : "hover:bg-[#FBF7EA] hover:text-[#8A6515]"
+                        : "hover:bg-[#FBF7EA] hover:text-[#8A6515]",
                     )}
                   >
                     <Checkbox
@@ -432,7 +434,7 @@ function ColumnSelector({
                         "data-[state=checked]:text-white",
                         isRep
                           ? "data-[state=checked]:border-[#168557] data-[state=checked]:bg-[#168557]"
-                          : "data-[state=checked]:border-[#C9A44C] data-[state=checked]:bg-[#C9A44C]"
+                          : "data-[state=checked]:border-[#C9A44C] data-[state=checked]:bg-[#C9A44C]",
                       )}
                       aria-label={`Toggle ${column.label} column`}
                     />
@@ -481,7 +483,6 @@ function SalesRecordDetailsDrawer({
   onOpenChange,
   copiedRowId,
   onCopyValue,
-  isRep = false,
 }: {
   summary: RowSummary | null;
   open: boolean;
@@ -1040,7 +1041,7 @@ export default function SalesTable({
                 "h-10 w-full rounded-[10px] border border-[#DDE3EE] bg-[#F9FAFB] pr-3 pl-9 text-sm font-medium text-[#182033] transition-colors outline-none placeholder:text-[#98A2B3]",
                 isRep
                   ? "focus:border-[#168557] focus:ring-2 focus:ring-[#168557]/20"
-                  : "focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10"
+                  : "focus:border-[#C9A44C] focus:ring-[3px] focus:ring-[#C9A44C]/10",
               )}
             />
             {searchDraft && (
@@ -1079,7 +1080,7 @@ export default function SalesTable({
             <span
               className={cn(
                 "sales-time-filter-indicator",
-                isRep && "sales-time-filter-indicator-rep"
+                isRep && "sales-time-filter-indicator-rep",
               )}
               aria-hidden="true"
             />
@@ -1105,14 +1106,14 @@ export default function SalesTable({
                     "sales-time-filter-tab relative z-10 flex h-full min-w-0 items-center justify-center rounded-[9px] px-3 text-xs font-semibold transition-all duration-160 outline-none",
                     isRep
                       ? isActive
-                        ? "text-white font-bold"
+                        ? "font-bold text-white"
                         : "text-[#344054] hover:text-[#182033]"
                       : isActive
-                      ? "text-white"
-                      : "text-[#344054]",
+                        ? "text-white"
+                        : "text-[#344054]",
                     isRep
                       ? "focus-visible:ring-2 focus-visible:ring-[#168557]/30"
-                      : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30"
+                      : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/30",
                   )}
                 >
                   <span className="sales-time-filter-label truncate">
@@ -1214,7 +1215,7 @@ export default function SalesTable({
                       tabIndex={0}
                       aria-controls="sales-record-details-drawer"
                       data-expanded={isSelected}
-                      className="sales-record-row sales-table-row-enter border-b border-[#EEF1F6] outline-none last:border-0 cursor-pointer"
+                      className="sales-record-row sales-table-row-enter cursor-pointer border-b border-[#EEF1F6] outline-none last:border-0"
                       style={
                         {
                           "--sales-row-delay": `${Math.min(idx * 20, 140)}ms`,
@@ -1305,7 +1306,7 @@ export default function SalesTable({
                             "sales-row-chevron-button inline-flex size-8 items-center justify-center rounded-[9px] text-[#667085] transition-[background-color,color,transform] duration-[170ms] focus-visible:outline-none",
                             isRep
                               ? "hover:bg-[#E9F8F1] hover:text-[#168557] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-                              : "hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                              : "hover:bg-[#FBF7EA] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
                           )}
                         >
                           <ChevronRight
@@ -1343,7 +1344,7 @@ export default function SalesTable({
                       "w-full p-4 text-left focus-visible:outline-none",
                       isRep
                         ? "focus-visible:ring-2 focus-visible:ring-[#168557]/20"
-                        : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                        : "focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
                     )}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -1400,14 +1401,14 @@ export default function SalesTable({
                       <span
                         className={cn(
                           "inline-flex h-9 items-center justify-center gap-2 rounded-[10px] px-3 text-xs font-semibold text-white",
-                          isRep ? "bg-[#168557]" : "bg-gp-navy-900"
+                          isRep ? "bg-[#168557]" : "bg-gp-navy-900",
                         )}
                       >
                         View Details
                         <ChevronRight
                           className={cn(
                             "size-3.5",
-                            isRep ? "text-[#CBEFDD]" : "text-gp-gold-500"
+                            isRep ? "text-[#CBEFDD]" : "text-gp-gold-500",
                           )}
                           aria-hidden="true"
                         />

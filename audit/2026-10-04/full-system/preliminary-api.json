@@ -1,0 +1,472 @@
+{
+  "schema": "goldera_qa_20261004_86266d2a4f",
+  "total": 106,
+  "passed": 66,
+  "failed": 40,
+  "results": [
+    {
+      "name": "Login manager",
+      "pass": true
+    },
+    {
+      "name": "Login supervisor",
+      "pass": true
+    },
+    {
+      "name": "Login rep",
+      "pass": true
+    },
+    {
+      "name": "Login rep2",
+      "pass": true
+    },
+    {
+      "name": "Login outsider",
+      "pass": true
+    },
+    {
+      "name": "Invalid login rejected",
+      "pass": true
+    },
+    {
+      "name": "Anonymous catalog rejected",
+      "pass": true
+    },
+    {
+      "name": "Privileged public signup rejected",
+      "pass": true
+    },
+    {
+      "name": "Read manager /products",
+      "pass": true
+    },
+    {
+      "name": "Read manager /doctors",
+      "pass": true
+    },
+    {
+      "name": "Read manager /pharmacies",
+      "pass": true
+    },
+    {
+      "name": "Read manager /regions",
+      "pass": true
+    },
+    {
+      "name": "Read manager /sub-regions",
+      "pass": true
+    },
+    {
+      "name": "Read manager /accounts",
+      "pass": true
+    },
+    {
+      "name": "Read manager /managers/users",
+      "pass": true
+    },
+    {
+      "name": "Read manager /managers/team",
+      "pass": true
+    },
+    {
+      "name": "Read manager /managers/team/requests?role=MEDICAL_REP",
+      "pass": false,
+      "evidence": "Expected 200 got 500: Failed to fetch requests"
+    },
+    {
+      "name": "Read manager /visits/all?paginate=false",
+      "pass": true
+    },
+    {
+      "name": "Read manager /visits/all?paginate=true",
+      "pass": false,
+      "evidence": "Expected 200 got 500: \nInvalid `prisma.visit.count()` invocation:\n\n{\n  select: {\n    _count: {\n      select: {\n        _all: true\n      }\n    }\n  },\n  where: {\n    paginate: \"true\",\n    ~~~~~~~~\n?   AND?: VisitWhereInput | VisitWhereInput[],\n?   OR?: VisitWhereInput[],\n?   NOT?: VisitWhereInput | VisitWhereInput[],\n?   id?: StringFilter | String,\n?   visitType?: EnumVisitTypeFilter | VisitType,\n?   samples?: StringNullableListFilter,\n?   date?: DateTimeFilter | DateTime,\n?   time?: StringNullableFilter | String | Null,\n?   doctorId?: StringFilter | String,\n?   userId?: StringFilter | String,\n?   planId?: StringNullableFilter | String | Null,\n?   notes?: StringNullableFilter | String | Null,\n?   status?: EnumVisitStatusFilter | VisitStatus,\n?   createdAt?: DateTimeFilter | DateTime,\n?   upd"
+    },
+    {
+      "name": "Read manager /visits/all-visit-reports",
+      "pass": true
+    },
+    {
+      "name": "Read manager /plans/all",
+      "pass": true
+    },
+    {
+      "name": "Read manager /plans/mgmt",
+      "pass": true
+    },
+    {
+      "name": "Read manager /forecasts/all",
+      "pass": true
+    },
+    {
+      "name": "Read manager /appraisals",
+      "pass": true
+    },
+    {
+      "name": "Read manager /coaching-reports/all",
+      "pass": true
+    },
+    {
+      "name": "Read manager /sales",
+      "pass": true
+    },
+    {
+      "name": "Read manager /dashboard/manager",
+      "pass": true
+    },
+    {
+      "name": "Read manager /profiles",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /supervisors/team",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /supervisors/team/requests",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /visits/all?paginate=false",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /visits/all-visit-reports",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /plans/mgmt",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /forecasts/all",
+      "pass": true
+    },
+    {
+      "name": "Read supervisor /coaching-reports",
+      "pass": true
+    },
+    {
+      "name": "Read rep /reps/me",
+      "pass": true
+    },
+    {
+      "name": "Read rep /profiles",
+      "pass": true
+    },
+    {
+      "name": "Read rep /products",
+      "pass": true
+    },
+    {
+      "name": "Read rep /doctors",
+      "pass": true
+    },
+    {
+      "name": "Read rep /pharmacies",
+      "pass": true
+    },
+    {
+      "name": "Read rep /visits",
+      "pass": true
+    },
+    {
+      "name": "Read rep /visits?date=2026-10-04",
+      "pass": true
+    },
+    {
+      "name": "Read rep /visits/visit-reports",
+      "pass": true
+    },
+    {
+      "name": "Read rep /requests",
+      "pass": true
+    },
+    {
+      "name": "Read rep /plans",
+      "pass": true
+    },
+    {
+      "name": "Read rep /forecasts",
+      "pass": true
+    },
+    {
+      "name": "Read rep /appraisals/rep",
+      "pass": true
+    },
+    {
+      "name": "Read rep /coaching-reports/rep",
+      "pass": true
+    },
+    {
+      "name": "Read rep /sales",
+      "pass": false,
+      "evidence": "Expected 200 got 403: Access Denied - You are not authorized to perform this action"
+    },
+    {
+      "name": "Read rep /dashboard/rep",
+      "pass": true
+    },
+    {
+      "name": "No secrets /managers/team",
+      "pass": false,
+      "evidence": "Password hash exposed in response"
+    },
+    {
+      "name": "No secrets /managers/users?id=90419777-fe0c-48ca-b4ed-bea923104f7b",
+      "pass": false,
+      "evidence": "Password hash exposed in response"
+    },
+    {
+      "name": "No secrets /managers/users/90419777-fe0c-48ca-b4ed-bea923104f7b",
+      "pass": false,
+      "evidence": "Password hash exposed in response"
+    },
+    {
+      "name": "No secrets /supervisors/team",
+      "pass": false,
+      "evidence": "Password hash exposed in response"
+    },
+    {
+      "name": "No secrets /reps/me",
+      "pass": false,
+      "evidence": "Password hash exposed in response"
+    },
+    {
+      "name": "Manager creates product",
+      "pass": true
+    },
+    {
+      "name": "Product update persists",
+      "pass": false,
+      "evidence": "Expected 200 got 404: Route /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 not found"
+    },
+    {
+      "name": "Negative product price rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 404: Route /api/products/f95a0636-1144-4f5e-9d47-7dde0d009b68 not found"
+    },
+    {
+      "name": "Blank product rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 201: Data created successfully"
+    },
+    {
+      "name": "Product keyword search works",
+      "pass": false,
+      "evidence": "Expected 200 got 500: Failed to fetch products"
+    },
+    {
+      "name": "Invalid pagination rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 200: Data fetched successfully"
+    },
+    {
+      "name": "Unknown query rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 500: Failed to fetch products"
+    },
+    {
+      "name": "Rep cannot create product",
+      "pass": true
+    },
+    {
+      "name": "Manager creates pharmacy",
+      "pass": true
+    },
+    {
+      "name": "Pharmacy update persists",
+      "pass": false,
+      "evidence": "Expected 200 got 404: Route /api/pharmacies/31f95819-f76a-4d8a-bb10-07efc794251e not found"
+    },
+    {
+      "name": "Blank pharmacy rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 201: Data created successfully"
+    },
+    {
+      "name": "Pharmacy search works",
+      "pass": false,
+      "evidence": "Expected 200 got 500: Failed to fetch pharmacies"
+    },
+    {
+      "name": "Manager creates doctor",
+      "pass": true
+    },
+    {
+      "name": "Doctor update persists",
+      "pass": false,
+      "evidence": "Expected 200 got 404: Route /api/doctors/44f0f690-857d-47b7-afdd-3f619aed17f5 not found"
+    },
+    {
+      "name": "Empty doctor rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 201: User created successfully"
+    },
+    {
+      "name": "Doctor search works",
+      "pass": false,
+      "evidence": "Expected 200 got 500: Failed to fetch doctors"
+    },
+    {
+      "name": "Manager creates rep",
+      "pass": false,
+      "evidence": "Expected 201 got 500: \nInvalid `prisma.user.create()` invocation:\n\n{\n  data: {\n    name: \"QA Added Rep\",\n    email: \"qa.added.baseline@goldera.test\",\n    password: \"$2b$10$3hUGLHxP48N4O9Hs3E5S5e2zQ9.FMtQWiBkLMIOQ9tKCUilI5qCqK\",\n    phone: undefined,\n    role: \"MEDICAL_REP\",\n    managerId: \"11305e9f-ebdd-45c7-9d81-986d00da68fa\",\n    ~~~~~~~~~\n    supervisorId: \"01855310-7a5b-4b20-afb8-6b92adad6a1b\",\n    dateOfBirth: new Date(\"1995-01-01T00:00:00.000Z\"),\n    dateOfRecruitment: new Date(\"2026-01-01T00:00:00.000Z\"),\n    educationBackground: undefined,\n    iqamaNumber: undefined,\n    passportNumber: undefined,\n    subRegion: {\n      connect: {\n        id: \"ed3e641f-4d5b-4873-ae36-5444b99ab894\"\n      }\n    },\n?   id?: String,\n?   department?: String | Null,\n?   location?: String | Null,\n?   bio?"
+    },
+    {
+      "name": "Member update persists",
+      "pass": false,
+      "evidence": "Expected 200 got 404: User not found"
+    },
+    {
+      "name": "Profile cannot elevate role",
+      "pass": false,
+      "evidence": "Rep can promote own role"
+    },
+    {
+      "name": "Profile normal update hides password",
+      "pass": false,
+      "evidence": "Expected 200 got 404: Route /api/profiles not found"
+    },
+    {
+      "name": "Manager schedules rep visit",
+      "pass": true
+    },
+    {
+      "name": "Visit time update persists",
+      "pass": false,
+      "evidence": "Expected values to be strictly equal:\n\n'10:30' !== '11:45'\n"
+    },
+    {
+      "name": "Rep cannot edit another visit",
+      "pass": true
+    },
+    {
+      "name": "Unrelated manager cannot edit visit",
+      "pass": false,
+      "evidence": "Expected 403/404 got 200: Data updated successfully"
+    },
+    {
+      "name": "Supervisor visit scope cannot be overridden",
+      "pass": false,
+      "evidence": "Expected 200/403 got 500: \nInvalid `prisma.visit.count()` invocation:\n\n{\n  select: {\n    _count: {\n      select: {\n        _all: true\n      }\n    }\n  },\n  where: {\n    createdById: \"66e124f9-9e0d-4a08-ac6e-25a2e77c35b7\",\n    ~~~~~~~~~~~\n?   AND?: VisitWhereInput | VisitWhereInput[],\n?   OR?: VisitWhereInput[],\n?   NOT?: VisitWhereInput | VisitWhereInput[],\n?   id?: StringFilter | String,\n?   visitType?: EnumVisitTypeFilter | VisitType,\n?   samples?: StringNullableListFilter,\n?   date?: DateTimeFilter | DateTime,\n?   time?: StringNullableFilter | String | Null,\n?   doctorId?: StringFilter | String,\n?   userId?: StringFilter | String,\n?   planId?: StringNullableFilter | String | Null,\n?   notes?: StringNullableFilter | String | Null,\n?   status?: EnumVisitStatusFilter | VisitStatus,\n?   crea"
+    },
+    {
+      "name": "Visit report saves topics and completes visit",
+      "pass": false,
+      "evidence": "Expected 200/201 got 500: \nInvalid `prisma.visit.findUnique()` invocation:\n\n{\n  where: {\n    id: \"d38d21df-6fb9-4391-beb2-cdc0333da50d\"\n  },\n  include: {\n    reports: true,\n    ~~~~~~~\n?   doctor?: true,\n?   createdBy?: true,\n?   plan?: true,\n?   visitReports?: true\n  }\n}\n\nUnknown field `reports` for include statement on model `Visit`. Available options are marked with ?."
+    },
+    {
+      "name": "Duplicate visit report rejected",
+      "pass": false,
+      "evidence": "Expected 400/409 got 500: \nInvalid `prisma.visit.findUnique()` invocation:\n\n{\n  where: {\n    id: \"d38d21df-6fb9-4391-beb2-cdc0333da50d\"\n  },\n  include: {\n    reports: true,\n    ~~~~~~~\n?   doctor?: true,\n?   createdBy?: true,\n?   plan?: true,\n?   visitReports?: true\n  }\n}\n\nUnknown field `reports` for include statement on model `Visit`. Available options are marked with ?."
+    },
+    {
+      "name": "Rep creates pending plan",
+      "pass": true
+    },
+    {
+      "name": "Rep cannot approve own plan",
+      "pass": false,
+      "evidence": "Expected 403 got 200: Plan updated successfully"
+    },
+    {
+      "name": "Plan approval creates visits once concurrently",
+      "pass": false,
+      "evidence": "Concurrent approval duplicated plan visits\n\n2 !== 1\n"
+    },
+    {
+      "name": "Rep cannot create approved forecast",
+      "pass": false,
+      "evidence": "Rep can self-approve forecast"
+    },
+    {
+      "name": "Rep creates forecast",
+      "pass": true
+    },
+    {
+      "name": "Unrelated rep cannot read forecast",
+      "pass": false,
+      "evidence": "Expected 403/404 got 200: {\"status\":\"success\",\"data\":{\"id\":\"4d5e61ab-727c-486f-95a8-0c3d216999ab\",\"repId\":\"90419777-fe0c-48ca-b4ed-bea923104f7b\",\"periodType\":\"monthly\",\"periodDate\":\"2026-11-01T00:00:00.000Z\",\"productForecasts\":[{\"quantity\":10,\"productId\":\"7f7c7ba9-9c44-41a7-9"
+    },
+    {
+      "name": "Supervisor approves forecast consistently",
+      "pass": false,
+      "evidence": "Expected values to be strictly equal:\n\nfalse !== true\n"
+    },
+    {
+      "name": "Rep creates sample request",
+      "pass": true
+    },
+    {
+      "name": "Manager approves sample request",
+      "pass": true
+    },
+    {
+      "name": "Duplicate request review rejected",
+      "pass": true
+    },
+    {
+      "name": "Negative sample amount rejected",
+      "pass": false,
+      "evidence": "Expected 400/422 got 201: Data created successfully"
+    },
+    {
+      "name": "Concurrent leave approval increments once",
+      "pass": false,
+      "evidence": "Concurrent approval counted leave twice\n\n4 !== 2\n"
+    },
+    {
+      "name": "Manager creates coaching report",
+      "pass": true
+    },
+    {
+      "name": "Rep accepts manager coaching",
+      "pass": false,
+      "evidence": "Expected 200 got 500: Failed to update coaching report"
+    },
+    {
+      "name": "Unrelated manager cannot coach rep",
+      "pass": false,
+      "evidence": "Expected 403/404 got 201: Data created successfully"
+    },
+    {
+      "name": "Manager creates appraisal",
+      "pass": true
+    },
+    {
+      "name": "Rep acknowledges appraisal",
+      "pass": true
+    },
+    {
+      "name": "Other rep cannot acknowledge appraisal",
+      "pass": true
+    },
+    {
+      "name": "Unrelated manager cannot appraise rep",
+      "pass": false,
+      "evidence": "Expected 403/404 got 201: Appraisal added successfully"
+    },
+    {
+      "name": "Deactivated login and token blocked",
+      "pass": true
+    },
+    {
+      "name": "Delete and confirm products",
+      "pass": true
+    },
+    {
+      "name": "Delete and confirm pharmacy",
+      "pass": true
+    },
+    {
+      "name": "Delete and confirm doctor",
+      "pass": true
+    },
+    {
+      "name": "Delete and confirm user",
+      "pass": false,
+      "evidence": "Expected 200/204 got 500: \nInvalid `prisma.user.delete()` invocation:\n\n\nAn operation failed because it depends on one or more records that were required but not found. No record was found for a delete."
+    }
+  ]
+}

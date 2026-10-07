@@ -4,7 +4,7 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { format } from "date-fns";
 import VisitCard from "../shared/VisitCard";
-import { Calendar, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, Plus } from "lucide-react";
 import { Visit } from "@/features/visits/lib/types/ui";
 import Link from "next/link";
 import { useRoleUI } from "@/core/ui/role-ui-context";
@@ -12,12 +12,15 @@ import AddVisitDialog from "@/features/visits/components/AddVisitDialog";
 import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/utils/toast";
 
 type DayVisitsPanelProps = {
   date: Date;
   visits: Visit[];
   reportBasePath?: string;
   isSearching?: boolean;
+  isFiltered?: boolean;
+  onClearFilters?: () => void;
   managerTheme?: boolean;
 };
 
@@ -26,6 +29,8 @@ export default function DayVisitsPanel({
   visits,
   reportBasePath,
   isSearching = false,
+  isFiltered = false,
+  onClearFilters,
   managerTheme = false,
 }: DayVisitsPanelProps) {
   const pathname = usePathname();
@@ -34,8 +39,8 @@ export default function DayVisitsPanel({
   const isManager =
     managerTheme || role === "MANAGER" || pathname?.startsWith("/manager");
   const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [isLoadingScheduleData, setIsLoadingScheduleData] = useState(false);
   const [doctorsList, setDoctorsList] = useState<DoctorApiResponse[]>([]);
-  const [expanded, setExpanded] = useState(false);
 
   const addVisitPath =
     role === "MANAGER"
@@ -45,20 +50,40 @@ export default function DayVisitsPanel({
         : "/rep/visits/add";
 
   const handleOpenSchedule = async () => {
+    if (isLoadingScheduleData) return;
+
     if (doctorsList.length === 0) {
-      const doctorsRes = await getSchedulableDoctorsAction();
-      if (doctorsRes.success && doctorsRes.data) {
-        setDoctorsList(doctorsRes.data);
+      setIsLoadingScheduleData(true);
+      const doctorsRes = await getSchedulableDoctorsAction().finally(() => {
+        setIsLoadingScheduleData(false);
+      });
+
+      if (!doctorsRes.success) {
+        toast.error({
+          title: "Couldn't load doctors",
+          description:
+            doctorsRes.error?.message ||
+            "Doctors are required before scheduling a visit.",
+        });
+        return;
       }
+
+      setDoctorsList(doctorsRes.data ?? []);
     }
+
     setScheduleDialogOpen(true);
   };
 
-  // Progressive Disclosure: Max 2 visits by default unless searching or expanded
-  const INITIAL_LIMIT = 2;
-  const visibleVisits =
-    isSearching || expanded ? visits : visits.slice(0, INITIAL_LIMIT);
-  const remainingCount = visits.length - INITIAL_LIMIT;
+  const emptyTitle = isSearching
+    ? "No visits match your search."
+    : isFiltered
+      ? "No visits match the current filters."
+      : `No visits scheduled for ${format(date, "MMM d, yyyy")}`;
+  const emptyDescription = isSearching
+    ? "Try a different doctor, facility, rep, or visit type."
+    : isFiltered
+      ? "Clear filters to return to the full visit workspace."
+      : "You can schedule a medical visit for this day.";
 
   return (
     <>
@@ -77,78 +102,70 @@ export default function DayVisitsPanel({
             <Calendar className="size-5" aria-hidden="true" />
           </span>
           <h4 className="mt-4 text-base font-semibold text-[#182033]">
-            No visits scheduled for {format(date, "MMM d, yyyy")}
+            {emptyTitle}
           </h4>
           <p className="mt-2 max-w-[360px] text-sm leading-6 font-medium text-[#667085]">
-            You can schedule a medical visit for this day.
+            {emptyDescription}
           </p>
-          <div className="mt-5 flex items-center gap-2">
+          {(isSearching || isFiltered) && onClearFilters ? (
             <button
               type="button"
-              onClick={handleOpenSchedule}
+              onClick={onClearFilters}
               className={cn(
-                "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none",
+                "mt-5 inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border px-4 text-sm font-semibold transition-[background-color,border-color,color] duration-[170ms] focus-visible:outline-none",
                 isRep
-                  ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
-                  : isManager
-                    ? "border border-[#E9DDB8] bg-white text-[#101D36] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#101D36] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
-                    : "border border-[#C9A44C] bg-white text-[#8A6515] hover:bg-[#FFF8E5] hover:text-[#182033]",
+                  ? "border-[#CBEFDD] bg-white text-[#168557] hover:bg-[#E9F8F1] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                  : "border-[#E9DDB8] bg-white text-[#101D36] hover:bg-[#FFF8E5] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
               )}
             >
-              <Plus
-                className={cn("size-4", isManager && "text-[#C9A44C]")}
-                aria-hidden="true"
-              />
-              Schedule Visit
+              Clear Filters
             </button>
-            <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
-              Schedule Visit Page
-            </Link>
-          </div>
+          ) : (
+            <div className="mt-5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleOpenSchedule}
+                disabled={isLoadingScheduleData}
+                className={cn(
+                  "inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] px-4 text-sm font-semibold shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-[170ms] hover:-translate-y-px focus-visible:outline-none disabled:pointer-events-none disabled:opacity-60",
+                  isRep
+                    ? "bg-gp-rep-primary hover:bg-gp-rep-primary-hover text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
+                    : isManager
+                      ? "border border-[#E9DDB8] bg-white text-[#101D36] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#101D36] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20"
+                      : "border border-[#C9A44C] bg-white text-[#8A6515] hover:bg-[#FFF8E5] hover:text-[#182033]",
+                )}
+              >
+                <Plus
+                  className={cn("size-4", isManager && "text-[#C9A44C]")}
+                  aria-hidden="true"
+                />
+                {isLoadingScheduleData ? "Loading..." : "Schedule Visit"}
+              </button>
+              <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
+                Schedule Visit Page
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-            {visibleVisits.map((v, index) => (
+          <div
+            className={cn(
+              "grid grid-cols-1 gap-2.5",
+              isManager ? "2xl:grid-cols-2" : "xl:grid-cols-2",
+            )}
+          >
+            {visits.map((v, index) => (
               <VisitCard
                 key={v.id}
                 visit={v}
                 reportBasePath={reportBasePath}
                 animationDelay={`${Math.min(index * 24, 120)}ms`}
                 managerTheme={isManager}
+                density={isManager ? "compact" : "comfortable"}
               />
             ))}
           </div>
-
-          {!isSearching && visits.length > INITIAL_LIMIT && (
-            <div className="flex justify-center pt-1">
-              <button
-                type="button"
-                onClick={() => setExpanded(!expanded)}
-                className={cn(
-                  "inline-flex h-9 items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-white px-4 text-xs font-semibold text-[#344054] shadow-none transition-[background-color,border-color,color,transform] duration-[160ms] hover:-translate-y-px focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0",
-                  isRep
-                    ? "hover:border-gp-rep-primary-border hover:bg-gp-rep-primary-soft hover:text-gp-rep-primary focus-visible:ring-gp-rep-primary/20 focus-visible:ring-2"
-                    : "hover:border-[#E9DDB8] hover:bg-[#FFF8E5] hover:text-[#8A6515] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
-                )}
-              >
-                {expanded ? (
-                  <>
-                    <span>Show less</span>
-                    <ChevronUp className="size-3.5" aria-hidden="true" />
-                  </>
-                ) : (
-                  <>
-                    <span>
-                      Show {remainingCount} more{" "}
-                      {remainingCount === 1 ? "visit" : "visits"}
-                    </span>
-                    <ChevronDown className="size-3.5" aria-hidden="true" />
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
       )}
 

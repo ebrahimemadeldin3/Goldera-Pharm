@@ -9,14 +9,14 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { page?: string; limit?: string };
+  searchParams?: Promise<{ page?: string; limit?: string }>;
 }) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const result = await getProductsAction(page, limit);
+  const result = await getProductsAction(undefined, undefined, false, "all");
 
   if (!result.success) {
     throw new Error(result.error?.message || "Failed to fetch products");

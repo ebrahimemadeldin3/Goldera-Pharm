@@ -30,6 +30,8 @@ async function loadManagerRequestsDirectory() {
       getManagerTeamRequestsAction(index + 2, REQUESTS_DIRECTORY_FETCH_LIMIT),
     ),
   );
+  const failedPage = remainingResults.find((result) => !result.success);
+  if (failedPage) return failedPage;
   const requests = [
     ...firstRequests,
     ...remainingResults.flatMap((result) => {
@@ -52,7 +54,7 @@ async function loadManagerRequestsDirectory() {
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: { page?: string; limit?: string };
+  searchParams?: Promise<{ page?: string; limit?: string }>;
 }) {
   const params = await searchParams;
 

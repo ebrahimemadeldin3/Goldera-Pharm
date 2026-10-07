@@ -130,7 +130,6 @@ export async function getRepDashboardAction(): Promise<{
 }> {
   try {
     const response = await fetchRepDashboard();
-    console.log(response);
 
     return {
       success: true,

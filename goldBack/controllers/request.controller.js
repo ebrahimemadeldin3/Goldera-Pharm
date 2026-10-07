@@ -1,12 +1,17 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
-import { uploadDocumentToCloudinary } from "../utils/cloudinary.js";
+import {
+  uploadDocumentToCloudinary,
+  removeDocumentFromCloudinary,
+} from "../utils/cloudinary.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import { text, number, date } from "../utils/validation.js";
+import { validateAndDetectFiles } from "../utils/fileValidator.js";
 
 // Requests Controllers
 const getMyRequests = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "Request");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -38,12 +43,22 @@ const getMyRequests = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch requests", 500));
+    next(error);
   }
 };
 
 const createRequest = async (req, res, next) => {
+  let pdfs = [];
   try {
+    for (const key of ["doctorIds", "sampleData", "totalExpenseData"]) {
+      if (typeof req.body[key] === "string") {
+        try {
+          req.body[key] = JSON.parse(req.body[key]);
+        } catch {
+          throw new ApiError(`Invalid ${key} format`, 400);
+        }
+      }
+    }
     const {
       title,
       subject,
@@ -69,7 +84,26 @@ const createRequest = async (req, res, next) => {
 
     let leaveDaysCount = null;
     let resolvedDoctorIds = [];
-    let pdfs = [];
+    let resolvedExpenseData = [];
+
+    text(title, "Title");
+    text(subject, "Subject");
+    text(description, "Description");
+    text(urgency, "Urgency");
+    if (req.files?.pdfs) await validateAndDetectFiles(req.files.pdfs);
+    if (
+      doctorIds &&
+      (!Array.isArray(doctorIds) ||
+        doctorIds.some((id) => typeof id !== "string"))
+    )
+      throw new ApiError("Invalid doctor selection", 400);
+    if (Array.isArray(doctorIds) && doctorIds.length) {
+      const count = await prisma.doctor.count({
+        where: { id: { in: [...new Set(doctorIds)] } },
+      });
+      if (count !== new Set(doctorIds).size)
+        throw new ApiError("One or more selected doctors no longer exist", 400);
+    }
 
     if (type === "LEAVE") {
       if (
@@ -89,8 +123,8 @@ const createRequest = async (req, res, next) => {
         );
       }
 
-      const start = new Date(leaveStartDate);
-      const end = new Date(leaveEndDate);
+      const start = date(leaveStartDate, "Leave start date");
+      const end = date(leaveEndDate, "Leave end date");
 
       if (start > end) {
         return next(
@@ -99,19 +133,6 @@ const createRequest = async (req, res, next) => {
       }
 
       leaveDaysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-
-      // upload leave pdf to cloudinary
-      const leavePdf = req.files.pdfs[0];
-      const result = await uploadDocumentToCloudinary(leavePdf.buffer, {
-        public_id: `${type}_pdf_${req.user.id}_${Date.now()}`,
-        folder: "folder-files/pdfs",
-      });
-
-      pdfs.push({
-        name: `${type} pdf`,
-        public_id: result.public_id,
-        url: result.secure_url,
-      });
     } else if (type === "EXPENSE" || type === "MARKETING") {
       if (
         !req.files ||
@@ -131,20 +152,8 @@ const createRequest = async (req, res, next) => {
           new ApiError("Budget and at least one doctor are required", 400),
         );
       }
-      resolvedDoctorIds = doctorIds;
-
-      // upload pdf to cloudinary
-      const invoicePdf = req.files.pdfs[0];
-      const result = await uploadDocumentToCloudinary(invoicePdf.buffer, {
-        public_id: `${type}_pdf_${req.user.id}_${Date.now()}`,
-        folder: "folder-files/pdfs",
-      });
-
-      pdfs.push({
-        name: `${type} pdf`,
-        public_id: result.public_id,
-        url: result.secure_url,
-      });
+      resolvedDoctorIds = [...new Set(doctorIds)];
+      number(budget, "Budget", { min: 0.01 });
     } else if (type === "SAMPLE") {
       if (
         !sampleData ||
@@ -153,6 +162,26 @@ const createRequest = async (req, res, next) => {
       ) {
         return next(new ApiError("At least one product is required", 400));
       }
+      if (Array.isArray(doctorIds) && doctorIds.length > 0) {
+        resolvedDoctorIds = [...new Set(doctorIds)];
+      }
+      for (const item of sampleData) {
+        text(item.productId, "Product");
+        number(item.amount, "Sample quantity", { min: 1, integer: true });
+      }
+      const productsCount = await prisma.products.count({
+        where: {
+          id: { in: [...new Set(sampleData.map((item) => item.productId))] },
+          isArchived: false,
+        },
+      });
+      if (
+        productsCount !== new Set(sampleData.map((item) => item.productId)).size
+      )
+        throw new ApiError(
+          "One or more selected products are unavailable",
+          400,
+        );
     } else if (type === "PERSONAL_EXPENSE") {
       if (
         !req.files ||
@@ -162,36 +191,47 @@ const createRequest = async (req, res, next) => {
         return next(new ApiError("Please upload a file", 400));
       }
 
+      let parsedExpenseData = totalExpenseData;
+      if (typeof totalExpenseData === "string") {
+        try {
+          parsedExpenseData = JSON.parse(totalExpenseData);
+        } catch {
+          return next(new ApiError("Invalid totalExpenseData format", 400));
+        }
+      }
+
       if (
         !visitedCity ||
         !visitDaysCount ||
         !totalExpenseAmount ||
-        !totalExpenseData ||
-        !Array.isArray(totalExpenseData)
+        !parsedExpenseData ||
+        !Array.isArray(parsedExpenseData) ||
+        parsedExpenseData.length === 0
       ) {
         return next(new ApiError("Total expense data is required", 400));
       }
 
-      // upload pdf to cloudinary
-      const results = await Promise.all(
-        req.files.pdfs.map(async (pdf, index) => {
-          const result = await uploadDocumentToCloudinary(pdf.buffer, {
-            public_id: `${type}_pdf_${req.user.id}_${Date.now()}_${index}`, // ✅ Add index
-            folder: "folder-files/pdfs",
-          });
-          return {
-            name: `${type} pdf`,
-            public_id: result.public_id,
-            url: result.secure_url,
-          };
-        }),
-      );
-
-      pdfs = [...pdfs, ...results];
+      resolvedExpenseData = parsedExpenseData.map((item) => ({
+        name: text(item.name, "Expense name"),
+        amount: number(item.amount, "Expense amount", { min: 0.01 }),
+      }));
+      number(visitDaysCount, "Visit days", { min: 1, integer: true });
     } else {
       return next(new ApiError(`Invalid request type: ${type}`, 400));
     }
 
+    // Validate every field first, then track each upload for reliable failure cleanup.
+    for (const [index, file] of (req.files?.pdfs || []).entries()) {
+      const result = await uploadDocumentToCloudinary(file.buffer, {
+        public_id: `${type}_pdf_${req.user.id}_${Date.now()}_${index}`,
+        folder: "folder-files/pdfs",
+      });
+      pdfs.push({
+        name: file.originalname,
+        public_id: result.public_id,
+        url: result.secure_url,
+      });
+    }
     const data = await prisma.request.create({
       data: {
         title,
@@ -212,9 +252,15 @@ const createRequest = async (req, res, next) => {
           type === "PERSONAL_EXPENSE" ? Number(visitDaysCount) : null,
         visitedCity: type === "PERSONAL_EXPENSE" ? visitedCity : null,
         totalExpenseAmount:
-          type === "PERSONAL_EXPENSE" ? Number(totalExpenseAmount) : null,
+          type === "PERSONAL_EXPENSE"
+            ? resolvedExpenseData.reduce(
+                (total, item) => total + item.amount,
+                0,
+              )
+            : null,
         pdfs: pdfs?.length ? { set: pdfs } : [],
-        totalExpenseData: type === "PERSONAL_EXPENSE" ? totalExpenseData : [],
+        totalExpenseData:
+          type === "PERSONAL_EXPENSE" ? resolvedExpenseData : [],
       },
     });
 
@@ -224,8 +270,15 @@ const createRequest = async (req, res, next) => {
       data,
     });
   } catch (error) {
+    if (pdfs && pdfs.length > 0) {
+      await Promise.allSettled(
+        pdfs.map(
+          (p) => p.public_id && removeDocumentFromCloudinary(p.public_id),
+        ),
+      );
+    }
     console.error(error);
-    next(new ApiError("Failed to create request", 500));
+    next(error);
   }
 };
 
@@ -233,37 +286,109 @@ const updateRequest = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { status, response } = req.body;
-    let responseDate = response ? new Date() : undefined;
 
-    const data = await prisma.request.update({
+    const validStatuses = ["APPROVED", "REJECTED"];
+    if (!validStatuses.includes(status)) {
+      return next(new ApiError("Invalid status value", 400));
+    }
+
+    const existingRequest = await prisma.request.findUnique({
       where: { id },
-      data: {
-        status,
-        response,
-        responseDate,
-        handledAt: new Date(),
+      include: {
+        user: {
+          select: {
+            id: true,
+            supervisorId: true,
+            managerId: true,
+          },
+        },
       },
     });
 
-    if (status === "APPROVED" && data.type === "LEAVE") {
-      await prisma.user.update({
-        where: { id: data.userId },
+    if (!existingRequest) {
+      return next(new ApiError("Request not found", 404));
+    }
+
+    // Prevent self-approval
+    if (existingRequest.userId === req.user.id) {
+      return next(new ApiError("Cannot review your own request", 403));
+    }
+
+    // Enforce hierarchy scoping
+    if (req.user.role === "SUPERVISOR") {
+      if (existingRequest.user?.supervisorId !== req.user.id) {
+        return next(
+          new ApiError(
+            "Unauthorized to review requests outside your team",
+            403,
+          ),
+        );
+      }
+    } else if (req.user.role === "MANAGER") {
+      if (existingRequest.user?.managerId !== req.user.id) {
+        return next(
+          new ApiError(
+            "Unauthorized to review requests outside your team",
+            403,
+          ),
+        );
+      }
+    }
+
+    // Prevent duplicate approval / counter corruption
+    if (existingRequest.status !== "PENDING") {
+      return next(
+        new ApiError(
+          `Request has already been ${existingRequest.status.toLowerCase()}`,
+          400,
+        ),
+      );
+    }
+
+    const responseDate = new Date();
+
+    const [updatedRequest] = await prisma.$transaction(async (tx) => {
+      const claimed = await tx.request.updateMany({
+        where: { id, status: "PENDING" },
+        data: { status },
+      });
+      if (claimed.count !== 1)
+        throw new ApiError("This request has already been reviewed", 409);
+      const updated = await tx.request.update({
+        where: { id },
         data: {
-          leaveDaysCountTotal: {
-            increment: data.leaveDaysCount || 0,
-          },
+          status,
+          response: response || null,
+          responseDate,
+          handledAt: new Date(),
         },
       });
-    }
+
+      if (status === "APPROVED" && existingRequest.type === "LEAVE") {
+        const daysToIncrement = Number(existingRequest.leaveDaysCount) || 0;
+        if (daysToIncrement > 0) {
+          await tx.user.update({
+            where: { id: existingRequest.userId },
+            data: {
+              leaveDaysCountTotal: {
+                increment: daysToIncrement,
+              },
+            },
+          });
+        }
+      }
+
+      return [updated];
+    });
 
     res.status(200).json({
       status: "success",
       message: "Data updated successfully",
-      data: data,
+      data: updatedRequest,
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to update request", 500));
+    next(error);
   }
 };
 

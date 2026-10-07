@@ -5,6 +5,9 @@ export interface ProductApiResponse {
   name: string;
   internalRef: string;
   salesPrice: number;
+  image?: unknown;
+  isArchived: boolean;
+  archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -16,3 +19,5 @@ export interface CreateProductDto {
   internalRef: string;
   salesPrice: number;
 }
+
+export type ProductStatusFilter = "active" | "archived" | "all";

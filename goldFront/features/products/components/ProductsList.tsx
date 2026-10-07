@@ -9,31 +9,40 @@ import {
   type CSSProperties,
 } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
   ChevronDown,
   Check,
-  Pencil,
+  Archive,
   Leaf,
+  Loader2,
   MoreHorizontal,
   Package,
   PackageOpen,
+  Pencil,
+  RotateCcw,
   Search,
   SlidersHorizontal,
   Tag,
-  Trash2,
   TrendingUp,
+  Trash2,
   X,
   type LucideIcon,
 } from "lucide-react";
-import { toast } from "@/lib/utils/toast";
 import { useRoleUI } from "@/core/ui/role-ui-context";
+import { AddProductDialog } from "./AddProductDialog";
+import {
+  archiveProductAction,
+  deleteProductAction,
+  restoreProductAction,
+} from "../api";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/lib/utils/toast";
 import {
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -62,19 +71,11 @@ import {
 } from "@/components/ui/sheet";
 import { Slider } from "@/components/ui/slider";
 import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
-import { AddProductDialog } from "./AddProductDialog";
 import type { ProductApiResponse } from "../lib/types";
 import {
   getProductCategory,
   getProductDisplayName,
   getProductImageInfo,
-  getStoredProductImageInfo,
-  readRemovedProductIds,
-  readStoredProductOverrides,
-  readStoredProductImages,
-  saveRemovedProductId,
-  type StoredProductOverrideMap,
-  type StoredProductImageMap,
 } from "../lib/utils";
 
 interface ProductsListProps {
@@ -100,6 +101,8 @@ type PriceLimits = {
 };
 type FilterPanelMode = "desktop" | "mobile";
 type DateFilterValue = "any" | "today" | "last7" | "last30";
+type ProductLifecycleFilter = "active" | "archived" | "all";
+type ProductLifecycleAction = "delete" | "archive" | "restore";
 type ProductFilterCriteria = {
   term: string;
   selectedCategories: string[];
@@ -126,6 +129,12 @@ const dateFilterLabels: Record<DateFilterValue, string> = {
   today: "Today",
   last7: "Last 7 days",
   last30: "Last 30 days",
+};
+
+const lifecycleFilterLabels: Record<ProductLifecycleFilter, string> = {
+  active: "Active",
+  archived: "Archived",
+  all: "All",
 };
 
 const summaryToneStyles: Record<SummaryCardProps["tone"], string> = {
@@ -372,14 +381,13 @@ function CategoryBadge({ category }: { category: string }) {
 type FilterTriggerButtonProps = {
   activeFilterCount: number;
   isOpen: boolean;
-  isRep?: boolean;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
 const FilterTriggerButton = forwardRef<
   HTMLButtonElement,
   FilterTriggerButtonProps
 >(function FilterTriggerButton(
-  { activeFilterCount, isOpen, isRep = false, className = "", ...props },
+  { activeFilterCount, isOpen, className = "", ...props },
   ref,
 ) {
   return (
@@ -408,7 +416,6 @@ const FilterTriggerButton = forwardRef<
         <span className="truncate">Filters</span>
         {activeFilterCount > 0 && (
           <span className="products-catalog-filter-count-badge inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border border-[#C9A44C]/50 bg-[#C9A44C] px-1.5 text-[11px] leading-none font-bold text-[#101D36]">
-
             {activeFilterCount}
           </span>
         )}
@@ -514,22 +521,18 @@ function FilterDateButton({
 function ActiveFilterChip({
   label,
   onRemove,
-  isRep = false,
 }: {
   label: string;
   onRemove: () => void;
-  isRep?: boolean;
 }) {
   return (
     <span className="products-catalog-active-filter-chip inline-flex h-8 max-w-full items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFFDF7] px-3 text-xs font-semibold text-[#182033]">
-
       <span className="truncate">{label}</span>
       <button
         type="button"
         onClick={onRemove}
         aria-label={`Remove ${label} filter`}
         className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-[#344054] transition-[background-color,color] duration-[150ms] hover:bg-[#E9DDB8] hover:text-[#182033] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none"
-
       >
         <X className="size-3" aria-hidden="true" />
       </button>
@@ -610,7 +613,9 @@ function ProductFilterPanel({
             <span
               className={cn(
                 "products-filter-title-icon inline-flex size-8 shrink-0 items-center justify-center rounded-[10px]",
-                isRep ? "bg-[#E9F8F1] text-[#168557]" : "bg-[#FBF7EA] text-[#B18732]"
+                isRep
+                  ? "bg-[#E9F8F1] text-[#168557]"
+                  : "bg-[#FBF7EA] text-[#B18732]",
               )}
             >
               <SlidersHorizontal className="size-4" aria-hidden="true" />
@@ -635,7 +640,7 @@ function ProductFilterPanel({
                 ? isRep
                   ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349]"
                   : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033]"
-                : "cursor-not-allowed text-[#B7BFCC] opacity-70"
+                : "cursor-not-allowed text-[#B7BFCC] opacity-70",
             )}
           >
             Reset
@@ -647,7 +652,9 @@ function ProductFilterPanel({
               aria-label="Close product filters"
               className={cn(
                 "inline-flex size-8 items-center justify-center rounded-full text-[#667085] transition-[background-color,color] duration-[150ms] hover:bg-[#F4F6FA] hover:text-[#182033] focus-visible:outline-none",
-                isRep ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15" : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+                isRep
+                  ? "focus-visible:ring-3 focus-visible:ring-[#168557]/15"
+                  : "focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
               )}
             >
               <X className="size-4" aria-hidden="true" />
@@ -703,7 +710,7 @@ function ProductFilterPanel({
                       "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
                       isRep
                         ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
-                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]",
                     )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
@@ -728,7 +735,7 @@ function ProductFilterPanel({
                       "products-catalog-price-input h-12 w-full rounded-[12px] border border-[#E5E8EF] bg-white px-4 pr-12 text-[15px] font-bold text-[#182033] transition-[background-color,border-color,box-shadow] duration-[160ms] outline-none focus:ring-0",
                       isRep
                         ? "focus:border-[#168557] focus:bg-[#F0FDF4]/30"
-                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]"
+                        : "focus:border-[#C9A44C] focus:bg-[#FFFDF7]",
                     )}
                   />
                   <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs font-bold text-[#98A2B3]">
@@ -753,7 +760,7 @@ function ProductFilterPanel({
               }
               className={cn(
                 "products-catalog-price-slider mt-1 py-3",
-                isRep && "products-catalog-price-slider-rep"
+                isRep && "products-catalog-price-slider-rep",
               )}
             />
             <div className="flex items-center justify-between text-[11px] font-semibold text-[#98A2B3]">
@@ -766,7 +773,10 @@ function ProductFilterPanel({
         <section className="products-filter-panel-section products-filter-panel-stagger products-filter-panel-stagger-date grid gap-3">
           <div className="flex items-center gap-2">
             <CalendarDays
-              className={cn("size-4", isRep ? "text-[#168557]" : "text-[#B18732]")}
+              className={cn(
+                "size-4",
+                isRep ? "text-[#168557]" : "text-[#B18732]",
+              )}
               aria-hidden="true"
             />
             <h3 className="text-[11px] font-bold tracking-[0.1em] text-[#344054] uppercase">
@@ -792,7 +802,9 @@ function ProductFilterPanel({
           key={resultCount}
           className="products-filter-result-count products-filter-panel-stagger products-filter-panel-stagger-results text-sm font-bold text-[#182033]"
         >
-          <span className={cn(isRep ? "text-[#168557]" : "text-[#B18732]")}>{resultCount}</span>{" "}
+          <span className={cn(isRep ? "text-[#168557]" : "text-[#B18732]")}>
+            {resultCount}
+          </span>{" "}
           {resultCount === 1 ? "product" : "products"} found
         </p>
         <div className="products-filter-panel-stagger products-filter-panel-stagger-actions grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] gap-2.5">
@@ -809,7 +821,7 @@ function ProductFilterPanel({
                 ? isRep
                   ? "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#168557] hover:bg-[#F0FDF4] hover:text-[#182033]"
                   : "border-[#D7DCE5] bg-white text-[#4B5568] hover:border-[#C9A44C] hover:bg-[#FFFDF7] hover:text-[#182033]"
-                : "cursor-not-allowed border-[#E5E8EF] bg-white text-[#B7BFCC] opacity-70"
+                : "cursor-not-allowed border-[#E5E8EF] bg-white text-[#B7BFCC] opacity-70",
             )}
           >
             Clear
@@ -818,7 +830,6 @@ function ProductFilterPanel({
             type="button"
             onClick={onApply}
             className="products-filter-show-button h-12 rounded-[12px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_10px_22px_rgba(16,29,54,0.18)] transition-[box-shadow,background-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/25 focus-visible:outline-none active:translate-y-0"
-
           >
             Show {resultCount} Products
           </button>
@@ -828,17 +839,9 @@ function ProductFilterPanel({
   );
 }
 
-function ProductThumbnail({
-  product,
-  storedProductImages,
-}: {
-  product: ProductApiResponse;
-  storedProductImages: StoredProductImageMap;
-}) {
+function ProductThumbnail({ product }: { product: ProductApiResponse }) {
   const [imageFailed, setImageFailed] = useState(false);
-  const imageInfo =
-    getStoredProductImageInfo(product, storedProductImages) ||
-    getProductImageInfo(product);
+  const imageInfo = getProductImageInfo(product);
   const shouldShowImage = Boolean(imageInfo && !imageFailed);
 
   return (
@@ -881,6 +884,11 @@ function ProductName({ product }: { product: ProductApiResponse }) {
           {displayName.secondary}
         </p>
       )}
+      {product.isArchived && (
+        <span className="mt-1.5 inline-flex w-fit rounded-[7px] border border-[#D0D5DD] bg-[#F8FAFC] px-2 py-0.5 text-[11px] font-bold text-[#667085]">
+          Archived
+        </span>
+      )}
     </div>
   );
 }
@@ -888,64 +896,160 @@ function ProductName({ product }: { product: ProductApiResponse }) {
 function ProductActionsButton({
   product,
   canManageProducts,
-  onEdit,
-  onRemove,
 }: {
   product: ProductApiResponse;
   canManageProducts: boolean;
-  onEdit: (product: ProductApiResponse) => void;
-  onRemove: (product: ProductApiResponse) => void;
 }) {
-  const buttonClassName =
-    "inline-flex size-9 items-center justify-center rounded-[9px] border border-[#E5E8EF] bg-white text-[#667085] transition-[background-color,border-color,color] duration-[180ms]";
+  const [editing, setEditing] = useState(false);
+  const [action, setAction] = useState<ProductLifecycleAction | null>(null);
+  const [pending, setPending] = useState(false);
+  const router = useRouter();
 
-  if (!canManageProducts) {
-    return (
-      <button
-        type="button"
-        disabled
-        title="No product actions configured"
-        aria-label={`No product actions configured for ${product.name}`}
-        className={`${buttonClassName} disabled:cursor-not-allowed disabled:opacity-70`}
-      >
-        <MoreHorizontal className="size-4" aria-hidden="true" />
-      </button>
-    );
+  if (!canManageProducts) return null;
+
+  const productName = getProductDisplayName(product.name).primary;
+  const isArchived = product.isArchived;
+
+  const actionCopy = {
+    delete: {
+      title: "Delete product?",
+      description: `Delete "${productName}"? This permanently removes the product only if it has no sales, requests, sample requests, or forecasts.`,
+      button: "Delete product",
+      loading: "Deleting...",
+      success: "Product deleted successfully.",
+      error: "Could not delete product",
+      buttonClassName: "bg-gp-danger hover:bg-gp-danger/90 text-white",
+    },
+    archive: {
+      title: "Archive product?",
+      description: `Archive "${productName}"? The product will remain available in historical records but will no longer be available for new operations.`,
+      button: "Archive product",
+      loading: "Archiving...",
+      success: "Product archived successfully.",
+      error: "Could not archive product",
+      buttonClassName: "bg-[#101D36] hover:bg-[#101D36]/95 text-white",
+    },
+    restore: {
+      title: "Restore product?",
+      description: `Restore "${productName}"? The product will become available for new operations again.`,
+      button: "Restore product",
+      loading: "Restoring...",
+      success: "Product restored successfully.",
+      error: "Could not restore product",
+      buttonClassName: "bg-[#168557] hover:bg-[#107349] text-white",
+    },
+  } as const;
+
+  async function runLifecycleAction() {
+    if (!action || pending) return;
+    setPending(true);
+    try {
+      const result =
+        action === "delete"
+          ? await deleteProductAction(product.id)
+          : action === "archive"
+            ? await archiveProductAction(product.id)
+            : await restoreProductAction(product.id);
+
+      if (!result.success) {
+        toast.error({
+          title: actionCopy[action].error,
+          description: result.error?.message || "Please try again.",
+        });
+        return;
+      }
+
+      toast.success({ title: actionCopy[action].success });
+      setAction(null);
+      router.refresh();
+    } catch {
+      toast.error({
+        title: actionCopy[action].error,
+        description: "Please try again.",
+      });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          title="Product actions"
-          aria-label={`Open actions for ${product.name}`}
-          className={`${buttonClassName} hover:border-[#D4AF4F]/55 hover:bg-[#FFFDF7] hover:text-[#B18732] focus-visible:ring-4 focus-visible:ring-[#D4AF4F]/20 focus-visible:outline-none`}
-        >
-          <MoreHorizontal className="size-4" aria-hidden="true" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align="end"
-        className="w-36 rounded-[10px] border-[#E5E8EF] bg-white p-1.5 shadow-[0_14px_32px_rgba(16,24,40,0.14)]"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={`Actions for ${productName}`}
+          >
+            <MoreHorizontal className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {!isArchived ? (
+            <>
+              <DropdownMenuItem onSelect={() => setEditing(true)}>
+                <Pencil className="size-4" /> Edit product
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => setAction("archive")}>
+                <Archive className="size-4" /> Archive product
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => setAction("delete")}
+                className="text-gp-danger"
+              >
+                <Trash2 className="size-4" /> Delete product
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <DropdownMenuItem onSelect={() => setAction("restore")}>
+              <RotateCcw className="size-4" /> Restore product
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <AddProductDialog
+        product={product}
+        open={editing}
+        onOpenChange={setEditing}
+      />
+      <AlertDialog
+        open={Boolean(action)}
+        onOpenChange={(next) => {
+          if (!pending) setAction(next ? action : null);
+        }}
       >
-        <DropdownMenuItem
-          onSelect={() => onEdit(product)}
-          className="cursor-pointer rounded-[8px] px-2.5 py-2 text-sm font-medium text-[#344054] focus:bg-[#F4F6FA] focus:text-[#182033]"
-        >
-          <Pencil className="size-4 text-[#667085]" aria-hidden="true" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          variant="destructive"
-          onSelect={() => onRemove(product)}
-          className="cursor-pointer rounded-[8px] px-2.5 py-2 text-sm font-medium text-[#B42318] focus:bg-[#FEF3F2] focus:text-[#B42318]"
-        >
-          <Trash2 className="size-4 text-[#B42318]" aria-hidden="true" />
-          Remove
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <AlertDialogContent>
+          {action && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{actionCopy[action].title}</AlertDialogTitle>
+                <AlertDialogDescription>
+                  {actionCopy[action].description}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
+                <Button
+                  disabled={pending}
+                  onClick={runLifecycleAction}
+                  className={actionCopy[action].buttonClassName}
+                >
+                  {pending && (
+                    <Loader2
+                      className="size-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {pending
+                    ? actionCopy[action].loading
+                    : actionCopy[action].button}
+                </Button>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -958,8 +1062,11 @@ export default function ProductsList({
   const pathname = usePathname();
   const { role } = useRoleUI();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
-  const canManageProducts = role === "MANAGER";
+  const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
+  const canManageProducts = isManager;
   const [q, setQ] = useState("");
+  const [lifecycleFilter, setLifecycleFilter] =
+    useState<ProductLifecycleFilter>("active");
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<PriceRange | null>(null);
   const [dateFilter, setDateFilter] = useState<DateFilterValue>("any");
@@ -971,67 +1078,30 @@ export default function ProductsList({
   );
   const [draftDateFilter, setDraftDateFilter] =
     useState<DateFilterValue>("any");
-  const [storedProductImages, setStoredProductImages] =
-    useState<StoredProductImageMap>({});
-  const [storedProductOverrides, setStoredProductOverrides] =
-    useState<StoredProductOverrideMap>({});
-  const [removedProductIds, setRemovedProductIds] = useState<string[]>([]);
-  const [editingProduct, setEditingProduct] =
-    useState<ProductApiResponse | null>(null);
-  const [productPendingRemoval, setProductPendingRemoval] =
-    useState<ProductApiResponse | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const isMobileFilterPanel = useIsMobileFilterPanel();
 
-  useEffect(() => {
-    function syncStoredProductState() {
-      setStoredProductImages(readStoredProductImages());
-      setStoredProductOverrides(readStoredProductOverrides());
-      setRemovedProductIds(readRemovedProductIds());
+  const visibleProducts = useMemo(() => {
+    if (!isManager) return products.filter((product) => !product.isArchived);
+    if (lifecycleFilter === "archived") {
+      return products.filter((product) => product.isArchived);
     }
-
-    syncStoredProductState();
-    window.addEventListener("storage", syncStoredProductState);
-    window.addEventListener(
-      "goldera-product-images-updated",
-      syncStoredProductState,
-    );
-    window.addEventListener(
-      "goldera-products-local-state-updated",
-      syncStoredProductState,
-    );
-
-    return () => {
-      window.removeEventListener("storage", syncStoredProductState);
-      window.removeEventListener(
-        "goldera-product-images-updated",
-        syncStoredProductState,
-      );
-      window.removeEventListener(
-        "goldera-products-local-state-updated",
-        syncStoredProductState,
-      );
-    };
-  }, []);
-
-  const removedProductIdSet = useMemo(
-    () => new Set(removedProductIds),
-    [removedProductIds],
+    if (lifecycleFilter === "active") {
+      return products.filter((product) => !product.isArchived);
+    }
+    return products;
+  }, [isManager, lifecycleFilter, products]);
+  const activeProductsCount = useMemo(
+    () => products.filter((product) => !product.isArchived).length,
+    [products],
   );
-  const visibleProducts = useMemo(
-    () =>
-      products
-        .map((product) => ({
-          ...product,
-          ...storedProductOverrides[product.id],
-        }))
-        .filter((product) => !removedProductIdSet.has(product.id)),
-    [products, removedProductIdSet, storedProductOverrides],
+  const archivedProductsCount = useMemo(
+    () => products.filter((product) => product.isArchived).length,
+    [products],
   );
-  const safeTotalCount = Math.max(
-    0,
-    (totalCount || products.length) - removedProductIds.length,
-  );
+  const safeTotalCount = isManager
+    ? visibleProducts.length
+    : totalCount || visibleProducts.length;
 
   const categoryOptions = useMemo(
     () =>
@@ -1149,11 +1219,17 @@ export default function ProductsList({
     visibleProducts,
   ]);
 
-  const displayedTotalCount = hasActiveCriteria
-    ? filtered.length
-    : safeTotalCount;
-  const displayedPage = hasActiveCriteria ? 1 : page;
-  const criteriaSignature = `${trimmedQuery}-${effectiveSelectedCategories.join("|")}-${activePriceRange[0]}-${activePriceRange[1]}-${dateFilter}-${filtered.length}`;
+  const displayedTotalCount = filtered.length;
+  const displayedTotalPages = Math.max(
+    1,
+    Math.ceil(displayedTotalCount / limit),
+  );
+  const displayedPage = Math.min(Math.max(page, 1), displayedTotalPages);
+  const pagedProducts = useMemo(() => {
+    const startIndex = (displayedPage - 1) * limit;
+    return filtered.slice(startIndex, startIndex + limit);
+  }, [displayedPage, filtered, limit]);
+  const criteriaSignature = `${lifecycleFilter}-${trimmedQuery}-${effectiveSelectedCategories.join("|")}-${activePriceRange[0]}-${activePriceRange[1]}-${dateFilter}-${filtered.length}`;
 
   function resetFilters() {
     setSelectedCategories([]);
@@ -1219,60 +1295,17 @@ export default function ProductsList({
     );
   }
 
-  function handleProductUpdated(updatedProduct: ProductApiResponse) {
-    setStoredProductOverrides((current) => ({
-      ...current,
-      [updatedProduct.id]: {
-        id: updatedProduct.id,
-        name: updatedProduct.name,
-        internalRef: updatedProduct.internalRef,
-        salesPrice: updatedProduct.salesPrice,
-        updatedAt: updatedProduct.updatedAt,
-      },
-    }));
-  }
-
-  function handleConfirmRemove() {
-    if (!productPendingRemoval) {
-      return;
-    }
-
-    const productToRemove = productPendingRemoval;
-    const productRemoved = saveRemovedProductId(productToRemove.id);
-
-    if (!productRemoved) {
-      toast.error({
-        title: "Couldn't remove product",
-        description: "Product changes could not be saved in this browser.",
-      });
-      return;
-    }
-
-    setRemovedProductIds((current) =>
-      Array.from(new Set([...current, productToRemove.id])),
-    );
-    setStoredProductOverrides((current) => {
-      const next = { ...current };
-      delete next[productToRemove.id];
-      return next;
-    });
-    if (editingProduct?.id === productToRemove.id) {
-      setEditingProduct(null);
-    }
-    setProductPendingRemoval(null);
-    toast.success({
-      title: "Product removed successfully",
-      description: "The product was removed successfully.",
-    });
-  }
-
   return (
     <div className="products-page-enter products-page-enter-delay-1 mt-5 space-y-5 sm:mt-6 sm:space-y-6">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <SummaryCard
           label="Total Products"
           value={numberFormatter.format(summary.totalProducts)}
-          helper="Active pharmaceutical items"
+          helper={
+            isManager
+              ? `${lifecycleFilterLabels[lifecycleFilter]} catalog items`
+              : "Active pharmaceutical items"
+          }
           icon={Package}
           tone="navy"
           animationDelay="120ms"
@@ -1295,6 +1328,52 @@ export default function ProductsList({
         />
       </section>
 
+      {isManager && (
+        <section
+          className="products-page-enter products-page-enter-delay-2 flex flex-wrap items-center gap-2"
+          aria-label="Product lifecycle filter"
+        >
+          {(
+            [
+              ["active", activeProductsCount],
+              ["archived", archivedProductsCount],
+              ["all", products.length],
+            ] as Array<[ProductLifecycleFilter, number]>
+          ).map(([value, count]) => {
+            const isActive = lifecycleFilter === value;
+            return (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => {
+                  setLifecycleFilter(value);
+                  resetFilters();
+                }}
+                className={cn(
+                  "inline-flex h-10 items-center gap-2 rounded-[10px] border px-3.5 text-sm font-bold transition-[background-color,border-color,color,box-shadow] duration-[160ms] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none",
+                  isActive
+                    ? "border-[#101D36] bg-[#101D36] text-white shadow-[0_8px_18px_rgba(16,29,54,0.14)]"
+                    : "border-[#E5E8EF] bg-white text-[#344054] hover:border-[#E9DDB8] hover:bg-[#FFFDF7]",
+                )}
+              >
+                {lifecycleFilterLabels[value]}
+                <span
+                  className={cn(
+                    "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] leading-5",
+                    isActive
+                      ? "bg-[#C9A44C] text-[#101D36]"
+                      : "bg-[#F4F6FA] text-[#667085]",
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </section>
+      )}
+
       <section className="products-page-enter products-page-enter-delay-2 overflow-hidden rounded-[16px] border border-[#E5E8EF] bg-white shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
         <header className="flex flex-col gap-4 px-4 py-4 sm:px-5 sm:py-5 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(320px,520px)] lg:items-start lg:gap-6">
           <div className="products-catalog-header-copy-enter min-w-0">
@@ -1313,7 +1392,7 @@ export default function ProductsList({
                   "size-1.5 rounded-full",
                   isRep
                     ? "bg-[#168557] shadow-[0_0_0_3px_rgba(22,133,87,0.15)]"
-                    : "bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]"
+                    : "bg-[#C9A44C] shadow-[0_0_0_3px_rgba(201,164,76,0.12)]",
                 )}
                 aria-hidden="true"
               />
@@ -1351,7 +1430,6 @@ export default function ProductsList({
                 onChange={(event) => setQ(event.target.value)}
                 placeholder="Search by name or reference..."
                 className="products-catalog-search-input h-11 w-full rounded-[12px] border border-[#E5E8EF] bg-white pr-10 pl-10 text-sm font-medium text-[#182033] transition-[border-color,background-color,box-shadow] duration-[160ms] outline-none placeholder:text-[#98A2B3] focus:border-[#C9A44C] focus:bg-white focus:ring-0"
-
               />
               {hasSearchQuery && (
                 <button
@@ -1371,7 +1449,6 @@ export default function ProductsList({
                   <FilterTriggerButton
                     activeFilterCount={activeFilterCount}
                     isOpen={isFilterOpen}
-                    isRep={isRep}
                     className="products-catalog-filter-field products-catalog-filter-button"
                     aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
                   />
@@ -1417,7 +1494,6 @@ export default function ProductsList({
                   <FilterTriggerButton
                     activeFilterCount={activeFilterCount}
                     isOpen={isFilterOpen}
-                    isRep={isRep}
                     className="products-catalog-filter-field products-catalog-filter-button"
                     aria-label={`Open product filters${activeFilterCount > 0 ? `, ${activeFilterCount} active` : ""}`}
                   />
@@ -1469,21 +1545,18 @@ export default function ProductsList({
                     key={category}
                     label={category}
                     onRemove={() => removeCategoryFilter(category)}
-                    isRep={isRep}
                   />
                 ))}
                 {hasPriceFilter && (
                   <ActiveFilterChip
                     label={formatFilterPriceRange(activePriceRange)}
                     onRemove={() => setPriceRange(null)}
-                    isRep={isRep}
                   />
                 )}
                 {hasDateFilter && (
                   <ActiveFilterChip
                     label={dateFilterLabels[dateFilter]}
                     onRemove={() => setDateFilter("any")}
-                    isRep={isRep}
                   />
                 )}
               </div>
@@ -1494,7 +1567,7 @@ export default function ProductsList({
                   "w-fit rounded-full px-2.5 py-1 text-xs font-bold transition-[background-color,color] duration-[150ms] focus-visible:outline-none",
                   isRep
                     ? "text-[#168557] hover:bg-[#E9F8F1] hover:text-[#107349] focus-visible:ring-3 focus-visible:ring-[#168557]/15"
-                    : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15"
+                    : "text-[#9A7628] hover:bg-[#FFF8E5] hover:text-[#182033] focus-visible:ring-3 focus-visible:ring-[#C9A44C]/15",
                 )}
               >
                 Clear all
@@ -1503,7 +1576,7 @@ export default function ProductsList({
           </div>
         )}
 
-        {filtered.length > 0 ? (
+        {pagedProducts.length > 0 ? (
           <div
             key={criteriaSignature}
             className="products-catalog-results-refresh"
@@ -1536,7 +1609,7 @@ export default function ProductsList({
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((product, index) => {
+                  {pagedProducts.map((product, index) => {
                     const category = getProductCategory(product.internalRef);
 
                     return (
@@ -1554,10 +1627,7 @@ export default function ProductsList({
                         </td>
                         <td className="max-w-[360px] px-5 py-4">
                           <div className="flex min-w-0 items-center gap-3">
-                            <ProductThumbnail
-                              product={product}
-                              storedProductImages={storedProductImages}
-                            />
+                            <ProductThumbnail product={product} />
                             <ProductName product={product} />
                           </div>
                         </td>
@@ -1585,8 +1655,6 @@ export default function ProductsList({
                           <ProductActionsButton
                             product={product}
                             canManageProducts={canManageProducts}
-                            onEdit={setEditingProduct}
-                            onRemove={setProductPendingRemoval}
                           />
                         </td>
                       </tr>
@@ -1597,7 +1665,7 @@ export default function ProductsList({
             </div>
 
             <div className="grid gap-3 p-4 md:hidden">
-              {filtered.map((product, index) => {
+              {pagedProducts.map((product, index) => {
                 const category = getProductCategory(product.internalRef);
 
                 return (
@@ -1611,10 +1679,7 @@ export default function ProductsList({
                     }
                   >
                     <div className="flex min-w-0 items-start gap-3">
-                      <ProductThumbnail
-                        product={product}
-                        storedProductImages={storedProductImages}
-                      />
+                      <ProductThumbnail product={product} />
                       <div className="min-w-0 flex-1">
                         <ProductName product={product} />
                         <p className="mt-2 text-xs font-medium text-[#98A2B3]">
@@ -1624,8 +1689,6 @@ export default function ProductsList({
                       <ProductActionsButton
                         product={product}
                         canManageProducts={canManageProducts}
-                        onEdit={setEditingProduct}
-                        onRemove={setProductPendingRemoval}
                       />
                     </div>
 
@@ -1714,55 +1777,6 @@ export default function ProductsList({
           pageNavAriaLabel="Product catalog pages"
         />
       </section>
-
-      {canManageProducts && editingProduct && (
-        <AddProductDialog
-          key={editingProduct.id}
-          product={editingProduct}
-          open
-          onOpenChange={(nextOpen) => {
-            if (!nextOpen) {
-              setEditingProduct(null);
-            }
-          }}
-          onProductUpdated={handleProductUpdated}
-        />
-      )}
-
-      <AlertDialog
-        open={Boolean(productPendingRemoval)}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) {
-            setProductPendingRemoval(null);
-          }
-        }}
-      >
-        <AlertDialogContent className="rounded-[14px] border-0 bg-white shadow-[0_24px_70px_rgba(12,22,42,0.22)] sm:max-w-[460px]">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-[20px] font-semibold text-[#B42318]">
-              Remove Product
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm leading-6 text-[#667085]">
-              Are you sure you want to remove{" "}
-              <span className="font-semibold text-[#182033]">
-                {productPendingRemoval?.name || "this product"}
-              </span>
-              ?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="h-10 cursor-pointer rounded-[9px] border-[#E5E8EF] px-4 font-semibold text-[#475467]">
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmRemove}
-              className="h-10 cursor-pointer rounded-[9px] border border-[#B42318] bg-[#B42318] px-4 font-semibold text-white hover:bg-white hover:text-[#B42318]"
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

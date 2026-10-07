@@ -81,11 +81,17 @@ const statusMeta: Record<
 };
 
 function getForecastStatus(forecast: ForecastManagement): ForecastStatus {
-  if (forecast.isApproved) {
+  const status = forecast.status?.toUpperCase();
+
+  if (status === "APPROVED" || forecast.isApproved) {
     return "approved";
   }
 
-  return forecast.supervisorFeedback?.trim() ? "rejected" : "pending";
+  if (status === "REJECTED") {
+    return "rejected";
+  }
+
+  return "pending";
 }
 
 function formatForecastDate(value: string, pattern = "MMM d, yyyy") {
@@ -762,6 +768,9 @@ export default function ForecastApprovalCenter({
   const displayTotalCount = hasClientFilters
     ? filteredForecasts.length
     : totalCount || forecasts.length;
+  const visibleForecasts = hasClientFilters
+    ? filteredForecasts
+    : filteredForecasts.slice((displayPage - 1) * limit, displayPage * limit);
 
   function clearFilters() {
     setSearchQuery("");
@@ -876,7 +885,7 @@ export default function ForecastApprovalCenter({
           />
         ) : (
           <div className="grid gap-3 p-4 sm:p-5">
-            {filteredForecasts.map((forecast) => (
+            {visibleForecasts.map((forecast) => (
               <ForecastRequestCard
                 key={forecast.id}
                 forecast={forecast}

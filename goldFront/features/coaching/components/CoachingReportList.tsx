@@ -48,7 +48,7 @@ export default function CoachingReportList({
 
   const counts = useMemo(() => {
     const pending = reports.filter(
-      (r) => r.status === "Pending Feedback"
+      (r) => r.status === "Pending Feedback",
     ).length;
     const completed = reports.filter((r) => r.status === "Completed").length;
     return { all: reports.length, pending, completed };
@@ -109,19 +109,19 @@ export default function CoachingReportList({
     ];
 
     return (
-      <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-5 space-y-5">
+      <div className="space-y-5 rounded-[14px] border border-[#E5E8EF] bg-white p-5">
         {/* Filter Tabs */}
-        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-[12px] bg-[#F6F8FB] p-1 border border-[#E5E8EF]">
+        <div className="flex w-fit flex-wrap items-center gap-1.5 rounded-[12px] border border-[#E5E8EF] bg-[#F6F8FB] p-1">
           {repTabs.map((tab) => {
             const isActive = filter === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
-                className={`flex cursor-pointer items-center gap-2 rounded-[9px] px-3 py-1.5 text-xs font-semibold transition-all border ${
+                className={`flex cursor-pointer items-center gap-2 rounded-[9px] border px-3 py-1.5 text-xs font-semibold transition-all ${
                   isActive
-                    ? "bg-[#E9F8F1] border-[#CBEFDD] text-[#168557] shadow-2xs"
-                    : "bg-white border-[#E5E8EF] text-[#667085] hover:text-[#182033]"
+                    ? "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557] shadow-2xs"
+                    : "border-[#E5E8EF] bg-white text-[#667085] hover:text-[#182033]"
                 }`}
               >
                 {tab.label}
@@ -129,7 +129,7 @@ export default function CoachingReportList({
                   className={`flex h-4.5 min-w-4.5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
                     isActive
                       ? "bg-[#168557] text-white"
-                      : "bg-[#F6F8FB] text-[#344054] border border-[#E5E8EF]"
+                      : "border border-[#E5E8EF] bg-[#F6F8FB] text-[#344054]"
                   }`}
                 >
                   {tab.count}
@@ -142,19 +142,24 @@ export default function CoachingReportList({
         {/* Reports List */}
         <div>
           {visible.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] py-10 px-6 text-center max-h-[220px]">
-              <ListChecks className="size-8 text-[#98A2B3] mb-2" />
+            <div className="flex max-h-[220px] flex-col items-center justify-center rounded-[12px] border border-dashed border-[#E5E8EF] bg-[#F9FAFB] px-6 py-10 text-center">
+              <ListChecks className="mb-2 size-8 text-[#98A2B3]" />
               <p className="text-sm font-bold text-[#182033]">
                 No coaching sessions found
               </p>
-              <p className="text-xs text-[#667085] mt-1 max-w-sm">
+              <p className="mt-1 max-w-sm text-xs text-[#667085]">
                 Your coaching sessions and supervisor feedback will appear here.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="coaching-reveal is-revealed grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2">
               {visible.map((r, index) => (
-                <CoachingReportCard key={r.id} report={r} isRep={isRep} animationIndex={index} />
+                <CoachingReportCard
+                  key={r.id}
+                  report={r}
+                  isRep={isRep}
+                  animationIndex={index}
+                />
               ))}
             </div>
           )}
@@ -177,7 +182,8 @@ export default function CoachingReportList({
     all: {
       icon: ClipboardCheck,
       title: "No coaching reports yet",
-      description: "Coaching reports will appear here once sessions are documented.",
+      description:
+        "Coaching reports will appear here once sessions are documented.",
     },
     pending: {
       icon: MessageSquareText,

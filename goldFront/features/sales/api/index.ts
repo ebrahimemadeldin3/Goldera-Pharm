@@ -12,6 +12,18 @@ function buildSalesQueryString(params?: SalesQueryParams) {
   if (params.date) {
     query.set("date", params.date);
   }
+  if (params.dateFrom) {
+    query.set("dateFrom", params.dateFrom);
+  }
+  if (params.dateTo) {
+    query.set("dateTo", params.dateTo);
+  }
+  if (params.timeFilter && params.timeFilter !== "all") {
+    query.set("timeFilter", params.timeFilter);
+  }
+  if (params.q?.trim()) {
+    query.set("q", params.q.trim());
+  }
   if (params.sheetName) {
     query.set("sheetName", params.sheetName);
   }

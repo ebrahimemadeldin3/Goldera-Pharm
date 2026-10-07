@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function Page({
   searchParams,
 }: {
-  searchParams?: Promise<{ page?: string; limit?: string; subRegion?: string }> | { page?: string; limit?: string; subRegion?: string };
+  searchParams?: Promise<{ page?: string; limit?: string; subRegion?: string }>;
 }) {
   const params = await searchParams;
 

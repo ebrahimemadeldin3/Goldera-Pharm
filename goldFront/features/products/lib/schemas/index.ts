@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const createProductSchema = z.object({
-  name: z.string().min(1, "Product name is required"),
-  internalRef: z.string().min(1, "Internal reference is required"),
+  name: z.string().trim().min(1, "Product name is required"),
+  internalRef: z.string().trim().min(1, "Internal reference is required"),
   salesPrice: z.number().positive("Sales price must be a positive number"),
 });
 

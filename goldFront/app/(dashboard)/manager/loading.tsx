@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import { PageContainer } from "@/components/layout/page-container";
 import { DashboardSkeleton } from "@/components/ui/skeletons/DashboardSkeleton";
-import { DashboardSkeleton as ManagerSkeleton } from "@/features/dashboard/components/manager/DashboardPrimitives";
+import { OverviewSkeleton as ManagerSkeleton } from "@/features/dashboard/components/manager/overview/OverviewPrimitives";
 
 export default function ManagerDashboardLoading() {
   const pathname = usePathname();

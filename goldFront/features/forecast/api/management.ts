@@ -39,6 +39,7 @@ function transformForecast(
     periodDate: apiForecast.periodDate,
     productForecasts: apiForecast.productForecasts,
     notes: apiForecast.notes,
+    status: apiForecast.status,
     isApproved: apiForecast.isApproved,
     supervisorFeedback: apiForecast.supervisorFeedback,
     createdAt: apiForecast.createdAt,

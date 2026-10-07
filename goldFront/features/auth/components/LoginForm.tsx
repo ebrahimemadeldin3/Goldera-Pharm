@@ -3,13 +3,10 @@
 import { useState, useTransition } from "react";
 import type { CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -45,7 +42,6 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps = {}) {
     defaultValues: {
       email: "",
       password: "",
-      remember: true,
     },
   });
 
@@ -210,42 +206,6 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps = {}) {
                 );
               }}
             />
-
-            <div
-              className="auth-stagger flex flex-wrap items-center justify-between gap-3 pt-1"
-              style={{ "--auth-delay": "300ms" } as CSSProperties}
-            >
-              <FormField
-                control={form.control}
-                name="remember"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2">
-                    <FormControl>
-                      <Checkbox
-                        id="remember"
-                        checked={field.value}
-                        onCheckedChange={(v) => field.onChange(Boolean(v))}
-                        disabled={isPending}
-                        className="size-4 cursor-pointer rounded-[4px] border-white/15 bg-[#272F3D] text-[#101827] focus-visible:ring-2 focus-visible:ring-[#D0A000]/30 data-[state=checked]:border-[#D0A000] data-[state=checked]:bg-[#D0A000] data-[state=checked]:text-[#101827]"
-                      />
-                    </FormControl>
-                    <Label
-                      htmlFor="remember"
-                      className="mb-0 cursor-pointer text-[13px] font-medium text-[#C8D0DC]"
-                    >
-                      Remember Me
-                    </Label>
-                  </FormItem>
-                )}
-              />
-
-              <Link
-                href="#"
-                className="auth-link rounded-md text-[13px] font-medium text-[#D0A000] transition-colors hover:text-[#E0B119] focus-visible:ring-2 focus-visible:ring-[#D0A000]/35 focus-visible:outline-none"
-              >
-                Forgot Password
-              </Link>
-            </div>
 
             {error && (
               <div

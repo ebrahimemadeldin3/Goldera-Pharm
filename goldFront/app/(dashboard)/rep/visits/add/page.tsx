@@ -1,4 +1,5 @@
 import AddVisitForm from "@/features/visits/components/AddVisitForm";
+import { VisitsErrorState } from "@/features/visits/components/VisitsErrorState";
 import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -9,8 +10,20 @@ export const dynamic = "force-dynamic";
 
 export default async function Page() {
   const doctorsResponse = await getSchedulableDoctorsAction();
-  const doctors = doctorsResponse.success ? doctorsResponse.data : [];
-  
+
+  if (!doctorsResponse.success) {
+    return (
+      <PageContainer className="flex min-h-[calc(100vh-195px)] flex-col gap-6">
+        <VisitsErrorState
+          title="Unable to load doctors"
+          message={doctorsResponse.error?.message}
+        />
+      </PageContainer>
+    );
+  }
+
+  const doctors = doctorsResponse.data ?? [];
+
   return (
     <PageContainer className="flex min-h-[calc(100vh-195px)] flex-col gap-6">
       <div className="flex items-center gap-2">

@@ -37,7 +37,7 @@ export default function RepPendingRequests({
     .filter((req) => req.status === "PENDING")
     .slice(0, 3);
 
-  const pendingCount = pendingRequests.length;
+  const pendingCount = requests.filter((request) => request.status === "PENDING").length;
 
   return (
     <div className="flex flex-col justify-between rounded-[14px] border border-[#E5E8EF] bg-white p-5 shadow-none transition-all">

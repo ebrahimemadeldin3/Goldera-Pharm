@@ -15,6 +15,7 @@ export interface ForecastManagementApiResponse {
     productUnits: number;
   }[];
   notes: string | null;
+  status: string;
   isApproved: boolean;
   supervisorFeedback: string | null;
   createdAt: string;
@@ -43,6 +44,7 @@ export interface ForecastManagement {
     productUnits: number;
   }[];
   notes: string | null;
+  status: string;
   isApproved: boolean;
   supervisorFeedback: string | null;
   createdAt: string;

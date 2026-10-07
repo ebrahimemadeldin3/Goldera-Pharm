@@ -1,0 +1,248 @@
+{
+  "total": 60,
+  "passed": 60,
+  "failed": 0,
+  "removedSyntheticAssets": 29,
+  "results": [
+    {
+      "name": "Notifications require authentication",
+      "pass": true
+    },
+    {
+      "name": "Rep notification feed contains actual decisions",
+      "pass": true
+    },
+    {
+      "name": "Manager notification feed contains team pending requests",
+      "pass": true
+    },
+    {
+      "name": "Team includes assigned territory",
+      "pass": true
+    },
+    {
+      "name": "Manager cannot modify outside team member",
+      "pass": true
+    },
+    {
+      "name": "Manager cannot delete self",
+      "pass": true
+    },
+    {
+      "name": "Manager cannot disable self",
+      "pass": true
+    },
+    {
+      "name": "Profile cannot change leave balance",
+      "pass": true
+    },
+    {
+      "name": "Manager cannot write arbitrary member ID",
+      "pass": true
+    },
+    {
+      "name": "Manager role filter works for visits and team screens",
+      "pass": true
+    },
+    {
+      "name": "Supervisor dashboard endpoint serves scoped data",
+      "pass": true
+    },
+    {
+      "name": "Supervisor sales endpoint serves assigned territories",
+      "pass": true
+    },
+    {
+      "name": "Sales rep selector cannot expose another manager team",
+      "pass": true
+    },
+    {
+      "name": "Unassigned rep does not inherit all company sales",
+      "pass": true
+    },
+    {
+      "name": "Bulk doctor import rejects empty names atomically",
+      "pass": true
+    },
+    {
+      "name": "Coaching acknowledgement requires an actual action",
+      "pass": true
+    },
+    {
+      "name": "Bulk pharmacy import validates all rows before saving",
+      "pass": true
+    },
+    {
+      "name": "Bulk pharmacy import saves selected records",
+      "pass": true
+    },
+    {
+      "name": "Bulk doctor import saves selected records",
+      "pass": true
+    },
+    {
+      "name": "Bulk import rejects a batch above the supported limit",
+      "pass": true
+    },
+    {
+      "name": "Manager assigned plan creates visits for the chosen representative",
+      "pass": true
+    },
+    {
+      "name": "Plans cannot be assigned outside the team",
+      "pass": true
+    },
+    {
+      "name": "Rep dashboard MTD excludes previous-month sales",
+      "pass": true
+    },
+    {
+      "name": "Concurrent report submission persists exactly once",
+      "pass": true
+    },
+    {
+      "name": "Completed visit cannot be silently rewritten",
+      "pass": true
+    },
+    {
+      "name": "Report rating validation preserves scheduled visit",
+      "pass": true
+    },
+    {
+      "name": "Cancelled visit rejects report",
+      "pass": true
+    },
+    {
+      "name": "Visit completion cannot bypass report",
+      "pass": true
+    },
+    {
+      "name": "Supervisor report filters do not expose another team",
+      "pass": true
+    },
+    {
+      "name": "Plan without doctors gives validation feedback",
+      "pass": true
+    },
+    {
+      "name": "Reversed plan dates rejected",
+      "pass": true
+    },
+    {
+      "name": "Appraisal uses the displayed 0–100 scale",
+      "pass": true
+    },
+    {
+      "name": "Appraisal rejects scores above 100",
+      "pass": true
+    },
+    {
+      "name": "String false is not an acknowledgement",
+      "pass": true
+    },
+    {
+      "name": "regions create/edit/delete persists",
+      "pass": true
+    },
+    {
+      "name": "Rep cannot manage regions",
+      "pass": true
+    },
+    {
+      "name": "regions blank name rejected",
+      "pass": true
+    },
+    {
+      "name": "sub-regions create/edit/delete persists",
+      "pass": true
+    },
+    {
+      "name": "Rep cannot manage sub-regions",
+      "pass": true
+    },
+    {
+      "name": "sub-regions blank name rejected",
+      "pass": true
+    },
+    {
+      "name": "accounts create/edit/delete persists",
+      "pass": true
+    },
+    {
+      "name": "Rep cannot manage accounts",
+      "pass": true
+    },
+    {
+      "name": "accounts blank name rejected",
+      "pass": true
+    },
+    {
+      "name": "Referenced regions cannot be deleted",
+      "pass": true
+    },
+    {
+      "name": "Referenced sub-regions cannot be deleted",
+      "pass": true
+    },
+    {
+      "name": "Referenced accounts cannot be deleted",
+      "pass": true
+    },
+    {
+      "name": "Canonical multipart sample data saves associations",
+      "pass": true
+    },
+    {
+      "name": "Spoofed PDF rejected before upload",
+      "pass": true
+    },
+    {
+      "name": "Oversized attachment gets 413",
+      "pass": true
+    },
+    {
+      "name": "Spreadsheet import keeps the final valid row",
+      "pass": true
+    },
+    {
+      "name": "Spreadsheet total row is excluded explicitly",
+      "pass": true
+    },
+    {
+      "name": "Unknown product import is atomic",
+      "pass": true
+    },
+    {
+      "name": "CSV advertised by UI can be imported",
+      "pass": true
+    },
+    {
+      "name": "Sales date filter and rep sales endpoint work",
+      "pass": true
+    },
+    {
+      "name": "Product used in sales cannot be deleted",
+      "pass": true
+    },
+    {
+      "name": "Pharmacy used in sales cannot be deleted",
+      "pass": true
+    },
+    {
+      "name": "Real PDF request upload preserves every filename",
+      "pass": true
+    },
+    {
+      "name": "Expense total is derived from validated line items",
+      "pass": true
+    },
+    {
+      "name": "Valid leave PDF upload and approval persists",
+      "pass": true
+    },
+    {
+      "name": "Synthetic upload assets removed from Cloudinary",
+      "pass": true
+    }
+  ]
+}

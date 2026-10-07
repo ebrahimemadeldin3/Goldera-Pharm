@@ -1,15 +1,17 @@
-import { Target, MapPin, Clock } from "lucide-react";
+import { Target, MapPin, Clock, DollarSign } from "lucide-react";
 
 type RepKPICardsProps = {
   targetAchievement?: string;
   coverage?: string;
   pendingRequestsCount?: number;
+  totalSales?: number;
 };
 
 export function RepKPICards({
   targetAchievement = "0%",
   coverage = "0%",
   pendingRequestsCount = 0,
+  totalSales,
 }: RepKPICardsProps) {
   // Parse numeric values safely for progress bars
   const parsePercent = (val: string) => {
@@ -20,8 +22,22 @@ export function RepKPICards({
   const targetPercent = parsePercent(targetAchievement);
   const coveragePercent = parsePercent(coverage);
 
+  const formattedSales =
+    totalSales !== undefined
+      ? new Intl.NumberFormat("en-US", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0,
+        }).format(totalSales)
+      : null;
+
+  const hasSalesCard = totalSales !== undefined;
+
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <div
+      className={`grid grid-cols-1 gap-4 ${
+        hasSalesCard ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3"
+      }`}
+    >
       {/* 1. Target Achievement Card */}
       <div className="flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-shadow hover:border-[#D8DEE8]">
         <div className="flex items-center justify-between">
@@ -78,7 +94,31 @@ export function RepKPICards({
         </div>
       </div>
 
-      {/* 3. Pending Requests Card */}
+      {/* 3. Personal Sales Card (if provided) */}
+      {hasSalesCard && (
+        <div className="flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-shadow hover:border-[#D8DEE8]">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#667085]">
+              Sales (MTD)
+            </span>
+            <div className="flex size-9 items-center justify-center rounded-[10px] bg-[#F4F3FF] text-[#6941C6]">
+              <DollarSign size={18} />
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <div className="flex items-baseline justify-between">
+              <span className="text-2xl font-semibold tracking-tight text-[#182033]">
+                SAR {formattedSales}
+              </span>
+              <span className="text-xs font-medium text-[#6941C6]">Untaxed Total</span>
+            </div>
+            <p className="text-xs text-[#667085]">Current billing cycle</p>
+          </div>
+        </div>
+      )}
+
+      {/* 4. Pending Requests Card */}
       <div className="flex flex-col justify-between gap-3 rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none transition-shadow hover:border-[#D8DEE8]">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-[0.04em] text-[#667085]">

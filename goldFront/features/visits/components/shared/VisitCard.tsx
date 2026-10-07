@@ -36,6 +36,7 @@ type VisitCardProps = {
   reportBasePath?: string;
   animationDelay?: string;
   managerTheme?: boolean;
+  density?: "comfortable" | "compact";
 };
 
 const statusBadgeStyles: Record<VisitStatus, string> = {
@@ -103,11 +104,26 @@ function compactId(value: string) {
   return `${value.slice(0, 8)}...${value.slice(-6)}`;
 }
 
+function isScheduledUpcoming(visit: Visit) {
+  if (visit.status !== "SCHEDULED") return false;
+
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const visitStart = new Date(
+    visit.date.getFullYear(),
+    visit.date.getMonth(),
+    visit.date.getDate(),
+  );
+
+  return visitStart >= todayStart;
+}
+
 export default function VisitCard({
   visit,
   reportBasePath,
   animationDelay = "0ms",
   managerTheme = false,
+  density = "comfortable",
 }: VisitCardProps) {
   const pathname = usePathname();
   const { role } = useRoleUI();
@@ -137,6 +153,198 @@ export default function VisitCard({
   const detailsLabel = isManager ? "Details" : "Technical Details";
   const hasAssignedLocation = Boolean(visit.place);
   const scheduledTimeLabel = formatScheduledTime(visit.timeLabel);
+  const assignedRepName =
+    visit.medicalRepName || (isRep ? visit.createdBy : undefined);
+  const facilityLabel = visit.facility || visit.place;
+  const specialtyLabel = visit.doctor?.specialty;
+  const [scheduledTimeMain, scheduledTimePeriod] =
+    scheduledTimeLabel.includes(" ")
+      ? scheduledTimeLabel.split(" ")
+      : [scheduledTimeLabel, ""];
+
+  if (density === "compact") {
+    return (
+      <Card
+        className={cn(
+          "visits-record-card visits-row-enter group/visit rounded-[12px] border border-[#E3E7EF] bg-white p-0 focus-within:outline-none",
+          isManager
+            ? "shadow-[0_1px_2px_rgba(16,24,40,0.03)]"
+            : "shadow-none",
+          isRep
+            ? "focus-within:ring-2 focus-within:ring-[#168557]/25"
+            : "focus-within:ring-2 focus-within:ring-[#C9A44C]/25",
+        )}
+        style={
+          {
+            "--visits-row-delay": animationDelay,
+          } as CSSProperties
+        }
+      >
+        <div className="grid min-h-[94px] grid-cols-[72px_minmax(0,1fr)] gap-0 sm:grid-cols-[82px_minmax(0,1fr)_auto]">
+          <div className="flex flex-col items-center justify-center border-r border-[#EEF1F6] bg-[#FBFCFE] px-2 py-3 text-center">
+            <span className="font-mono text-sm leading-5 font-bold tabular-nums text-[#101D36]">
+              {scheduledTimeMain}
+            </span>
+            {scheduledTimePeriod && (
+              <span className="mt-0.5 text-[10px] leading-none font-bold tracking-[0.08em] text-[#667085] uppercase">
+                {scheduledTimePeriod}
+              </span>
+            )}
+          </div>
+
+          <div className="min-w-0 px-3 py-3 sm:px-4">
+            <div className="flex min-w-0 items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h4
+                  className="truncate text-sm leading-5 font-semibold text-[#101D36]"
+                  dir="auto"
+                  title={visit.person || "Unnamed Doctor"}
+                >
+                  {visit.person || "Unnamed Doctor"}
+                </h4>
+                {facilityLabel && (
+                  <p
+                    className="mt-0.5 truncate text-xs leading-5 font-medium text-[#667085]"
+                    dir="auto"
+                    title={facilityLabel}
+                  >
+                    {facilityLabel}
+                  </p>
+                )}
+              </div>
+
+              <span
+                className={cn(
+                  "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[10px] font-bold",
+                  statusBadgeStyles[visit.status],
+                )}
+                role="status"
+              >
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    statusDotStyles[visit.status],
+                  )}
+                  aria-hidden="true"
+                />
+                {statusLabel}
+              </span>
+            </div>
+
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-[#667085]">
+              {isManager && assignedRepName && (
+                <span
+                  className="inline-flex min-w-0 max-w-full items-center gap-1.5"
+                  title={assignedRepName}
+                >
+                  <UserRound
+                    className="size-3.5 shrink-0 text-[#98A2B3]"
+                    aria-hidden="true"
+                  />
+                  <span className="truncate" dir="auto">
+                    {assignedRepName}
+                  </span>
+                </span>
+              )}
+              {isManager && !assignedRepName && (
+                <span className="text-[#8A94A6]">
+                  Rep assignment unavailable
+                </span>
+              )}
+              {visit.visitType && (
+                <>
+                  <span className="text-[#C3CAD6]" aria-hidden="true">
+                    |
+                  </span>
+                  <span className="font-medium text-[#667085]">
+                    {visit.visitType}
+                  </span>
+                </>
+              )}
+              {specialtyLabel && (
+                <>
+                  <span className="text-[#C3CAD6]" aria-hidden="true">
+                    |
+                  </span>
+                  <span className="font-medium text-[#8A94A6]">
+                    {specialtyLabel}
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="col-span-2 flex items-center justify-end gap-2 border-t border-[#EEF1F6] px-3 py-2 sm:col-span-1 sm:border-t-0 sm:py-3 sm:pr-3 sm:pl-0">
+            <button
+              type="button"
+              aria-expanded={showTechDetails}
+              onClick={() => setShowTechDetails(!showTechDetails)}
+              className={cn(
+                "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] border border-transparent px-2.5 text-[11px] font-bold transition-[background-color,border-color,color] duration-[160ms] focus-visible:outline-none",
+                isRep
+                  ? "text-[#168557] hover:border-[#CBEFDD] hover:bg-[#E9F8F1] focus-visible:ring-2 focus-visible:ring-[#168557]/20"
+                  : "text-[#101D36] hover:border-[#E9DDB8] hover:bg-[#FFF8E5] focus-visible:ring-2 focus-visible:ring-[#C9A44C]/20",
+              )}
+            >
+              <span>Details</span>
+              <ChevronDown
+                className={cn(
+                  "size-3.5 text-[#B18732] transition-transform duration-200 motion-reduce:transition-none",
+                  showTechDetails && "rotate-180",
+                )}
+                aria-hidden="true"
+              />
+            </button>
+
+            {reportBasePath && !isCompleted && (
+              <Link
+                href={`${reportBasePath}?visitId=${visit.id}`}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-[8px] bg-[#168557] px-2.5 text-[11px] font-semibold text-white transition-[background-color,transform] duration-[160ms] hover:-translate-y-px hover:bg-[#107349] focus-visible:ring-2 focus-visible:ring-[#20A66A]/25 focus-visible:outline-none motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                <CircleCheckBig className="size-3.5" aria-hidden="true" />
+                <span>Complete</span>
+              </Link>
+            )}
+          </div>
+        </div>
+
+        {showTechDetails && (
+          <div className="visits-tech-details border-t border-[#EEF1F6] bg-[#FBFCFE] px-4 py-3">
+            <dl className="grid gap-3 text-xs sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#8A94A6]">Visit Date</dt>
+                <dd className="mt-1 font-semibold text-[#182033]">
+                  {visitDateLabel}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#8A94A6]">
+                  Medical Representative
+                </dt>
+                <dd className="mt-1 truncate font-semibold text-[#182033]">
+                  {assignedRepName || "Not assigned by API"}
+                </dd>
+              </div>
+              <div className="min-w-0">
+                <dt className="font-semibold text-[#8A94A6]">Visit Type</dt>
+                <dd className="mt-1 truncate font-semibold text-[#182033]">
+                  {visit.visitType || "Not selected"}
+                </dd>
+              </div>
+              {visit.notes && (
+                <div className="min-w-0 sm:col-span-3">
+                  <dt className="font-semibold text-[#8A94A6]">Notes</dt>
+                  <dd className="mt-1 line-clamp-3 text-[#344054]">
+                    {visit.notes}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
+      </Card>
+    );
+  }
 
   return (
     <Card
@@ -169,6 +377,10 @@ export default function VisitCard({
           </div>
 
           <div className="min-w-0 flex-1">
+            <p className="mb-1 text-[11px] font-bold tracking-[0.04em] text-[#667085] uppercase">
+              {scheduledTimeLabel}
+            </p>
+
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h4 className="truncate text-base leading-snug font-semibold text-[#182033]">
                 {visit.person || "Unnamed Doctor"}
@@ -192,29 +404,31 @@ export default function VisitCard({
             </div>
 
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium text-[#667085]">
-              <span className="flex min-w-0 items-center gap-1.5">
-                <MapPin className="size-3.5 shrink-0 text-[#98A2B3]" />
-                <span
-                  className={cn(
-                    "truncate",
-                    isManager &&
-                      (hasAssignedLocation
-                        ? "text-[#344054]"
-                        : "text-[#98A2B3]"),
-                  )}
-                  title={plannedLocation}
-                >
-                  {plannedLocation}
+              {hasAssignedLocation && (
+                <span className="flex min-w-0 items-center gap-1.5">
+                  <MapPin className="size-3.5 shrink-0 text-[#98A2B3]" />
+                  <span
+                    className={cn("truncate", isManager && "text-[#344054]")}
+                    title={plannedLocation}
+                  >
+                    {plannedLocation}
+                  </span>
                 </span>
-              </span>
+              )}
 
               {(visit.timeLabel || visit.duration) && (
                 <span className="flex shrink-0 items-center gap-1.5">
                   <Clock3 className="size-3.5 shrink-0 text-[#98A2B3]" />
-                  <span>{visit.timeLabel || "Scheduled"}</span>
+                  <span>{scheduledTimeLabel}</span>
                   {visit.duration && (
                     <span className="text-[#98A2B3]">({visit.duration})</span>
                   )}
+                </span>
+              )}
+
+              {isScheduledUpcoming(visit) && (
+                <span className="rounded-full bg-[#FFF8E5] px-2 py-0.5 text-[11px] font-bold text-[#8A6515]">
+                  Upcoming
                 </span>
               )}
             </div>
@@ -249,7 +463,7 @@ export default function VisitCard({
               isManager ? "break-words" : "truncate",
             )}
           >
-            {visit.visitType || "Routine Visit"}
+            {visit.visitType || "Not selected"}
           </dd>
         </div>
 
@@ -263,9 +477,9 @@ export default function VisitCard({
               "mt-1 font-semibold text-[#182033]",
               isManager ? "leading-5 break-words" : "truncate",
             )}
-            title={visit.createdBy || "Assigned Rep"}
+            title={assignedRepName || "Assigned Rep"}
           >
-            {visit.createdBy || "Assigned Rep"}
+            {assignedRepName || "Not assigned by API"}
           </dd>
         </div>
 
@@ -355,11 +569,22 @@ export default function VisitCard({
                     </dt>
                     <dd
                       className="mt-1 font-semibold break-words text-[#182033]"
-                      title={visit.createdBy || "Assigned Rep"}
+                      title={assignedRepName || "Assigned Rep"}
                     >
-                      {visit.createdBy || "Assigned Rep"}
+                      {assignedRepName || "Not assigned by API"}
                     </dd>
                   </div>
+                  {visit.createdBy && (
+                    <div className="min-w-0 sm:col-span-2">
+                      <dt className="flex items-center gap-1.5 font-semibold text-[#8A94A6]">
+                        <UserRound className="size-3.5 text-[#B18732]" />
+                        Created By
+                      </dt>
+                      <dd className="mt-1 font-semibold break-words text-[#182033]">
+                        {visit.createdBy}
+                      </dd>
+                    </div>
+                  )}
                   <div className="min-w-0 sm:col-span-2">
                     <dt className="flex items-center gap-1.5 font-semibold text-[#8A94A6]">
                       <MapPin className="size-3.5 text-[#B18732]" />
@@ -374,7 +599,7 @@ export default function VisitCard({
                       )}
                       title={plannedLocation}
                     >
-                      {plannedLocation}
+                      {hasAssignedLocation ? plannedLocation : "Not selected"}
                     </dd>
                   </div>
                 </dl>

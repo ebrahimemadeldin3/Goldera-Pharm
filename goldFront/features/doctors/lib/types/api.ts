@@ -22,18 +22,18 @@ export interface CreateDoctorDto {
 export interface UpdateDoctorDto {
   nameEN?: string;
   nameAR?: string;
-  email?: string;
+  email?: string | null;
   phone?: string;
-  avgPatientsPerDay?: number;
+  avgPatientsPerDay?: number | null;
   specialty?: string;
   grade?: string;
-  LicenseNumber?: string;
+  LicenseNumber?: string | null;
   accountName?: string;
   subRegion?: string;
-  area?: string;
+  area?: string | null;
   isActive?: boolean;
-  latitude?: number;
-  longitude?: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 // ! this interface is used in visits feature ( the creation form ) so be careful when modifying it ( only name , id are needed)

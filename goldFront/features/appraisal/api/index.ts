@@ -40,6 +40,36 @@ export async function createAppraisal(
   return response.data;
 }
 
+function calculateAppraisalStats(reviews: Review[]) {
+  const avgScore =
+    reviews.length > 0
+      ? Math.round(
+          reviews.reduce((acc, review) => acc + review.overallCurrent, 0) /
+            reviews.length,
+        )
+      : 0;
+
+  return {
+    avgScore,
+    excellentCount: reviews.filter(
+      (review) => review.statusBadge === "Excellent",
+    ).length,
+    improvingCount: reviews.filter(
+      (review) => review.statusBadge === "Improving",
+    ).length,
+    totalReviews: reviews.length,
+  };
+}
+
+async function getAppraisalStatsSource(response: GetAppraisalsResponse) {
+  if ((response.results ?? response.data.length) <= response.data.length) {
+    return response.data;
+  }
+
+  const statsResponse = await getAppraisals(1, response.results);
+  return statsResponse.data;
+}
+
 /**
  * Get all appraisal reviews
  */
@@ -61,33 +91,17 @@ export async function getAppraisalReviews(
     const response = await getAppraisals(page, limit);
     const appraisals = response.data;
     const reviews = appraisals.map(mapAppraisalToReview);
-
-    // Calculate stats
-    const avgScore =
-      reviews.length > 0
-        ? Math.round(
-            reviews.reduce((acc, r) => acc + r.overallCurrent, 0) /
-              reviews.length,
-          )
-        : 0;
-
-    const excellentCount = reviews.filter(
-      (r) => r.statusBadge === "Excellent",
-    ).length;
-
-    const improvingCount = reviews.filter(
-      (r) => r.statusBadge === "Improving",
-    ).length;
+    const statsReviews = (await getAppraisalStatsSource(response)).map(
+      mapAppraisalToReview,
+    );
 
     return {
       success: true,
       reviews,
       totalCount: response.results ?? reviews.length,
       stats: {
-        avgScore,
-        excellentCount,
-        improvingCount,
-        totalReviews: reviews.length,
+        ...calculateAppraisalStats(statsReviews),
+        totalReviews: response.results ?? statsReviews.length,
       },
     };
   } catch (error) {

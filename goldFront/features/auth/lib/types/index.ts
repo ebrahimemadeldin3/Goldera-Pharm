@@ -46,4 +46,5 @@ export type NotificationItem = {
   message: string;
   time: string;
   unread?: boolean;
+  href?: string;
 };

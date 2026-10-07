@@ -6,7 +6,10 @@ import {
   TrendingUp,
 } from "lucide-react";
 import type { CSSProperties } from "react";
+import { redirect } from "next/navigation";
 import { LoginForm } from "@/features/auth/components/LoginForm";
+import { getCurrentUser } from "@/features/auth/api";
+import { getRoleRedirectPath } from "@/features/auth/lib/types/roles";
 
 const brandFeatures = [
   {
@@ -82,7 +85,12 @@ function BrandFeatures() {
   );
 }
 
-export default function Page() {
+export default async function Page() {
+  const user = await getCurrentUser();
+  if (user) {
+    redirect(getRoleRedirectPath(user.data.role));
+  }
+
   return (
     <main className="auth-screen relative isolate flex min-h-dvh min-h-screen items-center justify-center overflow-x-hidden px-4 py-6 text-white sm:px-6 lg:px-8">
       <div className="auth-shell relative z-10 grid overflow-hidden rounded-[24px] border border-white/[0.075] shadow-[0_28px_80px_rgba(4,10,24,0.36)] lg:grid-cols-[52fr_48fr]">

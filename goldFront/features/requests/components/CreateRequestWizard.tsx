@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useForm, type Resolver } from "react-hook-form";
+import { useForm, useWatch, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   submitRequestSchema,
@@ -43,6 +43,7 @@ import {
   Edit3,
   Trash2,
   Paperclip,
+  Plus,
   X,
   Stethoscope,
 } from "lucide-react";
@@ -122,7 +123,7 @@ export default function CreateRequestWizard({
     Array<{ productId: string; productName: string; amount: number }>
   >([]);
   const [selectedDoctorIds, setSelectedDoctorIds] = useState<string[]>([]);
-  const [expenseItems] = useState<
+  const [expenseItems, setExpenseItems] = useState<
     Array<{ name: string; amount: number }>
   >([{ name: "Travel / Per Diem", amount: 100 }]);
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -134,7 +135,9 @@ export default function CreateRequestWizard({
   const [attachmentError, setAttachmentError] = useState<string>("");
 
   const form = useForm<SubmitRequestFormValues>({
-    resolver: (zodResolver(submitRequestSchema) as unknown) as Resolver<SubmitRequestFormValues>,
+    resolver: zodResolver(
+      submitRequestSchema,
+    ) as unknown as Resolver<SubmitRequestFormValues>,
     defaultValues: {
       type: "EXPENSE",
       urgency: "medium",
@@ -149,6 +152,8 @@ export default function CreateRequestWizard({
       budget: 500,
     },
   });
+
+  const watched = useWatch({ control: form.control });
 
   const handleSelectType = (type: RequestType) => {
     setSelectedType(type);
@@ -254,7 +259,10 @@ export default function CreateRequestWizard({
             sampleData: sampleItems,
           };
         } else if (selectedType === "PERSONAL_EXPENSE") {
-          const totalAmount = expenseItems.reduce((s, i) => s + (i.amount || 0), 0);
+          const totalAmount = expenseItems.reduce(
+            (s, i) => s + (i.amount || 0),
+            0,
+          );
           payload = {
             ...payload,
             visitedCity: values.visitedCity,
@@ -327,11 +335,11 @@ export default function CreateRequestWizard({
             const isCurrent = step === s.id;
             const isCompleted = step > s.id;
             return (
-              <li key={s.id} className="flex items-center flex-1">
+              <li key={s.id} className="flex flex-1 items-center">
                 <button
                   type="button"
                   onClick={() => s.id < step && setStep(s.id as 1 | 2 | 3)}
-                  className="flex items-center gap-2.5 outline-none cursor-pointer"
+                  className="flex cursor-pointer items-center gap-2.5 outline-none"
                 >
                   <span
                     className={cn(
@@ -339,8 +347,8 @@ export default function CreateRequestWizard({
                       isCurrent
                         ? "bg-[#168557] text-white ring-4 ring-[#E9F8F1]"
                         : isCompleted
-                        ? "bg-[#168557] text-white"
-                        : "bg-[#F4F6FA] text-[#667085] border border-[#E5E8EF]"
+                          ? "bg-[#168557] text-white"
+                          : "border border-[#E5E8EF] bg-[#F4F6FA] text-[#667085]",
                     )}
                   >
                     {isCompleted ? <Check className="size-3.5" /> : s.id}
@@ -348,7 +356,9 @@ export default function CreateRequestWizard({
                   <span
                     className={cn(
                       "text-xs font-bold",
-                      isCurrent || isCompleted ? "text-[#182033]" : "text-[#667085]"
+                      isCurrent || isCompleted
+                        ? "text-[#182033]"
+                        : "text-[#667085]",
                     )}
                   >
                     {s.label}
@@ -357,8 +367,8 @@ export default function CreateRequestWizard({
                 {idx < 2 && (
                   <div
                     className={cn(
-                      "flex-1 h-0.5 mx-4",
-                      s.id < step ? "bg-[#168557]" : "bg-[#E5E8EF]"
+                      "mx-4 h-0.5 flex-1",
+                      s.id < step ? "bg-[#168557]" : "bg-[#E5E8EF]",
                     )}
                   />
                 )}
@@ -369,19 +379,21 @@ export default function CreateRequestWizard({
       </div>
 
       {/* Main Card Content */}
-      <div className="rounded-[14px] border border-[#E5E8EF] bg-white p-6 md:p-8 space-y-6">
+      <div className="space-y-6 rounded-[14px] border border-[#E5E8EF] bg-white p-6 md:p-8">
         <Form {...form}>
           {/* STEP 1: Select Request Type */}
           {step === 1 && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-lg font-bold text-[#182033]">Select Request Type</h2>
+                <h2 className="text-lg font-bold text-[#182033]">
+                  Select Request Type
+                </h2>
                 <p className="text-xs text-[#667085]">
                   Choose the category that best matches your request.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <div className="grid grid-cols-1 gap-3 pt-2 md:grid-cols-2">
                 {REQUEST_TYPES.map((t) => {
                   const Icon = t.icon;
                   const isSelected = selectedType === t.type;
@@ -391,10 +403,10 @@ export default function CreateRequestWizard({
                       type="button"
                       onClick={() => handleSelectType(t.type)}
                       className={cn(
-                        "flex items-start gap-3.5 rounded-[12px] border p-4 text-left transition-all cursor-pointer",
+                        "flex cursor-pointer items-start gap-3.5 rounded-[12px] border p-4 text-left transition-all",
                         isSelected
                           ? "border-[#168557] bg-[#E9F8F1]/50 shadow-2xs"
-                          : "border-[#E5E8EF] bg-white hover:border-[#CBEFDD]"
+                          : "border-[#E5E8EF] bg-white hover:border-[#CBEFDD]",
                       )}
                     >
                       <div
@@ -402,14 +414,18 @@ export default function CreateRequestWizard({
                           "flex size-10 shrink-0 items-center justify-center rounded-[10px]",
                           isSelected
                             ? "bg-[#168557] text-white"
-                            : "bg-[#F4F6FA] text-[#667085]"
+                            : "bg-[#F4F6FA] text-[#667085]",
                         )}
                       >
                         <Icon size={20} />
                       </div>
                       <div>
-                        <h3 className="text-sm font-bold text-[#182033]">{t.title}</h3>
-                        <p className="text-xs text-[#667085] mt-0.5">{t.description}</p>
+                        <h3 className="text-sm font-bold text-[#182033]">
+                          {t.title}
+                        </h3>
+                        <p className="mt-0.5 text-xs text-[#667085]">
+                          {t.description}
+                        </p>
                       </div>
                     </button>
                   );
@@ -423,14 +439,15 @@ export default function CreateRequestWizard({
             <div className="space-y-5">
               <div>
                 <h2 className="text-lg font-bold text-[#182033]">
-                  {REQUEST_TYPES.find((t) => t.type === selectedType)?.title} Details
+                  {REQUEST_TYPES.find((t) => t.type === selectedType)?.title}{" "}
+                  Details
                 </h2>
                 <p className="text-xs text-[#667085]">
                   Fill in the required information for your request.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="title"
@@ -472,7 +489,7 @@ export default function CreateRequestWizard({
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="urgency"
@@ -481,7 +498,10 @@ export default function CreateRequestWizard({
                       <FormLabel className="text-xs font-bold text-[#182033]">
                         Urgency / Priority *
                       </FormLabel>
-                      <Select value={field.value} onValueChange={field.onChange}>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
                           <SelectTrigger className="h-10 rounded-[10px] border-[#DDE3EE] text-xs">
                             <SelectValue placeholder="Select Urgency" />
@@ -489,9 +509,13 @@ export default function CreateRequestWizard({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="low">Low Priority</SelectItem>
-                          <SelectItem value="medium">Medium Priority</SelectItem>
+                          <SelectItem value="medium">
+                            Medium Priority
+                          </SelectItem>
                           <SelectItem value="high">High Priority</SelectItem>
-                          <SelectItem value="priority">Critical / Priority</SelectItem>
+                          <SelectItem value="priority">
+                            Critical / Priority
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -499,7 +523,8 @@ export default function CreateRequestWizard({
                   )}
                 />
 
-                {(selectedType === "EXPENSE" || selectedType === "MARKETING") && (
+                {(selectedType === "EXPENSE" ||
+                  selectedType === "MARKETING") && (
                   <FormField
                     control={form.control}
                     name="budget"
@@ -512,7 +537,9 @@ export default function CreateRequestWizard({
                           <Input
                             type="number"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
                             className="h-10 rounded-[10px] border-[#DDE3EE] text-xs"
                           />
                         </FormControl>
@@ -524,19 +551,23 @@ export default function CreateRequestWizard({
               </div>
 
               {/* Target Doctor Selector for Expense, Marketing & Sample */}
-              {(selectedType === "EXPENSE" || selectedType === "MARKETING" || selectedType === "SAMPLE") && (
+              {(selectedType === "EXPENSE" ||
+                selectedType === "MARKETING" ||
+                selectedType === "SAMPLE") && (
                 <div className="space-y-2 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4">
                   <div className="flex items-center justify-between">
-                    <FormLabel className="text-xs font-bold text-[#182033] flex items-center gap-1.5">
+                    <FormLabel className="flex items-center gap-1.5 text-xs font-bold text-[#182033]">
                       <Stethoscope size={14} className="text-[#168557]" />
                       Target Doctors * ({selectedDoctorIds.length} Selected)
                     </FormLabel>
                   </div>
 
                   {doctors.length === 0 ? (
-                    <p className="text-xs text-[#667085]">No doctors available in region.</p>
+                    <p className="text-xs text-[#667085]">
+                      No doctors available in region.
+                    </p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-36 overflow-y-auto pt-1">
+                    <div className="grid max-h-36 grid-cols-1 gap-2 overflow-y-auto pt-1 sm:grid-cols-2">
                       {doctors.map((doc) => {
                         const isSelected = selectedDoctorIds.includes(doc.id);
                         return (
@@ -545,14 +576,21 @@ export default function CreateRequestWizard({
                             type="button"
                             onClick={() => handleToggleDoctor(doc.id)}
                             className={cn(
-                              "flex items-center justify-between rounded-[8px] border px-3 py-2 text-xs font-medium text-left transition-all cursor-pointer",
+                              "flex cursor-pointer items-center justify-between rounded-[8px] border px-3 py-2 text-left text-xs font-medium transition-all",
                               isSelected
                                 ? "border-[#168557] bg-[#E9F8F1] text-[#168557]"
-                                : "border-[#E5E8EF] bg-white text-[#344054] hover:border-[#CBEFDD]"
+                                : "border-[#E5E8EF] bg-white text-[#344054] hover:border-[#CBEFDD]",
                             )}
                           >
-                            <span className="truncate">{doc.nameEN || doc.nameAR || doc.accountName}</span>
-                            {isSelected && <Check size={14} className="shrink-0 text-[#168557]" />}
+                            <span className="truncate">
+                              {doc.nameEN || doc.nameAR || doc.accountName}
+                            </span>
+                            {isSelected && (
+                              <Check
+                                size={14}
+                                className="shrink-0 text-[#168557]"
+                              />
+                            )}
                           </button>
                         );
                       })}
@@ -560,13 +598,15 @@ export default function CreateRequestWizard({
                   )}
 
                   {doctorError && (
-                    <p className="text-[11px] font-medium text-[#D92D20] pt-1">{doctorError}</p>
+                    <p className="pt-1 text-[11px] font-medium text-[#D92D20]">
+                      {doctorError}
+                    </p>
                   )}
                 </div>
               )}
 
               {selectedType === "LEAVE" && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4">
+                <div className="grid grid-cols-1 gap-4 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4 md:grid-cols-3">
                   <FormField
                     control={form.control}
                     name="leaveType"
@@ -575,16 +615,21 @@ export default function CreateRequestWizard({
                         <FormLabel className="text-xs font-bold text-[#182033]">
                           Leave Type *
                         </FormLabel>
-                        <Select value={field.value} onValueChange={field.onChange}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
                           <FormControl>
-                            <SelectTrigger className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white">
+                            <SelectTrigger className="h-10 rounded-[10px] border-[#DDE3EE] bg-white text-xs">
                               <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="Annual">Annual Leave</SelectItem>
                             <SelectItem value="Sick">Sick Leave</SelectItem>
-                            <SelectItem value="Emergency">Emergency Leave</SelectItem>
+                            <SelectItem value="Emergency">
+                              Emergency Leave
+                            </SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -603,7 +648,7 @@ export default function CreateRequestWizard({
                           <Input
                             type="date"
                             {...field}
-                            className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white"
+                            className="h-10 rounded-[10px] border-[#DDE3EE] bg-white text-xs"
                           />
                         </FormControl>
                         <FormMessage />
@@ -623,7 +668,7 @@ export default function CreateRequestWizard({
                           <Input
                             type="date"
                             {...field}
-                            className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white"
+                            className="h-10 rounded-[10px] border-[#DDE3EE] bg-white text-xs"
                           />
                         </FormControl>
                         <FormMessage />
@@ -640,7 +685,7 @@ export default function CreateRequestWizard({
                       Sample Products Selection * ({sampleItems.length})
                     </span>
                     <Select onValueChange={handleAddSampleItem}>
-                      <SelectTrigger className="h-8 w-48 rounded-[8px] border-[#DDE3EE] text-xs bg-white cursor-pointer">
+                      <SelectTrigger className="h-8 w-48 cursor-pointer rounded-[8px] border-[#DDE3EE] bg-white text-xs">
                         <SelectValue placeholder="+ Add Sample Product" />
                       </SelectTrigger>
                       <SelectContent>
@@ -654,7 +699,7 @@ export default function CreateRequestWizard({
                   </div>
 
                   {sampleItems.length === 0 ? (
-                    <p className="text-xs text-[#667085] py-2 text-center">
+                    <p className="py-2 text-center text-xs text-[#667085]">
                       Select sample products from catalog above.
                     </p>
                   ) : (
@@ -676,16 +721,18 @@ export default function CreateRequestWizard({
                                   prev.map((i) =>
                                     i.productId === item.productId
                                       ? { ...i, amount: Number(e.target.value) }
-                                      : i
-                                  )
+                                      : i,
+                                  ),
                                 )
                               }
-                              className="h-7 w-20 rounded-[6px] text-xs text-center border-[#DDE3EE]"
+                              className="h-7 w-20 rounded-[6px] border-[#DDE3EE] text-center text-xs"
                             />
                             <button
                               type="button"
-                              onClick={() => handleRemoveSampleItem(item.productId)}
-                              className="text-[#D92D20] p-1 hover:bg-[#FEF3F2] rounded cursor-pointer"
+                              onClick={() =>
+                                handleRemoveSampleItem(item.productId)
+                              }
+                              className="cursor-pointer rounded p-1 text-[#D92D20] hover:bg-[#FEF3F2]"
                             >
                               <Trash2 size={14} />
                             </button>
@@ -696,14 +743,16 @@ export default function CreateRequestWizard({
                   )}
 
                   {sampleError && (
-                    <p className="text-[11px] font-medium text-[#D92D20] pt-1">{sampleError}</p>
+                    <p className="pt-1 text-[11px] font-medium text-[#D92D20]">
+                      {sampleError}
+                    </p>
                   )}
                 </div>
               )}
 
               {selectedType === "PERSONAL_EXPENSE" && (
                 <div className="space-y-4 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <FormField
                       control={form.control}
                       name="visitedCity"
@@ -716,7 +765,7 @@ export default function CreateRequestWizard({
                             <Input
                               {...field}
                               placeholder="e.g. Riyadh"
-                              className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white"
+                              className="h-10 rounded-[10px] border-[#DDE3EE] bg-white text-xs"
                             />
                           </FormControl>
                           <FormMessage />
@@ -735,9 +784,12 @@ export default function CreateRequestWizard({
                           <FormControl>
                             <Input
                               type="number"
+                              min={1}
                               {...field}
-                              onChange={(e) => field.onChange(Number(e.target.value))}
-                              className="h-10 rounded-[10px] border-[#DDE3EE] text-xs bg-white"
+                              onChange={(e) =>
+                                field.onChange(Number(e.target.value))
+                              }
+                              className="h-10 rounded-[10px] border-[#DDE3EE] bg-white text-xs"
                             />
                           </FormControl>
                           <FormMessage />
@@ -746,8 +798,97 @@ export default function CreateRequestWizard({
                     />
                   </div>
 
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#182033]">
+                        Expense Breakdown *
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setExpenseItems([
+                            ...expenseItems,
+                            { name: "", amount: 0 },
+                          ]);
+                          setExpenseItemError("");
+                        }}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#168557] hover:underline"
+                      >
+                        <Plus className="size-3.5" />
+                        <span>Add Item</span>
+                      </button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {expenseItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 rounded-lg border border-[#E5E8EF] bg-white p-2.5"
+                        >
+                          <Input
+                            placeholder="Expense description (e.g. Hotel, Taxi)"
+                            value={item.name}
+                            onChange={(e) => {
+                              const updated = [...expenseItems];
+                              updated[idx].name = e.target.value;
+                              setExpenseItems(updated);
+                            }}
+                            className="h-9 flex-1 text-xs"
+                          />
+                          <div className="flex w-32 shrink-0 items-center gap-1.5">
+                            <Input
+                              type="number"
+                              min={0}
+                              placeholder="Amount"
+                              value={item.amount || ""}
+                              onChange={(e) => {
+                                const updated = [...expenseItems];
+                                updated[idx].amount =
+                                  Number(e.target.value) || 0;
+                                setExpenseItems(updated);
+                              }}
+                              className="h-9 text-xs"
+                            />
+                            <span className="text-[11px] font-medium text-[#667085]">
+                              EGP
+                            </span>
+                          </div>
+                          {expenseItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setExpenseItems(
+                                  expenseItems.filter((_, i) => i !== idx),
+                                );
+                              }}
+                              className="p-1 text-[#98A2B3] hover:text-[#D92D20]"
+                              aria-label="Remove item"
+                            >
+                              <Trash2 className="size-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-end pt-1">
+                      <span className="text-xs font-bold text-[#182033]">
+                        Total:{" "}
+                        <span className="text-[#168557]">
+                          {expenseItems.reduce(
+                            (s, i) => s + (i.amount || 0),
+                            0,
+                          )}{" "}
+                          EGP
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+
                   {expenseItemError && (
-                    <p className="text-[11px] font-medium text-[#D92D20]">{expenseItemError}</p>
+                    <p className="text-[11px] font-medium text-[#D92D20]">
+                      {expenseItemError}
+                    </p>
                   )}
                 </div>
               )}
@@ -774,19 +915,23 @@ export default function CreateRequestWizard({
               />
 
               {/* Attachment Control */}
-              <div className="rounded-[10px] border border-[#E5E8EF] bg-white p-3.5 space-y-2">
-                <FormLabel className="text-xs font-bold text-[#182033] flex items-center justify-between">
+              <div className="space-y-2 rounded-[10px] border border-[#E5E8EF] bg-white p-3.5">
+                <FormLabel className="flex items-center justify-between text-xs font-bold text-[#182033]">
                   <span>
                     {selectedType === "LEAVE"
-                      ? "Supporting Document (PDF / Image) *"
+                      ? "Supporting Document (PDF) *"
                       : selectedType !== "SAMPLE"
-                      ? "Attachment (Invoice / PDF Document Required) *"
-                      : "Attachment (Optional Invoice / PDF)"}
+                        ? "Attachment (Invoice / PDF Document Required) *"
+                        : "Attachment (Optional Invoice / PDF)"}
                   </span>
                   {selectedType !== "SAMPLE" ? (
-                    <span className="text-[11px] font-bold text-[#D92D20]">Required</span>
+                    <span className="text-[11px] font-bold text-[#D92D20]">
+                      Required
+                    </span>
                   ) : (
-                    <span className="text-[11px] font-normal text-[#667085]">Optional</span>
+                    <span className="text-[11px] font-normal text-[#667085]">
+                      Optional
+                    </span>
                   )}
                 </FormLabel>
 
@@ -794,25 +939,37 @@ export default function CreateRequestWizard({
                   <div className="flex items-center justify-between rounded-[8px] border border-[#CBEFDD] bg-[#E9F8F1] p-2.5 text-xs text-[#168557]">
                     <div className="flex items-center gap-2 truncate">
                       <Paperclip size={14} />
-                      <span className="font-semibold truncate">{attachedFile.name}</span>
+                      <span className="truncate font-semibold">
+                        {attachedFile.name}
+                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setAttachedFile(null)}
-                      className="text-[#D92D20] p-1 hover:bg-white/50 rounded cursor-pointer"
+                      className="cursor-pointer rounded p-1 text-[#D92D20] hover:bg-white/50"
                     >
                       <X size={14} />
                     </button>
                   </div>
                 ) : (
-                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#DDE3EE] bg-[#F9FAFB] p-3 text-xs text-[#667085] hover:bg-[#F4F6FA] transition-colors">
+                  <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[8px] border border-dashed border-[#DDE3EE] bg-[#F9FAFB] p-3 text-xs text-[#667085] transition-colors hover:bg-[#F4F6FA]">
                     <Paperclip size={14} />
-                    <span>Upload invoice or document (PDF, PNG, JPG)</span>
+                    <span>Upload invoice or document (PDF, up to 5 MB)</span>
                     <input
                       type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      accept=".pdf,application/pdf"
                       onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          if (
+                            file.type !== "application/pdf" ||
+                            file.size > 5 * 1024 * 1024
+                          ) {
+                            setAttachedFile(null);
+                            setAttachmentError("Choose a PDF file up to 5 MB.");
+                            e.target.value = "";
+                            return;
+                          }
                           setAttachedFile(e.target.files[0]);
                           setAttachmentError("");
                         }
@@ -823,7 +980,9 @@ export default function CreateRequestWizard({
                 )}
 
                 {attachmentError && (
-                  <p className="text-[11px] font-medium text-[#D92D20] pt-1">{attachmentError}</p>
+                  <p className="pt-1 text-[11px] font-medium text-[#D92D20]">
+                    {attachmentError}
+                  </p>
                 )}
               </div>
             </div>
@@ -832,17 +991,17 @@ export default function CreateRequestWizard({
           {/* STEP 3: Review & Submit */}
           {step === 3 && (
             <div className="space-y-5">
-              <div className="rounded-[12px] border border-[#CBEFDD] bg-[#E9F8F1]/60 p-4 flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-[12px] border border-[#CBEFDD] bg-[#E9F8F1]/60 p-4">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#168557]">
+                  <span className="text-[10px] font-bold tracking-wider text-[#168557] uppercase">
                     Ready For Submission
                   </span>
                   <h3 className="text-base font-bold text-[#182033]">
-                    {form.watch("title")}
+                    {watched.title}
                   </h3>
                   <p className="text-xs text-[#667085]">
-                    {REQUEST_TYPES.find((t) => t.type === selectedType)?.title} ·{" "}
-                    {formatUrgencyLabel(form.watch("urgency"))}
+                    {REQUEST_TYPES.find((t) => t.type === selectedType)?.title}{" "}
+                    · {formatUrgencyLabel(watched.urgency || "medium")}
                   </p>
                 </div>
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-[#168557]">
@@ -850,13 +1009,15 @@ export default function CreateRequestWizard({
                 </span>
               </div>
 
-              <div className="rounded-[10px] border border-[#E5E8EF] bg-white p-4 space-y-3.5 text-xs">
+              <div className="space-y-3.5 rounded-[10px] border border-[#E5E8EF] bg-white p-4 text-xs">
                 <div className="flex justify-between border-b border-[#EEF1F6] pb-2">
-                  <span className="font-bold text-[#182033]">Request Details</span>
+                  <span className="font-bold text-[#182033]">
+                    Request Details
+                  </span>
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="text-[#168557] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-1 font-bold text-[#168557] hover:underline"
                   >
                     <Edit3 size={12} /> Edit Details
                   </button>
@@ -865,36 +1026,41 @@ export default function CreateRequestWizard({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <span className="text-[#667085]">Subject:</span>{" "}
-                    <span className="font-bold text-[#182033]">{form.watch("subject")}</span>
+                    <span className="font-bold text-[#182033]">
+                      {watched.subject}
+                    </span>
                   </div>
                   <div>
                     <span className="text-[#667085]">Priority:</span>{" "}
                     <span className="font-bold text-[#182033]">
-                      {formatUrgencyLabel(form.watch("urgency"))}
+                      {formatUrgencyLabel(watched.urgency || "medium")}
                     </span>
                   </div>
                 </div>
 
                 <div>
                   <span className="text-[#667085]">Description:</span>
-                  <p className="p-2.5 rounded-[8px] bg-[#F9FAFB] border border-[#EEF1F6] mt-1 text-[#344054]">
-                    {form.watch("description")}
+                  <p className="mt-1 rounded-[8px] border border-[#EEF1F6] bg-[#F9FAFB] p-2.5 text-[#344054]">
+                    {watched.description}
                   </p>
                 </div>
 
                 {/* Type-specific breakdown */}
-                {(selectedType === "EXPENSE" || selectedType === "MARKETING") && (
-                  <div className="pt-2 border-t border-[#EEF1F6] space-y-1.5">
+                {(selectedType === "EXPENSE" ||
+                  selectedType === "MARKETING") && (
+                  <div className="space-y-1.5 border-t border-[#EEF1F6] pt-2">
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Budget Amount:</span>
                       <span className="font-bold text-[#168557]">
-                        SAR {form.watch("budget")}
+                        SAR {watched.budget}
                       </span>
                     </div>
                     {selectedDoctorNames.length > 0 && (
                       <div>
-                        <span className="text-[#667085]">Target Doctors ({selectedDoctorNames.length}):</span>
-                        <p className="font-semibold text-[#182033] mt-0.5">
+                        <span className="text-[#667085]">
+                          Target Doctors ({selectedDoctorNames.length}):
+                        </span>
+                        <p className="mt-0.5 font-semibold text-[#182033]">
                           {selectedDoctorNames.join(", ")}
                         </p>
                       </div>
@@ -903,32 +1069,34 @@ export default function CreateRequestWizard({
                 )}
 
                 {selectedType === "LEAVE" && (
-                  <div className="pt-2 border-t border-[#EEF1F6] space-y-1.5">
+                  <div className="space-y-1.5 border-t border-[#EEF1F6] pt-2">
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Leave Type:</span>
-                      <span className="font-bold text-[#182033]">{form.watch("leaveType")}</span>
+                      <span className="font-bold text-[#182033]">
+                        {watched.leaveType}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Period:</span>
                       <span className="font-bold text-[#182033]">
-                        {form.watch("leaveStartDate")} to {form.watch("leaveEndDate")}
+                        {watched.leaveStartDate} to {watched.leaveEndDate}
                       </span>
                     </div>
                   </div>
                 )}
 
                 {selectedType === "SAMPLE" && (
-                  <div className="pt-2 border-t border-[#EEF1F6] space-y-2">
+                  <div className="space-y-2 border-t border-[#EEF1F6] pt-2">
                     {selectedDoctorNames.length > 0 && (
                       <div>
                         <span className="text-[#667085]">Target Doctors:</span>
-                        <p className="font-semibold text-[#182033] mt-0.5">
+                        <p className="mt-0.5 font-semibold text-[#182033]">
                           {selectedDoctorNames.join(", ")}
                         </p>
                       </div>
                     )}
                     <div>
-                      <span className="text-[#667085] font-semibold block mb-1">
+                      <span className="mb-1 block font-semibold text-[#667085]">
                         Requested Samples ({sampleItems.length}):
                       </span>
                       <div className="flex flex-wrap gap-1.5">
@@ -946,25 +1114,38 @@ export default function CreateRequestWizard({
                 )}
 
                 {selectedType === "PERSONAL_EXPENSE" && (
-                  <div className="pt-2 border-t border-[#EEF1F6] space-y-1.5">
+                  <div className="space-y-1.5 border-t border-[#EEF1F6] pt-2">
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Visited City:</span>
-                      <span className="font-bold text-[#182033]">{form.watch("visitedCity")}</span>
+                      <span className="font-bold text-[#182033]">
+                        {watched.visitedCity}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-[#667085]">Visit Duration:</span>
                       <span className="font-bold text-[#182033]">
-                        {form.watch("visitDaysCount")} Days
+                        {watched.visitDaysCount} Days
                       </span>
                     </div>
                   </div>
                 )}
 
                 {/* Optional Attachment Summary */}
-                <div className="pt-2 border-t border-[#EEF1F6] flex items-center justify-between text-xs">
+                <div className="flex items-center justify-between border-t border-[#EEF1F6] pt-2 text-xs">
                   <div className="flex items-center gap-1.5 text-[#667085]">
-                    <Paperclip size={14} className={attachedFile ? "text-[#168557]" : "text-[#98A2B3]"} />
-                    <span className={attachedFile ? "font-semibold text-[#168557]" : "text-[#667085]"}>
+                    <Paperclip
+                      size={14}
+                      className={
+                        attachedFile ? "text-[#168557]" : "text-[#98A2B3]"
+                      }
+                    />
+                    <span
+                      className={
+                        attachedFile
+                          ? "font-semibold text-[#168557]"
+                          : "text-[#667085]"
+                      }
+                    >
                       {attachedFile ? attachedFile.name : "No attachment"}
                     </span>
                   </div>
@@ -972,7 +1153,7 @@ export default function CreateRequestWizard({
                     <button
                       type="button"
                       onClick={() => setStep(2)}
-                      className="text-[#168557] font-bold hover:underline cursor-pointer"
+                      className="cursor-pointer font-bold text-[#168557] hover:underline"
                     >
                       Edit / Replace
                     </button>
@@ -990,7 +1171,7 @@ export default function CreateRequestWizard({
                   type="button"
                   onClick={() => setStep((s) => (s - 1) as 1 | 2 | 3)}
                   variant="outline"
-                  className="h-10 rounded-[10px] border-[#E5E8EF] px-5 text-xs font-semibold text-[#344054] cursor-pointer"
+                  className="h-10 cursor-pointer rounded-[10px] border-[#E5E8EF] px-5 text-xs font-semibold text-[#344054]"
                 >
                   <ChevronLeft className="mr-1.5 size-4" />
                   Back
@@ -1000,7 +1181,7 @@ export default function CreateRequestWizard({
                   type="button"
                   onClick={() => router.push("/rep/requests")}
                   variant="outline"
-                  className="h-10 rounded-[10px] border-[#E5E8EF] px-5 text-xs font-semibold text-[#344054] cursor-pointer"
+                  className="h-10 cursor-pointer rounded-[10px] border-[#E5E8EF] px-5 text-xs font-semibold text-[#344054]"
                 >
                   Cancel
                 </Button>
@@ -1012,7 +1193,7 @@ export default function CreateRequestWizard({
                 <Button
                   type="button"
                   onClick={handleNextStep1}
-                  className="h-10 rounded-[10px] bg-gp-rep-primary px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-gp-rep-primary-hover cursor-pointer"
+                  className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 cursor-pointer rounded-[10px] px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
                 >
                   Continue
                   <ChevronRight className="ml-1.5 size-4" />
@@ -1023,7 +1204,7 @@ export default function CreateRequestWizard({
                 <Button
                   type="button"
                   onClick={handleNextStep2}
-                  className="h-10 rounded-[10px] bg-gp-rep-primary px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-gp-rep-primary-hover cursor-pointer"
+                  className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 cursor-pointer rounded-[10px] px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
                 >
                   Review Request
                   <ChevronRight className="ml-1.5 size-4" />
@@ -1035,7 +1216,7 @@ export default function CreateRequestWizard({
                   type="button"
                   onClick={onSubmit}
                   disabled={isPending}
-                  className="h-10 rounded-[10px] bg-gp-rep-primary px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] hover:bg-gp-rep-primary-hover cursor-pointer"
+                  className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 cursor-pointer rounded-[10px] px-6 text-xs font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)]"
                 >
                   {isPending ? (
                     "Submitting..."

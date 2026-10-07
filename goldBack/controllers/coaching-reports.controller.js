@@ -1,6 +1,13 @@
 import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
+import {
+  date,
+  number,
+  text,
+  canManageUser,
+  userScope,
+} from "../utils/validation.js";
 
 const addCoachingReport = async (req, res, next) => {
   try {
@@ -17,6 +24,21 @@ const addCoachingReport = async (req, res, next) => {
       actionItems,
       notes,
     } = req.body;
+
+    const rep = await prisma.user.findUnique({ where: { id: repId } });
+    if (!rep || !canManageUser(req.user, rep) || rep.id === req.user.id)
+      return next(new ApiError("Select a representative from your team", 403));
+    const score = number(performanceRating, "Performance rating", {
+      min: 1,
+      integer: true,
+    });
+    if (score > 5)
+      return next(
+        new ApiError("Performance rating must be between 1 and 5", 400),
+      );
+    date(visitDate, "Visit date");
+    text(visitDuration, "Duration");
+    text(visitLocation, "Location");
 
     const data = await prisma.coachingReport.create({
       data: {
@@ -41,7 +63,7 @@ const addCoachingReport = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to create coaching report", 500));
+    next(error);
   }
 };
 
@@ -49,6 +71,11 @@ const responseToCoachingReport = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { comment, accept } = req.body;
+    if (
+      (!comment || typeof comment !== "string" || !comment.trim()) &&
+      accept !== true
+    )
+      return next(new ApiError("Add a comment or accept the report", 400));
 
     const exists = await prisma.coachingReport.findUnique({
       where: { id },
@@ -73,7 +100,9 @@ const responseToCoachingReport = async (req, res, next) => {
         where: {
           id,
           repId: req.user.id,
-          createdById: { in: [req.user.supervisorId, req.user.managerId] },
+          createdById: {
+            in: [req.user.supervisorId, req.user.managerId].filter(Boolean),
+          },
         },
         data: {
           repComment: comment,
@@ -82,7 +111,13 @@ const responseToCoachingReport = async (req, res, next) => {
       });
     } else if (accept) {
       data = await prisma.coachingReport.update({
-        where: { id, repId: req.user.id, createdById: req.user.supervisorId },
+        where: {
+          id,
+          repId: req.user.id,
+          createdById: {
+            in: [req.user.supervisorId, req.user.managerId].filter(Boolean),
+          },
+        },
         data: {
           repAccepted: true,
         },
@@ -96,13 +131,13 @@ const responseToCoachingReport = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to update coaching report", 500));
+    next(error);
   }
 };
 
 const getMyCoachingReport = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "CoachingReport");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -110,7 +145,9 @@ const getMyCoachingReport = async (req, res, next) => {
       createdById: req.user.id,
     };
 
-    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+    const totalDocuments = await prisma.coachingReport.count({
+      where: whereClause,
+    });
 
     const data = await prisma.coachingReport.findMany({
       where: whereClause,
@@ -170,17 +207,19 @@ const getMyCoachingReport = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch coaching report", 500));
+    next(error);
   }
 };
 
 const getAllCoachingReport = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "CoachingReport");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
-    const whereClause = { ...queryObj.where };
+    const whereClause = { ...queryObj.where, rep: userScope(req.user) };
 
-    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+    const totalDocuments = await prisma.coachingReport.count({
+      where: whereClause,
+    });
 
     const data = await prisma.coachingReport.findMany({
       where: whereClause,
@@ -240,13 +279,13 @@ const getAllCoachingReport = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch coaching report", 500));
+    next(error);
   }
 };
 
 const getRepCoachingReport = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query);
+    const apiFeatures = new ApiFeatures(req.query, "CoachingReport");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
     const whereClause = {
@@ -254,7 +293,9 @@ const getRepCoachingReport = async (req, res, next) => {
       repId: req.user.id,
     };
 
-    const totalDocuments = await prisma.coachingReport.count({ where: whereClause });
+    const totalDocuments = await prisma.coachingReport.count({
+      where: whereClause,
+    });
 
     const data = await prisma.coachingReport.findMany({
       where: whereClause,
@@ -314,7 +355,7 @@ const getRepCoachingReport = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
-    next(new ApiError("Failed to fetch coaching report", 500));
+    next(error);
   }
 };
 

@@ -9,7 +9,7 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: { page?: string; limit?: string } }) {
+export default async function Page({ searchParams }: { searchParams?: Promise<{ page?: string; limit?: string }> }) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;

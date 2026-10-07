@@ -66,69 +66,6 @@ async function createRequestJson(data: CreateRequestDto): Promise<void> {
   });
 }
 
-function appendRequestBaseFields(fd: FormData, payload: CreateRequestDto) {
-  fd.append("title", payload.title);
-  fd.append("subject", payload.subject);
-  fd.append("description", payload.description);
-  fd.append("type", payload.type);
-  fd.append("urgency", payload.urgency);
-}
-
-type PersonalExpenseVariant =
-  | "totalExpenseDataJson"
-  | "personalExpenseItemsJson"
-  | "indexedOnly";
-
-function buildPersonalExpenseFallbackFormData(
-  payload: CreateRequestDto,
-  files:
-    | {
-        invoice?: File;
-        medicalReport?: File;
-        personalExpenseInvoices?: (File | null)[];
-      }
-    | undefined,
-  variant: PersonalExpenseVariant,
-) {
-  const fd = new FormData();
-  const totalExpenseData = payload.totalExpenseData ?? [];
-  const personalExpenseItems = totalExpenseData.map((item) => ({
-    amount: Number(item.amount),
-  }));
-
-  appendRequestBaseFields(fd, payload);
-
-  if (payload.visitedCity) {
-    fd.append("visitedCity", payload.visitedCity);
-    fd.append("visitCity", payload.visitedCity);
-  }
-  if (payload.visitDaysCount != null) {
-    fd.append("visitDaysCount", String(payload.visitDaysCount));
-  }
-  if (payload.totalExpenseAmount != null) {
-    fd.append("totalExpenseAmount", String(payload.totalExpenseAmount));
-  }
-
-  if (variant === "totalExpenseDataJson") {
-    fd.append("totalExpenseData", JSON.stringify(totalExpenseData));
-  }
-
-  if (variant === "personalExpenseItemsJson") {
-    fd.append("personalExpenseItems", JSON.stringify(personalExpenseItems));
-  }
-
-  if (variant === "indexedOnly") {
-    totalExpenseData.forEach((item, index) => {
-      fd.append(`totalExpenseData[${index}][name]`, item.name);
-      fd.append(`totalExpenseData[${index}][amount]`, String(item.amount));
-      fd.append(`personalExpenseItems[${index}][amount]`, String(item.amount));
-    });
-  }
-
-  appendRequestFiles(fd, files);
-  return fd;
-}
-
 /**
  * Fetch all requests for current user
  */
@@ -206,77 +143,18 @@ export async function createRequestAction(
     const payload = buildCreateRequestPayload(data);
     const hasFiles = Boolean(
       files?.invoice ||
-        files?.medicalReport ||
-        (files?.personalExpenseInvoices &&
-          files.personalExpenseInvoices.some((f) => Boolean(f))),
+      files?.medicalReport ||
+      (files?.personalExpenseInvoices &&
+        files.personalExpenseInvoices.some((f) => Boolean(f))),
     );
 
-    // When no file attachment exists, send clean JSON payload to avoid backend Multer file upload errors
     if (!hasFiles) {
-      try {
-        await createRequestJson(payload);
-        return { success: true };
-      } catch {
-        // Fallback to multipart if backend requires multipart for specific route
-        const fd = new FormData();
-        appendCreateRequestFields(fd, payload);
-        await createRequestMultipart(fd);
-        return { success: true };
-      }
-    }
-
-    // When files exist, send multipart/form-data
-    const fd = new FormData();
-    appendCreateRequestFields(fd, payload);
-    appendRequestFiles(fd, files);
-
-    try {
-      await createRequestMultipart(fd);
-    } catch (error) {
-      const err = error as ApiError;
-
-      const shouldRetrySampleAsJson =
-        payload.type === "SAMPLE" &&
-        (err.message ?? "")
-          .toLowerCase()
-          .includes("at least one product is required");
-
-      if (!shouldRetrySampleAsJson) {
-        const shouldRetryPersonalExpenseMultipart =
-          payload.type === "PERSONAL_EXPENSE" &&
-          (err.message ?? "")
-            .toLowerCase()
-            .includes("total expense data is required");
-
-        if (!shouldRetryPersonalExpenseMultipart) {
-          throw error;
-        }
-
-        const variants: PersonalExpenseVariant[] = [
-          "totalExpenseDataJson",
-          "personalExpenseItemsJson",
-          "indexedOnly",
-        ];
-
-        let lastError: unknown = error;
-        for (const variant of variants) {
-          try {
-            const retryFd = buildPersonalExpenseFallbackFormData(
-              payload,
-              files,
-              variant,
-            );
-            await createRequestMultipart(retryFd);
-            return { success: true };
-          } catch (retryError) {
-            lastError = retryError;
-          }
-        }
-
-        throw lastError;
-      }
-
       await createRequestJson(payload);
+    } else {
+      const fd = new FormData();
+      appendCreateRequestFields(fd, payload);
+      appendRequestFiles(fd, files);
+      await createRequestMultipart(fd);
     }
 
     return { success: true };
@@ -309,7 +187,6 @@ export async function getMyRequestsAction(page?: number, limit?: number) {
       };
     }
     // Transform API response to frontend format
-    console.log("requests.data", requests.data);
     const transformedData: TRequest[] = requests.data.map((request) => ({
       ...mapRequestApiResponseToTRequest(request),
       belongToWho: "me" as const,

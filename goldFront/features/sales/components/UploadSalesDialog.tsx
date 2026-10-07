@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ function isAcceptedFile(file: File) {
 export function UploadSalesDialog() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [sheetName, setSheetName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,8 +49,9 @@ export function UploadSalesDialog() {
     setSelectedFile(file);
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (isPending) return;
     if (!selectedFile) {
       toast.error({ title: "Please select an Excel file" });
       return;
@@ -60,7 +61,8 @@ export function UploadSalesDialog() {
       return;
     }
 
-    startTransition(async () => {
+    setIsPending(true);
+    try {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("sheetName", sheetName.trim());
@@ -79,7 +81,14 @@ export function UploadSalesDialog() {
           description: result.error?.message || "Check the file and try again.",
         });
       }
-    });
+    } catch {
+      toast.error({
+        title: "Couldn't upload sales data",
+        description: "Check the file and try again.",
+      });
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (

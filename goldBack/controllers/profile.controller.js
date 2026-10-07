@@ -21,14 +21,26 @@ const getProfile = async (req, res) => {
   });
 };
 
-const updateProfile = async (req, res) => {
-  if (req.body?.password) {
-    delete req.body.password; // Prevent password updates through this route
+const updateProfile = async (req, res, next) => {
+  const allowed = ["name", "email", "phone", "location", "bio"];
+  if (Object.keys(req.body).some((key) => !allowed.includes(key))) {
+    return next(
+      new ApiError("Only profile contact details can be edited here", 400),
+    );
   }
+  const updates = { ...req.body };
+  for (const key of ["name", "email"]) {
+    if (updates[key] !== undefined) {
+      if (typeof updates[key] !== "string" || !updates[key].trim())
+        return next(new ApiError(`${key} is required`, 400));
+      updates[key] = updates[key].trim();
+    }
+  }
+  if (updates.email) updates.email = updates.email.toLowerCase();
 
   const data = await prisma.user.update({
     where: { id: req.user.id },
-    data: req.body,
+    data: updates,
   });
   res.status(200).json({
     status: "success",

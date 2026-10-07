@@ -1,0 +1,39 @@
+[dotenv@17.2.3] injecting env (0) from .env -- tip: 📡 add observability to secrets: https://dotenvx.com/ops
+{
+  "range": {
+    "from": "2026-10-01",
+    "to": "2026-10-31",
+    "bucket": "day",
+    "timeZone": "Asia/Riyadh"
+  },
+  "sections": {
+    "visits": {
+      "status": "ready",
+      "total": 70
+    },
+    "sales": {
+      "status": "ready",
+      "total": 0,
+      "records": 0
+    },
+    "directory": {
+      "status": "ready",
+      "doctors": 425
+    },
+    "team": {
+      "status": "ready",
+      "total": 5
+    },
+    "coaching": {
+      "status": "ready",
+      "total": 2
+    },
+    "appraisals": {
+      "status": "ready",
+      "total": 2
+    },
+    "workflow": {
+      "status": "ready"
+    }
+  }
+}

@@ -320,6 +320,9 @@ model Appraisal {
   appearance                   Int?
   attitude                     Int?
   timing                       Int?
+  acknowledged                 Boolean   @default(false)
+  acknowledgedAt               DateTime?
+  acknowledgementComment       String?
 
   repId     String
   managerId String
@@ -328,15 +331,23 @@ model Appraisal {
   updatedAt DateTime @updatedAt
 }
 
+enum ForecastStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model forecast {
-  id                 String   @id @default(uuid())
-  rep                User     @relation(fields: [repId], references: [id])
+  id                 String         @id @default(uuid())
+  rep                User           @relation(fields: [repId], references: [id])
   repId              String
   periodType         String
   periodDate         DateTime
   productForecasts   Json[]
   notes              String?
-  isApproved         Boolean  @default(false)
+  status             ForecastStatus @default(DRAFT)
+  isApproved         Boolean        @default(false)
   supervisorFeedback String?
 
   createdAt DateTime @default(now())
@@ -344,10 +355,13 @@ model forecast {
 }
 
 model Products {
-  id          String @id @default(uuid())
+  id          String    @id @default(uuid())
   name        String
   internalRef String
   salesPrice  Float
+  image       Json?
+  isArchived  Boolean   @default(false)
+  archivedAt  DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

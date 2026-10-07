@@ -4,9 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
-  useTransition,
   type ChangeEvent,
-  type DragEvent,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
@@ -25,31 +23,29 @@ import {
 import { Input } from "@/components/ui/input";
 import {
   BadgeDollarSign,
-  ImagePlus,
+  ImageIcon,
   Loader2,
   Package,
   Plus,
   ScanLine,
-  UploadCloud,
-  X,
+  Trash2,
+  Upload,
 } from "lucide-react";
 import {
   createProductSchema,
   type CreateProductFormValues,
 } from "../lib/schemas";
-import { createProductAction } from "../api";
+import { createProductAction, updateProductAction } from "../api";
 import type { ProductApiResponse } from "../lib/types";
-import {
-  getProductImageInfo,
-  getStoredProductImageInfo,
-  readStoredProductImages,
-  saveStoredProductImage,
-  saveStoredProductOverride,
-} from "../lib/utils";
+import { getProductStoredImageUrl } from "../lib/utils";
 import { toast } from "@/lib/utils/toast";
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+const ALLOWED_PRODUCT_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
 
 type AddProductDialogProps = {
   product?: ProductApiResponse | null;
@@ -58,12 +54,6 @@ type AddProductDialogProps = {
   onProductUpdated?: (product: ProductApiResponse) => void;
   trigger?: ReactNode;
 };
-
-function revokeImagePreview(src: string | null) {
-  if (src?.startsWith("blob:")) {
-    URL.revokeObjectURL(src);
-  }
-}
 
 function getProductFormDefaults(
   product?: ProductApiResponse | null,
@@ -79,56 +69,32 @@ function getProductFormDefaults(
   };
 }
 
-function getInitialImagePreview(product?: ProductApiResponse | null) {
-  if (!product) {
-    return null;
+async function detectImageMime(file: File) {
+  const bytes = new Uint8Array(await file.slice(0, 12).arrayBuffer());
+
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+    return "image/jpeg";
   }
 
-  const imageInfo =
-    getStoredProductImageInfo(product, readStoredProductImages()) ||
-    getProductImageInfo(product);
+  if (
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  ) {
+    return "image/png";
+  }
 
-  return imageInfo?.src || null;
-}
+  const header = String.fromCharCode(...bytes);
+  if (header.startsWith("RIFF") && header.slice(8, 12) === "WEBP") {
+    return "image/webp";
+  }
 
-function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-async function createTableImageDataUrl(file: File): Promise<string> {
-  const rawDataUrl = await readFileAsDataUrl(file);
-
-  return new Promise((resolve) => {
-    const previewImage = new window.Image();
-
-    previewImage.onload = () => {
-      const maxSize = 900;
-      const scale = Math.min(
-        1,
-        maxSize / Math.max(previewImage.width, previewImage.height),
-      );
-      const canvas = document.createElement("canvas");
-      canvas.width = Math.max(1, Math.round(previewImage.width * scale));
-      canvas.height = Math.max(1, Math.round(previewImage.height * scale));
-
-      const context = canvas.getContext("2d");
-      if (!context) {
-        resolve(rawDataUrl);
-        return;
-      }
-
-      context.drawImage(previewImage, 0, 0, canvas.width, canvas.height);
-      resolve(canvas.toDataURL("image/webp", 0.86));
-    };
-
-    previewImage.onerror = () => resolve(rawDataUrl);
-    previewImage.src = rawDataUrl;
-  });
+  return null;
 }
 
 export function AddProductDialog({
@@ -139,52 +105,57 @@ export function AddProductDialog({
   trigger,
 }: AddProductDialogProps = {}) {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isPending, startTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [selectedPreviewUrl, setSelectedPreviewUrl] = useState<string | null>(
+    null,
+  );
+  const [imageError, setImageError] = useState("");
+  const [removeExistingImage, setRemoveExistingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEditMode = Boolean(product);
   const open = controlledOpen ?? uncontrolledOpen;
+  const storedImageUrl = product ? getProductStoredImageUrl(product) : null;
+  const previewSrc =
+    selectedPreviewUrl || (!removeExistingImage ? storedImageUrl : null);
 
   const form = useForm<CreateProductFormValues>({
     resolver: zodResolver(createProductSchema),
     defaultValues: getProductFormDefaults(product),
   });
 
-  const [imagePreview, setImagePreview] = useState<string | null>(() =>
-    getInitialImagePreview(product),
-  );
-
   useEffect(() => {
     return () => {
-      revokeImagePreview(imagePreview);
+      if (selectedPreviewUrl) URL.revokeObjectURL(selectedPreviewUrl);
     };
-  }, [imagePreview]);
+  }, [selectedPreviewUrl]);
 
-  function clearImage() {
-    setImagePreview((current) => {
-      revokeImagePreview(current);
-      return null;
-    });
-    setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+  useEffect(() => {
+    form.reset(getProductFormDefaults(product));
+  }, [form, product]);
+
+  function clearSelectedImage() {
+    if (selectedPreviewUrl) URL.revokeObjectURL(selectedPreviewUrl);
+    setSelectedImage(null);
+    setSelectedPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   function resetDialog() {
-    form.reset();
-    clearImage();
-    setIsDragging(false);
+    form.reset(getProductFormDefaults(product));
+    clearSelectedImage();
+    setImageError("");
+    setRemoveExistingImage(false);
   }
 
   function handleOpenChange(nextOpen: boolean) {
+    if (isSubmitting) return;
     if (controlledOpen === undefined) {
       setUncontrolledOpen(nextOpen);
     }
     onOpenChange?.(nextOpen);
-    if (!nextOpen && !isPending) {
+    if (!nextOpen) {
       resetDialog();
     }
   }
@@ -196,120 +167,106 @@ export function AddProductDialog({
     onOpenChange?.(false);
   }
 
-  function handleImageFile(file: File) {
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast.error({ title: "Choose a JPG, PNG, or WEBP product image" });
+  async function handleImageFile(file: File | undefined) {
+    if (!file) return;
+
+    setImageError("");
+
+    if (file.size > MAX_PRODUCT_IMAGE_SIZE) {
+      setImageError("Image must be smaller than 5 MB.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast.error({ title: "Product image must be smaller than 5MB" });
+    const detectedMime = await detectImageMime(file);
+    const declaredMimeAllowed =
+      !file.type ||
+      ALLOWED_PRODUCT_IMAGE_TYPES.includes(
+        file.type as (typeof ALLOWED_PRODUCT_IMAGE_TYPES)[number],
+      );
+
+    if (
+      !detectedMime ||
+      !declaredMimeAllowed ||
+      !ALLOWED_PRODUCT_IMAGE_TYPES.includes(
+        detectedMime as (typeof ALLOWED_PRODUCT_IMAGE_TYPES)[number],
+      )
+    ) {
+      setImageError("Please select a JPG, PNG or WebP image.");
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
-    setImageFile(file);
-    setImagePreview((current) => {
-      revokeImagePreview(current);
-      return URL.createObjectURL(file);
-    });
+    clearSelectedImage();
+    setSelectedImage(file);
+    setSelectedPreviewUrl(URL.createObjectURL(file));
+    setRemoveExistingImage(false);
   }
 
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleImageFile(file);
+  function handleImageInputChange(event: ChangeEvent<HTMLInputElement>) {
+    void handleImageFile(event.target.files?.[0]);
+  }
+
+  function handleRemoveImage() {
+    clearSelectedImage();
+    setImageError("");
+    if (isEditMode && storedImageUrl) {
+      setRemoveExistingImage(true);
     }
   }
 
-  function handleDrop(event: DragEvent<HTMLDivElement>) {
-    event.preventDefault();
-    setIsDragging(false);
-
-    const file = event.dataTransfer.files?.[0];
-    if (file) {
-      handleImageFile(file);
+  async function onSubmit(values: CreateProductFormValues) {
+    if (isSubmitting) return;
+    if (imageError) {
+      toast.error({
+        title: "Check product image",
+        description: imageError,
+      });
+      return;
     }
-  }
 
-  function onSubmit(values: CreateProductFormValues) {
-    const productPayload = {
-      name: values.name.trim(),
-      internalRef: values.internalRef.trim(),
-      salesPrice: values.salesPrice,
-    };
-    const selectedImage = imageFile;
+    const productPayload = new FormData();
+    productPayload.append("name", values.name.trim());
+    productPayload.append("internalRef", values.internalRef.trim());
+    productPayload.append("salesPrice", String(values.salesPrice));
+    if (selectedImage) productPayload.append("image", selectedImage);
+    if (isEditMode && removeExistingImage && !selectedImage) {
+      productPayload.append("removeImage", "true");
+    }
 
-    startTransition(async () => {
-      if (product) {
-        const updatedProduct: ProductApiResponse = {
-          ...product,
-          ...productPayload,
-          updatedAt: new Date().toISOString(),
-        };
-        const productSaved = saveStoredProductOverride(updatedProduct);
+    setIsSubmitting(true);
 
-        if (!productSaved) {
-          toast.error({
-            title: "Couldn't update product",
-            description: "Product changes could not be saved in this browser.",
-          });
-          return;
-        }
-
-        if (selectedImage) {
-          const imageDataUrl = await createTableImageDataUrl(selectedImage);
-          const imageSaved = saveStoredProductImage(
-            productPayload,
-            imageDataUrl,
-          );
-
-          if (!imageSaved) {
-            toast.warning({
-              title: "Product updated",
-              description:
-                "The image could not be saved in this browser.",
-            });
-          }
-        }
-
-        toast.success({ title: "Product updated successfully" });
-        onProductUpdated?.(updatedProduct);
-        closeAfterSubmit();
-        return;
-      }
-
-      const result = await createProductAction(productPayload);
+    try {
+      const result = product
+        ? await updateProductAction(product.id, productPayload)
+        : await createProductAction(productPayload);
       if (result.success) {
-        if (selectedImage) {
-          const imageDataUrl = await createTableImageDataUrl(selectedImage);
-          const imageSaved = saveStoredProductImage(
-            productPayload,
-            imageDataUrl,
-          );
-
-          if (!imageSaved) {
-            toast.warning({
-              title: "Product added successfully",
-              description:
-                "The image could not be saved in this browser.",
-            });
-          }
-        }
-
-        toast.success({ title: "Product added successfully" });
+        toast.success({
+          title: product
+            ? "Product updated successfully"
+            : "Product added successfully",
+        });
+        if (product && result.data) onProductUpdated?.(result.data);
         closeAfterSubmit();
         form.reset();
-        setImageFile(null);
-        setImagePreview(null);
-        setIsDragging(false);
+        setSelectedImage(null);
+        setSelectedPreviewUrl(null);
+        setRemoveExistingImage(false);
         router.refresh();
       } else {
         toast.error({
-          title: "Couldn't add product",
+          title: product ? "Couldn't update product" : "Couldn't add product",
           description: result.error?.message || "Please try again.",
         });
       }
-    });
+    } catch {
+      toast.error({
+        title: product ? "Couldn't update product" : "Couldn't add product",
+        description: "Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -330,8 +287,8 @@ export function AddProductDialog({
       eyebrow={isEditMode ? "Catalog Update" : "New Product"}
       description={
         isEditMode
-          ? "Update catalog details and the product image used in the table."
-          : "Add catalog details and the product image used in the table."
+          ? "Update the product name, image, internal reference and sales price."
+          : "Add a product name, image, internal reference and sales price."
       }
       icon={<Package className="size-5" aria-hidden="true" />}
       width="md"
@@ -346,96 +303,100 @@ export function AddProductDialog({
           className="flex min-h-0 flex-1 flex-col"
         >
           <div className="bg-gp-surface-page min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5 sm:px-6">
-            <section className="gp-form-section border-gp-border-subtle rounded-[14px] border bg-white p-4">
-              <div className="mb-2 flex items-center justify-between gap-3">
-                <p className="text-sm font-semibold text-[#182033]">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <label className="text-sm font-semibold text-[#182033]">
                   Product Image
-                </p>
-                {imageFile && (
-                  <span className="max-w-[220px] truncate text-xs font-medium text-[#667085]">
-                    {imageFile.name}
-                  </span>
-                )}
+                </label>
+                <span className="text-gp-text-muted text-xs font-medium">
+                  Optional
+                </span>
               </div>
 
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={() => fileInputRef.current?.click()}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    fileInputRef.current?.click();
-                  }
-                }}
-                onDragOver={(event) => {
-                  event.preventDefault();
-                  setIsDragging(true);
-                }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={handleDrop}
-                className={`relative min-h-[148px] cursor-pointer overflow-hidden rounded-[14px] border border-dashed p-4 transition-[border-color,background-color,box-shadow] duration-[180ms] ${
-                  isDragging
-                    ? "border-[#D4AF4F] bg-[#FFF8E5] shadow-[0_0_0_4px_rgba(212,175,79,0.14)]"
-                    : "border-[#D8DEE8] bg-[#F8FAFC] hover:border-[#D4AF4F]/70 hover:bg-[#FFFDF7]"
-                }`}
-              >
-                {imagePreview ? (
-                  <div className="flex min-h-[116px] items-center gap-4">
-                    <div
-                      className="size-[112px] shrink-0 rounded-[12px] border border-[#E5E8EF] bg-white bg-contain bg-center bg-no-repeat p-2 shadow-[0_1px_2px_rgba(16,24,40,0.04)]"
-                      style={{ backgroundImage: `url(${imagePreview})` }}
-                      aria-label="Selected product image preview"
+              <div className="rounded-[12px] border border-[#E5E8EF] bg-white p-3 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
+                <div className="relative flex aspect-[16/9] min-h-[168px] items-center justify-center overflow-hidden rounded-[10px] border border-dashed border-[#D7DCE5] bg-[#F8FAFC]">
+                  {previewSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={previewSrc}
+                      alt="Product preview"
+                      className="h-full w-full object-contain"
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[#182033]">
-                        Product image ready
+                  ) : (
+                    <div className="flex flex-col items-center px-4 text-center">
+                      <span className="flex size-11 items-center justify-center rounded-full bg-[#FFF8E5] text-[#B18732]">
+                        <ImageIcon className="size-5" aria-hidden="true" />
+                      </span>
+                      <p className="mt-3 text-sm font-semibold text-[#182033]">
+                        Upload product image
                       </p>
-                      <p className="mt-1 text-xs leading-5 text-[#667085]">
-                        This image will appear beside the product name in the
-                        catalog table.
+                      <p className="mt-1 text-xs font-medium text-[#667085]">
+                        PNG, JPG or WebP. Maximum 5 MB.
                       </p>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="mt-3 h-8 rounded-[8px] border-[#E5E8EF] px-3 text-xs font-semibold text-[#667085]"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          clearImage();
-                        }}
-                      >
-                        <X className="size-3.5" aria-hidden="true" />
-                        Remove
-                      </Button>
                     </div>
-                  </div>
-                ) : (
-                  <div className="flex min-h-[116px] flex-col items-center justify-center text-center">
-                    <span className="flex size-12 items-center justify-center rounded-full border border-[#E9DDB8] bg-[#FFF8E5] text-[#B18732]">
-                      <ImagePlus className="size-5" aria-hidden="true" />
-                    </span>
-                    <p className="mt-3 text-sm font-semibold text-[#182033]">
-                      Drop product image here
+                  )}
+                </div>
+
+                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={isSubmitting}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="h-10 rounded-[10px] border-[#E5E8EF] px-4 font-semibold text-[#344054]"
+                  >
+                    <Upload className="size-4" />
+                    {previewSrc ? "Change Image" : "Upload Image"}
+                  </Button>
+                  {previewSrc && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isSubmitting}
+                      onClick={handleRemoveImage}
+                      className="h-10 rounded-[10px] border-[#F3C5C5] px-4 font-semibold text-[#B42318] hover:bg-[#FEF3F2] hover:text-[#B42318]"
+                    >
+                      <Trash2 className="size-4" />
+                      Remove
+                    </Button>
+                  )}
+                </div>
+
+                {imageError && (
+                  <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm font-medium text-[#B42318]">
+                      {imageError}
                     </p>
-                    <p className="mt-1 text-xs leading-5 text-[#667085]">
-                      JPG, PNG, or WEBP up to 5MB
-                    </p>
-                    <span className="mt-3 inline-flex items-center gap-2 rounded-[8px] bg-white px-3 py-2 text-xs font-semibold text-[#B18732] shadow-[0_1px_2px_rgba(16,24,40,0.05)]">
-                      <UploadCloud className="size-3.5" aria-hidden="true" />
-                      Browse image
-                    </span>
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => {
+                        setImageError("");
+                        if (fileInputRef.current)
+                          fileInputRef.current.value = "";
+                      }}
+                      className="w-fit text-xs font-bold text-[#9A7628] underline-offset-4 hover:underline disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Clear
+                    </button>
                   </div>
                 )}
-
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
+                {removeExistingImage && !selectedImage && (
+                  <p className="mt-2 text-sm font-medium text-[#667085]">
+                    Image will be removed when you save changes.
+                  </p>
+                )}
               </div>
-            </section>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                className="hidden"
+                disabled={isSubmitting}
+                onChange={handleImageInputChange}
+              />
+            </div>
 
             <FormField
               control={form.control}
@@ -453,6 +414,7 @@ export function AddProductDialog({
                     <FormControl>
                       <Input
                         placeholder="e.g. Omega-3 Capsules"
+                        disabled={isSubmitting}
                         className="h-11 rounded-[10px] border-[#E5E8EF] bg-white pl-10 text-sm shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[border-color,box-shadow] focus-visible:border-[#D4AF4F] focus-visible:ring-[#D4AF4F]/20"
                         {...field}
                       />
@@ -480,6 +442,7 @@ export function AddProductDialog({
                       <FormControl>
                         <Input
                           placeholder="e.g. P01001"
+                          disabled={isSubmitting}
                           className="h-11 rounded-[10px] border-[#E5E8EF] bg-white pl-10 text-sm shadow-[0_1px_2px_rgba(16,24,40,0.04)] transition-[border-color,box-shadow] focus-visible:border-[#D4AF4F] focus-visible:ring-[#D4AF4F]/20"
                           {...field}
                         />
@@ -510,6 +473,7 @@ export function AddProductDialog({
                           step={0.01}
                           placeholder="0.00"
                           value={field.value || ""}
+                          disabled={isSubmitting}
                           onChange={(event) =>
                             field.onChange(parseFloat(event.target.value) || 0)
                           }
@@ -533,24 +497,30 @@ export function AddProductDialog({
                 type="button"
                 variant="outline"
                 onClick={() => handleOpenChange(false)}
-                disabled={isPending}
+                disabled={isSubmitting}
                 className="h-11 rounded-[10px] border-[#E5E8EF] px-5 font-semibold text-[#475467]"
               >
                 Cancel
               </Button>
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={isSubmitting}
                 className="gp-primary-action h-11 rounded-[10px] bg-[#101D36] px-5 font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-all duration-[180ms] hover:-translate-y-px hover:bg-[#101D36]/95 hover:text-white hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] disabled:translate-y-0"
               >
-                {isPending ? (
+                {isSubmitting ? (
                   <Loader2 className="size-4 animate-spin text-[#C9A44C]" />
                 ) : isEditMode ? (
                   <Package className="size-4 text-[#C9A44C]" />
                 ) : (
                   <Plus className="size-4 text-[#C9A44C]" />
                 )}
-                {isEditMode ? "Save Changes" : "Add Product"}
+                {isSubmitting
+                  ? isEditMode
+                    ? "Saving..."
+                    : "Adding..."
+                  : isEditMode
+                    ? "Save Changes"
+                    : "Add Product"}
               </Button>
             </div>
           </div>

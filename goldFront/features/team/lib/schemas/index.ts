@@ -27,7 +27,10 @@ export const addMemberSchema = z.object({
     })
     .optional(),
   certificates: z
-    .instanceof(FileList)
+    .custom<FileList>(
+      (value) => typeof FileList !== "undefined" && value instanceof FileList,
+      "Select certificate files",
+    )
     .refine(
       (files) => {
         if (!files || files.length === 0) return true;

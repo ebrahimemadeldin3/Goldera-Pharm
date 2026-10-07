@@ -62,14 +62,14 @@ export function RepQuickActions() {
         </span>
       </div>
 
-      <div className="flex flex-col gap-2.5 pt-1">
+      <div className="grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2 xl:grid-cols-4">
         {actions.map((action) => {
           const Icon = action.icon;
           return (
             <Link
               key={action.id}
               href={action.href}
-              className="group/action flex items-center justify-between gap-3 rounded-[12px] border border-[#E7EAF0] bg-[#FAFCFF] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D0D5DD] hover:bg-white hover:shadow-[0_4px_12px_rgba(16,24,40,0.06)]"
+              className="group/action flex min-w-0 items-center justify-between gap-3 rounded-[12px] border border-[#E7EAF0] bg-[#FAFCFF] p-3 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#D0D5DD] hover:bg-white hover:shadow-[0_4px_12px_rgba(16,24,40,0.06)]"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <span

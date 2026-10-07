@@ -34,7 +34,8 @@ type CoachingReportApiResponse = {
   };
   doctor: {
     id: string;
-    name: string;
+    nameAR?: string | null;
+    nameEN?: string | null;
     email: string;
     phone: string;
   };
@@ -73,8 +74,43 @@ type RepCoachingReportsActionResult =
     };
 
 type AddRepCommentDto = {
-  comment: string;
+  comment?: string;
+  accept?: boolean;
 };
+
+function calculateRepCoachingStats(reports: CoachingReportApiResponse[]) {
+  const totalReports = reports.length;
+
+  return {
+    totalReports,
+    pendingComments: reports.filter((report) => !report.repAccepted).length,
+    averageRating:
+      totalReports > 0
+        ? reports.reduce((sum, report) => sum + report.performanceRating, 0) /
+          totalReports
+        : 0,
+    thisMonth: reports.filter((report) => {
+      const reportDate = new Date(report.createdAt);
+      const now = new Date();
+      return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
+    }).length,
+  };
+}
+
+function getDoctorDisplayName(doctor: CoachingReportApiResponse["doctor"]) {
+  return doctor.nameEN || doctor.nameAR || "Unknown doctor";
+}
+
+async function getRepCoachingStatsSource(
+  response: GetRepCoachingReportsResponse,
+) {
+  if (response.results <= response.data.length) {
+    return response.data;
+  }
+
+  const statsResponse = await getRepCoachingReports(1, response.results);
+  return statsResponse.data;
+}
 
 /**
  * Fetch coaching reports for the logged-in rep
@@ -114,6 +150,7 @@ export async function getRepCoachingReportsAction(
 ): Promise<RepCoachingReportsActionResult> {
   try {
     const response = await getRepCoachingReports(page, limit);
+    const statsSource = await getRepCoachingStatsSource(response);
 
     // Map API response to CoachingReport type
     const reports: CoachingReport[] = response.data.map((report) => {
@@ -128,7 +165,7 @@ export async function getRepCoachingReportsAction(
       };
 
       // Determine status based on rep response
-      const status: "Completed" | "Pending Feedback" = report.repComment
+      const status: "Completed" | "Pending Feedback" = report.repAccepted
         ? "Completed"
         : "Pending Feedback";
 
@@ -144,7 +181,7 @@ export async function getRepCoachingReportsAction(
           initials: getInitials(report.rep.name),
         },
         supervisor: report.createdBy.name,
-        doctor: report.doctor.name,
+        doctor: getDoctorDisplayName(report.doctor),
         hospital: report.visitLocation,
         date: formattedDate,
         visitType: "Joint Visit",
@@ -154,7 +191,7 @@ export async function getRepCoachingReportsAction(
         improvements: report.visitCons,
         actionPlan: report.actionItems.join(", "),
         supervisorComments: report.recommendations,
-        repResponse: report.repComment || "No response yet",
+        repResponse: report.repComment || "Accepted without comment",
       };
     });
 
@@ -163,16 +200,8 @@ export async function getRepCoachingReportsAction(
       reports,
       totalCount: response.results,
       stats: {
+        ...calculateRepCoachingStats(statsSource),
         totalReports: response.results,
-        pendingComments: response.data.filter((r) => !r.repComment).length,
-        averageRating:
-          response.data.reduce((sum, r) => sum + r.performanceRating, 0) /
-          (response.results || 1),
-        thisMonth: response.data.filter((r) => {
-          const reportDate = new Date(r.createdAt);
-          const now = new Date();
-          return getSaudiYearMonthKey(reportDate) === getSaudiYearMonthKey(now);
-        }).length,
       },
     };
   } catch (error) {
@@ -195,7 +224,11 @@ export async function getRepCoachingReportsAction(
  */
 export async function addRepCommentAction(reportId: string, comment: string) {
   try {
-    await addRepComment(reportId, { comment });
+    const trimmed = comment.trim();
+    await addRepComment(
+      reportId,
+      trimmed ? { comment: trimmed } : { accept: true },
+    );
 
     return {
       success: true,

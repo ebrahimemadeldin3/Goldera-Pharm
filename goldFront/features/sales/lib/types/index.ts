@@ -27,6 +27,10 @@ export type SaleApiResponse = {
 
 export type SalesQueryParams = {
   date?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  timeFilter?: DateFilter;
+  q?: string;
   sheetName?: string;
   page?: number;
   limit?: number;

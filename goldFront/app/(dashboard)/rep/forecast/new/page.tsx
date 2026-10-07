@@ -7,7 +7,7 @@ import { calculateForecastStats } from "@/features/forecast/lib/utils";
 import { PageContainer } from "@/components/layout/page-container";
 
 export default async function Page() {
-  const result = await getMyForecastsAction();
+  const result = await getMyForecastsAction(1, 1000);
   const forecasts = result.success ? (result.data ?? []) : [];
 
   // Calculate stats using utility
@@ -18,7 +18,7 @@ export default async function Page() {
       <div className="flex items-center gap-2">
         <Link
           href="/rep/forecast"
-          className="border-[#E5E8EF] text-[#344054] hover:bg-[#F9FAFB] inline-flex h-9 items-center gap-2 rounded-[10px] border bg-white px-3 text-xs font-semibold transition-colors"
+          className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[#E5E8EF] bg-white px-3 text-xs font-semibold text-[#344054] transition-colors hover:bg-[#F9FAFB]"
         >
           <ArrowLeft size={15} />
           <span>Back to Forecasts</span>

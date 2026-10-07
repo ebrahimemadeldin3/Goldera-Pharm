@@ -41,7 +41,7 @@ export function groupSelectedDoctorsByHospital(
     if (!existing) {
       hospitalMap.set(doctor.id, {
         id: doctor.id,
-        nameEN: doctor.nameEN,
+        nameEN: doctor.nameEN || doctor.nameAR || "Doctor",
         nameAR: doctor.nameAR,
         accountName: doctor.accountName,
         subRegion: doctor.subRegion,
@@ -83,7 +83,7 @@ export function groupSelectedDoctorsByDay(
     if (!existing) {
       dayMap.set(doctor.id, {
         id: doctor.id,
-        nameEN: doctor.nameEN,
+        nameEN: doctor.nameEN || doctor.nameAR || "Doctor",
         nameAR: doctor.nameAR,
         accountName: doctor.accountName,
         subRegion: doctor.subRegion,

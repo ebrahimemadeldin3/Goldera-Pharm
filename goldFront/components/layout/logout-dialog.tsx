@@ -49,11 +49,10 @@ export function LogoutDialog({
             <AlertCircle size={13} className="text-dashboard-red shrink-0" />
             <div>
               <h4 className="text-dashboard-red mb-1 text-sm/[21px] font-medium">
-                Active Session Warning
+                Before you sign out
               </h4>
               <p className="text-secondary-dark text-sm/[21px] font-normal">
-                You have unsaved changes and pending requests. Make sure all
-                important data is saved before logging out.
+                Save any changes you are working on before signing out.
               </p>
             </div>
           </div>

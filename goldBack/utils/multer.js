@@ -1,5 +1,7 @@
 import multer from "multer";
 import { ApiError } from "./apiError.js";
+import fs from "node:fs";
+import path from "node:path";
 
 // Image-specific configuration
 const imageUpload = multer({
@@ -19,6 +21,21 @@ const imageUpload = multer({
   },
 }).single("profileImage");
 
+const productImageUpload = multer({
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new ApiError("Please select a JPG, PNG or WebP image.", 415), false);
+    }
+  },
+  limits: {
+    fileSize: 5 * 1024 * 1024,
+  },
+}).single("image");
+
 const filesUpload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
@@ -29,7 +46,7 @@ const filesUpload = multer({
       cb(new ApiError("Only PDF files are allowed!", 422), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 },
+  limits: { fileSize: 5 * 1024 * 1024, files: 10 },
 }).fields([
   { name: "resume", maxCount: 1 },
   { name: "certificates", maxCount: 10 },
@@ -39,7 +56,9 @@ const filesUpload = multer({
 const sheetUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, "uploads/");
+      const directory = path.join(process.cwd(), "uploads");
+      fs.mkdirSync(directory, { recursive: true });
+      cb(null, directory);
     },
     filename: (req, file, cb) => {
       const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -50,7 +69,9 @@ const sheetUpload = multer({
     if (
       file.mimetype ===
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-      file.mimetype === "application/vnd.ms-excel"
+      file.mimetype === "application/vnd.ms-excel" ||
+      file.mimetype === "text/csv" ||
+      file.mimetype === "application/csv"
     ) {
       cb(null, true);
     } else {
@@ -60,4 +81,4 @@ const sheetUpload = multer({
   limits: { fileSize: 10 * 1024 * 1024 },
 }).single("sheet");
 
-export { imageUpload, filesUpload, sheetUpload };
+export { imageUpload, productImageUpload, filesUpload, sheetUpload };

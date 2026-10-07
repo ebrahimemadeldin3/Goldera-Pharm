@@ -16,6 +16,7 @@ router.use(guard);
 
 router.get("/", getAllDoctors);
 router.post("/", allowedTo("MANAGER"), addNewDoctor);
+router.post("/bulk-import", allowedTo("MANAGER"), addDoctorByCSV);
 router.post("/csv", allowedTo("MANAGER"), sheetUpload, addDoctorByCSV);
 router.get("/:id", getOneDoctor);
 router.patch("/:id", allowedTo("MANAGER"), updateDoctor);
