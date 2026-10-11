@@ -139,7 +139,7 @@ export function AddCommentDialog({
           <Button
             type="button"
             onClick={handleSubmit}
-            disabled={isPending}
+            disabled={isPending || !comment.trim()}
             className="bg-gp-gold-500 hover:bg-gp-gold-600 shadow-gp-gold-action font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isPending ? "Submitting..." : "Submit Comment"}

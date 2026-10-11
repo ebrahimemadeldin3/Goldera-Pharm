@@ -76,7 +76,7 @@ export function FormDrawer({
   closeLabel,
 }: FormDrawerProps) {
   const titleId = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-drawer-title`;
-  const descriptionId = description ? `${titleId}-description` : undefined;
+  const descriptionId = `${titleId}-description`;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -118,12 +118,16 @@ export function FormDrawer({
                 >
                   {title}
                 </SheetTitle>
-                {description && (
+                {description ? (
                   <SheetDescription
                     id={descriptionId}
                     className="text-gp-text-muted mt-1 max-w-[460px] text-sm leading-6 font-medium"
                   >
                     {description}
+                  </SheetDescription>
+                ) : (
+                  <SheetDescription id={descriptionId} className="sr-only">
+                    {title} drawer form
                   </SheetDescription>
                 )}
                 {headerExtra}

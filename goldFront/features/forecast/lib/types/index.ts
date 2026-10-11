@@ -36,6 +36,7 @@ export interface CreateForecastApiDto {
     doctorName: string;
   }[];
   notes?: string;
+  status?: string;
 }
 
 export interface CreateForecastApiResponse {

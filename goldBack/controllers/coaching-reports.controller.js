@@ -25,9 +25,42 @@ const addCoachingReport = async (req, res, next) => {
       notes,
     } = req.body;
 
-    const rep = await prisma.user.findUnique({ where: { id: repId } });
+    const rep = await prisma.user.findUnique({
+      where: { id: repId },
+      include: { subRegion: true },
+    });
     if (!rep || !canManageUser(req.user, rep) || rep.id === req.user.id)
       return next(new ApiError("Select a representative from your team", 403));
+
+    const doctor = await prisma.doctor.findUnique({
+      where: { id: doctorId },
+      include: { accounts: { include: { subRegion: true } } },
+    });
+    if (!doctor) {
+      return next(new ApiError("Doctor not found", 404));
+    }
+
+    const repTerritory = rep.subRegion?.name || rep.location;
+    if (repTerritory) {
+      const normalize = (v) => (v || "").trim().toLowerCase();
+      const normRepTerritory = normalize(repTerritory);
+      const isAssigned =
+        normalize(doctor.subRegion) === normRepTerritory ||
+        normalize(doctor.area) === normRepTerritory ||
+        normalize(doctor.accounts?.subRegion?.name) === normRepTerritory ||
+        doctor.accounts?.subRegionId === rep.subRegionId ||
+        doctor.subRegion === rep.subRegionId;
+
+      if (!isAssigned) {
+        return next(
+          new ApiError(
+            "Doctor is not assigned to the selected representative",
+            400,
+          ),
+        );
+      }
+    }
+
     const score = number(performanceRating, "Performance rating", {
       min: 1,
       integer: true,

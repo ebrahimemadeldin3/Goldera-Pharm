@@ -45,18 +45,38 @@ router.get("/", async (req, res, next) => {
           where: reviewing
             ? { status: "PENDING", rep: userScope(req.user) }
             : { repId: req.user.id, status: { in: ["APPROVED", "REJECTED"] } },
+          include: reviewing ? { rep: { select: { name: true } } } : undefined,
           orderBy: { updatedAt: "desc" },
           take: 20,
         }),
         reviewing
-          ? []
+          ? prisma.appraisal.findMany({
+              where: {
+                acknowledged: true,
+                rep: userScope(req.user),
+              },
+              include: { rep: { select: { name: true } } },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+            })
           : prisma.appraisal.findMany({
               where: { repId: req.user.id },
               orderBy: { updatedAt: "desc" },
               take: 10,
             }),
         reviewing
-          ? []
+          ? prisma.coachingReport.findMany({
+              where: {
+                repAccepted: true,
+                rep: userScope(req.user),
+              },
+              include: {
+                rep: { select: { name: true } },
+                doctor: { select: { nameEN: true } },
+              },
+              orderBy: { updatedAt: "desc" },
+              take: 10,
+            })
           : prisma.coachingReport.findMany({
               where: { repId: req.user.id },
               orderBy: { updatedAt: "desc" },
@@ -108,7 +128,9 @@ router.get("/", async (req, res, next) => {
           reviewing
             ? "Forecast awaiting review"
             : `Forecast ${f.status.toLowerCase()}`,
-          f.supervisorFeedback || "Review the product forecast details.",
+          reviewing
+            ? `${f.rep?.name ? `${f.rep.name}: ` : ""}${f.periodType || "Monthly"} forecast submitted for review`
+            : f.supervisorFeedback || "Review the product forecast details.",
           `${prefix}/forecast`,
           f.status === "APPROVED" ? "success" : "file",
         ),
@@ -117,19 +139,25 @@ router.get("/", async (req, res, next) => {
         item(
           "appraisal",
           a,
-          "Performance appraisal",
-          a.feedbackComments ||
-            "Your performance appraisal is available to review.",
+          reviewing ? "Appraisal acknowledged" : "Performance appraisal",
+          reviewing
+            ? `${a.rep?.name || "Representative"} acknowledged appraisal${a.acknowledgementComment ? `: "${a.acknowledgementComment}"` : ""}`
+            : a.feedbackComments ||
+              "Your performance appraisal is available to review.",
           `${prefix}/appraisal`,
+          "success",
         ),
       ),
       ...coachings.map((c) =>
         item(
           "coaching",
           c,
-          "Coaching review",
-          c.recommendations,
+          reviewing ? "Coaching review responded" : "Coaching review",
+          reviewing
+            ? `${c.rep?.name || "Representative"} responded to coaching review${c.repComment ? `: "${c.repComment}"` : ""}`
+            : c.recommendations || "Your supervisor shared coaching notes.",
           `${prefix}/coaching`,
+          "success",
         ),
       ),
     ]

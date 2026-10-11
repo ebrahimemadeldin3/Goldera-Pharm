@@ -109,6 +109,15 @@ export default function AppraisalCard({ review, animationIndex = 0 }: Props) {
                 >
                   {roleLabel}
                 </span>
+                {review.acknowledged ? (
+                  <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-[#CBEFDD] bg-[#E9F8F1] px-2.5 py-0.5 text-xs font-semibold text-[#168557]">
+                    Acknowledged
+                  </span>
+                ) : (
+                  <span className="inline-flex min-h-6 items-center gap-1 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2.5 py-0.5 text-xs font-semibold text-[#8A6515]">
+                    Pending
+                  </span>
+                )}
                 {review.statusBadge && statusTone && (
                   <span
                     className={cn(

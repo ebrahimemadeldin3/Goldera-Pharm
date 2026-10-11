@@ -109,11 +109,32 @@ const addNewDoctor = async (req, res, next) => {
 // Get all doctors
 const getAllDoctors = async (req, res, next) => {
   try {
-    const { subRegion, paginate } = req.query;
+    const { subRegion, repId, paginate } = req.query;
+
+    let targetSubRegion = subRegion;
+    if (repId) {
+      const rep = await prisma.user.findUnique({
+        where: { id: repId },
+        include: { subRegion: true },
+      });
+      if (rep) {
+        targetSubRegion = rep.subRegion?.name || rep.location;
+      }
+    }
+
+    const territoryFilter = targetSubRegion
+      ? {
+          OR: [
+            { subRegion: targetSubRegion },
+            { area: targetSubRegion },
+            { accounts: { subRegion: { name: targetSubRegion } } },
+          ],
+        }
+      : {};
 
     if (paginate === "false") {
       const doctors = await prisma.doctor.findMany({
-        where: subRegion ? { subRegion } : {},
+        where: territoryFilter,
         orderBy: { createdAt: "desc" },
       });
 
@@ -129,8 +150,7 @@ const getAllDoctors = async (req, res, next) => {
     const apiFeatures = new ApiFeatures(req.query, "Doctor");
     const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
 
-    const whereClause = { ...queryObj.where };
-    if (subRegion) whereClause.subRegion = subRegion;
+    const whereClause = { ...queryObj.where, ...territoryFilter };
 
     const totalDocuments = await prisma.doctor.count({ where: whereClause });
 

@@ -65,12 +65,8 @@ export default function CreateForecastForm() {
 
       if (productsResult.success && productsResult.data) {
         setProducts(productsResult.data);
-        // Pre-select first 3 products as default suggestions if available
-        if (productsResult.data.length > 0) {
-          setSelectedProductIds(
-            productsResult.data.slice(0, 3).map((p) => p.id),
-          );
-        }
+        // Default to no selected products to prevent accidental allocations
+        setSelectedProductIds([]);
       }
       if (doctorsResult.success && doctorsResult.data) {
         setDoctors(doctorsResult.data);

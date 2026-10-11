@@ -5,7 +5,7 @@ import { Calendar, CheckCircle2, Stethoscope, ChevronDown, ChevronUp } from "luc
 import { format } from "date-fns";
 import { planTypeConfig, statusConfig } from "../../lib/constants";
 import { VisitPlan } from "@/features/plan/api/get";
-import { groupSelectedDoctorsByDay } from "../../lib/utils";
+import { groupSelectedDoctorsByDay, calculatePlanCoverage, formatPlanCoverage } from "../../lib/utils";
 
 type PlanCardProps = {
   plan: VisitPlan;
@@ -78,9 +78,12 @@ export default function RepPlanCard({ plan }: PlanCardProps) {
           <div className="space-y-0.5">
             <span className="text-[#667085] text-[10px] font-medium block">Coverage</span>
             <span className="font-bold text-sm text-[#168557]">
-              {plan.targetVisits && selectedDoctorsCount
-                ? `${Math.round((selectedDoctorsCount / plan.targetVisits) * 100)}%`
-                : "100%"}
+              {formatPlanCoverage(
+                calculatePlanCoverage(
+                  selectedDoctorsCount,
+                  plan.targetDoctors ?? plan.targetVisits,
+                ),
+              )}
             </span>
           </div>
         </div>

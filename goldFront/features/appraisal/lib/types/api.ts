@@ -34,6 +34,7 @@ export interface AppraisalApiResponse {
   feedbackComments: string | null;
   acknowledged?: boolean;
   acknowledgedAt?: string | null;
+  acknowledgementComment?: string | null;
   repComment?: string | null;
   employeeComment?: string | null;
   createdAt: string;

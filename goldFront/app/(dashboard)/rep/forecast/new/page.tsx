@@ -7,7 +7,7 @@ import { calculateForecastStats } from "@/features/forecast/lib/utils";
 import { PageContainer } from "@/components/layout/page-container";
 
 export default async function Page() {
-  const result = await getMyForecastsAction(1, 1000);
+  const result = await getMyForecastsAction(1, 50);
   const forecasts = result.success ? (result.data ?? []) : [];
 
   // Calculate stats using utility

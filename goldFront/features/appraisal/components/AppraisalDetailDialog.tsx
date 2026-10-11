@@ -7,6 +7,8 @@ import {
   Briefcase,
   Building2,
   CalendarDays,
+  CheckCircle2,
+  Clock3,
   MapPin,
   MessageSquare,
   Star,
@@ -26,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import type { Review } from "../lib/types";
+import { formatAcknowledgedAt } from "../lib/utils";
 
 type Props = {
   review: Review;
@@ -386,6 +389,47 @@ export function AppraisalDetailDialog({ review, open, onOpenChange }: Props) {
               </p>
             </section>
           )}
+
+          <section className="border-gp-border-subtle bg-gp-surface-card shadow-gp-card rounded-[14px] border p-4 sm:p-5">
+            <div className="flex items-center gap-2.5">
+              <span className="border-gp-gold-300 bg-gp-gold-50 text-gp-gold-700 flex size-9 shrink-0 items-center justify-center rounded-[10px] border">
+                <UserRound className="size-4" aria-hidden="true" />
+              </span>
+              <h3 className="text-gp-navy-900 text-sm font-semibold">
+                Representative Acknowledgement & Response
+              </h3>
+              {review.acknowledged ? (
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#CBEFDD] bg-[#E9F8F1] px-2.5 py-0.5 text-xs font-bold text-[#168557]">
+                  <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                  Acknowledged
+                </span>
+              ) : (
+                <span className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[#E9DDB8] bg-[#FFF8E5] px-2.5 py-0.5 text-xs font-bold text-[#8A6515]">
+                  <Clock3 className="size-3.5" aria-hidden="true" />
+                  Pending Acknowledgement
+                </span>
+              )}
+            </div>
+            {review.acknowledged ? (
+              <div className="mt-3 rounded-[10px] border border-[#CBEFDD] bg-[#F7FCFA] p-3.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-[#168557]">
+                  <span>Acknowledged by {review.name}</span>
+                  {review.acknowledgedAt && (
+                    <span className="text-[#667085] font-normal">
+                      {formatAcknowledgedAt(review.acknowledgedAt)}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm leading-6 whitespace-pre-wrap text-[#344054]">
+                  {review.repComment?.trim() || "No response comment was submitted."}
+                </p>
+              </div>
+            ) : (
+              <p className="text-gp-text-muted mt-3 text-sm leading-6 font-medium">
+                {review.name} has not acknowledged this appraisal yet.
+              </p>
+            )}
+          </section>
         </div>
 
         <DialogFooter className="appraisal-dialog-footer border-gp-border-subtle flex-row items-center justify-between gap-3 border-t bg-white px-4 py-3.5 sm:px-5">

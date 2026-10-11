@@ -205,12 +205,15 @@ const acknowledgeAppraisal = async (req, res, next) => {
       );
     }
 
+    const trimmedComment =
+      typeof comment === "string" ? comment.trim() || null : null;
+
     const updatedAppraisal = await prisma.appraisal.update({
       where: { id },
       data: {
         acknowledged: Boolean(accept),
         acknowledgedAt: accept ? new Date() : null,
-        acknowledgementComment: comment ?? null,
+        acknowledgementComment: trimmedComment,
       },
       include: {
         rep: { select: { id: true, name: true, email: true } },

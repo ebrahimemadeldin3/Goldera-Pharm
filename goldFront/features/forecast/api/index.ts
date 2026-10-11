@@ -21,10 +21,10 @@ import {
   ForecastApiResponse,
   GetProductsResponse,
   ProductApiResponse,
-  GetDoctorsResponse,
   DoctorApiResponse,
 } from "../lib/types";
 import { fetchProducts as fetchProductsFromStore } from "@/features/products/api";
+import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { CreateForecastFormValues } from "../lib/schemas";
 
 const BACKEND_REQUIRED_MESSAGE =
@@ -134,6 +134,7 @@ function prepareSubmissionData(
     periodDate,
     productForecasts,
     notes: formData.notes || undefined,
+    status: "PENDING",
   };
 }
 
@@ -336,13 +337,8 @@ export async function fetchProducts(): Promise<{
 export async function fetchMyDoctors(): Promise<{
   data: Doctor[];
 }> {
-  const response = await apiFetch<GetDoctorsResponse>("/api/doctors", {
-    method: "GET",
-  });
-
-  const doctors = response.data
-    .filter((doctor) => doctor.isActive)
-    .map(mapDoctorApiToDoctor);
+  const result = await getSchedulableDoctorsAction();
+  const doctors = (result.data || []).map(mapDoctorApiToDoctor);
 
   return {
     data: doctors,
@@ -495,10 +491,21 @@ export async function getMyDoctorsAction(): Promise<{
   error?: ApiError;
 }> {
   try {
-    const response = await fetchMyDoctors();
+    const result = await getSchedulableDoctorsAction();
+    if (!result.success || !result.data) {
+      return {
+        success: false,
+        error: result.error || {
+          statusCode: 500,
+          code: "FETCH_ERROR",
+          message: "Failed to fetch schedulable doctors",
+        },
+      };
+    }
+    const doctors = result.data.map(mapDoctorApiToDoctor);
     return {
       success: true,
-      data: response.data,
+      data: doctors,
     };
   } catch (error) {
     const err = error as ApiError;

@@ -255,9 +255,28 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps = {}) {
           style={{ "--auth-delay": "420ms" } as CSSProperties}
         >
           Need help?{" "}
-          <span className="auth-link font-semibold text-[#F7F9FC]">
+          <a
+            href={
+              process.env.NEXT_PUBLIC_SUPPORT_URL ||
+              (process.env.NEXT_PUBLIC_SUPPORT_EMAIL
+                ? `mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}?subject=${encodeURIComponent("GolderaPharm IT Support Request")}`
+                : "mailto:support@golderapharm.com?subject=GolderaPharm%20IT%20Support%20Request")
+            }
+            target={
+              process.env.NEXT_PUBLIC_SUPPORT_URL?.startsWith("http")
+                ? "_blank"
+                : undefined
+            }
+            rel={
+              process.env.NEXT_PUBLIC_SUPPORT_URL?.startsWith("http")
+                ? "noopener noreferrer"
+                : undefined
+            }
+            aria-label="Contact IT Support"
+            className="auth-link font-semibold text-[#F7F9FC] underline hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gp-gold-500 rounded-sm cursor-pointer"
+          >
             Contact IT Support
-          </span>
+          </a>
         </p>
       </div>
     </div>

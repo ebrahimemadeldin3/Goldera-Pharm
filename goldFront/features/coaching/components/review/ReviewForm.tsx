@@ -73,6 +73,7 @@ import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { PharmacyApiResponse } from "@/features/pharmacies/lib/types";
 import { VisitLocationField } from "./VisitLocationField";
 import { buildLocationSuggestions } from "@/features/coaching/lib/visit-location/suggestions";
+import { getTerritoryLookup } from "@/features/plan/lib/territory";
 
 type ReviewSectionId = "visit" | "performance" | "assessment" | "coaching";
 
@@ -509,6 +510,7 @@ const ReviewForm = ({
 
   const form = useForm<CoachingReviewFormValues>({
     resolver: zodResolver(coachingReviewSchema),
+    mode: "onChange",
     defaultValues: {
       repId: "",
       doctorId: "",
@@ -537,14 +539,55 @@ const ReviewForm = ({
     () => reps.find((rep) => rep.id === selectedRepId),
     [reps, selectedRepId],
   );
+
+  const scopedDoctors = useMemo(() => {
+    if (!selectedRep) return [];
+    const repTerritory =
+      selectedRep.region?.subRegion?.name ||
+      selectedRep.region?.name ||
+      selectedRep.location;
+    if (!repTerritory) return doctors;
+    const normRepTerritory = (
+      getTerritoryLookup(repTerritory).territory || repTerritory
+    )
+      .trim()
+      .toLowerCase();
+
+    return doctors.filter((doc) => {
+      const docTerritory = (
+        getTerritoryLookup(doc.subRegion || doc.area || "").territory ||
+        doc.subRegion ||
+        doc.area ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+      return docTerritory === normRepTerritory;
+    });
+  }, [doctors, selectedRep]);
+
+  // Clear selected doctor if representative changes and doctor is no longer in scope
+  useEffect(() => {
+    if (selectedDoctorId && scopedDoctors.length > 0) {
+      const isDoctorValid = scopedDoctors.some(
+        (doc) => doc.id === selectedDoctorId,
+      );
+      if (!isDoctorValid) {
+        form.setValue("doctorId", "", { shouldValidate: true });
+      }
+    } else if (!selectedRepId && selectedDoctorId) {
+      form.setValue("doctorId", "", { shouldValidate: true });
+    }
+  }, [selectedRepId, scopedDoctors, selectedDoctorId, form]);
+
   const locationSuggestions = useMemo(
     () =>
       buildLocationSuggestions({
-        doctors,
+        doctors: scopedDoctors.length > 0 ? scopedDoctors : doctors,
         pharmacies,
         recentLocations: [],
       }),
-    [doctors, pharmacies],
+    [doctors, pharmacies, scopedDoctors],
   );
 
   useEffect(() => {
@@ -862,18 +905,27 @@ const ReviewForm = ({
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
-                          disabled={loading}
+                          disabled={loading || !selectedRepId || scopedDoctors.length === 0}
                         >
                           <FormControl>
                             <SelectTrigger className={selectTriggerClassName}>
-                              <SelectValue placeholder="Select doctor" />
+                              <SelectValue
+                                placeholder={
+                                  !selectedRepId
+                                    ? "Select representative first"
+                                    : scopedDoctors.length === 0
+                                      ? "No doctors assigned to this representative"
+                                      : "Select doctor"
+                                }
+                              />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="coaching-select-content border-gp-border-default shadow-gp-popover rounded-[10px] bg-white">
-                            {doctors.map((doctor) => (
+                            {scopedDoctors.map((doctor) => (
                               <SelectItem key={doctor.id} value={doctor.id}>
-                                {doctor.nameAR} - {doctor.nameEN} -{" "}
-                                {doctor.subRegion}
+                                {doctor.nameAR ? `${doctor.nameAR} - ` : ""}
+                                {doctor.nameEN}
+                                {doctor.subRegion ? ` - ${doctor.subRegion}` : ""}
                               </SelectItem>
                             ))}
                           </SelectContent>
@@ -1530,7 +1582,7 @@ const ReviewForm = ({
 
                 <Button
                   type="submit"
-                  disabled={isPending || saveSucceeded}
+                  disabled={!form.formState.isValid || isPending || saveSucceeded}
                   className="coaching-save bg-gp-navy-900 hover:bg-gp-navy-850 focus-visible:ring-gp-gold-500/25 h-11 gap-2 rounded-[12px] border border-transparent px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[background-color,box-shadow,transform,color] duration-[170ms] hover:text-white focus-visible:ring-3 focus-visible:outline-none active:translate-y-0 disabled:translate-y-0 disabled:cursor-not-allowed disabled:bg-gp-text-muted disabled:opacity-60"
                 >
                   {isPending ? (

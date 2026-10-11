@@ -15,6 +15,7 @@ import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -277,6 +278,9 @@ export default function RequestHistory({
             <DialogTitle className="text-lg font-bold text-[#182033]">
               {selectedRequest?.title || selectedRequest?.subject}
             </DialogTitle>
+            <DialogDescription className="text-xs text-[#667085]">
+              Detailed history and review response for this request.
+            </DialogDescription>
           </DialogHeader>
 
           {selectedRequest && (

@@ -108,6 +108,21 @@ export function mapAppraisalToReview(appraisal: AppraisalApiResponse): Review {
     managerName: appraisal.manager?.name || "Manager",
     acknowledged: Boolean(appraisal.acknowledged ?? appraisal.acknowledgedAt),
     acknowledgedAt: appraisal.acknowledgedAt ?? null,
-    repComment: appraisal.repComment ?? appraisal.employeeComment ?? null,
+    repComment:
+      appraisal.acknowledgementComment ??
+      appraisal.repComment ??
+      appraisal.employeeComment ??
+      null,
   };
+}
+
+export function formatAcknowledgedAt(value?: string | null) {
+  if (!value) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(value));
 }

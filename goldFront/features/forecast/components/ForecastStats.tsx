@@ -35,7 +35,12 @@ export default function ForecastStats({
             <span className="text-xl font-bold text-[#168557]">{totalAllocation}</span>
           </div>
           <div className="flex flex-col gap-1 min-w-0 sm:px-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#EEF1F6]">
-            <span className="text-xs font-medium text-[#667085] truncate">My Doctors</span>
+            <span
+              className="text-xs font-medium text-[#667085] truncate"
+              title="Unique doctors included in submitted forecasts"
+            >
+              Doctors Forecasted
+            </span>
             <span className="text-xl font-bold text-[#182033]">{myDoctors}</span>
           </div>
           <div className="flex flex-col gap-1 min-w-0 sm:pl-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-[#EEF1F6]">

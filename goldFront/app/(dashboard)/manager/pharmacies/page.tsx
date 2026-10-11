@@ -30,34 +30,20 @@ export default async function Page({
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
 
-  const firstResult = await getPharmaciesAction(1, limit);
+  const result = await getPharmaciesAction(page, 200);
 
-  if (!firstResult.success) {
-    throw new Error(firstResult.error?.message || "Failed to fetch pharmacies");
+  if (!result.success) {
+    return (
+      <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">
+        <div className="flex flex-col items-center justify-center p-12 text-center">
+          <p className="text-gp-navy-900 font-semibold text-base">Unable to load pharmacies</p>
+          <p className="text-gp-text-muted mt-1 text-sm">{result.error?.message || "Please check your connection and retry."}</p>
+        </div>
+      </PageContainer>
+    );
   }
 
-  const firstPage = getPharmacyRecords(firstResult.data);
-  const totalCount =
-    typeof firstResult.results === "number"
-      ? firstResult.results
-      : firstPage.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  const remainingResults = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, index) =>
-      getPharmaciesAction(index + 2, limit),
-    ),
-  );
-
-  const pharmacies = [
-    ...firstPage,
-    ...remainingResults.flatMap((result) => {
-      if (!result.success) {
-        throw new Error(result.error?.message || "Failed to fetch pharmacies");
-      }
-
-      return getPharmacyRecords(result.data);
-    }),
-  ];
+  const pharmacies = getPharmacyRecords(result.data);
 
   return (
     <PageContainer className="min-h-[calc(100vh-80px)] overflow-x-hidden bg-[#F6F8FB]">

@@ -169,11 +169,18 @@ export function NewAppraisalDialog() {
   const activeStepRef = useRef(0);
   const stepRefs = useRef<(HTMLElement | null)[]>([]);
 
-  const { control, handleSubmit, reset, getValues, register } =
-    useForm<CreateAppraisalFormValues>({
-      resolver: zodResolver(createAppraisalSchema),
-      defaultValues: DEFAULT_FORM_VALUES,
-    });
+  const {
+    control,
+    handleSubmit,
+    reset,
+    getValues,
+    register,
+    formState: { isValid, errors },
+  } = useForm<CreateAppraisalFormValues>({
+    resolver: zodResolver(createAppraisalSchema),
+    mode: "onChange",
+    defaultValues: DEFAULT_FORM_VALUES,
+  });
 
   // Direct DOM update — zero React renders for the overall bar
   function syncOverall() {
@@ -442,6 +449,11 @@ export function NewAppraisalDialog() {
                         </Select>
                       )}
                     />
+                    {errors.repId && (
+                      <p className="text-gp-danger text-xs font-medium">
+                        {errors.repId.message}
+                      </p>
+                    )}
                   </div>
                   <div className="min-w-0 space-y-1.5">
                     <label className={fieldLabel}>
@@ -710,7 +722,7 @@ export function NewAppraisalDialog() {
               <Button
                 form="new-appraisal-form"
                 type="submit"
-                disabled={isPending}
+                disabled={!isValid || isPending}
                 className="appraisal-save gp-primary-action border-gp-navy-900 bg-gp-navy-900 hover:bg-gp-navy-900/95 focus-visible:ring-gp-gold-500/25 h-11 cursor-pointer rounded-[10px] border px-5 text-sm font-semibold text-white shadow-[0_8px_18px_rgba(16,29,54,0.18)] transition-[box-shadow,transform,background-color] duration-[170ms] hover:-translate-y-px hover:shadow-[0_10px_24px_rgba(16,29,54,0.22)] focus-visible:ring-[3px] focus-visible:outline-none active:translate-y-0 active:scale-[0.98] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-65 motion-reduce:transition-none motion-reduce:hover:translate-y-0"
               >
                 {isPending ? (

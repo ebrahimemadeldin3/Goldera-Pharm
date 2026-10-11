@@ -1,4 +1,5 @@
 import { Doctor, VisitPlan } from "@/features/plan/api/get";
+export { calculatePlanCoverage, formatPlanCoverage } from "./coverage";
 
 export type AggregatedSelectedDoctor = {
   id: string;

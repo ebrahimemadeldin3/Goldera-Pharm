@@ -42,6 +42,7 @@ import {
   updatePlanStatusAction,
 } from "@/features/plan/api/handle";
 import { planTypeConfig } from "@/features/plan/lib/constants";
+import { calculatePlanCoverage } from "@/features/plan/lib/utils";
 import {
   KSA_TERRITORY_STRUCTURE,
   type DistrictGroup,
@@ -179,12 +180,13 @@ function getSelectedDoctorsCount(plan: VisitPlan) {
 }
 
 function getCoverage(plan: VisitPlan) {
-  const targetDoctors = plan.targetDoctors ?? 0;
+  const target = plan.targetDoctors ?? plan.targetVisits ?? 0;
   const selectedDoctors = getSelectedDoctorsCount(plan);
 
-  if (targetDoctors <= 0) return null;
+  if (target <= 0 && selectedDoctors <= 0) return 0;
+  if (target <= 0) return null;
 
-  return Math.min(100, (selectedDoctors / targetDoctors) * 100);
+  return calculatePlanCoverage(selectedDoctors, target);
 }
 
 function formatCoverage(value: number | null) {

@@ -754,7 +754,11 @@ export function RepAppraisalClient({
       </section>
 
       <AppraisalDetailsDialog
-        key={selectedReview?.id ?? "no-review-selected"}
+        key={
+          selectedReview
+            ? `${selectedReview.id}:${selectedReview.acknowledged}:${selectedReview.repComment ?? ""}`
+            : "no-review-selected"
+        }
         review={selectedReview}
         open={Boolean(selectedReview)}
         onOpenChange={(open) => {

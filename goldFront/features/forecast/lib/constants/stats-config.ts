@@ -18,7 +18,7 @@ export const forecastStatsConfig: StatCardConfig[] = [
   },
   {
     id: "my-doctors",
-    label: "My Doctors",
+    label: "Doctors Forecasted",
     dataKey: "myDoctors",
     icon: Users,
     bgColor: "bg-[#F6F8FB] text-[#344054] border border-[#E5E8EF]",
