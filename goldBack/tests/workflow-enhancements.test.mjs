@@ -24,6 +24,7 @@ import {
   mapMarketingDoctorOption,
   validateMarketingDoctorQuery,
 } from "../utils/marketing-doctors.js";
+import { computeForecastCardSummary } from "../utils/forecast-summary.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -220,4 +221,68 @@ test("7. Prisma schema and migration include all required enums and backward-com
   assert.match(migrationSql, /CREATE TYPE "VisitCompanionType"/);
   assert.match(migrationSql, /CREATE TYPE "ForecastTargetType"/);
   assert.match(migrationSql, /ALTER TYPE "RequestType" ADD VALUE 'MONTHLY_MARKETING'/);
+});
+
+test("8. Forecast card summary computes top 3 products, SAR value, warnings, and comparison", () => {
+  const summary = computeForecastCardSummary(
+    {
+      id: "f-2",
+      targetType: "PHARMACY",
+      periodDate: "2026-11-30",
+      rep: {
+        subRegion: { name: "Jeddah", region: { name: "Western" } },
+        manager: { name: "Tariq Al-Manager" },
+      },
+      productForecasts: [
+        { productId: "p1", productName: "Rizona 20 mg", productUnits: 160, pharmacyId: "ph1", pharmacyName: "Al Nahdi Pharmacy" },
+        { productId: "p2", productName: "Gastrozol", productUnits: 120, pharmacyId: "ph2", pharmacyName: "Al Dawaa Pharmacy" },
+        { productId: "p3", productName: "Cardiovex", productUnits: 80, pharmacyId: "ph1", pharmacyName: "Al Nahdi Pharmacy" },
+        { productId: "p4", productName: "ExtraMed", productUnits: 40, pharmacyId: "ph3", pharmacyName: "United Pharmacy" },
+      ],
+    },
+    {
+      priceByProductId: new Map([
+        ["p1", 100],
+        ["p2", 50],
+        ["p3", 25],
+        ["p4", 10],
+      ]),
+      previousForecast: {
+        id: "f-1",
+        periodDate: "2026-10-31",
+        productForecasts: [
+          { productId: "p1", productName: "Rizona 20 mg", productUnits: 200, pharmacyId: "ph1" },
+        ],
+      },
+    },
+  );
+
+  assert.equal(summary.repTerritory, "Jeddah");
+  assert.equal(summary.managerName, "Tariq Al-Manager");
+  assert.equal(summary.productCount, 4);
+  assert.equal(summary.accountCount, 3);
+  assert.equal(summary.totalUnits, 400);
+  assert.equal(summary.estimatedValueSAR, 24400);
+  assert.equal(summary.topProducts.length, 3);
+  assert.equal(summary.topProducts[0].productName, "Rizona 20 mg");
+  assert.equal(summary.extraProductsCount, 1);
+  assert.equal(summary.comparison.quantityChangePct, 100);
+  assert.equal(summary.comparison.accountCountDiff, 2);
+  assert.equal(summary.warnings.length, 0);
+
+  // Missing price returns null estimatedValueSAR; zero accounts/products emits warnings
+  const emptySummary = computeForecastCardSummary(
+    {
+      id: "f-3",
+      targetType: "DOCTOR",
+      productForecasts: [
+        { productName: "Unpriced Product", productUnits: 0, doctorName: "Unassigned doctor" },
+      ],
+    },
+    {},
+  );
+  assert.equal(emptySummary.estimatedValueSAR, null);
+  assert.equal(emptySummary.comparison, null);
+  assert.ok(emptySummary.warnings.some((w) => w.code === "ZERO_ALLOCATION_ROWS"));
+  assert.ok(emptySummary.warnings.some((w) => w.code === "NO_TARGET_ACCOUNTS"));
 });

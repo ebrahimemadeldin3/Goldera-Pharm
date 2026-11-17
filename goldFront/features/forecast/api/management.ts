@@ -48,6 +48,7 @@ function transformForecast(
     totalUnits,
     totalDoctors: uniqueDoctors.size,
     totalProducts: uniqueProducts.size,
+    summary: apiForecast.summary,
   };
 }
 

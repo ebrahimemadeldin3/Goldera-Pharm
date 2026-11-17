@@ -20,8 +20,8 @@ const fixture = JSON.parse(
 const cache = new Map();
 function load(file) {
   if (cache.has(file)) return cache.get(file);
-  const module = { exports: {} };
-  cache.set(file, module.exports);
+  const compiled = { exports: {} };
+  cache.set(file, compiled.exports);
   const code = ts.transpileModule(fs.readFileSync(file, "utf8"), {
     compilerOptions: {
       module: ts.ModuleKind.CommonJS,
@@ -69,11 +69,11 @@ function load(file) {
   };
   new Function("require", "module", "exports", code)(
     resolve,
-    module,
-    module.exports,
+    compiled,
+    compiled.exports,
   );
-  cache.set(file, module.exports);
-  return module.exports;
+  cache.set(file, compiled.exports);
+  return compiled.exports;
 }
 const Dashboard = load(
   path.join(source, "ManagerOverviewDashboard.tsx"),

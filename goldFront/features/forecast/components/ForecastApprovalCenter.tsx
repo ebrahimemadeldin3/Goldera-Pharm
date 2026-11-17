@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { format } from "date-fns";
 import {
   ArrowRight,
@@ -19,7 +19,7 @@ import {
   XCircle,
   type LucideIcon,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import Pagination from "@/components/ui/Pagination";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { updateForecastAction } from "../api/management";
 import type { ForecastManagement } from "../lib/types/management";
+import { ManagerForecastCard } from "./ManagerForecastCard";
 
 type ForecastStatus = "pending" | "approved" | "rejected";
 type StatusFilter = "all" | ForecastStatus;
@@ -270,6 +271,8 @@ function ForecastToolbar({
   onPeriodFilterChange,
   targetTypeFilter,
   onTargetTypeFilterChange,
+  sortBy,
+  onSortByChange,
   periodOptions,
   activeFilterCount,
   onClearFilters,
@@ -284,6 +287,8 @@ function ForecastToolbar({
   onPeriodFilterChange: (value: string) => void;
   targetTypeFilter: string;
   onTargetTypeFilterChange: (value: string) => void;
+  sortBy: string;
+  onSortByChange: (value: string) => void;
   periodOptions: Array<{ value: string; label: string }>;
   activeFilterCount: number;
   onClearFilters: () => void;
@@ -420,6 +425,18 @@ function ForecastToolbar({
               <SelectItem value="all">All Forecast Types</SelectItem>
               <SelectItem value="DOCTOR">Doctor Forecast</SelectItem>
               <SelectItem value="PHARMACY">Pharmacy Forecast</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={onSortByChange}>
+            <SelectTrigger className="forecast-select-trigger h-11 rounded-[12px] border-[#E5E8EF] bg-white text-sm font-semibold text-[#4B5568]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent className="forecast-select-content rounded-[12px] border-[#E5E8EF] bg-white shadow-[0_16px_34px_rgba(16,24,40,0.14)]">
+              <SelectItem value="newest">Newest submitted</SelectItem>
+              <SelectItem value="oldest_pending">Oldest pending</SelectItem>
+              <SelectItem value="highest_units">Highest total quantity</SelectItem>
+              <SelectItem value="rep_name">Representative name</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -713,13 +730,60 @@ export default function ForecastApprovalCenter({
   totalCount = 0,
 }: ForecastApprovalCenterProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [expandedForecasts, setExpandedForecasts] = useState<Set<string>>(
     new Set(),
   );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [periodFilter, setPeriodFilter] = useState("all");
-  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams?.get("search") || "",
+  );
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(() => {
+    const val = searchParams?.get("status");
+    return val === "pending" || val === "approved" || val === "rejected"
+      ? val
+      : "all";
+  });
+  const [periodFilter, setPeriodFilter] = useState(
+    () => searchParams?.get("period") || "all",
+  );
+  const [targetTypeFilter, setTargetTypeFilter] = useState(
+    () => searchParams?.get("targetType") || "all",
+  );
+  const [sortBy, setSortBy] = useState(
+    () => searchParams?.get("sort") || "newest",
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    if (searchQuery.trim()) params.set("search", searchQuery.trim());
+    else params.delete("search");
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    else params.delete("status");
+    if (periodFilter !== "all") params.set("period", periodFilter);
+    else params.delete("period");
+    if (targetTypeFilter !== "all") params.set("targetType", targetTypeFilter);
+    else params.delete("targetType");
+    if (sortBy !== "newest") params.set("sort", sortBy);
+    else params.delete("sort");
+
+    const nextQs = params.toString();
+    const currentQs = searchParams?.toString() || "";
+    if (nextQs !== currentQs) {
+      router.replace(nextQs ? `${pathname}?${nextQs}` : pathname, {
+        scroll: false,
+      });
+    }
+  }, [
+    pathname,
+    periodFilter,
+    router,
+    searchParams,
+    searchQuery,
+    sortBy,
+    statusFilter,
+    targetTypeFilter,
+  ]);
   const [dialogState, setDialogState] = useState<{
     open: boolean;
     forecastId: string | null;
@@ -792,15 +856,32 @@ export default function ForecastApprovalCenter({
         (forecast.targetType || "DOCTOR") === targetTypeFilter;
 
       return matchesSearch && matchesStatus && matchesPeriod && matchesTargetType;
+    }).sort((a, b) => {
+      if (sortBy === "oldest_pending") {
+        const aPending = getForecastStatus(a) === "pending" ? 0 : 1;
+        const bPending = getForecastStatus(b) === "pending" ? 0 : 1;
+        if (aPending !== bPending) return aPending - bPending;
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      if (sortBy === "highest_units") {
+        return (
+          (b.summary?.totalUnits ?? b.totalUnits) -
+          (a.summary?.totalUnits ?? a.totalUnits)
+        );
+      }
+      if (sortBy === "rep_name") {
+        return a.repName.localeCompare(b.repName);
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [forecasts, periodFilter, searchQuery, statusFilter, targetTypeFilter]);
+  }, [forecasts, periodFilter, searchQuery, sortBy, statusFilter, targetTypeFilter]);
 
   const activeFilterCount =
     (searchQuery.trim() ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
     (periodFilter !== "all" ? 1 : 0) +
     (targetTypeFilter !== "all" ? 1 : 0);
-  const hasClientFilters = activeFilterCount > 0;
+  const hasClientFilters = activeFilterCount > 0 || sortBy !== "newest";
   const displayPage = hasClientFilters ? 1 : page;
   const displayTotalCount = hasClientFilters
     ? filteredForecasts.length
@@ -814,6 +895,7 @@ export default function ForecastApprovalCenter({
     setStatusFilter("all");
     setPeriodFilter("all");
     setTargetTypeFilter("all");
+    setSortBy("newest");
   }
 
   function toggleExpanded(forecastId: string) {
@@ -912,6 +994,8 @@ export default function ForecastApprovalCenter({
             onPeriodFilterChange={setPeriodFilter}
             targetTypeFilter={targetTypeFilter}
             onTargetTypeFilterChange={setTargetTypeFilter}
+            sortBy={sortBy}
+            onSortByChange={setSortBy}
             periodOptions={periodOptions}
             activeFilterCount={activeFilterCount}
             onClearFilters={clearFilters}
@@ -924,9 +1008,9 @@ export default function ForecastApprovalCenter({
             onClearFilters={clearFilters}
           />
         ) : (
-          <div className="grid gap-3 p-4 sm:p-5">
+          <div className="grid gap-4 p-4 sm:p-5">
             {visibleForecasts.map((forecast) => (
-              <ForecastRequestCard
+              <ManagerForecastCard
                 key={forecast.id}
                 forecast={forecast}
                 isExpanded={expandedForecasts.has(forecast.id)}

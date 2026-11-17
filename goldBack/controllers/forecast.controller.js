@@ -2,6 +2,7 @@ import { prisma } from "../config/db.js";
 import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 import { date, number, userScope, canManageUser } from "../utils/validation.js";
+import { computeForecastCardSummary } from "../utils/forecast-summary.js";
 
 const normalizeTerritory = (value) =>
   String(value || "")
@@ -206,10 +207,95 @@ const getForecasts = async (req, res, next) => {
 
     const forecasts = await prisma.forecast.findMany({
       where: whereClause,
-      include: { rep: { select: { id: true, name: true, email: true } } },
+      include: {
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            location: true,
+            subRegion: {
+              select: {
+                id: true,
+                name: true,
+                region: { select: { name: true } },
+              },
+            },
+            manager: { select: { id: true, name: true } },
+          },
+        },
+      },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take,
       skip: queryObj.skip,
+    });
+
+    // Batched lookups (zero N+1) for product prices & previous comparable forecasts
+    const productIds = new Set();
+    const productNames = new Set();
+    const repIds = new Set();
+    for (const f of forecasts) {
+      repIds.add(f.repId);
+      for (const row of f.productForecasts || []) {
+        if (row.productId) productIds.add(row.productId);
+        if (row.productName) productNames.add(String(row.productName));
+      }
+    }
+
+    const [products, historicalForecasts] = await Promise.all([
+      productIds.size || productNames.size
+        ? prisma.products.findMany({
+            where: {
+              OR: [
+                ...(productIds.size ? [{ id: { in: [...productIds] } }] : []),
+                ...(productNames.size ? [{ name: { in: [...productNames] } }] : []),
+              ],
+            },
+            select: { id: true, name: true, salesPrice: true },
+          })
+        : [],
+      repIds.size
+        ? prisma.forecast.findMany({
+            where: { repId: { in: [...repIds] } },
+            select: {
+              id: true,
+              repId: true,
+              targetType: true,
+              periodType: true,
+              periodDate: true,
+              productForecasts: true,
+            },
+            orderBy: { periodDate: "desc" },
+          })
+        : [],
+    ]);
+
+    const priceByProductId = new Map();
+    const priceByProductName = new Map();
+    for (const p of products) {
+      priceByProductId.set(p.id, p.salesPrice);
+      priceByProductName.set(String(p.name).toLowerCase(), p.salesPrice);
+    }
+
+    const enrichedForecasts = forecasts.map((f) => {
+      const fTime = new Date(f.periodDate).getTime();
+      const previousForecast = historicalForecasts.find(
+        (h) =>
+          h.id !== f.id &&
+          h.repId === f.repId &&
+          h.targetType === f.targetType &&
+          h.periodType === f.periodType &&
+          new Date(h.periodDate).getTime() < fTime,
+      );
+
+      return {
+        ...f,
+        summary: computeForecastCardSummary(f, {
+          priceByProductId,
+          priceByProductName,
+          previousForecast: previousForecast || null,
+        }),
+      };
     });
 
     const paginationData = paginationResults(pagination, totalDocuments);
@@ -219,7 +305,7 @@ const getForecasts = async (req, res, next) => {
       message: "Data fetched successfully",
       results: totalDocuments,
       pagination: paginationData,
-      data: forecasts,
+      data: enrichedForecasts,
     });
   } catch (err) {
     console.error(err);
@@ -258,10 +344,95 @@ const getAllForecasts = async (req, res, next) => {
 
     const forecasts = await prisma.forecast.findMany({
       where: whereClause,
-      include: { rep: { select: { id: true, name: true, email: true } } },
+      include: {
+        rep: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            location: true,
+            subRegion: {
+              select: {
+                id: true,
+                name: true,
+                region: { select: { name: true } },
+              },
+            },
+            manager: { select: { id: true, name: true } },
+          },
+        },
+      },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take,
       skip: queryObj.skip,
+    });
+
+    // Batched lookups (zero N+1) for product prices & previous comparable forecasts
+    const productIds = new Set();
+    const productNames = new Set();
+    const repIds = new Set();
+    for (const f of forecasts) {
+      repIds.add(f.repId);
+      for (const row of f.productForecasts || []) {
+        if (row.productId) productIds.add(row.productId);
+        if (row.productName) productNames.add(String(row.productName));
+      }
+    }
+
+    const [products, historicalForecasts] = await Promise.all([
+      productIds.size || productNames.size
+        ? prisma.products.findMany({
+            where: {
+              OR: [
+                ...(productIds.size ? [{ id: { in: [...productIds] } }] : []),
+                ...(productNames.size ? [{ name: { in: [...productNames] } }] : []),
+              ],
+            },
+            select: { id: true, name: true, salesPrice: true },
+          })
+        : [],
+      repIds.size
+        ? prisma.forecast.findMany({
+            where: { repId: { in: [...repIds] } },
+            select: {
+              id: true,
+              repId: true,
+              targetType: true,
+              periodType: true,
+              periodDate: true,
+              productForecasts: true,
+            },
+            orderBy: { periodDate: "desc" },
+          })
+        : [],
+    ]);
+
+    const priceByProductId = new Map();
+    const priceByProductName = new Map();
+    for (const p of products) {
+      priceByProductId.set(p.id, p.salesPrice);
+      priceByProductName.set(String(p.name).toLowerCase(), p.salesPrice);
+    }
+
+    const enrichedForecasts = forecasts.map((f) => {
+      const fTime = new Date(f.periodDate).getTime();
+      const previousForecast = historicalForecasts.find(
+        (h) =>
+          h.id !== f.id &&
+          h.repId === f.repId &&
+          h.targetType === f.targetType &&
+          h.periodType === f.periodType &&
+          new Date(h.periodDate).getTime() < fTime,
+      );
+
+      return {
+        ...f,
+        summary: computeForecastCardSummary(f, {
+          priceByProductId,
+          priceByProductName,
+          previousForecast: previousForecast || null,
+        }),
+      };
     });
 
     const paginationData = paginationResults(pagination, totalDocuments);
@@ -271,7 +442,7 @@ const getAllForecasts = async (req, res, next) => {
       message: "Data fetched successfully",
       results: totalDocuments,
       pagination: paginationData,
-      data: forecasts,
+      data: enrichedForecasts,
     });
   } catch (err) {
     console.error(err);
