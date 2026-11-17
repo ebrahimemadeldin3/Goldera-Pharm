@@ -82,6 +82,7 @@ function mapProductApiToProduct(apiProduct: ProductApiResponse): Product {
 function prepareSubmissionData(
   formData: CreateForecastFormValues & {
     allocations: Record<string, Record<string, number>>;
+    status?: "DRAFT" | "PENDING";
   },
   doctors: Doctor[],
   products: Product[],
@@ -153,7 +154,7 @@ function prepareSubmissionData(
 
   return {
     targetType,
-    status: "PENDING",
+    status: formData.status === "DRAFT" ? "DRAFT" : "PENDING",
     periodType: formData.periodType === "MONTHLY" ? "Monthly" : "Quarterly",
     periodDate,
     productForecasts,
@@ -524,6 +525,7 @@ export async function createForecastAction(data: CreateForecastDto): Promise<{
 export async function submitForecastAction(
   formData: CreateForecastFormValues & {
     allocations: Record<string, Record<string, number>>;
+    status?: "DRAFT" | "PENDING";
   },
 ): Promise<{
   success: boolean;
@@ -531,13 +533,13 @@ export async function submitForecastAction(
   error?: ApiError;
 }> {
   try {
-    // First fetch doctors and products to get names
-    const [doctorsResult, productsResult] = await Promise.all([
-      getMyDoctorsAction(),
+    const targetType: ForecastTargetType = formData.targetType || "DOCTOR";
+    const [targetsResult, productsResult] = await Promise.all([
+      getForecastTargetsAction(targetType),
       getProductsAction(),
     ]);
 
-    if (!doctorsResult.success || !productsResult.success) {
+    if (!targetsResult.success || !productsResult.success) {
       return {
         success: false,
         error: {
@@ -548,11 +550,11 @@ export async function submitForecastAction(
       };
     }
 
-    const doctors = doctorsResult.data || [];
+    const targets = targetsResult.data || [];
     const products = productsResult.data || [];
 
     // Prepare and validate data in server action
-    const data = prepareSubmissionData(formData, doctors, products);
+    const data = prepareSubmissionData(formData, targets, products);
 
     // Validate that at least one product forecast exists
     if (data.productForecasts.length === 0) {

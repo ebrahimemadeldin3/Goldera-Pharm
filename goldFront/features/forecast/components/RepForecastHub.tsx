@@ -276,6 +276,20 @@ export function RepForecastHub({
                   <Eye className="size-3.5" aria-hidden="true" />
                   View Forecast
                 </Button>
+                {latestStatus?.key === "DRAFT" && (
+                  <Link
+                    href={`/rep/forecast/new?duplicateFrom=${latestForecast.id}`}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 gap-1.5 text-xs font-semibold"
+                    >
+                      <FileText className="size-3.5" aria-hidden="true" />
+                      Edit Draft
+                    </Button>
+                  </Link>
+                )}
                 <Link
                   href={`/rep/forecast/new?duplicateFrom=${latestForecast.id}`}
                 >

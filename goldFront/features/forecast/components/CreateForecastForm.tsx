@@ -283,7 +283,7 @@ export default function CreateForecastForm() {
     setCurrentStep(step);
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (submitStatus: "DRAFT" | "PENDING" = "PENDING") => {
     if (isSubmitting) return;
     setError("");
 
@@ -335,6 +335,7 @@ export default function CreateForecastForm() {
     try {
       const result = await submitForecastAction({
         ...form.getValues(),
+        status: submitStatus,
         allocations: distributions.reduce<
           Record<string, Record<string, number>>
         >((nextAllocations, distribution) => {
@@ -352,8 +353,14 @@ export default function CreateForecastForm() {
 
       if (result.success) {
         toast.success({
-          title: "Forecast submitted for approval",
-          description: "Your supervisor will review your forecast submission",
+          title:
+            submitStatus === "DRAFT"
+              ? "Forecast saved as Draft"
+              : "Forecast submitted for approval",
+          description:
+            submitStatus === "DRAFT"
+              ? "You can review and submit this draft later from Forecast History."
+              : "Your supervisor will review your forecast submission",
         });
         router.push("/rep/forecast");
       } else {
@@ -492,24 +499,35 @@ export default function CreateForecastForm() {
                     <ChevronRight className="ml-1.5 size-4" />
                   </Button>
                 ) : (
-                  <Button
-                    type="button"
-                    onClick={onSubmit}
-                    disabled={isSubmitting}
-                    className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 rounded-[10px] px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] focus-visible:ring-2 focus-visible:ring-[#168557]/30"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <span className="mr-2 size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={16} className="mr-1.5" />
-                        Submit Forecast
-                      </>
-                    )}
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => onSubmit("DRAFT")}
+                      disabled={isSubmitting}
+                      className="h-10 rounded-[10px] border-[#DDE3EE] px-5 text-sm font-semibold text-[#344054] hover:bg-[#F9FAFB]"
+                    >
+                      Save as Draft
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => onSubmit("PENDING")}
+                      disabled={isSubmitting}
+                      className="bg-gp-rep-primary hover:bg-gp-rep-primary-hover h-10 rounded-[10px] px-6 text-sm font-semibold text-white shadow-[0_4px_14px_rgba(22,133,87,0.22)] transition-all duration-[170ms] focus-visible:ring-2 focus-visible:ring-[#168557]/30"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <span className="mr-2 size-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} className="mr-1.5" />
+                          Submit Forecast
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

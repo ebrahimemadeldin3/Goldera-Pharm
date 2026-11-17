@@ -172,6 +172,15 @@ test("5. Marketing target doctors query builder, search, relational facility fil
   assert.equal(mapped.facilities.length, 1);
   assert.equal(mapped.facilities[0].id, "acc-1");
   assert.equal(mapped.facilities[0].name, "King Faisal Hospital");
+
+  // Legacy accountName fallback uses exact case-insensitive match (does not combine similar names)
+  const legacyWhere = buildMarketingDoctorWhere({
+    search: "Ahmed",
+    facilityId: "name:King Faisal Hospital",
+  });
+  assert.deepEqual(legacyWhere.AND[2], {
+    accountName: { equals: "King Faisal Hospital", mode: "insensitive" },
+  });
 });
 
 test("6. Reports date filtering handles Saudi timezone boundaries and invalid ranges", () => {
