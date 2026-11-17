@@ -19,6 +19,11 @@ export type Visit = {
   createdBy: string; // Name of person who created
   samples: string[]; // Products/samples
   visitType?: string;
+  companionType?: "SINGLE" | "WITH_MANAGER" | null;
+  companionLabel?: string;
+  creationSource?: "SCHEDULED" | "MANUAL_HISTORY" | null;
+  accompanyingManagerId?: string | null;
+  accompanyingManagerName?: string | null;
   doctorId: string;
   userId: string;
   medicalRepId?: string;

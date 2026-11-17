@@ -50,7 +50,11 @@ import {
   medicalRepVisitSchema,
   VisitFormValues,
 } from "@/features/visits/lib/schemas";
-import { HOURS } from "@/features/visits/lib/constants";
+import {
+  HOURS,
+  VISIT_DURATION_OPTIONS,
+} from "@/features/visits/lib/constants";
+import { getAvailableManagersAction } from "@/features/visits/api";
 import { useCreateVisit } from "@/features/visits/hooks/useCreateVisit";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { User } from "@/features/team/lib/types";
@@ -204,6 +208,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     initialDoctorId || searchParams.get("doctorId") || "";
   const { createVisit, isPending } = useCreateVisit();
   const [products, setProducts] = useState<Product[]>([]);
+  const [managers, setManagers] = useState<
+    Array<{ id: string; name: string; role: string }>
+  >([]);
   const [selectedHospital, setSelectedHospital] = useState<string>(() => {
     const selected = preselectedDoctorId
       ? doctors.find((doctor) => doctor.id === preselectedDoctorId)
@@ -213,7 +220,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch products on mount
+  // Fetch products & managers on mount
   useEffect(() => {
     const fetchProducts = async () => {
       const result = await getProductsAction();
@@ -221,7 +228,14 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
         setProducts(result.data);
       }
     };
+    const fetchManagers = async () => {
+      const result = await getAvailableManagersAction();
+      if (result.success && result.data) {
+        setManagers(result.data);
+      }
+    };
     fetchProducts();
+    fetchManagers();
   }, []);
 
   const { schema, defaultValues, redirectPath, hasVisitType } = useMemo(() => {
@@ -237,6 +251,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           doctorId,
           products: "",
           time: "",
+          duration: "30 min",
+          companionType: "SINGLE" as const,
+          accompanyingManagerId: "",
           visitType: "CHECK" as const,
           supervisorId: "",
           medicalRepId: "",
@@ -251,6 +268,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           doctorId,
           products: "",
           time: "",
+          duration: "30 min",
+          companionType: "SINGLE" as const,
+          accompanyingManagerId: "",
           visitType: "CHECK" as const,
           medicalRepId: "",
           notes: "",
@@ -264,6 +284,9 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
           doctorId,
           products: "",
           time: "",
+          duration: "30 min",
+          companionType: "SINGLE" as const,
+          accompanyingManagerId: "",
           notes: "",
         },
         redirectPath: "/rep/visits",
@@ -941,6 +964,128 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="duration"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="duration">
+                      <FormLabel className={labelClassName}>
+                        Visit Duration (15-min increments)
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value || "30 min"}
+                        >
+                          <SelectTrigger className={roleFieldClassName}>
+                            <Clock3
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select duration" />
+                          </SelectTrigger>
+                          <SelectContent
+                            className={cn(selectContentClassName, "max-h-72")}
+                          >
+                            {VISIT_DURATION_OPTIONS.map((opt) => (
+                              <SelectItem
+                                key={opt}
+                                value={opt}
+                                className={selectItemClassName}
+                              >
+                                {opt}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="companionType"
+                  render={({ field }) => (
+                    <FormItem data-visit-field="companionType">
+                      <FormLabel className={labelClassName}>
+                        Visit Mode <RequiredMark />
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={(val) => {
+                            field.onChange(val);
+                            if (val === "SINGLE") {
+                              form.setValue("accompanyingManagerId", "");
+                            }
+                          }}
+                          value={field.value || "SINGLE"}
+                        >
+                          <SelectTrigger className={roleFieldClassName}>
+                            <Users
+                              className="size-4 text-[#8A94A6]"
+                              aria-hidden="true"
+                            />
+                            <SelectValue placeholder="Select visit mode" />
+                          </SelectTrigger>
+                          <SelectContent className={selectContentClassName}>
+                            <SelectItem value="SINGLE" className={selectItemClassName}>
+                              Single Visit (Rep Alone)
+                            </SelectItem>
+                            <SelectItem value="WITH_MANAGER" className={selectItemClassName}>
+                              Joint Visit (With Manager)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("companionType") === "WITH_MANAGER" && (
+                  <FormField
+                    control={form.control}
+                    name="accompanyingManagerId"
+                    render={({ field }) => (
+                      <FormItem data-visit-field="accompanyingManagerId">
+                        <FormLabel className={labelClassName}>
+                          Accompanying Manager <RequiredMark />
+                        </FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                          >
+                            <SelectTrigger className={roleFieldClassName}>
+                              <Users
+                                className="size-4 text-[#8A94A6]"
+                                aria-hidden="true"
+                              />
+                              <SelectValue placeholder="Select manager" />
+                            </SelectTrigger>
+                            <SelectContent
+                              className={cn(selectContentClassName, "max-h-72")}
+                            >
+                              {managers.map((m) => (
+                                <SelectItem
+                                  key={m.id}
+                                  value={m.id}
+                                  className={selectItemClassName}
+                                >
+                                  {m.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage className="visits-add-error text-xs font-medium text-[#B42318]" />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 {showSupervisorField && (
                   <FormField

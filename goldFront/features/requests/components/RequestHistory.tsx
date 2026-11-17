@@ -90,6 +90,8 @@ const getTypeLabel = (type: string) => {
       return "Expense Reimbursement";
     case "MARKETING":
       return "Marketing Request";
+    case "MONTHLY_MARKETING":
+      return "Monthly Marketing";
     case "LEAVE":
       return "Leave Request";
     case "SAMPLE":

@@ -213,22 +213,45 @@ export default function VisitCard({
                 )}
               </div>
 
-              <span
-                className={cn(
-                  "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[10px] font-bold",
-                  statusBadgeStyles[visit.status],
-                )}
-                role="status"
-              >
+              <div className="flex flex-wrap items-center gap-1.5 shrink-0">
                 <span
                   className={cn(
-                    "size-1.5 rounded-full",
-                    statusDotStyles[visit.status],
+                    "inline-flex h-6 items-center rounded-full border px-2 text-[10px] font-bold",
+                    visit.companionType === "WITH_MANAGER"
+                      ? "border-[#D9C79E] bg-[#FFF8E5] text-[#8A6515]"
+                      : visit.companionType === "SINGLE"
+                        ? "border-[#DDE3EE] bg-[#F4F6FA] text-[#344054]"
+                        : "border-[#E5E8EF] bg-[#F9FAFB] text-[#667085]",
                   )}
-                  aria-hidden="true"
-                />
-                {statusLabel}
-              </span>
+                >
+                  {visit.companionLabel || "Unknown"}
+                  {visit.companionType === "WITH_MANAGER" &&
+                  visit.accompanyingManagerName
+                    ? ` • ${visit.accompanyingManagerName}`
+                    : ""}
+                </span>
+                {visit.creationSource === "MANUAL_HISTORY" && (
+                  <span className="inline-flex h-6 items-center rounded-full border border-[#CBEFDD] bg-[#E9F8F1] px-2 text-[10px] font-bold text-[#168557]">
+                    Historical
+                  </span>
+                )}
+                <span
+                  className={cn(
+                    "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full border px-2 text-[10px] font-bold",
+                    statusBadgeStyles[visit.status],
+                  )}
+                  role="status"
+                >
+                  <span
+                    className={cn(
+                      "size-1.5 rounded-full",
+                      statusDotStyles[visit.status],
+                    )}
+                    aria-hidden="true"
+                  />
+                  {statusLabel}
+                </span>
+              </div>
             </div>
 
             <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-semibold text-[#667085]">
@@ -385,6 +408,29 @@ export default function VisitCard({
               <h4 className="truncate text-base leading-snug font-semibold text-[#182033]">
                 {visit.person || "Unnamed Doctor"}
               </h4>
+
+              <span
+                className={cn(
+                  "inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-bold",
+                  visit.companionType === "WITH_MANAGER"
+                    ? "border-[#D9C79E] bg-[#FFF8E5] text-[#8A6515]"
+                    : visit.companionType === "SINGLE"
+                      ? "border-[#DDE3EE] bg-[#F4F6FA] text-[#344054]"
+                      : "border-[#E5E8EF] bg-[#F9FAFB] text-[#667085]",
+                )}
+              >
+                {visit.companionLabel || "Unknown"}
+                {visit.companionType === "WITH_MANAGER" &&
+                visit.accompanyingManagerName
+                  ? ` (${visit.accompanyingManagerName})`
+                  : ""}
+              </span>
+
+              {visit.creationSource === "MANUAL_HISTORY" && (
+                <span className="inline-flex h-6 items-center rounded-full border border-[#CBEFDD] bg-[#E9F8F1] px-2.5 text-[11px] font-bold text-[#168557]">
+                  Historical Entry
+                </span>
+              )}
 
               <span
                 className={cn(

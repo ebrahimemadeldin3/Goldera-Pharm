@@ -21,7 +21,7 @@ import {
   FORECAST_QUARTERS,
 } from "../lib/constants";
 import { CreateForecastFormValues } from "../lib/schemas";
-import { Calendar } from "lucide-react";
+import { Calendar, Building2, Stethoscope } from "lucide-react";
 
 interface ForecastSetupStepProps {
   form: UseFormReturn<CreateForecastFormValues>;
@@ -41,9 +41,65 @@ export function ForecastSetupStep({
       <div>
         <h2 className="text-lg font-bold text-[#182033]">Forecast Setup</h2>
         <p className="text-xs text-[#667085] mt-1">
-          Select the forecast period type, target time frame, and year.
+          Choose Doctor or Pharmacy Forecast, then select the period and year.
         </p>
       </div>
+
+      <FormField
+        control={form.control}
+        name="targetType"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-xs font-semibold text-[#344054]">
+              Forecast Type *
+            </FormLabel>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => field.onChange("DOCTOR")}
+                className={`flex items-center gap-3 rounded-[12px] border p-3.5 text-left transition-colors ${
+                  (field.value || "DOCTOR") === "DOCTOR"
+                    ? "border-[#168557] bg-[#E9F8F1]/60 text-[#182033]"
+                    : "border-[#DDE3EE] bg-white text-[#667085] hover:bg-[#F9FAFB]"
+                }`}
+              >
+                <Stethoscope className="size-5 shrink-0 text-[#168557]" />
+                <div>
+                  <div className="text-sm font-bold text-[#182033]">
+                    Doctor Forecast
+                  </div>
+                  <div className="text-xs text-[#667085]">
+                    Allocate product units across assigned doctors
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                disabled={isPending}
+                onClick={() => field.onChange("PHARMACY")}
+                className={`flex items-center gap-3 rounded-[12px] border p-3.5 text-left transition-colors ${
+                  field.value === "PHARMACY"
+                    ? "border-[#168557] bg-[#E9F8F1]/60 text-[#182033]"
+                    : "border-[#DDE3EE] bg-white text-[#667085] hover:bg-[#F9FAFB]"
+                }`}
+              >
+                <Building2 className="size-5 shrink-0 text-[#168557]" />
+                <div>
+                  <div className="text-sm font-bold text-[#182033]">
+                    Pharmacy Forecast
+                  </div>
+                  <div className="text-xs text-[#667085]">
+                    Allocate product units across territory pharmacies
+                  </div>
+                </div>
+              </button>
+            </div>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
         <FormField

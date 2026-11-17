@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const createForecastSchema = z.object({
+  targetType: z.enum(["DOCTOR", "PHARMACY"]),
   periodType: z.enum(["MONTHLY", "QUARTERLY"], {
     message: "Period type is required",
   }),

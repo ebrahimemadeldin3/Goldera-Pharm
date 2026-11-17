@@ -138,11 +138,14 @@ export default function ForecastHistory({
                           key={`${forecast.id}-${dist.doctorId}-${index}`}
                           className="flex items-center justify-between rounded-[6px] border border-[#E5E8EF] bg-[#F9FAFB] px-2.5 py-1.5 text-xs"
                         >
-                          <div className="min-w-0 truncate pr-2">
-                            <span className="font-bold text-[#182033]">
+                          <div className="min-w-0 flex-1 pr-2">
+                            <span
+                              className="font-bold text-[#182033] whitespace-normal break-words"
+                              dir="auto"
+                            >
                               {dist.doctorName}
                             </span>
-                            <span className="text-[#667085] ml-1.5 font-medium">
+                            <span className="text-[#667085] ml-1.5 font-medium whitespace-normal break-words">
                               ({dist.specialty})
                             </span>
                           </div>

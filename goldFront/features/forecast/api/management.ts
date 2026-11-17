@@ -33,6 +33,7 @@ function transformForecast(
   return {
     id: apiForecast.id,
     repId: apiForecast.repId,
+    targetType: apiForecast.targetType || "DOCTOR",
     repName: apiForecast.rep.name,
     repEmail: apiForecast.rep.email,
     periodType: apiForecast.periodType,

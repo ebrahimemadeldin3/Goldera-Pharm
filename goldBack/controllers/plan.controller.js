@@ -9,6 +9,11 @@ import {
   userScope,
   canManageUser,
 } from "../utils/validation.js";
+import {
+  getSaudiDateKey,
+  isSaudiFriday,
+  toSaudiDateTime,
+} from "../utils/working-week.js";
 
 // Plans Controllers
 const createPlan = async (req, res, next) => {
@@ -38,7 +43,9 @@ const createPlan = async (req, res, next) => {
   text(description, "Description");
   const start = date(startDate, "Start date");
   const end = date(endDate, "End date");
-  if (start > end)
+  const startKey = getSaudiDateKey(startDate);
+  const endKey = getSaudiDateKey(endDate);
+  if (!startKey || !endKey || startKey > endKey)
     return next(new ApiError("Start date must be before end date", 400));
   if (!["WEEKLY", "MONTHLY"].includes(type))
     return next(new ApiError("Invalid plan type", 400));
@@ -54,10 +61,15 @@ const createPlan = async (req, res, next) => {
   stringList(objectives, "Objectives", { required: true });
   for (const doctor of doctorsWithDates) {
     text(doctor.doctorId, "Doctor");
-    const visitDate = date(doctor.visitDate, "Doctor visit date");
-    if (visitDate < start || visitDate > end)
+    date(doctor.visitDate, "Doctor visit date");
+    const visitDateKey = getSaudiDateKey(doctor.visitDate);
+    if (!visitDateKey || visitDateKey < startKey || visitDateKey > endKey)
       return next(
         new ApiError("Visit dates must be within the plan period", 400),
+      );
+    if (type === "WEEKLY" && isSaudiFriday(visitDateKey))
+      return next(
+        new ApiError("Fridays are excluded from weekly working plans", 400),
       );
   }
 
@@ -96,7 +108,8 @@ const createPlan = async (req, res, next) => {
 
   const assignments = new Set();
   const doctors = doctorsWithDates.map((assignment) => {
-    const key = `${assignment.doctorId}:${new Date(assignment.visitDate).toISOString().slice(0, 10)}`;
+    const dateKey = getSaudiDateKey(assignment.visitDate);
+    const key = `${assignment.doctorId}:${dateKey}`;
     if (assignments.has(key))
       throw new ApiError(
         "A doctor can only be scheduled once on the same date",
@@ -105,7 +118,7 @@ const createPlan = async (req, res, next) => {
     assignments.add(key);
     return {
       ...doctorsInDB.find((doctor) => doctor.id === assignment.doctorId),
-      visitDate: new Date(assignment.visitDate).toISOString(),
+      visitDate: (toSaudiDateTime(dateKey, "00:00") || new Date(assignment.visitDate)).toISOString(),
     };
   });
 
@@ -115,8 +128,8 @@ const createPlan = async (req, res, next) => {
       type,
       status: "PENDING",
       description,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
+      startDate: toSaudiDateTime(startKey, "00:00") || start,
+      endDate: toSaudiDateTime(endKey, "23:59") || end,
       doctors: doctors,
       objectives,
       createdBy: { connect: { id: ownerId } },

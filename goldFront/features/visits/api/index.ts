@@ -201,6 +201,18 @@ export async function createVisitAction(data: VisitFormValues) {
       dto.visitType = data.visitType;
     }
 
+    if ("companionType" in data && data.companionType) {
+      dto.companionType = data.companionType;
+    }
+
+    if ("accompanyingManagerId" in data && data.accompanyingManagerId) {
+      dto.accompanyingManagerId = data.accompanyingManagerId;
+    }
+
+    if ("duration" in data && data.duration) {
+      dto.duration = data.duration;
+    }
+
     if ("supervisorId" in data && data.supervisorId) {
       dto.supervisorId = data.supervisorId;
     }
@@ -219,6 +231,68 @@ export async function createVisitAction(data: VisitFormValues) {
     console.error("Visit creation error:", error);
     const err = error as ApiError;
 
+    return {
+      success: false,
+      error: {
+        code: err.code,
+        message: err.message,
+        statusCode: err.statusCode,
+      },
+    };
+  }
+}
+
+export async function getAvailableManagersAction(): Promise<{
+  success: boolean;
+  data?: Array<{ id: string; name: string; role: string }>;
+  error?: string;
+}> {
+  try {
+    const response = await apiFetch<{
+      data: Array<{ id: string; name: string; role: string }>;
+    }>("/api/visits/managers", { method: "GET" });
+    return { success: true, data: response.data || [] };
+  } catch (error) {
+    return {
+      success: false,
+      data: [],
+      error: error instanceof Error ? error.message : "Failed to load managers",
+    };
+  }
+}
+
+export async function createHistoricalVisitAction(payload: {
+  doctorId: string;
+  date: Date;
+  time: string;
+  duration: string;
+  companionType: "SINGLE" | "WITH_MANAGER";
+  accompanyingManagerId?: string;
+  rating: number;
+  visitPurpose: string;
+  discussedTopics: string[];
+  samplesProvided?: string[];
+  doctorFeedback?: string;
+  notes?: string;
+}): Promise<{
+  success: boolean;
+  data?: CreateVisitResponse["data"];
+  error?: { code?: string; message?: string; statusCode?: number };
+}> {
+  try {
+    const response = await apiFetch<CreateVisitResponse>(
+      "/api/visits/historical",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          date: formatDateOnly(payload.date),
+        }),
+      },
+    );
+    return { success: true, data: response.data };
+  } catch (error) {
+    const err = error as ApiError;
     return {
       success: false,
       error: {

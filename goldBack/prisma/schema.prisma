@@ -40,6 +40,7 @@ model User {
   manager      User?     @relation("manager", fields: [managerId], references: [id])
   reps         User[]    @relation("SupervisorToReps")
   visits       Visit[]
+  accompanyingVisits Visit[] @relation("VisitAccompanyingManager")
   requests     Request[]
 
   createdAt           DateTime         @default(now())
@@ -95,15 +96,20 @@ enum PlanType {
 }
 
 model Visit {
-  id        String    @id @default(uuid())
-  visitType VisitType @default(ROUTINE)
-  samples   String[]
-  date      DateTime
-  time      String?
-  doctor    Doctor    @relation(fields: [doctorId], references: [id])
-  doctorId  String
-  createdBy User      @relation(fields: [userId], references: [id])
-  userId    String
+  id                    String              @id @default(uuid())
+  visitType             VisitType           @default(ROUTINE)
+  companionType         VisitCompanionType?
+  creationSource        VisitCreationSource @default(SCHEDULED)
+  samples               String[]
+  date                  DateTime
+  time                  String?
+  duration              String?
+  doctor                Doctor              @relation(fields: [doctorId], references: [id])
+  doctorId              String
+  createdBy             User                @relation(fields: [userId], references: [id])
+  userId                String
+  accompanyingManager   User?               @relation("VisitAccompanyingManager", fields: [accompanyingManagerId], references: [id])
+  accompanyingManagerId String?
 
   plan   Plan?       @relation(fields: [planId], references: [id])
   planId String?
@@ -113,6 +119,16 @@ model Visit {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   visitReports VisitReport[]
+}
+
+enum VisitCompanionType {
+  SINGLE
+  WITH_MANAGER
+}
+
+enum VisitCreationSource {
+  SCHEDULED
+  MANUAL_HISTORY
 }
 
 enum VisitType {
@@ -186,6 +202,7 @@ model Request {
 enum RequestType {
   EXPENSE
   MARKETING
+  MONTHLY_MARKETING
   SAMPLE
   LEAVE
   PERSONAL_EXPENSE
@@ -338,16 +355,22 @@ enum ForecastStatus {
   REJECTED
 }
 
+enum ForecastTargetType {
+  DOCTOR
+  PHARMACY
+}
+
 model forecast {
-  id                 String         @id @default(uuid())
-  rep                User           @relation(fields: [repId], references: [id])
+  id                 String             @id @default(uuid())
+  rep                User               @relation(fields: [repId], references: [id])
   repId              String
+  targetType         ForecastTargetType @default(DOCTOR)
   periodType         String
   periodDate         DateTime
   productForecasts   Json[]
   notes              String?
-  status             ForecastStatus @default(DRAFT)
-  isApproved         Boolean        @default(false)
+  status             ForecastStatus     @default(DRAFT)
+  isApproved         Boolean            @default(false)
   supervisorFeedback String?
 
   createdAt DateTime @default(now())

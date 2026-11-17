@@ -25,7 +25,9 @@ import {
   DoctorApiResponse,
 } from "../lib/types";
 import { fetchProducts as fetchProductsFromStore } from "@/features/products/api";
+import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { CreateForecastFormValues } from "../lib/schemas";
+import type { ForecastTargetType } from "../lib/types";
 
 const BACKEND_REQUIRED_MESSAGE =
   "Requires backend change — excluded from current frontend-only scope.";
@@ -37,8 +39,12 @@ function mapDoctorApiToDoctor(apiDoctor: DoctorApiResponse): Doctor {
   return {
     id: apiDoctor.id,
     name: apiDoctor.nameEN || apiDoctor.nameAR,
+    nameEN: apiDoctor.nameEN,
+    nameAR: apiDoctor.nameAR,
     specialty: (apiDoctor.specialty as Specialty) || "Internal Medicine",
     hospital: apiDoctor.accountName || "Unknown Hospital",
+    subRegion: apiDoctor.subRegion,
+    targetType: "DOCTOR",
   };
 }
 
@@ -108,13 +114,16 @@ function prepareSubmissionData(
   }
 
   // Transform allocations to productForecasts array
+  const targetType: ForecastTargetType = formData.targetType || "DOCTOR";
   const productForecasts: CreateForecastApiDto["productForecasts"] = [];
 
-  Object.entries(formData.allocations).forEach(([doctorId, doctorAlloc]) => {
-    const doctor = doctors.find((d) => d.id === doctorId);
-    const doctorName = doctor?.name || "Unknown Doctor";
+  Object.entries(formData.allocations).forEach(([targetId, targetAlloc]) => {
+    const target = doctors.find((d) => d.id === targetId);
+    const targetName =
+      target?.name ||
+      (targetType === "PHARMACY" ? "Unknown Pharmacy" : "Unknown Doctor");
 
-    Object.entries(doctorAlloc).forEach(([productId, units]) => {
+    Object.entries(targetAlloc).forEach(([productId, units]) => {
       if (units > 0) {
         const product = products.find((p) => p.id === productId);
         const productName = product?.name || "Unknown Product";
@@ -123,13 +132,28 @@ function prepareSubmissionData(
           productId,
           productName,
           productUnits: units,
-          doctorName,
+          targetId,
+          targetName,
+          ...(targetType === "PHARMACY"
+            ? {
+                pharmacyId: targetId,
+                pharmacyName: targetName,
+                city: target?.city,
+                subRegion: target?.subRegion,
+                doctorName: targetName,
+              }
+            : {
+                doctorId: targetId,
+                doctorName: targetName,
+              }),
         });
       }
     });
   });
 
   return {
+    targetType,
+    status: "PENDING",
     periodType: formData.periodType === "MONTHLY" ? "Monthly" : "Quarterly",
     periodDate,
     productForecasts,
@@ -210,6 +234,7 @@ function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
 
   return {
     id: apiForecast.id,
+    targetType: apiForecast.targetType || "DOCTOR",
     periodType: isMonthly ? "MONTHLY" : "QUARTERLY",
     period,
     month: isMonthly ? month : undefined,
@@ -234,6 +259,7 @@ function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
       }),
     ),
     notes: apiForecast.notes || undefined,
+    supervisorFeedback: apiForecast.supervisorFeedback || undefined,
     createdAt: apiForecast.createdAt,
   };
 }
@@ -336,7 +362,25 @@ export async function fetchProducts(): Promise<{
 export async function fetchMyDoctors(): Promise<{
   data: Doctor[];
 }> {
-  const response = await apiFetch<GetDoctorsResponse>("/api/doctors", {
+  const scoped = await getSchedulableDoctorsAction();
+  if (scoped.success && scoped.data) {
+    return {
+      data: scoped.data
+        .filter((doctor) => doctor.isActive !== false)
+        .map((doctor) => ({
+          id: doctor.id,
+          name: doctor.nameEN || doctor.nameAR || "Unnamed Doctor",
+          nameEN: doctor.nameEN || undefined,
+          nameAR: doctor.nameAR || undefined,
+          specialty: (doctor.specialty as Specialty) || "Internal Medicine",
+          hospital: doctor.accountName || "Unknown Hospital",
+          subRegion: doctor.subRegion || undefined,
+          targetType: "DOCTOR",
+        })),
+    };
+  }
+
+  const response = await apiFetch<GetDoctorsResponse>("/api/doctors?paginate=false", {
     method: "GET",
   });
 
@@ -347,6 +391,54 @@ export async function fetchMyDoctors(): Promise<{
   return {
     data: doctors,
   };
+}
+
+export async function fetchMyTerritoryPharmacies(): Promise<{
+  data: Doctor[];
+}> {
+  const response = await apiFetch<{
+    data: Array<{
+      id: string;
+      name: string;
+      city: string;
+      region: string;
+      subRegion: string;
+    }>;
+  }>("/api/pharmacies?territoryOnly=true&limit=1000", {
+    method: "GET",
+  });
+
+  const pharmacies: Doctor[] = (response.data || []).map((pharmacy) => ({
+    id: pharmacy.id,
+    name: pharmacy.name,
+    specialty: (pharmacy.city || pharmacy.subRegion || "Pharmacy") as Specialty,
+    hospital: [pharmacy.city, pharmacy.subRegion].filter(Boolean).join(" • ") || pharmacy.region || "Territory Pharmacy",
+    city: pharmacy.city,
+    subRegion: pharmacy.subRegion,
+    targetType: "PHARMACY",
+  }));
+
+  return {
+    data: pharmacies,
+  };
+}
+
+export async function getForecastTargetsAction(
+  targetType: ForecastTargetType,
+): Promise<{
+  success: boolean;
+  data?: Doctor[];
+  error?: ApiError;
+}> {
+  try {
+    const res =
+      targetType === "PHARMACY"
+        ? await fetchMyTerritoryPharmacies()
+        : await fetchMyDoctors();
+    return { success: true, data: res.data };
+  } catch (error) {
+    return { success: false, error: error as ApiError };
+  }
 }
 
 /**

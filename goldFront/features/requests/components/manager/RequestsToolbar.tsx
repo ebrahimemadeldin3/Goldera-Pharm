@@ -37,6 +37,7 @@ const typeOptions = [
   { value: "all", label: "All Types" },
   { value: "EXPENSE", label: "Expense" },
   { value: "MARKETING", label: "Marketing" },
+  { value: "MONTHLY_MARKETING", label: "Monthly Marketing" },
   { value: "SAMPLE", label: "Sample" },
   { value: "LEAVE", label: "Leave" },
   { value: "PERSONAL_EXPENSE", label: "Personal Expense" },

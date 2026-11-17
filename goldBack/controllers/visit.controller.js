@@ -9,6 +9,67 @@ import {
   userScope,
   canManageUser,
 } from "../utils/validation.js";
+import {
+  assertPastOrCurrentSaudiDateTime,
+  buildVisitReportDateFilter,
+  validateCompanionSelection,
+  validateVisitDuration,
+  validateVisitTime,
+} from "../utils/visit-validation.js";
+import { getSaudiDayBounds } from "../utils/working-week.js";
+
+async function resolveAccompanyingManager(companionType, accompanyingManagerId) {
+  const selection = validateCompanionSelection(
+    companionType,
+    accompanyingManagerId,
+  );
+  if (selection.companionType === "WITH_MANAGER") {
+    const manager = await prisma.user.findUnique({
+      where: { id: selection.accompanyingManagerId },
+      select: { id: true, name: true, role: true, isActive: true },
+    });
+    if (!manager || manager.isActive === false || manager.role !== "MANAGER") {
+      throw new ApiError(
+        "Selected accompanying user must be an active Manager",
+        400,
+      );
+    }
+  }
+  return selection;
+}
+
+const visitInclude = {
+  doctor: {
+    select: {
+      id: true,
+      nameAR: true,
+      nameEN: true,
+      accountName: true,
+      specialty: true,
+    },
+  },
+  createdBy: { select: { id: true, name: true } },
+  accompanyingManager: { select: { id: true, name: true, role: true } },
+};
+
+const visitReportVisitSelect = {
+  id: true,
+  date: true,
+  time: true,
+  duration: true,
+  companionType: true,
+  creationSource: true,
+  accompanyingManager: { select: { id: true, name: true, role: true } },
+  doctor: {
+    select: {
+      id: true,
+      nameAR: true,
+      nameEN: true,
+      accountName: true,
+      specialty: true,
+    },
+  },
+};
 
 // Visits and Visit Reports Controllers
 const scheduleVisit = async (req, res, next) => {
@@ -17,9 +78,12 @@ const scheduleVisit = async (req, res, next) => {
       samples,
       date,
       time,
+      duration,
       doctorId,
       notes,
       visitType,
+      companionType,
+      accompanyingManagerId,
       medicalRepId,
       supervisorId,
     } = req.body;
@@ -48,8 +112,14 @@ const scheduleVisit = async (req, res, next) => {
 
     validDate(date, "Visit date");
     text(doctorId, "Doctor");
-    if (time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
-      throw new ApiError("Time must use HH:mm", 400);
+    const normalizedTime = validateVisitTime(time, { required: false });
+    const normalizedDuration = validateVisitDuration(duration, {
+      required: false,
+    });
+    const companion = await resolveAccompanyingManager(
+      companionType,
+      accompanyingManagerId,
+    );
     const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
     if (!doctor || !doctor.isActive)
       throw new ApiError("Select an active doctor", 400);
@@ -57,18 +127,152 @@ const scheduleVisit = async (req, res, next) => {
       data: {
         samples: Array.isArray(samples) ? samples : [],
         date: new Date(date),
-        time,
+        time: normalizedTime,
+        duration: normalizedDuration,
         doctorId,
         notes,
         userId: targetUserId,
         visitType: visitType ? String(visitType).toUpperCase() : "ROUTINE",
+        companionType: companion.companionType,
+        accompanyingManagerId: companion.accompanyingManagerId,
+        creationSource: "SCHEDULED",
       },
+      include: visitInclude,
     });
 
     res.status(201).json({
       status: "success",
       message: "Data created successfully",
       data: data,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
+const addHistoricalVisit = async (req, res, next) => {
+  try {
+    const {
+      samples,
+      samplesProvided,
+      date,
+      time,
+      duration,
+      doctorId,
+      notes,
+      visitType,
+      companionType,
+      accompanyingManagerId,
+      rating,
+      visitPurpose,
+      discussedTopics,
+      doctorFeedback,
+      medicalRepId,
+    } = req.body;
+
+    const targetUserId =
+      req.user.role === "MANAGER" && medicalRepId ? medicalRepId : req.user.id;
+
+    if (req.user.role === "MANAGER" && medicalRepId) {
+      const rep = await prisma.user.findUnique({
+        where: { id: medicalRepId },
+        select: { id: true, managerId: true },
+      });
+      if (!rep || rep.managerId !== req.user.id) {
+        return next(
+          new ApiError("Selected rep is not under your management", 400),
+        );
+      }
+    }
+
+    text(doctorId, "Doctor");
+    const { dateKey, time: normalizedTime, visitDateTime } =
+      assertPastOrCurrentSaudiDateTime(date, time);
+    const normalizedDuration = validateVisitDuration(duration, {
+      required: true,
+    });
+    const companion = await resolveAccompanyingManager(
+      companionType,
+      accompanyingManagerId,
+    );
+
+    const score = number(rating, "Rating", { min: 1, integer: true });
+    if (score > 5) throw new ApiError("Rating must be between 1 and 5", 400);
+    text(visitPurpose, "Visit purpose");
+    const topics = stringList(discussedTopics, "Discussed topics", {
+      required: true,
+    });
+    const providedSamples = stringList(
+      samplesProvided ?? samples ?? [],
+      "Samples",
+    );
+
+    const doctor = await prisma.doctor.findUnique({ where: { id: doctorId } });
+    if (!doctor || !doctor.isActive) {
+      throw new ApiError("Select an active doctor", 400);
+    }
+
+    const dayBounds = getSaudiDayBounds(dateKey);
+    const duplicate = await prisma.visit.findFirst({
+      where: {
+        userId: targetUserId,
+        doctorId,
+        creationSource: "MANUAL_HISTORY",
+        time: normalizedTime,
+        date: { gte: dayBounds.start, lte: dayBounds.end },
+      },
+      select: { id: true },
+    });
+    if (duplicate) {
+      return next(
+        new ApiError(
+          "A historical visit for this doctor at the same date and time already exists",
+          409,
+        ),
+      );
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const visit = await tx.visit.create({
+        data: {
+          samples: providedSamples,
+          date: visitDateTime,
+          time: normalizedTime,
+          duration: normalizedDuration,
+          doctorId,
+          notes: notes || null,
+          userId: targetUserId,
+          visitType: visitType ? String(visitType).toUpperCase() : "ROUTINE",
+          companionType: companion.companionType,
+          accompanyingManagerId: companion.accompanyingManagerId,
+          creationSource: "MANUAL_HISTORY",
+          status: "COMPLETED",
+        },
+        include: visitInclude,
+      });
+
+      const report = await tx.visitReport.create({
+        data: {
+          visitId: visit.id,
+          userId: targetUserId,
+          duration: normalizedDuration,
+          rating: String(score),
+          doctorFeedback: doctorFeedback || null,
+          visitPurpose: visitPurpose.trim(),
+          notes: notes || null,
+          samplesProvided: providedSamples,
+          discussedTopics: topics,
+        },
+      });
+
+      return { ...visit, visitReports: [report] };
+    });
+
+    res.status(201).json({
+      status: "success",
+      message: "Historical visit recorded successfully",
+      data: result,
     });
   } catch (error) {
     console.error(error);
@@ -111,12 +315,7 @@ const getVisits = async (req, res, next) => {
           userId: req.user.id,
           ...(dateFilter && { date: dateFilter }),
         },
-        include: {
-          doctor: {
-            select: { id: true, nameAR: true, nameEN: true, accountName: true },
-          },
-          createdBy: { select: { id: true, name: true } },
-        },
+        include: visitInclude,
         orderBy: { createdAt: "desc" },
       });
 
@@ -146,12 +345,7 @@ const getVisits = async (req, res, next) => {
 
     const data = await prisma.visit.findMany({
       where: whereClause,
-      include: {
-        doctor: {
-          select: { id: true, nameAR: true, nameEN: true, accountName: true },
-        },
-        createdBy: { select: { id: true, name: true } },
-      },
+      include: visitInclude,
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take, // Apply limit
       skip: queryObj.skip, // Apply pagination skip
@@ -205,12 +399,7 @@ const getAllVisits = async (req, res, next) => {
     if (paginate === "false") {
       const data = await prisma.visit.findMany({
         where: whereClause,
-        include: {
-          doctor: {
-            select: { id: true, nameAR: true, nameEN: true, accountName: true },
-          },
-          createdBy: { select: { id: true, name: true } },
-        },
+        include: visitInclude,
         orderBy: { createdAt: "desc" },
       });
 
@@ -233,12 +422,7 @@ const getAllVisits = async (req, res, next) => {
 
     const data = await prisma.visit.findMany({
       where: whereClause,
-      include: {
-        doctor: {
-          select: { id: true, nameAR: true, nameEN: true, accountName: true },
-        },
-        createdBy: { select: { id: true, name: true } },
-      },
+      include: visitInclude,
       orderBy: queryObj.orderBy || { createdAt: "desc" },
       take: queryObj.take, // Apply limit
       skip: queryObj.skip, // Apply pagination skip
@@ -312,7 +496,9 @@ const addVisitReports = async (req, res, next) => {
       );
     }
 
-    text(duration, "Duration");
+    const normalizedDuration = validateVisitDuration(duration, {
+      required: true,
+    });
     const score = number(rating, "Rating", { min: 1, integer: true });
     if (score > 5) throw new ApiError("Rating must be between 1 and 5", 400);
     text(visitPurpose, "Visit purpose");
@@ -323,7 +509,7 @@ const addVisitReports = async (req, res, next) => {
     const report = await prisma.$transaction(async (tx) => {
       const claimed = await tx.visit.updateMany({
         where: { id: visitId, status: "SCHEDULED" },
-        data: { status: "COMPLETED" },
+        data: { status: "COMPLETED", duration: normalizedDuration },
       });
       if (claimed.count !== 1)
         throw new ApiError(
@@ -334,7 +520,7 @@ const addVisitReports = async (req, res, next) => {
         data: {
           visitId,
           userId: visit.userId,
-          duration: String(duration),
+          duration: normalizedDuration,
           rating: String(score),
           doctorFeedback: doctorFeedback || null,
           visitPurpose: visitPurpose.trim(),
@@ -359,24 +545,18 @@ const addVisitReports = async (req, res, next) => {
 const getMyVisitReports = async (req, res, next) => {
   try {
     let { paginate } = req.query;
+    const visitDateFilter = buildVisitReportDateFilter(req.query);
+    const reportWhere = {
+      userId: req.user.id,
+      ...(visitDateFilter ? { visit: { date: visitDateFilter } } : {}),
+    };
 
     if (paginate === "false") {
       const data = await prisma.visitReport.findMany({
-        where: { userId: req.user.id },
+        where: reportWhere,
         include: {
           visit: {
-            select: {
-              id: true,
-              date: true,
-              doctor: {
-                select: {
-                  id: true,
-                  nameAR: true,
-                  nameEN: true,
-                  accountName: true,
-                },
-              },
-            },
+            select: visitReportVisitSelect,
           },
         },
         orderBy: { createdAt: "desc" },
@@ -391,12 +571,17 @@ const getMyVisitReports = async (req, res, next) => {
       });
     }
 
+    const cleanQuery = { ...req.query };
+    delete cleanQuery.fromDate;
+    delete cleanQuery.toDate;
+    delete cleanQuery.date;
+
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query, "VisitReport");
-    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const apiFeatures = new ApiFeatures(cleanQuery, "VisitReport");
+    const { queryObj, pagination } = apiFeatures.applyFeatures(cleanQuery);
     const whereClause = {
       ...queryObj.where,
-      userId: req.user.id,
+      ...reportWhere,
     };
 
     // Get total count of documents for accurate pagination calculations
@@ -408,18 +593,7 @@ const getMyVisitReports = async (req, res, next) => {
       where: whereClause,
       include: {
         visit: {
-          select: {
-            id: true,
-            date: true,
-            doctor: {
-              select: {
-                id: true,
-                nameAR: true,
-                nameEN: true,
-                accountName: true,
-              },
-            },
-          },
+          select: visitReportVisitSelect,
         },
       },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
@@ -445,28 +619,25 @@ const getMyVisitReports = async (req, res, next) => {
 const getAllVisitReports = async (req, res, next) => {
   try {
     let { paginate } = req.query;
+    const visitDateFilter = buildVisitReportDateFilter(req.query);
 
-    const baseWhere = { createdBy: userScope(req.user) };
+    const baseWhere = {
+      createdBy: userScope(req.user),
+      ...(visitDateFilter ? { visit: { date: visitDateFilter } } : {}),
+    };
     if (req.query.createdById) baseWhere.userId = req.query.createdById;
+
+    const managerVisitSelect = {
+      ...visitReportVisitSelect,
+      createdBy: { select: { id: true, name: true } },
+    };
 
     if (paginate === "false") {
       const data = await prisma.visitReport.findMany({
         where: baseWhere,
         include: {
           visit: {
-            select: {
-              id: true,
-              date: true,
-              doctor: {
-                select: {
-                  id: true,
-                  nameAR: true,
-                  nameEN: true,
-                  accountName: true,
-                },
-              },
-              createdBy: { select: { id: true, name: true } },
-            },
+            select: managerVisitSelect,
           },
         },
         orderBy: { createdAt: "desc" },
@@ -481,9 +652,14 @@ const getAllVisitReports = async (req, res, next) => {
       });
     }
 
+    const cleanQuery = { ...req.query };
+    delete cleanQuery.fromDate;
+    delete cleanQuery.toDate;
+    delete cleanQuery.date;
+
     // Instantiate the ApiFeatures class and apply features
-    const apiFeatures = new ApiFeatures(req.query, "VisitReport");
-    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const apiFeatures = new ApiFeatures(cleanQuery, "VisitReport");
+    const { queryObj, pagination } = apiFeatures.applyFeatures(cleanQuery);
     const whereClause = {
       ...queryObj.where,
       ...baseWhere,
@@ -504,19 +680,7 @@ const getAllVisitReports = async (req, res, next) => {
       where: whereClause,
       include: {
         visit: {
-          select: {
-            id: true,
-            date: true,
-            doctor: {
-              select: {
-                id: true,
-                nameAR: true,
-                nameEN: true,
-                accountName: true,
-              },
-            },
-            createdBy: { select: { id: true, name: true } },
-          },
+          select: managerVisitSelect,
         },
       },
       orderBy: queryObj.orderBy || { createdAt: "desc" },
@@ -564,7 +728,10 @@ const updateVisit = async (req, res, next) => {
     const allowedFields = [
       "date",
       "time",
+      "duration",
       "visitType",
+      "companionType",
+      "accompanyingManagerId",
       "samples",
       "notes",
       "status",
@@ -580,8 +747,23 @@ const updateVisit = async (req, res, next) => {
       throw new ApiError("Completed visits cannot be changed", 409);
     if (updateData.date !== undefined)
       updateData.date = validDate(updateData.date, "Visit date");
-    if (updateData.time && !/^([01]\d|2[0-3]):[0-5]\d$/.test(updateData.time))
-      throw new ApiError("Time must use HH:mm", 400);
+    if (updateData.time !== undefined)
+      updateData.time = validateVisitTime(updateData.time, { required: false });
+    if (updateData.duration !== undefined)
+      updateData.duration = validateVisitDuration(updateData.duration, {
+        required: false,
+      });
+    if (
+      updateData.companionType !== undefined ||
+      updateData.accompanyingManagerId !== undefined
+    ) {
+      const companion = await resolveAccompanyingManager(
+        updateData.companionType ?? visit.companionType ?? "SINGLE",
+        updateData.accompanyingManagerId ?? visit.accompanyingManagerId,
+      );
+      updateData.companionType = companion.companionType;
+      updateData.accompanyingManagerId = companion.accompanyingManagerId;
+    }
     if (updateData.samples !== undefined)
       updateData.samples = stringList(updateData.samples, "Samples");
     // Completion must go through the report transaction.
@@ -612,8 +794,36 @@ const updateVisit = async (req, res, next) => {
   }
 };
 
+const getAvailableManagers = async (req, res, next) => {
+  try {
+    const managers = await prisma.user.findMany({
+      where: {
+        role: "MANAGER",
+        isActive: { not: false },
+      },
+      select: {
+        id: true,
+        name: true,
+        role: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    res.status(200).json({
+      status: "success",
+      results: managers.length,
+      data: managers,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
 export {
   scheduleVisit,
+  addHistoricalVisit,
+  getAvailableManagers,
   getVisits,
   addVisitReports,
   getMyVisitReports,

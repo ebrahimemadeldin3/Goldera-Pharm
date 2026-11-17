@@ -45,6 +45,9 @@ router.get("/", async (req, res, next) => {
           where: reviewing
             ? { status: "PENDING", rep: userScope(req.user) }
             : { repId: req.user.id, status: { in: ["APPROVED", "REJECTED"] } },
+          include: reviewing
+            ? { rep: { select: { id: true, name: true } } }
+            : undefined,
           orderBy: { updatedAt: "desc" },
           take: 20,
         }),
@@ -101,18 +104,28 @@ router.get("/", async (req, res, next) => {
           p.status === "APPROVED" ? "success" : "file",
         ),
       ),
-      ...forecasts.map((f) =>
-        item(
+      ...forecasts.map((f) => {
+        const forecastLabel =
+          f.targetType === "PHARMACY"
+            ? "Pharmacy Forecast"
+            : "Doctor Forecast";
+        return item(
           "forecast",
           f,
           reviewing
-            ? "Forecast awaiting review"
-            : `Forecast ${f.status.toLowerCase()}`,
-          f.supervisorFeedback || "Review the product forecast details.",
+            ? `${forecastLabel} awaiting review`
+            : `${forecastLabel} ${f.status.toLowerCase()}`,
+          reviewing
+            ? `${f.rep?.name ? `${f.rep.name}: ` : ""}${forecastLabel} (${f.periodType})`
+            : f.supervisorFeedback || `Your ${forecastLabel.toLowerCase()} was ${f.status.toLowerCase()}.`,
           `${prefix}/forecast`,
-          f.status === "APPROVED" ? "success" : "file",
-        ),
-      ),
+          f.status === "APPROVED"
+            ? "success"
+            : f.status === "REJECTED"
+              ? "alert"
+              : "file",
+        );
+      }),
       ...appraisals.map((a) =>
         item(
           "appraisal",

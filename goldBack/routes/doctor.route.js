@@ -4,6 +4,7 @@ const router = express.Router();
 import {
   addNewDoctor,
   getAllDoctors,
+  getMarketingDoctorsLookup,
   getOneDoctor,
   updateDoctor,
   deleteDoctor,
@@ -15,6 +16,7 @@ import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 router.use(guard);
 
 router.get("/", getAllDoctors);
+router.get("/marketing-lookup", getMarketingDoctorsLookup);
 router.post("/", allowedTo("MANAGER"), addNewDoctor);
 router.post("/bulk-import", allowedTo("MANAGER"), addDoctorByCSV);
 router.post("/csv", allowedTo("MANAGER"), sheetUpload, addDoctorByCSV);

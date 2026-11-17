@@ -250,6 +250,7 @@ export default function VisitsPlanner({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedRepId, setSelectedRepId] = useState<string>(ALL_FILTER);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(ALL_FILTER);
+  const [companionFilter, setCompanionFilter] = useState<string>(ALL_FILTER);
   const [dateFilterPreset, setDateFilterPreset] =
     useState<DateFilterPreset>("clear");
   const [customDateFrom, setCustomDateFrom] = useState("");
@@ -376,6 +377,13 @@ export default function VisitsPlanner({
       }
 
       if (
+        companionFilter !== ALL_FILTER &&
+        (visit.companionType ?? "UNKNOWN") !== companionFilter
+      ) {
+        return false;
+      }
+
+      if (
         dateFilterRange &&
         !isWithinInterval(visit.date, {
           start: dateFilterRange.start,
@@ -406,23 +414,27 @@ export default function VisitsPlanner({
     getAssignedRepName,
     selectedRepId,
     statusFilter,
+    companionFilter,
     trimmedSearchQuery,
   ]);
 
   const hasActiveFilters =
     selectedRepId !== ALL_FILTER ||
     statusFilter !== ALL_FILTER ||
+    companionFilter !== ALL_FILTER ||
     dateFilterPreset !== "clear" ||
     isSearching;
 
   const hasStructuredFilters =
     selectedRepId !== ALL_FILTER ||
     statusFilter !== ALL_FILTER ||
+    companionFilter !== ALL_FILTER ||
     dateFilterPreset !== "clear";
 
   function clearAllFilters() {
     setSelectedRepId(ALL_FILTER);
     setStatusFilter(ALL_FILTER);
+    setCompanionFilter(ALL_FILTER);
     setDateFilterPreset("clear");
     setCustomDateFrom("");
     setCustomDateTo("");
@@ -716,6 +728,34 @@ export default function VisitsPlanner({
                       {item.label}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="min-w-0 xl:w-[180px]">
+              <label htmlFor="visit-companion-filter" className="sr-only">
+                Visit mode
+              </label>
+              <Select
+                value={companionFilter}
+                onValueChange={setCompanionFilter}
+              >
+                <SelectTrigger
+                  id="visit-companion-filter"
+                  className={cn(
+                    filterControlClassName,
+                    isRep
+                      ? "focus-visible:border-[#168557] focus-visible:ring-[#168557]/15"
+                      : "focus-visible:border-[#101D36] focus-visible:ring-[#C9A44C]/15",
+                  )}
+                  aria-label="Filter by visit mode"
+                >
+                  <SelectValue placeholder="All Visit Modes" />
+                </SelectTrigger>
+                <SelectContent className={filterContentClassName}>
+                  <SelectItem value={ALL_FILTER}>All Visit Modes</SelectItem>
+                  <SelectItem value="SINGLE">Single Visit</SelectItem>
+                  <SelectItem value="WITH_MANAGER">Joint Visit</SelectItem>
                 </SelectContent>
               </Select>
             </div>

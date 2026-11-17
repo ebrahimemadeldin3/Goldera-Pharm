@@ -181,6 +181,11 @@ export function RepForecastHub({
                           <h3 className="text-base font-bold text-[#182033]">
                             {forecast.period}
                           </h3>
+                          <span className="inline-flex items-center rounded-full border border-[#DDE3EE] bg-[#F4F6FA] px-2.5 py-0.5 text-[11px] font-bold text-[#344054]">
+                            {forecast.targetType === "PHARMACY"
+                              ? "Pharmacy Forecast"
+                              : "Doctor Forecast"}
+                          </span>
                           {getStatusBadge(forecast.status)}
                           {getPeriodBadge(forecast.periodType)}
                         </div>
@@ -200,7 +205,11 @@ export function RepForecastHub({
 
                     <div className="grid grid-cols-2 gap-3 rounded-[10px] border border-[#EEF1F6] bg-[#F9FAFB] p-3 text-xs">
                       <div>
-                        <span className="text-[#667085]">Doctors:</span>{" "}
+                        <span className="text-[#667085]">
+                          {forecast.targetType === "PHARMACY"
+                            ? "Pharmacies:"
+                            : "Doctors:"}
+                        </span>{" "}
                         <span className="font-bold text-[#182033]">
                           {forecast.doctorsCovered}
                         </span>
@@ -223,12 +232,15 @@ export function RepForecastHub({
                             ).map((dist, idx) => (
                               <div
                                 key={`${forecast.id}-${dist.doctorId}-${idx}`}
-                                className="flex items-center justify-between rounded-[8px] border border-[#EEF1F6] bg-white p-2.5 text-xs"
+                                className="flex items-start justify-between gap-2 rounded-[8px] border border-[#EEF1F6] bg-white p-2.5 text-xs"
                               >
-                                <span className="max-w-[180px] truncate font-medium text-[#182033]">
+                                <span
+                                  className="min-w-0 flex-1 whitespace-normal break-words font-medium text-[#182033]"
+                                  dir="auto"
+                                >
                                   {dist.doctorName}
                                 </span>
-                                <span className="font-bold text-[#168557]">
+                                <span className="shrink-0 font-bold text-[#168557]">
                                   {dist.allocations.reduce(
                                     (s, a) => s + a.units,
                                     0,

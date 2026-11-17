@@ -22,6 +22,7 @@ export type Specialty =
 export type RequestType =
   | "EXPENSE"
   | "MARKETING"
+  | "MONTHLY_MARKETING"
   | "SAMPLE"
   | "LEAVE"
   | "PERSONAL_EXPENSE";

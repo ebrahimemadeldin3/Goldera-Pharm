@@ -15,6 +15,15 @@ export interface VisitReportApiResponse {
   visit: {
     id: string;
     date: string;
+    time?: string | null;
+    duration?: string | null;
+    companionType?: "SINGLE" | "WITH_MANAGER" | null;
+    creationSource?: "SCHEDULED" | "MANUAL_HISTORY" | null;
+    accompanyingManager?: {
+      id: string;
+      name: string;
+      role?: string;
+    } | null;
     doctor: {
       id: string;
       nameAR: string;
@@ -43,6 +52,10 @@ export interface VisitReport {
   representativeName?: string;
   representativeId?: string;
   visitDate: string;
+  visitTime?: string | null;
+  companionType?: "SINGLE" | "WITH_MANAGER" | null;
+  accompanyingManagerName?: string | null;
+  creationSource?: "SCHEDULED" | "MANUAL_HISTORY" | null;
   duration: string;
   rating: string;
   discussedTopics: string[];

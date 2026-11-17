@@ -373,3 +373,78 @@ export async function rejectRequestAction(id: string, response?: string) {
     };
   }
 }
+
+export interface MarketingDoctorOption {
+  id: string;
+  displayName: string;
+  nameEN: string | null;
+  nameAR: string | null;
+  specialty: string | null;
+  facilities: Array<{
+    id: string;
+    name: string;
+  }>;
+}
+
+export interface MarketingFacilityOption {
+  id: string;
+  name: string;
+}
+
+export async function getMarketingDoctorsLookupAction(params: {
+  search?: string;
+  facilityId?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  success: boolean;
+  data?: MarketingDoctorOption[];
+  facilities?: MarketingFacilityOption[];
+  totalCount?: number;
+  pagination?: {
+    currentPage: number;
+    limit: number;
+    totalPages: number;
+    next: number;
+    prev: number;
+  };
+  error?: string;
+}> {
+  try {
+    const query = new URLSearchParams();
+    if (params.search?.trim()) query.set("search", params.search.trim());
+    if (params.facilityId) query.set("facilityId", params.facilityId);
+    if (params.page) query.set("page", String(params.page));
+    if (params.limit) query.set("limit", String(params.limit));
+
+    const qs = query.toString();
+    const res = await apiFetch<{
+      results: number;
+      pagination: {
+        currentPage: number;
+        limit: number;
+        totalPages: number;
+        next: number;
+        prev: number;
+      };
+      data: MarketingDoctorOption[];
+      facilities: MarketingFacilityOption[];
+    }>(`/api/doctors/marketing-lookup${qs ? `?${qs}` : ""}`, {
+      method: "GET",
+    });
+
+    return {
+      success: true,
+      data: res.data || [],
+      facilities: res.facilities || [],
+      totalCount: res.results ?? 0,
+      pagination: res.pagination,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Failed to load doctors list",
+    };
+  }
+}

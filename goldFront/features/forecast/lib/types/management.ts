@@ -7,6 +7,7 @@ import type { PaginatedApiResponse } from "@/lib/types";
 export interface ForecastManagementApiResponse {
   id: string;
   repId: string;
+  targetType?: "DOCTOR" | "PHARMACY";
   periodType: string;
   periodDate: string;
   productForecasts: {
@@ -34,6 +35,7 @@ export type GetAllForecastsResponse = PaginatedApiResponse<
 export interface ForecastManagement {
   id: string;
   repId: string;
+  targetType: "DOCTOR" | "PHARMACY";
   repName: string;
   repEmail: string;
   periodType: string;

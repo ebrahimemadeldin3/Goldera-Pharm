@@ -4,6 +4,11 @@ import xlsx from "xlsx";
 import fs from "fs/promises";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 import { text, number } from "../utils/validation.js";
+import {
+  buildMarketingDoctorWhere,
+  mapMarketingDoctorOption,
+  validateMarketingDoctorQuery,
+} from "../utils/marketing-doctors.js";
 
 // Add new doctor
 const addNewDoctor = async (req, res, next) => {
@@ -385,9 +390,105 @@ const addDoctorByCSV = async (req, res, next) => {
   }
 };
 
+const getMarketingDoctorsLookup = async (req, res, next) => {
+  try {
+    const parsed = validateMarketingDoctorQuery(req.query);
+
+    let matchingFacilityNames = [];
+    if (parsed.facilityId && !parsed.facilityId.startsWith("name:")) {
+      const account = await prisma.accounts.findUnique({
+        where: { id: parsed.facilityId },
+        select: { name: true },
+      });
+      if (account?.name) matchingFacilityNames = [account.name];
+    }
+
+    const where = buildMarketingDoctorWhere({
+      ...parsed,
+      matchingFacilityNames,
+    });
+
+    const [totalDocuments, doctors, accounts, doctorAccountNames] =
+      await Promise.all([
+        prisma.doctor.count({ where }),
+        prisma.doctor.findMany({
+          where,
+          select: {
+            id: true,
+            nameAR: true,
+            nameEN: true,
+            specialty: true,
+            accountName: true,
+            accountsId: true,
+            accounts: {
+              select: { id: true, name: true },
+            },
+          },
+          orderBy: [
+            { nameEN: "asc" },
+            { nameAR: "asc" },
+            { id: "asc" },
+          ],
+          take: parsed.limit,
+          skip: parsed.skip,
+        }),
+        prisma.accounts.findMany({
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        }),
+        prisma.doctor.findMany({
+          where: { isActive: true, accountName: { not: null } },
+          select: { accountName: true },
+          distinct: ["accountName"],
+        }),
+      ]);
+
+    const facilityMap = new Map();
+    for (const acc of accounts) {
+      if (!acc.name?.trim()) continue;
+      facilityMap.set(acc.name.trim().toLowerCase(), {
+        id: acc.id,
+        name: acc.name.trim(),
+      });
+    }
+    for (const row of doctorAccountNames) {
+      const rawName = row.accountName?.trim();
+      if (!rawName) continue;
+      const key = rawName.toLowerCase();
+      if (!facilityMap.has(key)) {
+        facilityMap.set(key, {
+          id: `name:${rawName}`,
+          name: rawName,
+        });
+      }
+    }
+
+    const facilities = Array.from(facilityMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name),
+    );
+
+    const pagination = paginationResults(
+      { currentPage: parsed.page, limit: parsed.limit, skip: parsed.skip },
+      totalDocuments,
+    );
+
+    res.status(200).json({
+      status: "success",
+      results: totalDocuments,
+      pagination,
+      data: doctors.map(mapMarketingDoctorOption),
+      facilities,
+    });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+};
+
 export {
   addNewDoctor,
   getAllDoctors,
+  getMarketingDoctorsLookup,
   getOneDoctor,
   updateDoctor,
   deleteDoctor,

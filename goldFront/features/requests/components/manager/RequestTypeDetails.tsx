@@ -100,17 +100,28 @@ export function RequestTypeDetails({ request }: RequestTypeDetailsProps) {
     );
   }
 
-  if (request.type === "EXPENSE" || request.type === "MARKETING") {
+  if (
+    request.type === "EXPENSE" ||
+    request.type === "MARKETING" ||
+    request.type === "MONTHLY_MARKETING"
+  ) {
     const doctors = request.doctors ?? [];
     const doctorIds = request.doctorIds ?? [];
     return (
       <section>
         <PanelHead
-          icon={request.type === "MARKETING" ? Megaphone : DollarSign}
+          icon={
+            request.type === "MARKETING" ||
+            request.type === "MONTHLY_MARKETING"
+              ? Megaphone
+              : DollarSign
+          }
           title={
-            request.type === "MARKETING"
-              ? "Marketing Details"
-              : "Expense Details"
+            request.type === "MONTHLY_MARKETING"
+              ? "Monthly Marketing Details"
+              : request.type === "MARKETING"
+                ? "Marketing Details"
+                : "Expense Details"
           }
         />
         <PanelShell>

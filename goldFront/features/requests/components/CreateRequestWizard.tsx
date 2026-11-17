@@ -47,7 +47,8 @@ import {
   X,
   Stethoscope,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatSAR } from "@/lib/utils";
+import { MarketingTargetDoctorsSelector } from "./MarketingTargetDoctorsSelector";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { ProductApiResponse } from "@/features/products/lib/types";
 import type { CreateRequestDto } from "@/features/requests/lib/types";
@@ -86,6 +87,12 @@ const REQUEST_TYPES: Array<{
     title: "Marketing Request",
     description: "Request funding for marketing materials or doctor events",
     icon: Briefcase,
+  },
+  {
+    type: "MONTHLY_MARKETING",
+    title: "Monthly Marketing",
+    description: "Submit a monthly marketing request for a target doctor",
+    icon: DollarSign,
   },
   {
     type: "PERSONAL_EXPENSE",
@@ -173,6 +180,15 @@ export default function CreateRequestWizard({
     setExpenseItemError("");
     setAttachmentError("");
 
+    if (selectedType === "MONTHLY_MARKETING") {
+      if (!form.getValues("title")?.trim()) {
+        form.setValue("title", "Monthly Marketing Request");
+      }
+      if (!form.getValues("subject")?.trim()) {
+        form.setValue("subject", "Monthly Marketing");
+      }
+    }
+
     // Common validations
     const validTitle = await form.trigger("title");
     const validSubject = await form.trigger("subject");
@@ -180,8 +196,12 @@ export default function CreateRequestWizard({
 
     let isTypeValid = true;
 
-    // File attachment is required for all request types EXCEPT SAMPLE (backend contract requirement)
-    if (selectedType !== "SAMPLE" && !attachedFile) {
+    // File attachment is optional for SAMPLE, MARKETING, and MONTHLY_MARKETING
+    const attachmentOptional =
+      selectedType === "SAMPLE" ||
+      selectedType === "MARKETING" ||
+      selectedType === "MONTHLY_MARKETING";
+    if (!attachmentOptional && !attachedFile) {
       const errorMsg =
         selectedType === "LEAVE"
           ? "Supporting document (medical note or leave form) is required."
@@ -198,6 +218,18 @@ export default function CreateRequestWizard({
         isTypeValid = false;
       }
       if (!validBudget) isTypeValid = false;
+    } else if (selectedType === "MONTHLY_MARKETING") {
+      const budgetVal = Number(form.getValues("budget"));
+      if (!Number.isFinite(budgetVal) || budgetVal <= 0) {
+        form.setError("budget", {
+          message: "Amount must be greater than zero",
+        });
+        isTypeValid = false;
+      }
+      if (selectedDoctorIds.length !== 1) {
+        setDoctorError("Please select one target doctor.");
+        isTypeValid = false;
+      }
     } else if (selectedType === "LEAVE") {
       const validStart = await form.trigger("leaveStartDate");
       const validEnd = await form.trigger("leaveEndDate");
@@ -245,7 +277,11 @@ export default function CreateRequestWizard({
             leaveStartDate: values.leaveStartDate,
             leaveEndDate: values.leaveEndDate,
           };
-        } else if (selectedType === "EXPENSE" || selectedType === "MARKETING") {
+        } else if (
+          selectedType === "EXPENSE" ||
+          selectedType === "MARKETING" ||
+          selectedType === "MONTHLY_MARKETING"
+        ) {
           payload = {
             ...payload,
             budget: Number(values.budget) || 0,
@@ -524,18 +560,23 @@ export default function CreateRequestWizard({
                 />
 
                 {(selectedType === "EXPENSE" ||
-                  selectedType === "MARKETING") && (
+                  selectedType === "MARKETING" ||
+                  selectedType === "MONTHLY_MARKETING") && (
                   <FormField
                     control={form.control}
                     name="budget"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-bold text-[#182033]">
-                          Budget Amount (SAR) *
+                          {selectedType === "MONTHLY_MARKETING"
+                            ? "Amount (SAR) *"
+                            : "Budget Amount (SAR) *"}
                         </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
+                            step="0.01"
+                            min="0.01"
                             {...field}
                             onChange={(e) =>
                               field.onChange(Number(e.target.value))
@@ -550,15 +591,36 @@ export default function CreateRequestWizard({
                 )}
               </div>
 
-              {/* Target Doctor Selector for Expense, Marketing & Sample */}
+              {/* Target Doctor Selector for Marketing Request (All active DB doctors, search & facility filter) */}
+              {selectedType === "MARKETING" && (
+                <div className="space-y-2 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4">
+                  <MarketingTargetDoctorsSelector
+                    selectedDoctorIds={selectedDoctorIds}
+                    onChange={(ids) => {
+                      setSelectedDoctorIds(ids);
+                      if (ids.length > 0) setDoctorError("");
+                    }}
+                    disabled={isPending}
+                  />
+                  {doctorError && (
+                    <p className="pt-1 text-[11px] font-medium text-[#D92D20]">
+                      {doctorError}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Target Doctor Selector for Expense, Monthly Marketing & Sample */}
               {(selectedType === "EXPENSE" ||
-                selectedType === "MARKETING" ||
+                selectedType === "MONTHLY_MARKETING" ||
                 selectedType === "SAMPLE") && (
                 <div className="space-y-2 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-4">
                   <div className="flex items-center justify-between">
                     <FormLabel className="flex items-center gap-1.5 text-xs font-bold text-[#182033]">
                       <Stethoscope size={14} className="text-[#168557]" />
-                      Target Doctors * ({selectedDoctorIds.length} Selected)
+                      {selectedType === "MONTHLY_MARKETING"
+                        ? "Target Doctor * (Select 1)"
+                        : `Target Doctors * (${selectedDoctorIds.length} Selected)`}
                     </FormLabel>
                   </div>
 
@@ -567,24 +629,45 @@ export default function CreateRequestWizard({
                       No doctors available in region.
                     </p>
                   ) : (
-                    <div className="grid max-h-36 grid-cols-1 gap-2 overflow-y-auto pt-1 sm:grid-cols-2">
+                    <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto pt-1 sm:grid-cols-2">
                       {doctors.map((doc) => {
                         const isSelected = selectedDoctorIds.includes(doc.id);
                         return (
                           <button
                             key={doc.id}
                             type="button"
-                            onClick={() => handleToggleDoctor(doc.id)}
+                            onClick={() => {
+                              if (selectedType === "MONTHLY_MARKETING") {
+                                setSelectedDoctorIds(
+                                  isSelected ? [] : [doc.id],
+                                );
+                                setDoctorError("");
+                              } else {
+                                handleToggleDoctor(doc.id);
+                              }
+                            }}
                             className={cn(
-                              "flex cursor-pointer items-center justify-between rounded-[8px] border px-3 py-2 text-left text-xs font-medium transition-all",
+                              "flex cursor-pointer items-center justify-between gap-2 rounded-[8px] border px-3 py-2 text-left text-xs font-medium transition-all",
                               isSelected
                                 ? "border-[#168557] bg-[#E9F8F1] text-[#168557]"
                                 : "border-[#E5E8EF] bg-white text-[#344054] hover:border-[#CBEFDD]",
                             )}
                           >
-                            <span className="truncate">
-                              {doc.nameEN || doc.nameAR || doc.accountName}
-                            </span>
+                            <div className="min-w-0">
+                              <div
+                                className="whitespace-normal break-words font-semibold"
+                                dir="auto"
+                              >
+                                {doc.nameEN || doc.nameAR || doc.accountName}
+                              </div>
+                              {(doc.accountName || doc.specialty) && (
+                                <div className="text-[11px] text-[#667085] whitespace-normal break-words">
+                                  {[doc.specialty, doc.accountName]
+                                    .filter(Boolean)
+                                    .join(" • ")}
+                                </div>
+                              )}
+                            </div>
                             {isSelected && (
                               <Check
                                 size={14}
@@ -850,7 +933,7 @@ export default function CreateRequestWizard({
                               className="h-9 text-xs"
                             />
                             <span className="text-[11px] font-medium text-[#667085]">
-                              EGP
+                              SAR
                             </span>
                           </div>
                           {expenseItems.length > 1 && (
@@ -875,11 +958,12 @@ export default function CreateRequestWizard({
                       <span className="text-xs font-bold text-[#182033]">
                         Total:{" "}
                         <span className="text-[#168557]">
-                          {expenseItems.reduce(
-                            (s, i) => s + (i.amount || 0),
-                            0,
-                          )}{" "}
-                          EGP
+                          {formatSAR(
+                            expenseItems.reduce(
+                              (s, i) => s + (i.amount || 0),
+                              0,
+                            ),
+                          )}
                         </span>
                       </span>
                     </div>
@@ -920,11 +1004,15 @@ export default function CreateRequestWizard({
                   <span>
                     {selectedType === "LEAVE"
                       ? "Supporting Document (PDF) *"
-                      : selectedType !== "SAMPLE"
+                      : selectedType !== "SAMPLE" &&
+                          selectedType !== "MARKETING" &&
+                          selectedType !== "MONTHLY_MARKETING"
                         ? "Attachment (Invoice / PDF Document Required) *"
                         : "Attachment (Optional Invoice / PDF)"}
                   </span>
-                  {selectedType !== "SAMPLE" ? (
+                  {selectedType !== "SAMPLE" &&
+                  selectedType !== "MARKETING" &&
+                  selectedType !== "MONTHLY_MARKETING" ? (
                     <span className="text-[11px] font-bold text-[#D92D20]">
                       Required
                     </span>

@@ -61,7 +61,14 @@ import {
   formatDateOnly,
   formatSaudiDateDisplay,
 } from "@/lib/utils";
-import { addDays, addMonths, eachDayOfInterval, format, isBefore } from "date-fns";
+import { addDays, addMonths, format, isBefore } from "date-fns";
+import {
+  getNextWorkingDay,
+  getPlanWorkingDaysInRange,
+  getWeeklyPlanEndDate,
+  getWeeklyPlanWorkingDays,
+  WORKING_WEEK_DAYS,
+} from "@/features/plan/lib/working-week";
 import { createVisitPlanAction } from "@/features/plan/api/create";
 import type { UserRole } from "@/lib/types";
 import { useRouter } from "next/navigation";
@@ -187,8 +194,15 @@ function DoctorDateSelectorPopover({
                 {group.monthLabel}
               </h5>
 
-              {/* 7-Column Date Chip Grid */}
-              <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              {/* Date Chip Grid (6 working days for weekly, 7 columns for monthly) */}
+              <div
+                className={cn(
+                  "grid gap-1.5 sm:gap-2",
+                  daysInRange.length <= WORKING_WEEK_DAYS
+                    ? "grid-cols-3 sm:grid-cols-6"
+                    : "grid-cols-7",
+                )}
+              >
                 {group.days.map((day) => {
                   const dKey = formatDateOnly(day);
                   const isSelected = tempKey === dKey;
@@ -325,13 +339,18 @@ export default function CreatePlanDialogRep({
     );
   }, [open, userRole, userSubRegionName]);
 
+  const initialWorkingStart = useMemo(
+    () => getNextWorkingDay(todayStart),
+    [todayStart],
+  );
+
   const form = useForm<CreateVisitPlanFormValues>({
     resolver: zodResolver(createVisitPlanSchema),
     defaultValues: {
       planType: "WEEKLY",
       title: "",
-      startDate: todayStart,
-      endDate: addDays(todayStart, 6),
+      startDate: initialWorkingStart,
+      endDate: getWeeklyPlanEndDate(initialWorkingStart),
       description: "",
       objectives: "",
       doctorsWithDates: [],
@@ -351,8 +370,9 @@ export default function CreatePlanDialogRep({
 
     const sDate = startDate || todayStart;
     if (newType === "WEEKLY") {
-      const eDate = addDays(sDate, 6);
-      form.setValue("startDate", sDate);
+      const workingStart = getNextWorkingDay(sDate);
+      const eDate = getWeeklyPlanEndDate(workingStart);
+      form.setValue("startDate", workingStart);
       form.setValue("endDate", eDate);
     } else {
       const eDate = addDays(addMonths(sDate, 1), -1);
@@ -376,8 +396,9 @@ export default function CreatePlanDialogRep({
     );
 
     if (planType === "WEEKLY") {
-      const normalizedEnd = addDays(normalizedStart, 6);
-      form.setValue("startDate", normalizedStart);
+      const workingStart = getNextWorkingDay(normalizedStart);
+      const normalizedEnd = getWeeklyPlanEndDate(workingStart);
+      form.setValue("startDate", workingStart);
       form.setValue("endDate", normalizedEnd);
     } else {
       const normalizedEnd = addDays(addMonths(normalizedStart, 1), -1);
@@ -390,8 +411,11 @@ export default function CreatePlanDialogRep({
   const daysInRange = useMemo(() => {
     if (!startDate || !endDate) return [];
     if (startDate > endDate) return [];
-    return eachDayOfInterval({ start: startDate, end: endDate });
-  }, [startDate, endDate]);
+    if (planType === "WEEKLY") {
+      return getWeeklyPlanWorkingDays(startDate);
+    }
+    return getPlanWorkingDaysInRange(startDate, endDate, planType);
+  }, [startDate, endDate, planType]);
 
   const daysKeyMap = useMemo(() => {
     const map = new Map<string, Date>();
@@ -685,7 +709,7 @@ export default function CreatePlanDialogRep({
                     <div className="rounded-[10px] border border-[#CBEFDD] bg-[#E9F8F1]/60 p-3">
                       <p className="text-[11px] font-bold uppercase tracking-wider text-[#168557]">
                         {planType === "WEEKLY"
-                          ? "7-Day Plan Period"
+                          ? `${WORKING_WEEK_DAYS}-Day Working Week (Sat–Thu)`
                           : "Rolling Month Plan Period"}
                       </p>
                       <p className="text-xs font-bold text-[#182033] mt-0.5">

@@ -7,6 +7,7 @@ import {
   parseDateValue,
 } from "@/lib/utils";
 import {
+  VISIT_COMPANION_LABELS,
   VISIT_STATUS_LABELS,
   VISIT_DEFAULTS,
 } from "@/features/visits/lib/constants";
@@ -38,7 +39,7 @@ export function transformVisitApiResponse(apiVisit: VisitApiResponse): Visit {
     person: doctorName,
     place: apiVisit.doctor.accountName || VISIT_DEFAULTS.PLACE,
     timeLabel: apiVisit.time,
-    duration: VISIT_DEFAULTS.DURATION,
+    duration: apiVisit.duration || VISIT_DEFAULTS.DURATION,
     status: apiVisit.status,
     statusLabel: VISIT_STATUS_LABELS[apiVisit.status] || apiVisit.status,
     badge: VISIT_DEFAULTS.BADGE,
@@ -46,6 +47,16 @@ export function transformVisitApiResponse(apiVisit: VisitApiResponse): Visit {
     createdBy: apiVisit.createdBy.name,
     samples: normalizedSamples,
     visitType: apiVisit.visitType,
+    companionType: apiVisit.companionType ?? null,
+    companionLabel:
+      apiVisit.companionType === "WITH_MANAGER"
+        ? VISIT_COMPANION_LABELS.WITH_MANAGER
+        : apiVisit.companionType === "SINGLE"
+          ? VISIT_COMPANION_LABELS.SINGLE
+          : VISIT_COMPANION_LABELS.UNKNOWN,
+    creationSource: apiVisit.creationSource ?? "SCHEDULED",
+    accompanyingManagerId: apiVisit.accompanyingManagerId ?? null,
+    accompanyingManagerName: apiVisit.accompanyingManager?.name ?? null,
     doctorId: apiVisit.doctorId,
     userId: apiVisit.userId,
     medicalRepId: apiVisit.medicalRepId || apiVisit.medicalRep?.id,

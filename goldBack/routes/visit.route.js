@@ -3,6 +3,8 @@ const router = express.Router();
 
 import {
   scheduleVisit,
+  addHistoricalVisit,
+  getAvailableManagers,
   getVisits,
   addVisitReports,
   getAllVisitReports,
@@ -15,7 +17,9 @@ import { guard, allowedTo } from "../middlewares/auth.middleware.js";
 router.use(guard);
 
 // Visits and Visit Reports Routes
+router.get("/managers", getAvailableManagers);
 router.post("/", scheduleVisit);
+router.post("/historical", addHistoricalVisit);
 router.get("/", getVisits);
 router.get("/all", allowedTo("MANAGER", "SUPERVISOR"), getAllVisits);
 router.post("/visit-reports", addVisitReports);

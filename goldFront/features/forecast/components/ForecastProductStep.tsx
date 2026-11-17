@@ -139,10 +139,13 @@ export function ForecastProductStep({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <span className="inline-flex items-center rounded-md bg-[#F4F6FA] px-2 py-0.5 text-[11px] font-semibold text-[#667085] truncate max-w-full">
+                    <span className="inline-flex items-center rounded-md bg-[#F4F6FA] px-2 py-0.5 text-[11px] font-semibold text-[#667085] whitespace-normal break-words">
                       {product.category}
                     </span>
-                    <h3 className="mt-1.5 text-sm font-bold text-[#182033] line-clamp-1">
+                    <h3
+                      className="mt-1.5 text-sm font-bold text-[#182033] whitespace-normal break-words"
+                      dir="auto"
+                    >
                       {product.name}
                     </h3>
                     {product.internalRef && (

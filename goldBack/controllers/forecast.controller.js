@@ -3,10 +3,29 @@ import { ApiError } from "../utils/apiError.js";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 import { date, number, userScope, canManageUser } from "../utils/validation.js";
 
+const normalizeTerritory = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
 const createForecast = async (req, res, next) => {
-  const { periodType, periodDate, productForecasts, notes, status } = req.body;
+  const {
+    periodType,
+    periodDate,
+    productForecasts,
+    notes,
+    status,
+    targetType: rawTargetType,
+  } = req.body;
 
   try {
+    const targetType = rawTargetType
+      ? String(rawTargetType).trim().toUpperCase()
+      : "DOCTOR";
+    if (!["DOCTOR", "PHARMACY"].includes(targetType)) {
+      return next(new ApiError("Invalid forecast target type", 400));
+    }
+
     if (status && !["DRAFT", "PENDING"].includes(String(status).toUpperCase()))
       return next(
         new ApiError("Forecasts must be submitted for approval", 400),
@@ -61,21 +80,102 @@ const createForecast = async (req, res, next) => {
       );
     }
 
+    let pharmacyById = new Map();
+    if (targetType === "PHARMACY") {
+      const pharmacyIds = [
+        ...new Set(
+          productForecasts
+            .map((item) => item.pharmacyId || item.targetId)
+            .filter(Boolean),
+        ),
+      ];
+      if (!pharmacyIds.length || productForecasts.some((i) => !(i.pharmacyId || i.targetId))) {
+        return next(
+          new ApiError("Each pharmacy forecast row must include a valid pharmacy", 400),
+        );
+      }
+
+      const [repUser, pharmacies] = await Promise.all([
+        prisma.user.findUnique({
+          where: { id: req.user.id },
+          include: { subRegion: true },
+        }),
+        prisma.pharmacy.findMany({
+          where: { id: { in: pharmacyIds } },
+          select: {
+            id: true,
+            name: true,
+            city: true,
+            region: true,
+            subRegion: true,
+          },
+        }),
+      ]);
+
+      if (pharmacies.length !== pharmacyIds.length) {
+        return next(
+          new ApiError("One or more selected pharmacies no longer exist", 400),
+        );
+      }
+
+      const repSubRegion = normalizeTerritory(repUser?.subRegion?.name);
+      if (repSubRegion) {
+        const outOfTerritory = pharmacies.find(
+          (p) => normalizeTerritory(p.subRegion) !== repSubRegion,
+        );
+        if (outOfTerritory) {
+          return next(
+            new ApiError(
+              "Selected pharmacy is outside your assigned territory",
+              403,
+            ),
+          );
+        }
+      }
+
+      pharmacyById = new Map(pharmacies.map((p) => [p.id, p]));
+    }
+
     const forecast = await prisma.forecast.create({
       data: {
+        targetType,
         periodType,
         periodDate: date(periodDate, "Forecast period"),
-        productForecasts: productForecasts.map((item) => ({
-          ...item,
-          productId:
+        productForecasts: productForecasts.map((item) => {
+          const resolvedProductId =
             item.productId ||
             activeProducts.find((product) => product.name === item.productName)
-              ?.id,
-          productUnits: Number(item.productUnits ?? item.quantity),
-          doctorName: item.doctorName || "Unassigned doctor",
-        })),
+              ?.id;
+          if (targetType === "PHARMACY") {
+            const pId = item.pharmacyId || item.targetId;
+            const pharmacy = pharmacyById.get(pId);
+            const pharmacyName = pharmacy?.name || item.pharmacyName || item.targetName || "Unassigned pharmacy";
+            return {
+              ...item,
+              productId: resolvedProductId,
+              productUnits: Number(item.productUnits ?? item.quantity),
+              targetType: "PHARMACY",
+              targetId: pId,
+              targetName: pharmacyName,
+              pharmacyId: pId,
+              pharmacyName,
+              city: pharmacy?.city || item.city || "",
+              subRegion: pharmacy?.subRegion || item.subRegion || "",
+              doctorName: pharmacyName,
+            };
+          }
+          return {
+            ...item,
+            productId: resolvedProductId,
+            productUnits: Number(item.productUnits ?? item.quantity),
+            targetType: "DOCTOR",
+            targetId: item.doctorId || item.targetId || undefined,
+            targetName: item.doctorName || item.targetName || "Unassigned doctor",
+            doctorName: item.doctorName || item.targetName || "Unassigned doctor",
+          };
+        }),
         notes,
-        status: status ? String(status).toUpperCase() : "DRAFT",
+        status: status ? String(status).toUpperCase() : "PENDING",
         isApproved: false,
         repId: req.user.id,
       },

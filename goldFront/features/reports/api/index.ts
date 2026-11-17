@@ -73,15 +73,46 @@ export async function getVisitReports(
   scope: VisitReportsScope = "own",
   page?: number,
   limit?: number,
+  dateFilter?: { fromDate?: string; toDate?: string },
 ): Promise<VisitReportsResponse> {
+  const query = buildPaginationQuery({
+    page,
+    limit,
+    ...(dateFilter?.fromDate ? { fromDate: dateFilter.fromDate } : {}),
+    ...(dateFilter?.toDate ? { toDate: dateFilter.toDate } : {}),
+  });
   const endpoint =
     scope === "all"
-      ? `/api/visits/all-visit-reports${buildPaginationQuery({ page, limit })}`
-      : `/api/visits/visit-reports${buildPaginationQuery({ page, limit })}`;
+      ? `/api/visits/all-visit-reports${query}`
+      : `/api/visits/visit-reports${query}`;
 
   return apiFetch<VisitReportsResponse>(endpoint, {
     method: "GET",
   });
+}
+
+function mapVisitReport(report: VisitReportApiResponse): VisitReport {
+  return {
+    id: report.id,
+    visitId: report.visitId,
+    doctorNameAR: report.visit.doctor.nameAR,
+    doctorNameEN: report.visit.doctor.nameEN,
+    representativeName: report.visit.createdBy?.name,
+    representativeId: report.visit.createdBy?.id || report.userId,
+    visitDate: format(new Date(report.visit.date), "MMM dd, yyyy"),
+    visitTime: report.visit.time ?? null,
+    companionType: report.visit.companionType ?? null,
+    accompanyingManagerName: report.visit.accompanyingManager?.name ?? null,
+    creationSource: report.visit.creationSource ?? null,
+    duration: report.duration,
+    rating: report.rating,
+    discussedTopics: report.discussedTopics,
+    doctorFeedback: report.doctorFeedback,
+    visitPurpose: report.visitPurpose,
+    notes: report.notes,
+    samplesProvided: report.samplesProvided,
+    createdAt: format(new Date(report.createdAt), "MMM dd, yyyy 'at' h:mm a"),
+  };
 }
 
 /**
@@ -91,29 +122,13 @@ export async function getVisitReports(
 export async function getVisitReportsAction(
   page?: number,
   limit?: number,
+  dateFilter?: { fromDate?: string; toDate?: string },
 ): Promise<VisitReportsActionResult> {
   try {
-    const response = await getVisitReports("own", page, limit);
+    const response = await getVisitReports("own", page, limit, dateFilter);
     const normalized = normalizeVisitReportsResponse(response);
 
-    // Transform API response to client-friendly format
-    const reports: VisitReport[] = normalized.reports.map((report) => ({
-      id: report.id,
-      visitId: report.visitId,
-      doctorNameAR: report.visit.doctor.nameAR,
-      doctorNameEN: report.visit.doctor.nameEN,
-      representativeName: report.visit.createdBy?.name,
-      representativeId: report.visit.createdBy?.id || report.userId,
-      visitDate: format(new Date(report.visit.date), "MMM dd, yyyy"),
-      duration: report.duration,
-      rating: report.rating,
-      discussedTopics: report.discussedTopics,
-      doctorFeedback: report.doctorFeedback,
-      visitPurpose: report.visitPurpose,
-      notes: report.notes,
-      samplesProvided: report.samplesProvided,
-      createdAt: format(new Date(report.createdAt), "MMM dd, yyyy 'at' h:mm a"),
-    }));
+    const reports: VisitReport[] = normalized.reports.map(mapVisitReport);
 
     return {
       success: true,
@@ -140,28 +155,13 @@ export async function getVisitReportsAction(
 export async function getAllVisitReportsAction(
   page?: number,
   limit?: number,
+  dateFilter?: { fromDate?: string; toDate?: string },
 ): Promise<VisitReportsActionResult> {
   try {
-    const response = await getVisitReports("all", page, limit);
+    const response = await getVisitReports("all", page, limit, dateFilter);
     const normalized = normalizeVisitReportsResponse(response);
 
-    const reports: VisitReport[] = normalized.reports.map((report) => ({
-      id: report.id,
-      visitId: report.visitId,
-      doctorNameAR: report.visit.doctor.nameAR,
-      doctorNameEN: report.visit.doctor.nameEN,
-      representativeName: report.visit.createdBy?.name,
-      representativeId: report.visit.createdBy?.id || report.userId,
-      visitDate: format(new Date(report.visit.date), "MMM dd, yyyy"),
-      duration: report.duration,
-      rating: report.rating,
-      discussedTopics: report.discussedTopics,
-      doctorFeedback: report.doctorFeedback,
-      visitPurpose: report.visitPurpose,
-      notes: report.notes,
-      samplesProvided: report.samplesProvided,
-      createdAt: format(new Date(report.createdAt), "MMM dd, yyyy 'at' h:mm a"),
-    }));
+    const reports: VisitReport[] = normalized.reports.map(mapVisitReport);
 
     return {
       success: true,

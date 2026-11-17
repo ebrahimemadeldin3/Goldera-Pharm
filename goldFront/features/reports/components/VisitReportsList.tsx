@@ -1,6 +1,11 @@
 "use client";
 
+import { useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { VisitReport } from "../lib/types";
 import {
@@ -11,6 +16,7 @@ import {
   Package,
   FileText,
   Stethoscope,
+  X,
 } from "lucide-react";
 
 interface VisitReportsListProps {
@@ -18,6 +24,8 @@ interface VisitReportsListProps {
   page?: number;
   limit?: number;
   totalCount?: number;
+  initialFromDate?: string;
+  initialToDate?: string;
 }
 
 const getRatingColor = (rating: string) => {
@@ -32,21 +40,134 @@ export default function VisitReportsList({
   page = 1,
   limit = 10,
   totalCount = 0,
+  initialFromDate = "",
+  initialToDate = "",
 }: VisitReportsListProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [fromDate, setFromDate] = useState(initialFromDate);
+  const [toDate, setToDate] = useState(initialToDate);
+  const [rangeError, setRangeError] = useState<string | null>(null);
+
+  const hasActiveFilter = Boolean(initialFromDate || initialToDate);
+
+  const applyDateFilter = (nextFrom: string, nextTo: string) => {
+    if (nextFrom && nextTo && nextFrom > nextTo) {
+      setRangeError("From date cannot be after To date.");
+      return;
+    }
+    setRangeError(null);
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("page", "1");
+    if (nextFrom) params.set("fromDate", nextFrom);
+    else params.delete("fromDate");
+    if (nextTo) params.set("toDate", nextTo);
+    else params.delete("toDate");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  };
+
+  const clearDateFilter = () => {
+    setFromDate("");
+    setToDate("");
+    setRangeError(null);
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.delete("fromDate");
+    params.delete("toDate");
+    params.set("page", "1");
+    const qs = params.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname);
+  };
+
+  const filterBar = (
+    <Card className="rounded-[14px] border border-[#E5E8EF] bg-white p-4 shadow-none">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="grid flex-1 grid-cols-1 gap-3 sm:grid-cols-2 lg:max-w-xl">
+          <div className="space-y-1">
+            <Label htmlFor="reports-from-date" className="text-xs font-semibold text-[#344054]">
+              From Date
+            </Label>
+            <Input
+              id="reports-from-date"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="reports-to-date" className="text-xs font-semibold text-[#344054]">
+              To Date
+            </Label>
+            <Input
+              id="reports-to-date"
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="h-9 text-xs"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => applyDateFilter(fromDate, toDate)}
+            className="h-9 bg-[#168557] text-white hover:bg-[#107349]"
+          >
+            Apply Date Filter
+          </Button>
+          {(hasActiveFilter || fromDate || toDate) && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={clearDateFilter}
+              className="h-9 gap-1"
+            >
+              <X className="size-3.5" />
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {rangeError && (
+        <p className="mt-2 text-xs font-medium text-[#D92D20]">{rangeError}</p>
+      )}
+
+      {hasActiveFilter && (
+        <p className="mt-2 text-xs font-medium text-[#168557]">
+          Active Date Range:{" "}
+          {initialFromDate || "Start"} — {initialToDate || "Present"}
+        </p>
+      )}
+    </Card>
+  );
+
   if (reports.length === 0) {
     return (
-      <Card className="flex flex-col items-center justify-center rounded-[14px] border border-[#E5E8EF] bg-white p-12 shadow-none text-center">
-        <FileText className="mb-3 size-12 text-[#98A2B3]" />
-        <h3 className="text-base font-bold text-[#182033]">No reports found</h3>
-        <p className="text-xs text-[#667085] mt-1 max-w-sm">
-          Visit reports will appear here once you submit field visits.
-        </p>
-      </Card>
+      <div className="space-y-4">
+        {filterBar}
+        <Card className="flex flex-col items-center justify-center rounded-[14px] border border-[#E5E8EF] bg-white p-12 shadow-none text-center">
+          <FileText className="mb-3 size-12 text-[#98A2B3]" />
+          <h3 className="text-base font-bold text-[#182033]">No reports found</h3>
+          <p className="text-xs text-[#667085] mt-1 max-w-sm">
+            {hasActiveFilter
+              ? "No visit reports match the selected date range."
+              : "Visit reports will appear here once you submit field visits."}
+          </p>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="space-y-6">
+      {filterBar}
       {/* 2-Column Desktop Responsive Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {reports.map((report) => (
@@ -62,11 +183,20 @@ export default function VisitReportsList({
                     <Stethoscope className="size-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-[#182033]">
-                      Visit #{report.visitId}
-                    </h3>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <h3 className="text-sm font-bold text-[#182033]">
+                        {report.doctorNameEN || report.doctorNameAR || `Visit #${report.visitId}`}
+                      </h3>
+                      <span className="rounded-full border border-[#DDE3EE] bg-[#F4F6FA] px-2 py-0.5 text-[10px] font-bold text-[#344054]">
+                        {report.companionType === "WITH_MANAGER"
+                          ? `Joint Visit${report.accompanyingManagerName ? ` (${report.accompanyingManagerName})` : ""}`
+                          : report.companionType === "SINGLE"
+                            ? "Single Visit"
+                            : "Unknown"}
+                      </span>
+                    </div>
                     <p className="text-xs text-[#667085] mt-0.5">
-                      Date: {report.visitDate}
+                      Date: {report.visitDate}{report.visitTime ? ` at ${report.visitTime}` : ""}
                     </p>
                   </div>
                 </div>

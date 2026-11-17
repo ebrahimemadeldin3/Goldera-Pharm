@@ -30,9 +30,12 @@ export async function approvePlanAction(
   error?: ApiError;
 }> {
   try {
-    await apiFetch<HandlePlanResponse>(`/api/plans/${planId}/approve`, {
+    await apiFetch<HandlePlanResponse>(`/api/plans/${planId}`, {
       method: "PATCH",
-      body: JSON.stringify({ feedback }),
+      body: JSON.stringify({
+        status: "APPROVED",
+        ...(feedback ? { supervisorFeedback: feedback } : {}),
+      }),
     });
 
     return {
@@ -48,7 +51,7 @@ export async function approvePlanAction(
 }
 
 /**
- * Reject a plan (Supervisor only)
+ * Reject a plan (Supervisor / Manager)
  */
 export async function rejectPlanAction(
   planId: string,
@@ -58,9 +61,12 @@ export async function rejectPlanAction(
   error?: ApiError;
 }> {
   try {
-    await apiFetch<HandlePlanResponse>(`/api/plans/${planId}/reject`, {
+    await apiFetch<HandlePlanResponse>(`/api/plans/${planId}`, {
       method: "PATCH",
-      body: JSON.stringify({ feedback }),
+      body: JSON.stringify({
+        status: "REJECTED",
+        supervisorFeedback: feedback ?? "",
+      }),
     });
 
     return {

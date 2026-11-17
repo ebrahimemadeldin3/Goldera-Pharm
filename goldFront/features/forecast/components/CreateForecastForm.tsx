@@ -14,7 +14,7 @@ import { toast } from "@/lib/utils/toast";
 import { Product, Doctor } from "../lib/types";
 import {
   getProductsAction,
-  getMyDoctorsAction,
+  getForecastTargetsAction,
   submitForecastAction,
 } from "../api";
 import { Send, ChevronLeft, ChevronRight } from "lucide-react";
@@ -45,6 +45,7 @@ export default function CreateForecastForm() {
   const form = useForm<CreateForecastFormValues>({
     resolver: zodResolver(createForecastSchema),
     defaultValues: {
+      targetType: "DOCTOR",
       periodType: "MONTHLY",
       month: "december",
       year: currentYear,
@@ -53,40 +54,51 @@ export default function CreateForecastForm() {
     },
   });
 
-  // Fetch products and doctors on mount
+  const targetType = form.watch("targetType") || "DOCTOR";
+
+  // Fetch products on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchProducts = async () => {
       setLoading(true);
       setDataLoadError("");
-      const [productsResult, doctorsResult] = await Promise.all([
-        getProductsAction(),
-        getMyDoctorsAction(),
-      ]);
+      const productsResult = await getProductsAction();
 
       if (productsResult.success && productsResult.data) {
         setProducts(productsResult.data);
-        // Pre-select first 3 products as default suggestions if available
         if (productsResult.data.length > 0) {
           setSelectedProductIds(
             productsResult.data.slice(0, 3).map((p) => p.id),
           );
         }
-      }
-      if (doctorsResult.success && doctorsResult.data) {
-        setDoctors(doctorsResult.data);
-      }
-      if (!productsResult.success || !doctorsResult.success) {
+      } else {
         setDataLoadError(
-          productsResult.error?.message ||
-            doctorsResult.error?.message ||
-            "Failed to load forecast source data",
+          productsResult.error?.message || "Failed to load forecast products",
         );
       }
       setLoading(false);
     };
 
-    fetchData();
+    fetchProducts();
   }, []);
+
+  // Fetch territory-scoped targets (Doctors or Pharmacies) when targetType changes
+  useEffect(() => {
+    let active = true;
+    setAllocations({});
+    getForecastTargetsAction(targetType).then((res) => {
+      if (!active) return;
+      if (res.success && res.data) {
+        setDoctors(res.data);
+      } else if (res.error) {
+        setDataLoadError(
+          res.error.message || "Failed to load territory targets",
+        );
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [targetType]);
 
   const selectedProducts = useMemo(
     () => products.filter((p) => selectedProductIds.includes(p.id)),

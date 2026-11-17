@@ -7,6 +7,7 @@ import {
   CalendarPlus,
   CheckCircle2,
   Clock3,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +16,7 @@ import { UserRole } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import AddVisitDialog from "./AddVisitDialog";
+import HistoricalVisitDialog from "./HistoricalVisitDialog";
 import { getSchedulableDoctorsAction } from "@/features/doctors/api";
 import { getManagerTeamAction } from "@/features/team/api";
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
@@ -96,6 +98,7 @@ function VisitSummaryCard({
 
 export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [historicalDialogOpen, setHistoricalDialogOpen] = useState(false);
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(false);
   const [doctors, setDoctors] = useState<DoctorApiResponse[]>([]);
   const [supervisors, setSupervisors] = useState<User[]>([]);
@@ -111,6 +114,19 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
   const pathname = usePathname();
   const isRep = role === "MEDICAL_REP" || pathname?.startsWith("/rep");
   const isManager = role === "MANAGER" || pathname?.startsWith("/manager");
+
+  const openHistoricalVisitDialog = async () => {
+    setIsLoadingDialogData(true);
+    try {
+      const doctorsRes = await getSchedulableDoctorsAction();
+      if (doctorsRes.success && doctorsRes.data) {
+        setDoctors(doctorsRes.data);
+      }
+      setHistoricalDialogOpen(true);
+    } finally {
+      setIsLoadingDialogData(false);
+    }
+  };
 
   const openAddVisitDialog = async () => {
     if (isLoadingDialogData) return;
@@ -278,7 +294,18 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
     <>
       <div className="space-y-5">
         {isRep ? (
-          <div className="flex items-center justify-end pb-1">
+          <div className="flex flex-wrap items-center justify-end gap-2.5 pb-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={openHistoricalVisitDialog}
+              disabled={isLoadingDialogData}
+              className="inline-flex h-10 cursor-pointer items-center justify-center gap-2 rounded-[10px] border-[#DDE3EE] bg-white px-4 text-xs font-semibold text-[#182033] hover:bg-[#F9FAFB] disabled:pointer-events-none disabled:opacity-60"
+            >
+              <History className="h-4 w-4 text-[#168557]" aria-hidden="true" />
+              {isLoadingDialogData ? "Loading..." : "Add Visit"}
+            </Button>
+
             <Button
               type="button"
               onClick={openAddVisitDialog}
@@ -289,11 +316,11 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
                 className="visits-add-trigger-icon h-4 w-4"
                 aria-hidden="true"
               />
-              {isLoadingDialogData ? "Loading..." : "Add Visit"}
+              {isLoadingDialogData ? "Loading..." : "Schedule Visit"}
             </Button>
 
             <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
-              Add Visit Page
+              Schedule Visit Page
             </Link>
           </div>
         ) : (
@@ -334,11 +361,11 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
                   )}
                   aria-hidden="true"
                 />
-                {isLoadingDialogData ? "Loading..." : "Add Visit"}
+                {isLoadingDialogData ? "Loading..." : "Schedule Visit"}
               </Button>
 
               <Link href={addVisitPath} className="sr-only" tabIndex={-1}>
-                Add Visit Page
+                Schedule Visit Page
               </Link>
             </div>
           </header>
@@ -361,7 +388,7 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
         </section>
       </div>
 
-      {/* Add Visit Modal Overlay */}
+      {/* Schedule Visit Modal Overlay */}
       {dialogOpen && (
         <AddVisitDialog
           open={dialogOpen}
@@ -370,6 +397,15 @@ export default function VisitsHeader({ role, stats }: VisitsHeaderProps) {
           doctors={doctors}
           supervisors={supervisors}
           medicalReps={medicalReps}
+        />
+      )}
+
+      {/* Historical Add Visit Modal Overlay */}
+      {historicalDialogOpen && (
+        <HistoricalVisitDialog
+          open={historicalDialogOpen}
+          onOpenChange={setHistoricalDialogOpen}
+          doctors={doctors}
         />
       )}
     </>

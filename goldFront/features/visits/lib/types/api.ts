@@ -35,6 +35,15 @@ export type VisitApiResponse = {
     name: string;
   } | null;
   visitType?: VisitType | "ROUTINE" | string;
+  companionType?: "SINGLE" | "WITH_MANAGER" | null;
+  creationSource?: "SCHEDULED" | "MANUAL_HISTORY" | null;
+  duration?: string | null;
+  accompanyingManagerId?: string | null;
+  accompanyingManager?: {
+    id: string;
+    name: string;
+    role?: string;
+  } | null;
   supervisorId?: string;
   medicalRepId?: string;
   completionLocation?: VisitCompletionLocation | null;
@@ -54,6 +63,9 @@ export type CreateVisitDto = {
   date: string; // ISO date string
   time: string;
   visitType?: VisitType;
+  companionType?: "SINGLE" | "WITH_MANAGER";
+  accompanyingManagerId?: string;
+  duration?: string;
   supervisorId?: string;
   medicalRepId?: string;
   notes?: string;

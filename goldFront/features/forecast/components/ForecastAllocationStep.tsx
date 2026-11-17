@@ -158,16 +158,22 @@ export function ForecastAllocationStep({
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                   {/* Doctor Info */}
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-[#182033] truncate">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p
+                        className="text-sm font-bold text-[#182033] whitespace-normal break-words"
+                        dir="auto"
+                      >
                         {doctor.name}
                       </p>
-                      <span className="inline-flex items-center rounded-md bg-[#F4F6FA] border border-[#E5E8EF] px-2 py-0.5 text-[11px] font-medium text-[#667085]">
+                      <span className="inline-flex items-center rounded-md bg-[#F4F6FA] border border-[#E5E8EF] px-2 py-0.5 text-[11px] font-medium text-[#667085] whitespace-normal break-words">
                         {doctor.specialty}
                       </span>
                     </div>
-                    <p className="text-xs text-[#667085] flex items-center gap-1 mt-1">
-                      <Building2 className="size-3 text-[#98A2B3]" />
+                    <p
+                      className="text-xs text-[#667085] flex items-center gap-1 mt-1 whitespace-normal break-words"
+                      dir="auto"
+                    >
+                      <Building2 className="size-3 shrink-0 text-[#98A2B3]" />
                       <span>{doctor.hospital}</span>
                     </p>
                   </div>
@@ -182,7 +188,10 @@ export function ForecastAllocationStep({
                           key={product.id}
                           className="flex items-center gap-1.5 rounded-[10px] border border-[#E5E8EF] bg-[#F9FAFB] p-1.5"
                         >
-                          <span className="text-xs font-semibold text-[#344054] max-w-[110px] truncate px-1">
+                          <span
+                            className="text-xs font-semibold text-[#344054] whitespace-normal break-words px-1 max-w-[180px]"
+                            dir="auto"
+                          >
                             {product.name}
                           </span>
                           <div className="flex items-center gap-1">

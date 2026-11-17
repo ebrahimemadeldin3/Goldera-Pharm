@@ -2,6 +2,7 @@ import { z } from "zod";
 import { expenseRequestSchema } from "./request-types/expense";
 import { leaveRequestSchema } from "./request-types/leave";
 import { marketingRequestSchema } from "./request-types/marketing";
+import { monthlyMarketingRequestSchema } from "./request-types/monthly-marketing";
 import { personalExpenseRequestSchema } from "./request-types/personal-expense";
 import { sampleRequestSchema } from "./request-types/sample";
 import { requestTypeValues, urgencyValues } from "./request-types/common";
@@ -55,6 +56,7 @@ export const submitRequestSchema = z
     const schemaByType = {
       EXPENSE: expenseRequestSchema,
       MARKETING: marketingRequestSchema,
+      MONTHLY_MARKETING: monthlyMarketingRequestSchema,
       LEAVE: leaveRequestSchema,
       SAMPLE: sampleRequestSchema,
       PERSONAL_EXPENSE: personalExpenseRequestSchema,

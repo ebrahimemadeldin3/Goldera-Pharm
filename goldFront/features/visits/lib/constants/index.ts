@@ -1,27 +1,31 @@
 import { VisitStatus } from "@/lib/types";
 
 /**
- * Available time slots for visit scheduling
+ * Available 15-minute time slots for visit scheduling (00:00 through 23:45)
  */
-export const HOURS = [
-  "09:00",
-  "09:30",
-  "10:00",
-  "10:30",
-  "11:00",
-  "11:30",
-  "12:00",
-  "12:30",
-  "13:00",
-  "13:30",
-  "14:00",
-  "14:30",
-  "15:00",
-  "15:30",
-  "16:00",
-  "16:30",
-  "17:00",
-] as const;
+export const HOURS: string[] = Array.from({ length: 24 * 4 }, (_, index) => {
+  const hour = String(Math.floor(index / 4)).padStart(2, "0");
+  const minute = String((index % 4) * 15).padStart(2, "0");
+  return `${hour}:${minute}`;
+});
+
+/**
+ * Standard 15-minute increment duration options (15 min through 8 hours)
+ */
+export const VISIT_DURATION_OPTIONS: string[] = [
+  15, 30, 45, 60, 75, 90, 105, 120, 150, 180, 240, 300, 360, 420, 480,
+].map((mins) => `${mins} min`);
+
+export const VISIT_COMPANION_LABELS = {
+  SINGLE: "Single Visit",
+  WITH_MANAGER: "Joint Visit",
+  UNKNOWN: "Unknown",
+} as const;
+
+export const VISIT_CREATION_SOURCE_LABELS = {
+  SCHEDULED: "Scheduled",
+  MANUAL_HISTORY: "Historical Entry",
+} as const;
 
 /**
  * Visit status label mappings for UI display

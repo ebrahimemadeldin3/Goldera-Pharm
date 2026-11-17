@@ -4,36 +4,58 @@ import type { PaginatedApiResponse } from "@/lib/types";
 /**
  * Backend API types
  */
+export type ForecastTargetType = "DOCTOR" | "PHARMACY";
+
 export interface ForecastApiResponse {
   id: string;
   repId: string;
+  targetType?: ForecastTargetType;
   periodType: string;
   periodDate: string;
   notes: string | null;
   status: string;
+  isApproved?: boolean;
+  supervisorFeedback?: string | null;
   createdAt: string;
   updatedAt: string;
   productForecasts: {
-    id: string;
-    forecastId: string;
+    id?: string;
+    forecastId?: string;
+    productId?: string;
     productName: string;
     productUnits: number;
+    doctorId?: string;
     doctorName: string;
-    createdAt: string;
-    updatedAt: string;
+    pharmacyId?: string;
+    pharmacyName?: string;
+    targetId?: string;
+    targetName?: string;
+    city?: string;
+    subRegion?: string;
+    createdAt?: string;
+    updatedAt?: string;
   }[];
 }
 
 export type GetForecastsResponse = PaginatedApiResponse<ForecastApiResponse[]>;
 
 export interface CreateForecastApiDto {
+  targetType: ForecastTargetType;
   periodType: string;
   periodDate: string;
+  status?: "DRAFT" | "PENDING";
   productForecasts: {
     productId?: string;
     productName: string;
     productUnits: number;
+    doctorId?: string;
     doctorName: string;
+    pharmacyId?: string;
+    pharmacyName?: string;
+    targetId?: string;
+    targetName?: string;
+    city?: string;
+    subRegion?: string;
   }[];
   notes?: string;
 }
@@ -100,6 +122,7 @@ export type DoctorDistribution = {
 
 export type Forecast = {
   id: string;
+  targetType: ForecastTargetType;
   periodType: ForecastPeriodType;
   period: string;
   month?: string;
@@ -146,6 +169,11 @@ export type Product = {
 export type Doctor = {
   id: string;
   name: string;
+  nameAR?: string;
+  nameEN?: string;
   specialty: Specialty;
   hospital: string;
+  city?: string;
+  subRegion?: string;
+  targetType?: ForecastTargetType;
 };

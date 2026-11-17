@@ -39,9 +39,34 @@ const addPharmacy = async (req, res, next) => {
 
 const getAllPharmacies = async (req, res, next) => {
   try {
-    const apiFeatures = new ApiFeatures(req.query, "Pharmacy");
-    const { queryObj, pagination } = apiFeatures.applyFeatures(req.query);
+    const cleanQuery = { ...req.query };
+    const territoryOnly = cleanQuery.territoryOnly === "true";
+    delete cleanQuery.territoryOnly;
+
+    const apiFeatures = new ApiFeatures(cleanQuery, "Pharmacy");
+    const { queryObj, pagination } = apiFeatures.applyFeatures(cleanQuery);
     const whereClause = { ...queryObj.where };
+
+    if (territoryOnly && req.user?.role === "MEDICAL_REP") {
+      const rep = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        include: { subRegion: true },
+      });
+      if (rep?.subRegion?.name) {
+        whereClause.subRegion = {
+          equals: rep.subRegion.name.trim(),
+          mode: "insensitive",
+        };
+      } else {
+        return res.status(200).json({
+          status: "success",
+          message: "Data fetched successfully",
+          results: 0,
+          pagination: paginationResults(pagination, 0),
+          data: [],
+        });
+      }
+    }
 
     const totalDocuments = await prisma.pharmacy.count({ where: whereClause });
 

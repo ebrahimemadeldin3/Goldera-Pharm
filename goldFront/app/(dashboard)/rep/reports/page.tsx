@@ -4,13 +4,27 @@ import { PageContainer } from "@/components/layout/page-container";
 
 export const dynamic = "force-dynamic";
 
-export default async function Page({ searchParams }: { searchParams?: Promise<{ page?: string; limit?: string }> }) {
+export default async function Page({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    page?: string;
+    limit?: string;
+    fromDate?: string;
+    toDate?: string;
+  }>;
+}) {
   const params = await searchParams;
 
   const page: number = params?.page ? parseInt(params.page, 10) || 1 : 1;
   const limit: number = params?.limit ? parseInt(params.limit, 10) || 10 : 10;
+  const fromDate = params?.fromDate?.trim() || undefined;
+  const toDate = params?.toDate?.trim() || undefined;
 
-  const result = await getVisitReportsAction(page, limit);
+  const result = await getVisitReportsAction(page, limit, {
+    fromDate,
+    toDate,
+  });
 
   if (!result.success || !result.data) {
     return (
@@ -26,8 +40,14 @@ export default async function Page({ searchParams }: { searchParams?: Promise<{ 
 
   return (
     <PageContainer className="flex flex-col gap-6">
-
-      <VisitReportsList reports={reports} page={page} limit={limit} totalCount={totalCount} />
+      <VisitReportsList
+        reports={reports}
+        page={page}
+        limit={limit}
+        totalCount={totalCount}
+        initialFromDate={fromDate || ""}
+        initialToDate={toDate || ""}
+      />
     </PageContainer>
   );
 }

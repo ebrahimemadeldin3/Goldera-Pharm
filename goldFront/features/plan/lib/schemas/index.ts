@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const isSaudiFridayDate = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Riyadh",
+    weekday: "short",
+  }).format(date) === "Fri";
+
 const doctorWithDateSchema = z.object({
   doctorId: z.string(),
   visitDate: z.date(),
@@ -31,7 +37,16 @@ export const createVisitPlanSchema = z
   .refine((values) => values.doctorsWithDates.length <= values.targetVisits, {
     message: "Planned visits cannot exceed the visit limit",
     path: ["targetVisits"],
-  });
+  })
+  .refine(
+    (values) =>
+      values.planType !== "WEEKLY" ||
+      values.doctorsWithDates.every((item) => !isSaudiFridayDate(item.visitDate)),
+    {
+      message: "Fridays are excluded from weekly working plans",
+      path: ["doctorsWithDates"],
+    },
+  );
 
 // Supervisor - Create Plan Schema
 export const createSupervisorPlanSchema = z
@@ -60,7 +75,16 @@ export const createSupervisorPlanSchema = z
   .refine((values) => values.doctorsWithDates.length <= values.targetVisits, {
     message: "Planned visits cannot exceed the visit limit",
     path: ["targetVisits"],
-  });
+  })
+  .refine(
+    (values) =>
+      values.planType !== "WEEKLY" ||
+      values.doctorsWithDates.every((item) => !isSaudiFridayDate(item.visitDate)),
+    {
+      message: "Fridays are excluded from weekly working plans",
+      path: ["doctorsWithDates"],
+    },
+  );
 
 export type CreateVisitPlanFormValues = z.infer<typeof createVisitPlanSchema>;
 export type CreateSupervisorPlanFormValues = z.infer<

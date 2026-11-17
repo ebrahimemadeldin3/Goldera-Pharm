@@ -60,22 +60,40 @@ const createRequest = async (req, res, next) => {
       }
     }
     const {
-      title,
-      subject,
+      title: rawTitle,
+      subject: rawSubject,
       description,
       type,
-      urgency,
+      urgency: rawUrgency,
       leaveStartDate,
       leaveEndDate,
       leaveType,
       sampleData,
-      doctorIds,
-      budget,
+      doctorIds: rawDoctorIds,
+      doctorId,
+      budget: rawBudget,
+      amount,
       visitedCity,
       visitDaysCount,
       totalExpenseAmount,
       totalExpenseData,
     } = req.body;
+
+    const doctorIds = Array.isArray(rawDoctorIds)
+      ? rawDoctorIds
+      : doctorId
+        ? [doctorId]
+        : [];
+    const budget = rawBudget ?? amount;
+    const title =
+      rawTitle?.trim() ||
+      (type === "MONTHLY_MARKETING" ? "Monthly Marketing Request" : "");
+    const subject =
+      rawSubject?.trim() ||
+      (type === "MONTHLY_MARKETING" ? "Monthly Marketing" : "");
+    const urgency =
+      rawUrgency?.trim() ||
+      (type === "MONTHLY_MARKETING" ? "MEDIUM" : "");
 
     // Validate common required fields
     if (!title || !subject || !type) {
@@ -85,10 +103,16 @@ const createRequest = async (req, res, next) => {
     let leaveDaysCount = null;
     let resolvedDoctorIds = [];
     let resolvedExpenseData = [];
+    let resolvedBudget = null;
 
     text(title, "Title");
     text(subject, "Subject");
-    text(description, "Description");
+    const cleanDescription = text(description, "Description");
+    if (cleanDescription.length > 1000) {
+      return next(
+        new ApiError("Description must not exceed 1000 characters", 400),
+      );
+    }
     text(urgency, "Urgency");
     if (req.files?.pdfs) await validateAndDetectFiles(req.files.pdfs);
     if (
@@ -135,9 +159,10 @@ const createRequest = async (req, res, next) => {
       leaveDaysCount = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
     } else if (type === "EXPENSE" || type === "MARKETING") {
       if (
-        !req.files ||
-        !Array.isArray(req.files.pdfs) ||
-        req.files.pdfs.length === 0
+        type === "EXPENSE" &&
+        (!req.files ||
+          !Array.isArray(req.files.pdfs) ||
+          req.files.pdfs.length === 0)
       ) {
         return next(new ApiError("Please upload a file", 400));
       }
@@ -153,7 +178,52 @@ const createRequest = async (req, res, next) => {
         );
       }
       resolvedDoctorIds = [...new Set(doctorIds)];
-      number(budget, "Budget", { min: 0.01 });
+      resolvedBudget = Math.round(number(budget, "Budget", { min: 0.01 }) * 100) / 100;
+    } else if (type === "MONTHLY_MARKETING") {
+      if (!doctorIds.length) {
+        return next(new ApiError("A target doctor is required", 400));
+      }
+      const selectedDoctorId = doctorIds[0];
+      const [doctor, actor] = await Promise.all([
+        prisma.doctor.findUnique({
+          where: { id: selectedDoctorId },
+          select: {
+            id: true,
+            isActive: true,
+            subRegion: true,
+            area: true,
+            nameEN: true,
+            nameAR: true,
+          },
+        }),
+        prisma.user.findUnique({
+          where: { id: req.user.id },
+          include: { subRegion: true },
+        }),
+      ]);
+
+      if (!doctor || !doctor.isActive) {
+        return next(new ApiError("Select an active doctor", 400));
+      }
+
+      if (req.user.role === "MEDICAL_REP" && actor?.subRegion?.name) {
+        const repSub = actor.subRegion.name.trim().toLowerCase();
+        const docSub = (doctor.subRegion || doctor.area || "")
+          .trim()
+          .toLowerCase();
+        if (docSub !== repSub) {
+          return next(
+            new ApiError(
+              "Selected doctor is outside your assigned territory",
+              403,
+            ),
+          );
+        }
+      }
+
+      resolvedDoctorIds = [selectedDoctorId];
+      resolvedBudget =
+        Math.round(number(budget, "Amount", { min: 0.01 }) * 100) / 100;
     } else if (type === "SAMPLE") {
       if (
         !sampleData ||
@@ -245,7 +315,11 @@ const createRequest = async (req, res, next) => {
         leaveDaysCount: type === "LEAVE" ? Number(leaveDaysCount) : null,
         leaveType: type === "LEAVE" ? leaveType : null,
         budget:
-          type === "EXPENSE" || type === "MARKETING" ? Number(budget) : null,
+          type === "EXPENSE" ||
+          type === "MARKETING" ||
+          type === "MONTHLY_MARKETING"
+            ? resolvedBudget
+            : null,
         sampleData: type === "SAMPLE" ? sampleData : [],
         doctors: { connect: resolvedDoctorIds.map((id) => ({ id })) },
         visitDaysCount:

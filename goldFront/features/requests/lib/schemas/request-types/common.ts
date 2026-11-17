@@ -3,6 +3,7 @@ import { z } from "zod";
 export const requestTypeValues = [
   "EXPENSE",
   "MARKETING",
+  "MONTHLY_MARKETING",
   "LEAVE",
   "SAMPLE",
   "PERSONAL_EXPENSE",

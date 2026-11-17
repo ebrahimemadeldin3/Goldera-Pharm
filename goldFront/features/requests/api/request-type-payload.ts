@@ -12,7 +12,11 @@ export function buildCreateRequestPayload(
     urgency: capitalizeFirstLetter(data.urgency) as CreateRequestDto["urgency"],
   };
 
-  if (payload.type === "EXPENSE" || payload.type === "MARKETING") {
+  if (
+    payload.type === "EXPENSE" ||
+    payload.type === "MARKETING" ||
+    payload.type === "MONTHLY_MARKETING"
+  ) {
     payload.doctorIds = (data.doctorIds ?? []).filter(
       (doctorId): doctorId is string => Boolean(doctorId),
     );
@@ -72,7 +76,11 @@ export function appendCreateRequestFields(
   fd.append("type", payload.type);
   fd.append("urgency", payload.urgency);
 
-  if (payload.type === "EXPENSE" || payload.type === "MARKETING") {
+  if (
+    payload.type === "EXPENSE" ||
+    payload.type === "MARKETING" ||
+    payload.type === "MONTHLY_MARKETING"
+  ) {
     const doctorIds = payload.doctorIds ?? [];
 
     fd.append("doctorIds", JSON.stringify(doctorIds));

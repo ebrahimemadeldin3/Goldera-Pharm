@@ -32,6 +32,11 @@ const requestTypeMeta: Record<
 > = {
   EXPENSE: { label: "Expense", description: "Expense Request", icon: DollarSign },
   MARKETING: { label: "Marketing", description: "Marketing Request", icon: Megaphone },
+  MONTHLY_MARKETING: {
+    label: "Monthly Marketing",
+    description: "Monthly Marketing Request",
+    icon: Megaphone,
+  },
   SAMPLE: { label: "Sample", description: "Sample Request", icon: PackageSearch },
   LEAVE: { label: "Leave", description: "Leave Request", icon: CalendarDays },
   PERSONAL_EXPENSE: {
@@ -103,12 +108,11 @@ function formatDateTime(dateString: string | null | undefined): string {
   }
 }
 
+import { formatSAR } from "@/lib/utils/currency";
+
 function formatMoney(value: number | null | undefined): string {
   if (isBlank(value)) return EMPTY_VALUE;
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(Number(value));
+  return formatSAR(Number(value));
 }
 
 function shortId(id: string | undefined): string {

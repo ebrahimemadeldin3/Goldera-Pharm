@@ -347,7 +347,9 @@ export default function RequestCard({
             </div>
           )}
 
-          {(request.type === "EXPENSE" || request.type === "MARKETING") && (
+          {(request.type === "EXPENSE" ||
+            request.type === "MARKETING" ||
+            request.type === "MONTHLY_MARKETING") && (
             <div className="bg-light-blue border-blue-stroke rounded-md border p-4">
               <p className="text-dashboard-blue mb-2 flex items-center gap-1 text-sm/5 font-medium">
                 <AlertCircle size={16} />

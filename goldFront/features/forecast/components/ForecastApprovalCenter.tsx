@@ -268,6 +268,8 @@ function ForecastToolbar({
   statusCounts,
   periodFilter,
   onPeriodFilterChange,
+  targetTypeFilter,
+  onTargetTypeFilterChange,
   periodOptions,
   activeFilterCount,
   onClearFilters,
@@ -280,6 +282,8 @@ function ForecastToolbar({
   statusCounts: Record<ForecastStatus, number>;
   periodFilter: string;
   onPeriodFilterChange: (value: string) => void;
+  targetTypeFilter: string;
+  onTargetTypeFilterChange: (value: string) => void;
   periodOptions: Array<{ value: string; label: string }>;
   activeFilterCount: number;
   onClearFilters: () => void;
@@ -404,6 +408,20 @@ function ForecastToolbar({
               ))}
             </SelectContent>
           </Select>
+
+          <Select
+            value={targetTypeFilter}
+            onValueChange={onTargetTypeFilterChange}
+          >
+            <SelectTrigger className="forecast-select-trigger h-11 rounded-[12px] border-[#E5E8EF] bg-white text-sm font-semibold text-[#4B5568]">
+              <SelectValue placeholder="All Forecast Types" />
+            </SelectTrigger>
+            <SelectContent className="forecast-select-content rounded-[12px] border-[#E5E8EF] bg-white shadow-[0_16px_34px_rgba(16,24,40,0.14)]">
+              <SelectItem value="all">All Forecast Types</SelectItem>
+              <SelectItem value="DOCTOR">Doctor Forecast</SelectItem>
+              <SelectItem value="PHARMACY">Pharmacy Forecast</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       {activeFilterCount > 0 && (
@@ -495,9 +513,17 @@ function ForecastRequestCard({
           </span>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="truncate text-base font-semibold text-[#182033]">
+              <h3
+                className="whitespace-normal break-words text-base font-semibold text-[#182033]"
+                dir="auto"
+              >
                 {forecast.repName}
               </h3>
+              <span className="inline-flex items-center rounded-full border border-[#DDE3EE] bg-[#F4F6FA] px-2.5 py-0.5 text-[11px] font-bold text-[#344054]">
+                {forecast.targetType === "PHARMACY"
+                  ? "Pharmacy Forecast"
+                  : "Doctor Forecast"}
+              </span>
               <ForecastStatusBadge status={status} />
             </div>
             <p className="mt-1 text-sm font-medium text-[#8A94A6]">
@@ -608,14 +634,20 @@ function ForecastRequestCard({
                     className="grid gap-3 rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-[#182033]">
+                      <p
+                        className="whitespace-normal break-words text-sm font-semibold text-[#182033]"
+                        dir="auto"
+                      >
                         {pf.productName}
                       </p>
-                      <p className="mt-1 truncate text-xs font-medium text-[#8A94A6]">
+                      <p
+                        className="mt-1 whitespace-normal break-words text-xs font-medium text-[#8A94A6]"
+                        dir="auto"
+                      >
                         {pf.doctorName}
                       </p>
                     </div>
-                    <p className="text-sm font-bold text-[#182033]">
+                    <p className="shrink-0 text-sm font-bold text-[#182033]">
                       {numberFormatter.format(pf.productUnits)} units
                     </p>
                   </div>
@@ -624,7 +656,7 @@ function ForecastRequestCard({
             </>
           )}
 
-          {!forecast.isApproved && (
+          {forecast.status !== "APPROVED" && forecast.status !== "REJECTED" && (
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <Button
                 onClick={() =>
@@ -687,6 +719,7 @@ export default function ForecastApprovalCenter({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [periodFilter, setPeriodFilter] = useState("all");
+  const [targetTypeFilter, setTargetTypeFilter] = useState("all");
   const [dialogState, setDialogState] = useState<{
     open: boolean;
     forecastId: string | null;
@@ -754,15 +787,19 @@ export default function ForecastApprovalCenter({
       const matchesStatus = statusFilter === "all" || statusFilter === status;
       const matchesPeriod =
         periodFilter === "all" || periodFilter === periodKey;
+      const matchesTargetType =
+        targetTypeFilter === "all" ||
+        (forecast.targetType || "DOCTOR") === targetTypeFilter;
 
-      return matchesSearch && matchesStatus && matchesPeriod;
+      return matchesSearch && matchesStatus && matchesPeriod && matchesTargetType;
     });
-  }, [forecasts, periodFilter, searchQuery, statusFilter]);
+  }, [forecasts, periodFilter, searchQuery, statusFilter, targetTypeFilter]);
 
   const activeFilterCount =
     (searchQuery.trim() ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
-    (periodFilter !== "all" ? 1 : 0);
+    (periodFilter !== "all" ? 1 : 0) +
+    (targetTypeFilter !== "all" ? 1 : 0);
   const hasClientFilters = activeFilterCount > 0;
   const displayPage = hasClientFilters ? 1 : page;
   const displayTotalCount = hasClientFilters
@@ -776,6 +813,7 @@ export default function ForecastApprovalCenter({
     setSearchQuery("");
     setStatusFilter("all");
     setPeriodFilter("all");
+    setTargetTypeFilter("all");
   }
 
   function toggleExpanded(forecastId: string) {
@@ -872,6 +910,8 @@ export default function ForecastApprovalCenter({
             statusCounts={statusCounts}
             periodFilter={periodFilter}
             onPeriodFilterChange={setPeriodFilter}
+            targetTypeFilter={targetTypeFilter}
+            onTargetTypeFilterChange={setTargetTypeFilter}
             periodOptions={periodOptions}
             activeFilterCount={activeFilterCount}
             onClearFilters={clearFilters}
