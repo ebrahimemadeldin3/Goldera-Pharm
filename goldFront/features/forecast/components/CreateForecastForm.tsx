@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   createForecastSchema,
@@ -15,8 +15,11 @@ import { Product, Doctor } from "../lib/types";
 import {
   getProductsAction,
   getForecastTargetsAction,
+  getForecastByIdAction,
   submitForecastAction,
 } from "../api";
+import { buildDuplicateForecastDraft } from "../lib/utils/duplicate";
+import { getForecastTargetLabels } from "../lib/utils/labels";
 import { Send, ChevronLeft, ChevronRight } from "lucide-react";
 import { getSaudiYear } from "@/lib/utils";
 import { ForecastStepper, ForecastStepId } from "./ForecastStepper";
@@ -27,6 +30,9 @@ import { ForecastReviewStep } from "./ForecastReviewStep";
 
 export default function CreateForecastForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const duplicateFromId = searchParams?.get("duplicateFrom") || "";
+  const [duplicateBanner, setDuplicateBanner] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string>("");
   const [products, setProducts] = useState<Product[]>([]);
@@ -54,39 +60,85 @@ export default function CreateForecastForm() {
     },
   });
 
-  const targetType = form.watch("targetType") || "DOCTOR";
+  const watchedTargetType = useWatch({
+    control: form.control,
+    name: "targetType",
+  });
+  const targetType = watchedTargetType || "DOCTOR";
 
-  // Fetch products on mount
+  // Fetch products (and duplicate source if ?duplicateFrom= is set) on mount
   useEffect(() => {
-    const fetchProducts = async () => {
+    let active = true;
+    const fetchInitial = async () => {
       setLoading(true);
       setDataLoadError("");
       const productsResult = await getProductsAction();
+      if (!active) return;
 
+      const loadedProducts =
+        productsResult.success && productsResult.data ? productsResult.data : [];
       if (productsResult.success && productsResult.data) {
-        setProducts(productsResult.data);
-        if (productsResult.data.length > 0) {
-          setSelectedProductIds(
-            productsResult.data.slice(0, 3).map((p) => p.id),
-          );
-        }
+        setProducts(loadedProducts);
       } else {
         setDataLoadError(
           productsResult.error?.message || "Failed to load forecast products",
         );
       }
+
+      if (duplicateFromId) {
+        const dupRes = await getForecastByIdAction(duplicateFromId);
+        if (!active) return;
+        if (dupRes.success && dupRes.data) {
+          const source = dupRes.data;
+          const targetsRes = await getForecastTargetsAction(source.targetType);
+          if (!active) return;
+          const loadedTargets =
+            targetsRes.success && targetsRes.data ? targetsRes.data : [];
+          setDoctors(loadedTargets);
+
+          const draft = buildDuplicateForecastDraft(
+            source,
+            loadedProducts,
+            loadedTargets,
+          );
+          form.setValue("targetType", draft.targetType);
+          form.setValue("periodType", draft.periodType);
+          form.setValue("notes", draft.notes);
+          setSelectedProductIds(draft.selectedProductIds);
+          setAllocations(draft.allocations);
+
+          const labels = getForecastTargetLabels(draft.targetType);
+          const skippedTotal =
+            draft.skippedProducts.length + draft.skippedAccounts.length;
+          setDuplicateBanner(
+            `Duplicated from ${source.period} (${labels.forecastLabel}). Confirm the new period and review allocations before submitting.${
+              skippedTotal > 0
+                ? ` ${skippedTotal} unavailable item(s) were excluded.`
+                : ""
+            }`,
+          );
+        }
+      } else if (loadedProducts.length > 0) {
+        setSelectedProductIds(loadedProducts.slice(0, 3).map((p) => p.id));
+      }
+
       setLoading(false);
     };
 
-    fetchProducts();
-  }, []);
+    fetchInitial();
+    return () => {
+      active = false;
+    };
+  }, [duplicateFromId, form]);
 
   // Fetch territory-scoped targets (Doctors or Pharmacies) when targetType changes
   useEffect(() => {
     let active = true;
-    setAllocations({});
     getForecastTargetsAction(targetType).then((res) => {
       if (!active) return;
+      if (!duplicateFromId) {
+        setAllocations({});
+      }
       if (res.success && res.data) {
         setDoctors(res.data);
       } else if (res.error) {
@@ -98,7 +150,7 @@ export default function CreateForecastForm() {
     return () => {
       active = false;
     };
-  }, [targetType]);
+  }, [duplicateFromId, targetType]);
 
   const selectedProducts = useMemo(
     () => products.filter((p) => selectedProductIds.includes(p.id)),
@@ -342,6 +394,15 @@ export default function CreateForecastForm() {
 
   return (
     <div className="space-y-6">
+      {duplicateBanner && (
+        <div
+          role="status"
+          className="rounded-[12px] border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-medium text-emerald-900"
+        >
+          {duplicateBanner}
+        </div>
+      )}
+
       {/* Stepper Header Navigation */}
       <ForecastStepper
         currentStep={currentStep}

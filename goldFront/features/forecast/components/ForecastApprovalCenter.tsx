@@ -3,19 +3,15 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { format } from "date-fns";
 import {
-  ArrowRight,
   CalendarDays,
   CheckCircle2,
-  ChevronUp,
   CircleX,
   Clock3,
   FileText,
   Inbox,
-  Package,
   RefreshCw,
   Search,
   TrendingUp,
-  Users,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
@@ -56,31 +52,6 @@ type ForecastApprovalCenterProps = {
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
-const statusMeta: Record<
-  ForecastStatus,
-  {
-    label: string;
-    badgeClassName: string;
-    icon: LucideIcon;
-  }
-> = {
-  pending: {
-    label: "Pending Review",
-    badgeClassName: "border-[#F5DFAC] bg-[#FFF8E5] text-[#8A6515]",
-    icon: Clock3,
-  },
-  approved: {
-    label: "Approved",
-    badgeClassName: "border-[#CBEFDD] bg-[#E9F8F1] text-[#168557]",
-    icon: CheckCircle2,
-  },
-  rejected: {
-    label: "Rejected",
-    badgeClassName: "border-[#F5C9C5] bg-[#FFF1F0] text-[#B42318]",
-    icon: CircleX,
-  },
-};
-
 function getForecastStatus(forecast: ForecastManagement): ForecastStatus {
   const status = forecast.status?.toUpperCase();
 
@@ -113,16 +84,6 @@ function getPeriodKey(value: string) {
   }
 
   return format(date, "yyyy-MM");
-}
-
-function getInitials(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part.trim()[0])
-    .filter(Boolean)
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 }
 
 function ForecastPageHeader() {
@@ -243,20 +204,6 @@ function ForecastStats({
         delay="290ms"
       />
     </section>
-  );
-}
-
-function ForecastStatusBadge({ status }: { status: ForecastStatus }) {
-  const meta = statusMeta[status];
-  const Icon = meta.icon;
-
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold ${meta.badgeClassName}`}
-    >
-      <Icon className="size-3.5" aria-hidden="true" />
-      {meta.label}
-    </span>
   );
 }
 
@@ -497,208 +444,6 @@ function ForecastEmptyState({
         </button>
       )}
     </div>
-  );
-}
-
-function ForecastRequestCard({
-  forecast,
-  isExpanded,
-  onToggleExpanded,
-  onOpenDialog,
-}: {
-  forecast: ForecastManagement;
-  isExpanded: boolean;
-  onToggleExpanded: () => void;
-  onOpenDialog: (
-    forecastId: string,
-    action: "approve" | "reject",
-    repName: string,
-  ) => void;
-}) {
-  const status = getForecastStatus(forecast);
-  const periodLabel = formatForecastDate(forecast.periodDate, "MMMM yyyy");
-  const submittedLabel = formatForecastDate(forecast.createdAt, "MMM d, yyyy");
-  const submittedTime = formatForecastDate(forecast.createdAt, "h:mm a");
-  const initials = getInitials(forecast.repName) || "MR";
-
-  return (
-    <article className="forecast-request-card rounded-[16px] border border-[#E5E8EF] bg-white p-5 shadow-[0_1px_2px_rgba(16,24,40,0.04)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex min-w-0 gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full border border-[#E5E8EF] bg-[#F4F6FA] text-sm font-bold text-[#182033]">
-            {initials}
-          </span>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <h3
-                className="whitespace-normal break-words text-base font-semibold text-[#182033]"
-                dir="auto"
-              >
-                {forecast.repName}
-              </h3>
-              <span className="inline-flex items-center rounded-full border border-[#DDE3EE] bg-[#F4F6FA] px-2.5 py-0.5 text-[11px] font-bold text-[#344054]">
-                {forecast.targetType === "PHARMACY"
-                  ? "Pharmacy Forecast"
-                  : "Doctor Forecast"}
-              </span>
-              <ForecastStatusBadge status={status} />
-            </div>
-            <p className="mt-1 text-sm font-medium text-[#8A94A6]">
-              Medical Representative
-            </p>
-            <p className="mt-1 truncate text-xs font-medium text-[#98A2B3]">
-              {forecast.repEmail}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onToggleExpanded}
-          className="forecast-review-button inline-flex h-10 items-center justify-center gap-2 rounded-[10px] border border-[#101D36] bg-[#101D36] px-4 text-sm font-bold text-white shadow-[0_8px_18px_rgba(16,29,54,0.16)] transition-[background-color,border-color,color,transform] hover:-translate-y-px hover:bg-[#101D36]/95 focus-visible:ring-3 focus-visible:ring-[#C9A44C]/20 focus-visible:outline-none lg:ml-auto"
-          aria-expanded={isExpanded}
-        >
-          View Details
-          {isExpanded ? (
-            <ChevronUp className="size-4 text-[#C9A44C]" aria-hidden="true" />
-          ) : (
-            <ArrowRight
-              className="forecast-review-arrow size-4 text-[#C9A44C]"
-              aria-hidden="true"
-            />
-          )}
-        </button>
-      </div>
-
-      <dl className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
-          <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <CalendarDays className="size-4 text-[#B18732]" />
-            Forecast Period
-          </dt>
-          <dd className="mt-2 text-sm font-semibold text-[#182033]">
-            {periodLabel}
-          </dd>
-        </div>
-        <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
-          <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <Package className="size-4 text-[#B18732]" />
-            Products
-          </dt>
-          <dd className="mt-2 text-sm font-semibold text-[#182033]">
-            {forecast.totalProducts}{" "}
-            {forecast.totalProducts === 1 ? "Product" : "Products"}
-          </dd>
-        </div>
-        <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
-          <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <Users className="size-4 text-[#B18732]" />
-            Doctors Covered
-          </dt>
-          <dd className="mt-2 text-sm font-semibold text-[#182033]">
-            {forecast.totalDoctors}{" "}
-            {forecast.totalDoctors === 1 ? "Doctor" : "Doctors"}
-          </dd>
-        </div>
-        <div className="rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3">
-          <dt className="flex items-center gap-2 text-xs font-bold tracking-[0.04em] text-[#8A94A6] uppercase">
-            <TrendingUp className="size-4 text-[#B18732]" />
-            Total Units
-          </dt>
-          <dd className="mt-2 text-sm font-semibold text-[#182033]">
-            {numberFormatter.format(forecast.totalUnits)} Units
-          </dd>
-        </div>
-      </dl>
-
-      <p className="mt-4 text-xs font-medium text-[#8A94A6]">
-        Submitted {submittedLabel} - {submittedTime}
-      </p>
-
-      {isExpanded && (
-        <div className="forecast-card-details mt-5 border-t border-[#EEF1F5] pt-5">
-          {forecast.notes && (
-            <div className="mb-4 rounded-[12px] border border-[#F5DFAC] bg-[#FFF8E5] p-4">
-              <p className="text-sm leading-5 font-semibold text-[#8A6515]">
-                Rep Notes
-              </p>
-              <p className="mt-1 text-sm leading-6 font-medium text-[#6F5A20]">
-                {forecast.notes}
-              </p>
-            </div>
-          )}
-
-          {forecast.supervisorFeedback && (
-            <div className="mb-4 rounded-[12px] border border-[#CBEFDD] bg-[#E9F8F1] p-4">
-              <p className="text-sm leading-5 font-semibold text-[#168557]">
-                Supervisor Feedback
-              </p>
-              <p className="mt-1 text-sm leading-6 font-medium text-[#196744]">
-                {forecast.supervisorFeedback}
-              </p>
-            </div>
-          )}
-
-          {forecast.productForecasts.length > 0 && (
-            <>
-              <p className="mb-3 text-sm font-semibold text-[#182033]">
-                Product Distribution Details
-              </p>
-              <div className="grid gap-2">
-                {forecast.productForecasts.map((pf, index) => (
-                  <div
-                    key={`${forecast.id}-${pf.productName}-${pf.doctorName}-${index}`}
-                    className="grid gap-3 rounded-[12px] border border-[#EEF1F5] bg-[#FBFCFE] p-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
-                  >
-                    <div className="min-w-0">
-                      <p
-                        className="whitespace-normal break-words text-sm font-semibold text-[#182033]"
-                        dir="auto"
-                      >
-                        {pf.productName}
-                      </p>
-                      <p
-                        className="mt-1 whitespace-normal break-words text-xs font-medium text-[#8A94A6]"
-                        dir="auto"
-                      >
-                        {pf.doctorName}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-sm font-bold text-[#182033]">
-                      {numberFormatter.format(pf.productUnits)} units
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {forecast.status !== "APPROVED" && forecast.status !== "REJECTED" && (
-            <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              <Button
-                onClick={() =>
-                  onOpenDialog(forecast.id, "approve", forecast.repName)
-                }
-                className="h-11 cursor-pointer rounded-[10px] border border-[#168557] bg-[#168557] font-bold text-white transition-[background-color,color] hover:bg-white hover:text-[#168557]"
-              >
-                <CheckCircle2 className="mr-2 size-4" />
-                Approve
-              </Button>
-              <Button
-                onClick={() =>
-                  onOpenDialog(forecast.id, "reject", forecast.repName)
-                }
-                variant="outline"
-                className="h-11 cursor-pointer rounded-[10px] border-[#B42318] font-bold text-[#B42318] transition-[background-color,color] hover:bg-[#B42318] hover:text-white"
-              >
-                <CircleX className="mr-2 size-4" />
-                Reject
-              </Button>
-            </div>
-          )}
-        </div>
-      )}
-    </article>
   );
 }
 

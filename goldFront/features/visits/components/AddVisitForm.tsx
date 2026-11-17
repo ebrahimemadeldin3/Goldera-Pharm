@@ -302,6 +302,10 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
     defaultValues,
     shouldFocusError: true,
   });
+  const watchedCompanionType = useWatch({
+    control: form.control,
+    name: "companionType",
+  });
   const defaultsSyncRef = useRef({
     key: "",
     doctorId: defaultValues.doctorId,
@@ -1045,7 +1049,7 @@ export default function AddVisitForm(props: RoleBasedAddVisitFormProps) {
                   )}
                 />
 
-                {form.watch("companionType") === "WITH_MANAGER" && (
+                {watchedCompanionType === "WITH_MANAGER" && (
                   <FormField
                     control={form.control}
                     name="accompanyingManagerId"

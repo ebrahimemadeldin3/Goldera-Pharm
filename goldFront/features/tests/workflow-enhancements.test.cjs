@@ -194,3 +194,73 @@ test("Centralized SAR currency formatter and zero remaining EGP references", () 
   scanDirs.forEach(walk);
   assert.deepEqual(violations, []);
 });
+
+test("Centralized Forecast target labels, frequency/status labels, product-first grouping, and Draft duplication", () => {
+  const {
+    getForecastTargetLabels,
+    formatForecastFrequency,
+    formatForecastStatusLabel,
+    groupForecastAllocationsByProduct,
+  } = loadTs("features/forecast/lib/utils/labels.ts");
+  const { buildDuplicateForecastDraft } = loadTs(
+    "features/forecast/lib/utils/duplicate.ts",
+  );
+
+  // Screenshot defect regression: Pharmacy Forecast with 3 accounts & 1 hidden
+  const pharmacyLabels = getForecastTargetLabels("PHARMACY");
+  assert.equal(pharmacyLabels.forecastLabel, "Pharmacy Forecast");
+  assert.equal(pharmacyLabels.coveredLabel, "Pharmacies Covered");
+  assert.equal(pharmacyLabels.allocationsLabel, "Pharmacy Allocations");
+  assert.equal(pharmacyLabels.formatCount(3), "3 pharmacies");
+  assert.equal(pharmacyLabels.formatShowMore(1), "Show 1 more pharmacy");
+  assert.equal(pharmacyLabels.formatShowMore(3), "Show 3 more pharmacies");
+
+  const doctorLabels = getForecastTargetLabels("DOCTOR");
+  assert.equal(doctorLabels.forecastLabel, "Doctor Forecast");
+  assert.equal(doctorLabels.coveredLabel, "Doctors Covered");
+  assert.equal(doctorLabels.allocationsLabel, "Doctor Allocations");
+  assert.equal(doctorLabels.formatShowMore(1), "Show 1 more doctor");
+  assert.equal(doctorLabels.formatShowMore(3), "Show 3 more doctors");
+
+  assert.equal(formatForecastFrequency("monthly"), "Monthly");
+  assert.equal(formatForecastFrequency("quarterly"), "Quarterly");
+  assert.equal(formatForecastStatusLabel("PENDING").label, "Pending Review");
+  assert.equal(formatForecastStatusLabel("REJECTED").label, "Rejected");
+  assert.equal(formatForecastStatusLabel("DRAFT").label, "Draft");
+
+  // Product-first grouping & summary/details parity
+  const grouped = groupForecastAllocationsByProduct([
+    { productId: "p1", productName: "Rizona 20 mg", productUnits: 20, pharmacyId: "ph1", pharmacyName: "شركة دواء الشرقية الطبية" },
+    { productId: "p1", productName: "Rizona 20 mg", productUnits: 10, pharmacyId: "ph2", pharmacyName: "شركة أجياد الصحة للادوية" },
+    { productId: "p1", productName: "Rizona 20 mg", productUnits: 10, pharmacyId: "ph3", pharmacyName: "Al Nahdi Pharmacy" },
+  ]);
+  assert.equal(grouped.uniqueProductCount, 1);
+  assert.equal(grouped.uniqueAccountCount, 3);
+  assert.equal(grouped.totalUnits, 40);
+  assert.equal(grouped.groups[0].accounts.length, 3);
+
+  // Safe Draft duplication: excludes id, status, feedback, timestamps, and unavailable items
+  const draft = buildDuplicateForecastDraft(
+    {
+      id: "old-id",
+      status: "REJECTED",
+      supervisorFeedback: "Too high",
+      targetType: "PHARMACY",
+      periodType: "MONTHLY",
+      notes: "Copied notes",
+      productForecasts: [
+        { productId: "p1", productName: "Rizona 20 mg", productUnits: 20, pharmacyId: "ph1", pharmacyName: "شركة دواء الشرقية الطبية" },
+        { productId: "p-archived", productName: "Old Med", productUnits: 5, pharmacyId: "ph1", pharmacyName: "شركة دواء الشرقية الطبية" },
+      ],
+    },
+    [{ id: "p1", name: "Rizona 20 mg", category: "General", totalUnits: 100 }],
+    [{ id: "ph1", name: "شركة دواء الشرقية الطبية", specialty: "Internal Medicine", hospital: "Jeddah" }],
+  );
+  assert.equal(draft.targetType, "PHARMACY");
+  assert.equal(draft.periodType, "MONTHLY");
+  assert.deepEqual(draft.selectedProductIds, ["p1"]);
+  assert.equal(draft.allocations.ph1.p1, 20);
+  assert.deepEqual(draft.skippedProducts, ["Old Med"]);
+  assert.equal("id" in draft, false);
+  assert.equal("supervisorFeedback" in draft, false);
+});

@@ -58,8 +58,16 @@ export function computeForecastCardSummary(
       productId: row.productId || null,
       productName,
       units: 0,
+      accounts: new Set(),
     };
     existing.units += Number.isFinite(units) && units > 0 ? units : 0;
+    if (
+      accountKey &&
+      !/^unassigned (doctor|pharmacy)$/i.test(accountKey) &&
+      !/^unknown (doctor|pharmacy)$/i.test(accountKey)
+    ) {
+      existing.accounts.add(accountKey);
+    }
     productTotals.set(productKey, existing);
 
     const price =
@@ -72,9 +80,14 @@ export function computeForecastCardSummary(
     }
   }
 
-  const sortedProducts = Array.from(productTotals.values()).sort(
-    (a, b) => b.units - a.units || a.productName.localeCompare(b.productName),
-  );
+  const sortedProducts = Array.from(productTotals.values())
+    .map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      units: item.units,
+      accountCount: item.accounts.size,
+    }))
+    .sort((a, b) => b.units - a.units || a.productName.localeCompare(b.productName));
   const topProducts = sortedProducts.slice(0, 3);
   const extraProductsCount = Math.max(0, sortedProducts.length - 3);
 

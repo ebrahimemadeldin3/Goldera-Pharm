@@ -20,6 +20,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn, formatSAR, formatSaudiDateTimeDisplay, formatSaudiMonthYear } from "@/lib/utils";
 import type { ForecastManagement } from "../lib/types/management";
+import {
+  formatForecastFrequency,
+  getForecastTargetLabels,
+} from "../lib/utils/labels";
 
 const numberFormatter = new Intl.NumberFormat("en-US");
 
@@ -211,7 +215,8 @@ export function ManagerForecastCard({
   onOpenDialog,
 }: ManagerForecastCardProps) {
   const status = getManagerForecastStatus(forecast);
-  const isPharmacy = forecast.targetType === "PHARMACY";
+  const targetLabels = getForecastTargetLabels(forecast.targetType);
+  const isPharmacy = targetLabels.targetType === "PHARMACY";
   const summary = forecast.summary ?? buildFallbackSummary(forecast);
 
   const periodLabel =
@@ -231,7 +236,7 @@ export function ManagerForecastCard({
   const waitingLabel =
     status === "pending" ? formatWaitingDuration(forecast.createdAt) : null;
 
-  const targetAccountLabel = isPharmacy ? "Pharmacies" : "Doctors";
+  const targetAccountLabel = targetLabels.plural;
   const TargetIcon = isPharmacy ? Building2 : Stethoscope;
 
   const comparison = summary.comparison;
@@ -309,7 +314,7 @@ export function ManagerForecastCard({
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-[#DDE3EE] bg-[#F4F6FA] px-2.5 py-1 text-xs font-bold text-[#344054]">
             <TargetIcon className="size-3.5 shrink-0 text-[#101D36]" aria-hidden="true" />
-            {isPharmacy ? "Pharmacy Forecast" : "Doctor Forecast"}
+            {targetLabels.forecastLabel}
           </span>
           <StatusBadge status={status} />
         </div>
@@ -319,7 +324,7 @@ export function ManagerForecastCard({
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-[#EEF1F6] pt-3 text-xs text-[#475467]">
         <span className="inline-flex items-center gap-1.5 font-semibold text-[#182033]">
           <CalendarDays className="size-3.5 text-[#B18732]" aria-hidden="true" />
-          {periodLabel} ({forecast.periodType})
+          {periodLabel} ({formatForecastFrequency(forecast.periodType)})
         </span>
         <span>Submitted {submittedLabel}</span>
         {updatedLabel && <span>Updated {updatedLabel}</span>}

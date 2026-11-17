@@ -18,6 +18,7 @@ export interface ForecastApiResponse {
   supervisorFeedback?: string | null;
   createdAt: string;
   updatedAt: string;
+  summary?: Forecast["summary"];
   productForecasts: {
     id?: string;
     forecastId?: string;
@@ -129,15 +130,32 @@ export type Forecast = {
   quarter?: string;
   year: number;
   status: ForecastStatus;
+  rawStatus?: string;
   totalUnitsPlanned: number;
   doctorsCovered: number;
   productsUsed: number;
   totalDistribution: number;
   products: ProductAllocation[];
   distributions: DoctorDistribution[];
+  productForecasts?: ForecastApiResponse["productForecasts"];
+  summary?: {
+    productCount: number;
+    accountCount: number;
+    totalUnits: number;
+    estimatedValueSAR: number | null;
+    topProducts: Array<{
+      productId: string | null;
+      productName: string;
+      units: number;
+      accountCount?: number;
+    }>;
+    extraProductsCount: number;
+    warnings?: Array<{ code: string; message: string; count: number }>;
+  };
   notes?: string;
   supervisorFeedback?: string;
   createdAt: string;
+  updatedAt?: string;
   submittedAt?: string;
   approvedAt?: string;
 };

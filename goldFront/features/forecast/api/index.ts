@@ -241,11 +241,14 @@ function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
     quarter: !isMonthly ? `Q${Math.ceil(Number(saudiMonth) / 3)}` : undefined,
     year,
     status,
+    rawStatus: apiForecast.status,
     totalUnitsPlanned,
     doctorsCovered,
     productsUsed,
     totalDistribution: totalUnitsPlanned,
     products: [],
+    productForecasts,
+    summary: apiForecast.summary,
     distributions: Array.from(doctorMap.entries()).map(
       ([doctorName, data]) => ({
         doctorId: "",
@@ -253,7 +256,7 @@ function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
         specialty: "Internal Medicine" as Specialty,
         hospital: "",
         allocations: data.products.map((pf) => ({
-          productId: "",
+          productId: pf.productId || "",
           units: pf.productUnits,
         })),
       }),
@@ -261,6 +264,7 @@ function mapApiForecastToForecast(apiForecast: ForecastApiResponse): Forecast {
     notes: apiForecast.notes || undefined,
     supervisorFeedback: apiForecast.supervisorFeedback || undefined,
     createdAt: apiForecast.createdAt,
+    updatedAt: apiForecast.updatedAt,
   };
 }
 
@@ -421,6 +425,28 @@ export async function fetchMyTerritoryPharmacies(): Promise<{
   return {
     data: pharmacies,
   };
+}
+
+export async function getForecastByIdAction(id: string): Promise<{
+  success: boolean;
+  data?: Forecast;
+  error?: ApiError;
+}> {
+  try {
+    const response = await apiFetch<{ data: ForecastApiResponse }>(
+      `/api/forecasts/${id}`,
+      { method: "GET" },
+    );
+    return {
+      success: true,
+      data: mapApiForecastToForecast(response.data),
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error as ApiError,
+    };
+  }
 }
 
 export async function getForecastTargetsAction(
