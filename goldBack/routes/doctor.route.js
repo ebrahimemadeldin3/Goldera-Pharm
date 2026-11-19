@@ -5,6 +5,7 @@ import {
   addNewDoctor,
   getAllDoctors,
   getMarketingDoctorsLookup,
+  getMonthlyMarketingDoctors,
   getOneDoctor,
   updateDoctor,
   deleteDoctor,
@@ -17,6 +18,7 @@ router.use(guard);
 
 router.get("/", getAllDoctors);
 router.get("/marketing-lookup", getMarketingDoctorsLookup);
+router.get("/monthly-marketing-lookup", allowedTo("MEDICAL_REP"), getMonthlyMarketingDoctors);
 router.post("/", allowedTo("MANAGER"), addNewDoctor);
 router.post("/bulk-import", allowedTo("MANAGER"), addDoctorByCSV);
 router.post("/csv", allowedTo("MANAGER"), sheetUpload, addDoctorByCSV);

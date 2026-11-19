@@ -4,6 +4,7 @@ import xlsx from "xlsx";
 import fs from "fs/promises";
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 import { text, number } from "../utils/validation.js";
+import { matchesMonthlyMarketingTerritory } from "../utils/monthly-marketing-doctors.js";
 import {
   buildMarketingDoctorWhere,
   mapMarketingDoctorOption,
@@ -390,6 +391,45 @@ const addDoctorByCSV = async (req, res, next) => {
   }
 };
 
+const getMonthlyMarketingDoctors = async (req, res, next) => {
+  try {
+    const actor = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { subRegion: { select: { name: true } } },
+    });
+    const territory = actor?.subRegion?.name?.trim();
+    if (!territory) return res.status(200).json({ data: [] });
+
+    // Include candidates with surrounding whitespace, then apply the exact
+    // same territory rule used when a Monthly Marketing request is submitted.
+    const candidate = { contains: territory, mode: "insensitive" };
+    const doctors = await prisma.doctor.findMany({
+      where: {
+        isActive: true,
+        OR: [{ subRegion: candidate }, { area: candidate }],
+      },
+      select: {
+        id: true,
+        nameEN: true,
+        nameAR: true,
+        accountName: true,
+        specialty: true,
+        subRegion: true,
+        area: true,
+      },
+      orderBy: [{ nameEN: "asc" }, { nameAR: "asc" }, { id: "asc" }],
+    });
+    const data = doctors
+      .filter((doctor) => matchesMonthlyMarketingTerritory(doctor, territory))
+      .map(({ id, nameEN, nameAR, accountName, specialty }) => ({
+        id, nameEN, nameAR, accountName, specialty,
+      }));
+    return res.status(200).json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getMarketingDoctorsLookup = async (req, res, next) => {
   try {
     const parsed = validateMarketingDoctorQuery(req.query);
@@ -489,6 +529,7 @@ export {
   addNewDoctor,
   getAllDoctors,
   getMarketingDoctorsLookup,
+  getMonthlyMarketingDoctors,
   getOneDoctor,
   updateDoctor,
   deleteDoctor,

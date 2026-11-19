@@ -30,6 +30,26 @@ export async function createRequest(data: CreateRequestDto): Promise<void> {
   await createRequestMultipart(fd);
 }
 
+export type MonthlyMarketingDoctor = {
+  id: string;
+  nameEN: string | null;
+  nameAR: string | null;
+  accountName: string | null;
+  specialty: string | null;
+};
+
+export async function getMonthlyMarketingDoctorsAction() {
+  try {
+    const { data } = await apiFetch<{ data: MonthlyMarketingDoctor[] }>(
+      "/api/doctors/monthly-marketing-lookup",
+      { method: "GET", cache: "no-store" },
+    );
+    return { success: true as const, data };
+  } catch {
+    return { success: false as const, data: [] };
+  }
+}
+
 /**
  * Create a new request with file attachments via multipart/form-data
  */

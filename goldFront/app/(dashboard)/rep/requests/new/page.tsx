@@ -2,15 +2,17 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getDoctorsAction } from "@/features/doctors/api";
 import { getProductsAction } from "@/features/products/api";
+import { getMonthlyMarketingDoctorsAction } from "@/features/requests/api";
 import { PageContainer } from "@/components/layout/page-container";
 import CreateRequestWizard from "@/features/requests/components/CreateRequestWizard";
 
 export const dynamic = "force-dynamic";
 
 export default async function Page() {
-  const [doctorsResult, productsResult] = await Promise.all([
+  const [doctorsResult, productsResult, monthlyMarketingDoctors] = await Promise.all([
     getDoctorsAction(),
     getProductsAction(),
+    getMonthlyMarketingDoctorsAction(),
   ]);
 
   const doctors = doctorsResult.success ? (doctorsResult.data ?? []) : [];
@@ -28,7 +30,12 @@ export default async function Page() {
         </Link>
       </div>
 
-      <CreateRequestWizard doctors={doctors} products={products} />
+      <CreateRequestWizard
+        doctors={doctors}
+        products={products}
+        monthlyMarketingDoctors={monthlyMarketingDoctors.data}
+        monthlyMarketingDoctorsUnavailable={!monthlyMarketingDoctors.success}
+      />
     </PageContainer>
   );
 }

@@ -52,9 +52,12 @@ import { MarketingTargetDoctorsSelector } from "./MarketingTargetDoctorsSelector
 import type { DoctorApiResponse } from "@/features/doctors/lib/types/api";
 import type { ProductApiResponse } from "@/features/products/lib/types";
 import type { CreateRequestDto } from "@/features/requests/lib/types";
+import type { MonthlyMarketingDoctor } from "@/features/requests/api";
 
 interface CreateRequestWizardProps {
   doctors?: DoctorApiResponse[];
+  monthlyMarketingDoctors: MonthlyMarketingDoctor[];
+  monthlyMarketingDoctorsUnavailable: boolean;
   products?: ProductApiResponse[];
 }
 
@@ -118,6 +121,8 @@ const formatUrgencyLabel = (urgency: string) => {
 
 export default function CreateRequestWizard({
   doctors = [],
+  monthlyMarketingDoctors,
+  monthlyMarketingDoctorsUnavailable,
   products = [],
 }: CreateRequestWizardProps) {
   const router = useRouter();
@@ -163,6 +168,12 @@ export default function CreateRequestWizard({
   const watched = useWatch({ control: form.control });
 
   const handleSelectType = (type: RequestType) => {
+    if (
+      type !== selectedType &&
+      (type === "MONTHLY_MARKETING" || selectedType === "MONTHLY_MARKETING")
+    ) {
+      setSelectedDoctorIds([]);
+    }
     setSelectedType(type);
     form.setValue("type", type);
     setDoctorError("");
@@ -351,12 +362,15 @@ export default function CreateRequestWizard({
     setDoctorError("");
   };
 
+  const requestDoctors =
+    selectedType === "MONTHLY_MARKETING" ? monthlyMarketingDoctors : doctors;
+
   const selectedDoctorNames = useMemo(() => {
-    return doctors
+    return requestDoctors
       .filter((d) => selectedDoctorIds.includes(d.id))
       .map((d) => d.nameEN || d.nameAR || d.accountName)
       .filter(Boolean);
-  }, [doctors, selectedDoctorIds]);
+  }, [requestDoctors, selectedDoctorIds]);
 
   return (
     <div className="space-y-6">
@@ -624,13 +638,17 @@ export default function CreateRequestWizard({
                     </FormLabel>
                   </div>
 
-                  {doctors.length === 0 ? (
+                  {requestDoctors.length === 0 ? (
                     <p className="text-xs text-[#667085]">
-                      No doctors available in region.
+                      {selectedType !== "MONTHLY_MARKETING"
+                        ? "No doctors available in region."
+                        : monthlyMarketingDoctorsUnavailable
+                          ? "Could not load doctors. Refresh the page to try again."
+                          : "No active doctors are available in your assigned territory."}
                     </p>
                   ) : (
                     <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto pt-1 sm:grid-cols-2">
-                      {doctors.map((doc) => {
+                      {requestDoctors.map((doc) => {
                         const isSelected = selectedDoctorIds.includes(doc.id);
                         return (
                           <button

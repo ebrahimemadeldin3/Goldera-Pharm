@@ -7,6 +7,7 @@ import {
 import { ApiFeatures, paginationResults } from "../utils/apiFeatures.js";
 import { text, number, date } from "../utils/validation.js";
 import { validateAndDetectFiles } from "../utils/fileValidator.js";
+import { matchesMonthlyMarketingTerritory } from "../utils/monthly-marketing-doctors.js";
 
 // Requests Controllers
 const getMyRequests = async (req, res, next) => {
@@ -206,19 +207,13 @@ const createRequest = async (req, res, next) => {
         return next(new ApiError("Select an active doctor", 400));
       }
 
-      if (req.user.role === "MEDICAL_REP" && actor?.subRegion?.name) {
-        const repSub = actor.subRegion.name.trim().toLowerCase();
-        const docSub = (doctor.subRegion || doctor.area || "")
-          .trim()
-          .toLowerCase();
-        if (docSub !== repSub) {
-          return next(
-            new ApiError(
-              "Selected doctor is outside your assigned territory",
-              403,
-            ),
-          );
-        }
+      if (
+        req.user.role === "MEDICAL_REP" &&
+        !matchesMonthlyMarketingTerritory(doctor, actor?.subRegion?.name)
+      ) {
+        return next(
+          new ApiError("Selected doctor is outside your assigned territory", 403),
+        );
       }
 
       resolvedDoctorIds = [selectedDoctorId];

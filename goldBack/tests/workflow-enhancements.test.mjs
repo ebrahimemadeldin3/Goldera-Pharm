@@ -25,6 +25,15 @@ import {
   validateMarketingDoctorQuery,
 } from "../utils/marketing-doctors.js";
 import { computeForecastCardSummary } from "../utils/forecast-summary.js";
+import { matchesMonthlyMarketingTerritory } from "../utils/monthly-marketing-doctors.js";
+
+test("Monthly Marketing uses the rep's exact territory with legacy area fallback", () => {
+  assert.equal(matchesMonthlyMarketingTerritory({ subRegion: " Taif " }, "TAIF"), true);
+  assert.equal(matchesMonthlyMarketingTerritory({ subRegion: null, area: "Taif" }, "Taif"), true);
+  assert.equal(matchesMonthlyMarketingTerritory({ subRegion: "Taif North" }, "Taif"), false);
+  assert.equal(matchesMonthlyMarketingTerritory({ subRegion: "Jeddah", area: "Taif" }, "Taif"), false);
+  assert.equal(matchesMonthlyMarketingTerritory({ subRegion: "Taif" }, undefined), false);
+});
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
